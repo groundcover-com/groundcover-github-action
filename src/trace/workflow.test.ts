@@ -1,5 +1,21 @@
 import { jest, describe, it, expect, beforeAll, afterEach, afterAll } from "@jest/globals";
 import { SpanStatusCode, trace } from "@opentelemetry/api";
+import {
+  ATTR_CICD_PIPELINE_ACTION_NAME,
+  ATTR_CICD_PIPELINE_RESULT,
+  ATTR_CICD_PIPELINE_RUN_STATE,
+  ATTR_CICD_PIPELINE_RUN_URL_FULL,
+  CICD_PIPELINE_ACTION_NAME_VALUE_RUN,
+  CICD_PIPELINE_RESULT_VALUE_CANCELLATION,
+  CICD_PIPELINE_RESULT_VALUE_ERROR,
+  CICD_PIPELINE_RESULT_VALUE_FAILURE,
+  CICD_PIPELINE_RESULT_VALUE_SKIP,
+  CICD_PIPELINE_RESULT_VALUE_SUCCESS,
+  CICD_PIPELINE_RESULT_VALUE_TIMEOUT,
+  CICD_PIPELINE_RUN_STATE_VALUE_EXECUTING,
+  CICD_PIPELINE_RUN_STATE_VALUE_FINALIZING,
+  CICD_PIPELINE_RUN_STATE_VALUE_PENDING,
+} from "@opentelemetry/semantic-conventions/incubating";
 import { BasicTracerProvider, InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import type { components } from "@octokit/openapi-types";
 
@@ -184,10 +200,94 @@ describe("traceWorkflowRun", () => {
     const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
     expect(rootSpan?.attributes["cicd.pipeline.name"]).toBe("CI");
     expect(rootSpan?.attributes["cicd.pipeline.run.id"]).toBe(1000);
+    expect(rootSpan?.attributes[ATTR_CICD_PIPELINE_ACTION_NAME]).toBe(CICD_PIPELINE_ACTION_NAME_VALUE_RUN);
+    expect(rootSpan?.attributes[ATTR_CICD_PIPELINE_RUN_URL_FULL]).toBe("https://github.com/o/r/actions/runs/1000");
     expect(rootSpan?.attributes["github.run_id"]).toBe(1000);
     expect(rootSpan?.attributes["github.event"]).toBe("push");
     expect(rootSpan?.attributes["github.head_sha"]).toBe("abc123def456");
     expect(rootSpan?.attributes["github.head_branch"]).toBe("main");
+  });
+
+  it("maps pipeline results and states", () => {
+    traceWorkflowRun(makeWorkflowRun({ id: 2000, status: "completed", conclusion: "success" }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2001, status: "completed", conclusion: "failure" }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2002, status: "completed", conclusion: "cancelled" }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2003, status: "completed", conclusion: "skipped" }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2004, status: "completed", conclusion: "timed_out" }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2005, status: "failure", conclusion: null }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2006, status: "queued", conclusion: null }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2007, status: "in_progress", conclusion: null }), [makeJob()], {}, {});
+    traceWorkflowRun(
+      makeWorkflowRun({ id: 2008, status: "completed", conclusion: "action_required" }),
+      [makeJob()],
+      {},
+      {},
+    );
+    traceWorkflowRun(makeWorkflowRun({ id: 2009, status: "completed", conclusion: "neutral" }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2010, status: "completed", conclusion: "stale" }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2011, status: "requested", conclusion: null }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2012, status: "waiting", conclusion: null }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2013, status: "expected", conclusion: null }), [makeJob()], {}, {});
+    traceWorkflowRun(makeWorkflowRun({ id: 2014, status: "startup_failure", conclusion: null }), [makeJob()], {}, {});
+
+    const spans = exporter.getFinishedSpans().filter((span) => span.name === "CI");
+    expect(spans[0]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_SUCCESS);
+    expect(spans[0]?.attributes[ATTR_CICD_PIPELINE_RUN_STATE]).toBe(CICD_PIPELINE_RUN_STATE_VALUE_FINALIZING);
+    expect(spans[1]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_FAILURE);
+    expect(spans[2]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_CANCELLATION);
+    expect(spans[3]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_SKIP);
+    expect(spans[4]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_TIMEOUT);
+    expect(spans[5]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_ERROR);
+    expect(spans[6]?.attributes[ATTR_CICD_PIPELINE_RUN_STATE]).toBe(CICD_PIPELINE_RUN_STATE_VALUE_PENDING);
+    expect(spans[7]?.attributes[ATTR_CICD_PIPELINE_RUN_STATE]).toBe(CICD_PIPELINE_RUN_STATE_VALUE_EXECUTING);
+    expect(spans[8]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_FAILURE);
+    expect(spans[9]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_SUCCESS);
+    expect(spans[10]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_FAILURE);
+    expect(spans[11]?.attributes[ATTR_CICD_PIPELINE_RUN_STATE]).toBe(CICD_PIPELINE_RUN_STATE_VALUE_PENDING);
+    expect(spans[12]?.attributes[ATTR_CICD_PIPELINE_RUN_STATE]).toBe(CICD_PIPELINE_RUN_STATE_VALUE_PENDING);
+    expect(spans[13]?.attributes[ATTR_CICD_PIPELINE_RUN_STATE]).toBe(CICD_PIPELINE_RUN_STATE_VALUE_EXECUTING);
+    expect(spans[14]?.attributes[ATTR_CICD_PIPELINE_RUN_STATE]).toBe(CICD_PIPELINE_RUN_STATE_VALUE_FINALIZING);
+  });
+
+  it("maps extra workflow metadata from GitHub", () => {
+    traceWorkflowRun(
+      makeWorkflowRun({
+        workflow_url: "https://api.github.com/repos/o/r/actions/workflows/ci.yml",
+        node_id: "WFR_123",
+        check_suite_id: 456,
+        check_suite_node_id: "CS_456",
+        jobs_url: "https://api.github.com/repos/o/r/actions/runs/1000/jobs",
+        logs_url: "https://api.github.com/repos/o/r/actions/runs/1000/logs",
+        check_suite_url: "https://api.github.com/repos/o/r/check-suites/456",
+        artifacts_url: "https://api.github.com/repos/o/r/actions/runs/1000/artifacts",
+        cancel_url: "https://api.github.com/repos/o/r/actions/runs/1000/cancel",
+        rerun_url: "https://api.github.com/repos/o/r/actions/runs/1000/rerun",
+        previous_attempt_url: "https://api.github.com/repos/o/r/actions/runs/999",
+      }),
+      [makeJob()],
+      {},
+      {},
+    );
+
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    expect(rootSpan?.attributes["github.workflow_url"]).toBe(
+      "https://api.github.com/repos/o/r/actions/workflows/ci.yml",
+    );
+    expect(rootSpan?.attributes["github.workflow"]).toBe("CI");
+    expect(rootSpan?.attributes["github.node_id"]).toBe("WFR_123");
+    expect(rootSpan?.attributes["github.check_suite_id"]).toBe(456);
+    expect(rootSpan?.attributes["github.check_suite_node_id"]).toBe("CS_456");
+    expect(rootSpan?.attributes["github.jobs_url"]).toBe("https://api.github.com/repos/o/r/actions/runs/1000/jobs");
+    expect(rootSpan?.attributes["github.logs_url"]).toBe("https://api.github.com/repos/o/r/actions/runs/1000/logs");
+    expect(rootSpan?.attributes["github.check_suite_url"]).toBe("https://api.github.com/repos/o/r/check-suites/456");
+    expect(rootSpan?.attributes["github.artifacts_url"]).toBe(
+      "https://api.github.com/repos/o/r/actions/runs/1000/artifacts",
+    );
+    expect(rootSpan?.attributes["github.cancel_url"]).toBe("https://api.github.com/repos/o/r/actions/runs/1000/cancel");
+    expect(rootSpan?.attributes["github.rerun_url"]).toBe("https://api.github.com/repos/o/r/actions/runs/1000/rerun");
+    expect(rootSpan?.attributes["github.previous_attempt_url"]).toBe(
+      "https://api.github.com/repos/o/r/actions/runs/999",
+    );
   });
 
   it("includes referenced workflow attributes", () => {
@@ -241,6 +341,18 @@ describe("traceWorkflowRun", () => {
     expect(rootSpan?.attributes["cicd.pipeline.name"]).toBeUndefined();
     expect(rootSpan?.attributes["github.status"]).toBeUndefined();
     expect(rootSpan?.attributes["github.conclusion"]).toBeUndefined();
+  });
+
+  it("defaults github.run_attempt to 1 when absent", () => {
+    traceWorkflowRun(
+      makeWorkflowRun({ run_attempt: undefined } as unknown as Partial<WorkflowRun>),
+      [makeJob()],
+      {},
+      {},
+    );
+
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    expect(rootSpan?.attributes["github.run_attempt"]).toBe(1);
   });
 
   it("includes PR attributes and labels when pull requests are present", () => {
