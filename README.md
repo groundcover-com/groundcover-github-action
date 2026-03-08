@@ -82,6 +82,7 @@ Use these rules when generating workflows or modifying this repository:
 - Supports OTLP/HTTP and OTLP/gRPC transports
 - Follows the [OTEL CI/CD semantic conventions](https://opentelemetry.io/docs/specs/semconv/cicd/)
 - Adds resource attributes for `source`, `workload`, and optional `env`
+- Can parse JUnit XML test results and attach a summary to the workflow root span
 - Supports additional custom resource attributes for team/region/metadata
 
 ## Usage
@@ -205,6 +206,7 @@ jobs:
     otelServiceName: my-service
     env: production
     workload: payments-api
+    testResultsGlob: "reports/junit/**/*.xml"
     extraAttributes: "team=platform"
 ```
 
@@ -227,6 +229,7 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 | `traceparent`     | No       |                       | W3C Trace Context `traceparent` value (e.g., `00-<trace_id>-<span_id>-01`). When provided, the workflow root span becomes a child of this trace, enabling correlation between CI/CD and application traces. |
 | `env`             | No       |                       | Environment name added to resource attributes (e.g., `production`, `staging`).                                                                                                                              |
 | `workload`        | No       | Workflow name         | Workload name added to resource attributes. Use this to group traces by service/workload.                                                                                                                   |
+| `testResultsGlob` | No       |                       | Comma-separated glob patterns for JUnit XML test result files. Matching files are parsed and summarized onto the workflow root span.                                                                        |
 | `extraAttributes` | No       |                       | Extra resource attributes as comma-separated `key=value` pairs. Example: `"team=platform,region=us-east-1"`. Prefer using dedicated `env` and `workload` inputs when applicable.                            |
 
 ## Outputs
@@ -308,6 +311,20 @@ By default, the action sets:
 - `env` (only when input is provided)
 
 For groundcover users, `source`, `workload`, and `env` make it easier to filter and group CI/CD traces consistently with the rest of your telemetry.
+
+## Test Results
+
+If your workflow produces JUnit XML reports, set `testResultsGlob` to one or more comma-separated glob patterns. The action parses matching files and adds these workflow root span attributes:
+
+- `test.suites`
+- `test.total`
+- `test.passed`
+- `test.failed`
+- `test.skipped`
+- `test.errors`
+- `test.duration`
+
+The matching XML files must exist on disk in the job running this action. In a separate `workflow_run` export workflow, download the test result artifacts first if you want them included.
 
 ## How Trace Linking Works
 
