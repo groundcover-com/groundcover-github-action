@@ -78,7 +78,7 @@ function createTracerProvider(endpoint: string, headers: string, attributes: Att
     }
   }
 
-  const resource = new Resource(attributes);
+  const resource = Resource.default().merge(new Resource(attributes));
 
   const provider = new BasicTracerProvider({
     resource,
@@ -130,7 +130,7 @@ class DeterministicIdGenerator implements IdGenerator {
 
     for (let i = 0; i < length; i++) {
       const idx = this.getRandomInt(this.characters.length);
-      id += this.characters[idx] ?? "0";
+      id += this.characters.charAt(idx);
     }
     return id;
   }

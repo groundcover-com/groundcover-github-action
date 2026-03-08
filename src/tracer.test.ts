@@ -97,6 +97,7 @@ describe("tracer", () => {
       resource: { attributes: Record<string, unknown> };
     };
     expect(providerWithResource.resource.attributes["service.name"]).toBe("svc-http");
+    expect(providerWithResource.resource.attributes["telemetry.sdk.language"]).toBe("nodejs");
   });
 
   it("uses OTLP gRPC exporter for non HTTP endpoints", async () => {
