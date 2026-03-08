@@ -16,6 +16,7 @@ const github = {
 const getWorkflowRun = jest.fn<() => Promise<unknown>>();
 const listJobsForWorkflowRun = jest.fn<() => Promise<unknown>>();
 const getJobsAnnotations = jest.fn<() => Promise<unknown>>();
+const getJobsLogs = jest.fn<() => Promise<unknown>>();
 const getPRsLabels = jest.fn<() => Promise<unknown>>();
 const createTracerProvider = jest.fn(() => ({
   forceFlush: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
@@ -32,6 +33,7 @@ jest.unstable_mockModule("./github.js", () => ({
   getWorkflowRun,
   listJobsForWorkflowRun,
   getJobsAnnotations,
+  getJobsLogs,
   getPRsLabels,
 }));
 jest.unstable_mockModule("./tracer.js", () => ({
@@ -42,7 +44,7 @@ jest.unstable_mockModule("./tracer.js", () => ({
 jest.unstable_mockModule("./trace/workflow.js", () => ({ traceWorkflowRun }));
 jest.unstable_mockModule("./test-results.js", () => ({ findTestResultsSummary }));
 
-const { run } = await import("./runner.js");
+const { run, resolveOtlpHeaders } = await import("./runner.js");
 
 describe("run branch coverage", () => {
   beforeEach(() => {
@@ -55,6 +57,7 @@ describe("run branch coverage", () => {
     getWorkflowRun.mockReset();
     listJobsForWorkflowRun.mockReset();
     getJobsAnnotations.mockReset();
+    getJobsLogs.mockReset();
     getPRsLabels.mockReset();
     createTracerProvider.mockClear();
     extractParentContext.mockClear();
@@ -62,8 +65,103 @@ describe("run branch coverage", () => {
     traceWorkflowRun.mockClear();
     findTestResultsSummary.mockReset();
     findTestResultsSummary.mockResolvedValue(undefined);
+    getJobsLogs.mockResolvedValue({});
     delete process.env["OTEL_SERVICE_NAME"];
     delete process.env["GITHUB_TOKEN"];
+  });
+
+  it("exports job logs when exportLogs is enabled", async () => {
+    core.getInput.mockImplementation((name: string) => {
+      if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      if (name === "apiKey") return "gc-secret";
+      if (name === "exportLogs") return "true";
+      return "";
+    });
+    getWorkflowRun.mockResolvedValue({
+      id: 1,
+      workflow_id: 2,
+      run_attempt: 1,
+      name: "CI",
+      head_sha: "abc",
+      repository: { full_name: "o/r" },
+      pull_requests: [],
+      updated_at: "2024-01-01T00:00:00Z",
+    });
+    listJobsForWorkflowRun.mockResolvedValue([{ id: 10 }]);
+    getJobsAnnotations.mockResolvedValue({});
+    getJobsLogs.mockResolvedValue({ 10: "job logs" });
+    getPRsLabels.mockResolvedValue({});
+
+    await run();
+
+    expect(getJobsLogs).toHaveBeenCalledWith(github.context, { mocked: true }, [10]);
+    expect(traceWorkflowRun).toHaveBeenCalledWith(expect.any(Object), [{ id: 10 }], {}, {}, undefined, undefined, {
+      10: "job logs",
+    });
+  });
+
+  it("logs and continues when job log export fails", async () => {
+    core.getInput.mockImplementation((name: string) => {
+      if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      if (name === "apiKey") return "gc-secret";
+      if (name === "exportLogs") return "true";
+      return "";
+    });
+    getWorkflowRun.mockResolvedValue({
+      id: 1,
+      workflow_id: 2,
+      run_attempt: 1,
+      name: "CI",
+      head_sha: "abc",
+      repository: { full_name: "o/r" },
+      pull_requests: [],
+      updated_at: "2024-01-01T00:00:00Z",
+    });
+    listJobsForWorkflowRun.mockResolvedValue([{ id: 10 }]);
+    getJobsAnnotations.mockResolvedValue({});
+    getJobsLogs.mockRejectedValue(new Error("log download failed"));
+    getPRsLabels.mockResolvedValue({});
+
+    await run();
+
+    expect(core.info).toHaveBeenCalledWith("Failed to get job logs: log download failed");
+    expect(traceWorkflowRun).toHaveBeenCalledWith(expect.any(Object), [{ id: 10 }], {}, {}, undefined, undefined, {});
+    expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it("stringifies non-Error job log failures", async () => {
+    core.getInput.mockImplementation((name: string) => {
+      if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      if (name === "apiKey") return "gc-secret";
+      if (name === "exportLogs") return "true";
+      return "";
+    });
+    getWorkflowRun.mockResolvedValue({
+      id: 1,
+      workflow_id: 2,
+      run_attempt: 1,
+      name: "CI",
+      head_sha: "abc",
+      repository: { full_name: "o/r" },
+      pull_requests: [],
+      updated_at: "2024-01-01T00:00:00Z",
+    });
+    listJobsForWorkflowRun.mockResolvedValue([{ id: 10 }]);
+    getJobsAnnotations.mockResolvedValue({});
+    const nonErrorThrower = (function* (): Generator<never, never, unknown> {
+      yield undefined as never;
+      return undefined as never;
+    })();
+    getJobsLogs.mockImplementationOnce(() => {
+      const result = nonErrorThrower.throw(null);
+      return result as never;
+    });
+    getPRsLabels.mockResolvedValue({});
+
+    await run();
+
+    expect(core.info).toHaveBeenCalledWith("Failed to get job logs: null");
+    expect(core.setFailed).not.toHaveBeenCalled();
   });
 
   it("uses environment and workflow fallbacks for tracer attributes", async () => {
@@ -72,6 +170,7 @@ describe("run branch coverage", () => {
 
     core.getInput.mockImplementation((name: string) => {
       if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      if (name === "apiKey") return "gc-secret";
       if (name === "extraAttributes") return "team=platform";
       if (name === "env") return "prod";
       if (name === "traceparent") return "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbb-01";
@@ -100,7 +199,7 @@ describe("run branch coverage", () => {
     expect(extractParentContext).toHaveBeenCalledWith("00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbb-01");
     expect(createTracerProvider).toHaveBeenCalledWith(
       "https://localhost/v1/traces",
-      "",
+      "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "service.name": "svc-from-env",
         "service.instance.id": "o/r/22/11/1",
@@ -111,14 +210,47 @@ describe("run branch coverage", () => {
         env: "prod",
       }),
     );
-    expect(core.setSecret).not.toHaveBeenCalled();
+    expect(core.setSecret).toHaveBeenCalledWith("gc-secret");
+    expect(core.setSecret).toHaveBeenCalledWith("Authorization=Bearer gc-secret");
     expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it("derives Authorization header from apiKey input", async () => {
+    core.getInput.mockImplementation((name: string) => {
+      if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      if (name === "apiKey") return "gc-secret";
+      return "";
+    });
+    getWorkflowRun.mockResolvedValue({
+      id: 1,
+      workflow_id: 2,
+      run_attempt: 1,
+      name: "CI",
+      head_sha: "abc",
+      repository: { full_name: "o/r" },
+      pull_requests: [],
+      updated_at: "2024-01-01T00:00:00Z",
+    });
+    listJobsForWorkflowRun.mockResolvedValue([]);
+    getJobsAnnotations.mockResolvedValue({});
+    getPRsLabels.mockResolvedValue({});
+
+    await run();
+
+    expect(createTracerProvider).toHaveBeenCalledWith(
+      "https://localhost/v1/traces",
+      "Authorization=Bearer gc-secret",
+      expect.any(Object),
+    );
+    expect(core.setSecret).toHaveBeenCalledWith("gc-secret");
+    expect(core.setSecret).toHaveBeenCalledWith("Authorization=Bearer gc-secret");
   });
 
   it("prefers explicit inputs for service name, workload, headers, and run id", async () => {
     core.getInput.mockImplementation((name: string) => {
       if (name === "otlpEndpoint") return "https://localhost/v1/traces";
       if (name === "otlpHeaders") return "auth=token";
+      if (name === "apiKey") return "gc-secret";
       if (name === "otelServiceName") return "svc-input";
       if (name === "workload") return "payments";
       if (name === "githubToken") return "token-input";
@@ -152,12 +284,25 @@ describe("run branch coverage", () => {
         "service.instance.id": "o/r/2/1/3",
       }),
     );
+    expect(core.setSecret).toHaveBeenCalledWith("gc-secret");
     expect(core.setSecret).toHaveBeenCalledWith("auth=token");
+  });
+
+  it("fails when neither otlpHeaders nor apiKey is provided", async () => {
+    core.getInput.mockImplementation((name: string) => {
+      if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      return "";
+    });
+
+    await run();
+
+    expect(core.setFailed).toHaveBeenCalledWith("Either otlpHeaders or apiKey is required");
   });
 
   it("falls back to workflow name for service name and stringifies non-Error failures", async () => {
     core.getInput.mockImplementation((name: string) => {
       if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      if (name === "apiKey") return "gc-secret";
       return "";
     });
     getWorkflowRun.mockResolvedValue({
@@ -186,7 +331,7 @@ describe("run branch coverage", () => {
 
     expect(createTracerProvider).toHaveBeenCalledWith(
       "https://localhost/v1/traces",
-      "",
+      "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "service.name": "Workflow Name",
       }),
@@ -197,6 +342,7 @@ describe("run branch coverage", () => {
   it("falls back to workflow id when neither input, env, nor workflow name exist", async () => {
     core.getInput.mockImplementation((name: string) => {
       if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      if (name === "apiKey") return "gc-secret";
       return "";
     });
     getWorkflowRun.mockResolvedValue({
@@ -217,7 +363,7 @@ describe("run branch coverage", () => {
 
     expect(createTracerProvider).toHaveBeenCalledWith(
       "https://localhost/v1/traces",
-      "",
+      "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "service.name": "99",
         workload: "99",
@@ -326,5 +472,15 @@ describe("run branch coverage", () => {
     await run();
 
     expect(core.setFailed).toHaveBeenCalledWith("label boom");
+  });
+});
+
+describe("resolveOtlpHeaders", () => {
+  it("prefers explicit otlpHeaders over apiKey", () => {
+    expect(resolveOtlpHeaders("authorization=custom", "gc-secret")).toBe("authorization=custom");
+  });
+
+  it("builds bearer authorization from apiKey", () => {
+    expect(resolveOtlpHeaders("", "gc-secret")).toBe("Authorization=Bearer gc-secret");
   });
 });

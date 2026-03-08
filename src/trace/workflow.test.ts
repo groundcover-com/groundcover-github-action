@@ -162,6 +162,13 @@ describe("traceWorkflowRun", () => {
     expect(spanNames).toContain("test");
   });
 
+  it("passes exported job logs to child job spans", () => {
+    traceWorkflowRun(makeWorkflowRun(), [makeJob()], {}, {}, undefined, undefined, { 1: "job logs" });
+
+    const jobSpan = exporter.getFinishedSpans().find((s) => s.name === "build");
+    expect(jobSpan?.attributes["github.job.logs"]).toBe("job logs");
+  });
+
   it("returns a 32-char hex trace ID", () => {
     const traceId = traceWorkflowRun(makeWorkflowRun(), [makeJob()], {}, {});
 
