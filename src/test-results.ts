@@ -31,7 +31,7 @@ const parser = new XMLParser({
 function parseTestResultsGlobs(input: string): string[] {
   return input
     .split(",")
-    .map((pattern) => pattern.trim())
+    .map((pattern) => pattern.trim().replace(/\\/g, "/"))
     .filter(Boolean);
 }
 
