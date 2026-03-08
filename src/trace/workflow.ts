@@ -1,6 +1,7 @@
 import type { components } from "@octokit/openapi-types";
 import { type Attributes, type Context, context, ROOT_CONTEXT, SpanStatusCode, trace } from "@opentelemetry/api";
 import { ATTR_CICD_PIPELINE_NAME, ATTR_CICD_PIPELINE_RUN_ID } from "@opentelemetry/semantic-conventions/incubating";
+import type { TestResultsSummary } from "../test-results";
 import { traceJob } from "./job";
 
 function traceWorkflowRun(
@@ -9,11 +10,15 @@ function traceWorkflowRun(
   jobAnnotations: Record<number, components["schemas"]["check-annotation"][]>,
   prLabels: Record<number, string[]>,
   parentContext?: Context,
+  testResults?: TestResultsSummary,
 ): string {
   const tracer = trace.getTracer("otel-cicd-export-action");
 
   const startTime = new Date(workflowRun.run_started_at ?? workflowRun.created_at);
-  const attributes = workflowRunToAttributes(workflowRun, prLabels);
+  const attributes = {
+    ...workflowRunToAttributes(workflowRun, prLabels),
+    ...testResultsToAttributes(testResults),
+  };
   const activeContext = parentContext ?? ROOT_CONTEXT;
 
   const spanOptions = {
@@ -45,6 +50,22 @@ function traceWorkflowRun(
       return rootSpan.spanContext().traceId;
     },
   );
+}
+
+function testResultsToAttributes(testResults: TestResultsSummary | undefined): Attributes {
+  if (!testResults) {
+    return {};
+  }
+
+  return {
+    "test.suites": testResults.suites,
+    "test.total": testResults.total,
+    "test.passed": testResults.passed,
+    "test.failed": testResults.failed,
+    "test.skipped": testResults.skipped,
+    "test.errors": testResults.errors,
+    "test.duration": testResults.duration,
+  };
 }
 
 function workflowRunToAttributes(

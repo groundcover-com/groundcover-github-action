@@ -3,6 +3,7 @@ import { context, getOctokit } from "@actions/github";
 import type { RequestError } from "@octokit/request-error";
 import type { Attributes } from "@opentelemetry/api";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
+import { findTestResultsSummary } from "./test-results";
 import { traceWorkflowRun } from "./trace/workflow";
 import { createTracerProvider, extractParentContext, stringToRecord } from "./tracer";
 import { getJobsAnnotations, getPRsLabels, getWorkflowRun, listJobsForWorkflowRun } from "./github";
@@ -63,6 +64,7 @@ async function run(): Promise<void> {
     const otelServiceName = core.getInput("otelServiceName") || process.env["OTEL_SERVICE_NAME"] || "";
     const runId = Number.parseInt(core.getInput("runId") || `${context.runId}`, 10);
     const extraAttributes = stringToRecord(core.getInput("extraAttributes"));
+    const testResultsGlob = core.getInput("testResultsGlob");
     const env = core.getInput("env") || undefined;
     const workload = core.getInput("workload") || undefined;
     const ghToken = core.getInput("githubToken") || process.env["GITHUB_TOKEN"] || "";
@@ -74,6 +76,8 @@ async function run(): Promise<void> {
 
     core.info("Use Github API to fetch workflow data");
     const { workflowRun, jobs, jobAnnotations, prLabels } = await fetchGithub(ghToken, runId);
+
+    const testResults = await findTestResultsSummary(testResultsGlob);
 
     core.info(`Create tracer provider for ${otlpEndpoint}`);
     const attributes: Attributes = {
@@ -96,7 +100,7 @@ async function run(): Promise<void> {
     const parentContext = extractParentContext(traceparent);
 
     core.info(`Trace workflow run for ${runId} and export to ${otlpEndpoint}`);
-    const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext);
+    const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults);
 
     core.setOutput("traceId", traceId);
     core.info(`traceId: ${traceId}`);

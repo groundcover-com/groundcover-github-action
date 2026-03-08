@@ -264,4 +264,25 @@ describe("traceWorkflowRun", () => {
     expect(rootSpan?.attributes["github.pull_requests.0.number"]).toBe(7);
     expect(rootSpan?.attributes["github.pull_requests.0.labels"]).toEqual(["bug", "priority"]);
   });
+
+  it("includes parsed test result summary attributes", () => {
+    traceWorkflowRun(makeWorkflowRun(), [makeJob()], {}, {}, undefined, {
+      suites: 2,
+      total: 10,
+      passed: 8,
+      failed: 1,
+      skipped: 1,
+      errors: 0,
+      duration: 12.5,
+    });
+
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    expect(rootSpan?.attributes["test.suites"]).toBe(2);
+    expect(rootSpan?.attributes["test.total"]).toBe(10);
+    expect(rootSpan?.attributes["test.passed"]).toBe(8);
+    expect(rootSpan?.attributes["test.failed"]).toBe(1);
+    expect(rootSpan?.attributes["test.skipped"]).toBe(1);
+    expect(rootSpan?.attributes["test.errors"]).toBe(0);
+    expect(rootSpan?.attributes["test.duration"]).toBe(12.5);
+  });
 });

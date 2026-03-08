@@ -42,6 +42,11 @@ inputs:
       Extra resource attributes as comma-separated key=value pairs.
       Example: "team=platform,region=us-east-1"
     required: false
+  testResultsGlob:
+    description: >
+      Optional comma-separated glob patterns for JUnit XML test result files.
+      Matching files are parsed and summarized onto the workflow root span.
+    required: false
 
 outputs:
   traceId:
