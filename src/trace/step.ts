@@ -3,6 +3,7 @@ import type { components } from "@octokit/openapi-types";
 import { type Attributes, SpanStatusCode, trace } from "@opentelemetry/api";
 
 type Step = NonNullable<components["schemas"]["job"]["steps"]>[number];
+type CompletedStep = Step & { started_at: string; completed_at: string };
 
 function traceStep(step: Step): void {
   const tracer = trace.getTracer("otel-cicd-export-action");
@@ -17,9 +18,10 @@ function traceStep(step: Step): void {
     return;
   }
 
-  const startTime = new Date(step.started_at);
-  const completedTime = new Date(step.completed_at);
-  const attributes = stepToAttributes(step);
+  const completedStep: CompletedStep = { ...step, started_at: step.started_at, completed_at: step.completed_at };
+  const startTime = new Date(completedStep.started_at);
+  const completedTime = new Date(completedStep.completed_at);
+  const attributes = stepToAttributes(completedStep);
 
   tracer.startActiveSpan(step.name, { attributes, startTime }, (span) => {
     const code = step.conclusion === "failure" ? SpanStatusCode.ERROR : SpanStatusCode.OK;
@@ -30,14 +32,14 @@ function traceStep(step: Step): void {
   });
 }
 
-function stepToAttributes(step: Step): Attributes {
+function stepToAttributes(step: CompletedStep): Attributes {
   return {
     "github.job.step.status": step.status,
     "github.job.step.conclusion": step.conclusion ?? undefined,
     "github.job.step.name": step.name,
     "github.job.step.number": step.number,
-    "github.job.step.started_at": step.started_at ?? undefined,
-    "github.job.step.completed_at": step.completed_at ?? undefined,
+    "github.job.step.started_at": step.started_at,
+    "github.job.step.completed_at": step.completed_at,
     error: step.conclusion === "failure",
   };
 }

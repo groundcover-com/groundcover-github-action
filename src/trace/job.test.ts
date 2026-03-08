@@ -1,7 +1,15 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from "@jest/globals";
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import {
+  ATTR_CICD_PIPELINE_TASK_RUN_RESULT,
   ATTR_CICD_PIPELINE_TASK_TYPE,
+  ATTR_CICD_WORKER_ID,
+  ATTR_CICD_WORKER_NAME,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_CANCELLATION,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SKIP,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_TIMEOUT,
   CICD_PIPELINE_TASK_TYPE_VALUE_BUILD,
   CICD_PIPELINE_TASK_TYPE_VALUE_DEPLOY,
   CICD_PIPELINE_TASK_TYPE_VALUE_TEST,
@@ -138,6 +146,34 @@ describe("traceJob", () => {
     const span = exporter.getFinishedSpans()[0];
     expect(span?.attributes["github.job.annotations.0.level"]).toBe("warning");
     expect(span?.attributes["github.job.annotations.0.message"]).toBe("Potential issue");
+  });
+
+  it("maps task run results and worker attributes", () => {
+    traceJob(buildJob({ id: 20, conclusion: "success" }));
+    traceJob(buildJob({ id: 21, conclusion: "failure" }));
+    traceJob(buildJob({ id: 22, conclusion: "cancelled" }));
+    traceJob(buildJob({ id: 23, conclusion: "skipped" }));
+    traceJob(buildJob({ id: 24, conclusion: "timed_out" }));
+
+    const spans = exporter.getFinishedSpans();
+    expect(spans[0]?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS);
+    expect(spans[0]?.attributes[ATTR_CICD_WORKER_ID]).toBe(1);
+    expect(spans[0]?.attributes[ATTR_CICD_WORKER_NAME]).toBe("runner-1");
+    expect(spans[1]?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE);
+    expect(spans[2]?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(
+      CICD_PIPELINE_TASK_RUN_RESULT_VALUE_CANCELLATION,
+    );
+    expect(spans[3]?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SKIP);
+    expect(spans[4]?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(CICD_PIPELINE_TASK_RUN_RESULT_VALUE_TIMEOUT);
+  });
+
+  it("maps neutral and action_required task results", () => {
+    traceJob(buildJob({ id: 30, conclusion: "neutral" }));
+    traceJob(buildJob({ id: 31, conclusion: "action_required" }));
+
+    const spans = exporter.getFinishedSpans();
+    expect(spans[0]?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS);
+    expect(spans[1]?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE);
   });
 
   it("sets error status on failed jobs", () => {
