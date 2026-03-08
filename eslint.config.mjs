@@ -1,82 +1,62 @@
-// See: https://eslint.org/docs/latest/use/configure/configuration-files
+import eslint from "@eslint/js";
+import tseslint from "typescript-eslint";
+import eslintPluginPrettier from "eslint-plugin-prettier/recommended";
 
-import { FlatCompat } from '@eslint/eslintrc'
-import js from '@eslint/js'
-import typescriptEslint from '@typescript-eslint/eslint-plugin'
-import tsParser from '@typescript-eslint/parser'
-import jest from 'eslint-plugin-jest'
-import prettier from 'eslint-plugin-prettier'
-import globals from 'globals'
-
-const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all
-})
-
-export default [
+export default tseslint.config(
+  eslint.configs.recommended,
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
+  eslintPluginPrettier,
   {
-    ignores: ['**/coverage', '**/dist', '**/linter', '**/node_modules']
-  },
-  ...compat.extends(
-    'eslint:recommended',
-    'plugin:@typescript-eslint/eslint-recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:jest/recommended',
-    'plugin:prettier/recommended'
-  ),
-  {
-    plugins: {
-      jest,
-      prettier,
-      '@typescript-eslint': typescriptEslint
-    },
-
     languageOptions: {
-      globals: {
-        ...globals.node,
-        ...globals.jest,
-        Atomics: 'readonly',
-        SharedArrayBuffer: 'readonly'
-      },
-
-      parser: tsParser,
-      ecmaVersion: 2023,
-      sourceType: 'module',
-
       parserOptions: {
         projectService: {
-          allowDefaultProject: [
-            '__fixtures__/*.ts',
-            '__tests__/*.ts',
-            'eslint.config.mjs',
-            'jest.config.js',
-            'rollup.config.ts'
-          ]
+          allowDefaultProject: ["src/*.test.ts", "src/trace/*.test.ts", "src/__fixtures__/*.ts"],
         },
-        tsconfigRootDir: import.meta.dirname
-      }
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
-
-    settings: {
-      'import/resolver': {
-        typescript: {
-          alwaysTryTypes: true,
-          project: 'tsconfig.json'
-        }
-      }
-    },
-
     rules: {
-      camelcase: 'off',
-      'eslint-comments/no-use': 'off',
-      'eslint-comments/no-unused-disable': 'off',
-      'i18n-text/no-en': 'off',
-      'import/no-namespace': 'off',
-      'no-console': 'off',
-      'no-shadow': 'off',
-      'no-unused-vars': 'off',
-      'prettier/prettier': 'error'
-    }
-  }
-]
+      "@typescript-eslint/explicit-function-return-type": [
+        "error",
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+        },
+      ],
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/require-await": "error",
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        {
+          allowNumber: true,
+        },
+      ],
+      "@typescript-eslint/prefer-nullish-coalescing": [
+        "error",
+        {
+          ignorePrimitives: { string: true },
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+    },
+  },
+  {
+    ignores: ["dist/", "coverage/", "jest.config.ts", "rollup.config.ts"],
+  },
+);
