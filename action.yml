@@ -11,8 +11,13 @@ inputs:
   otlpHeaders:
     description: >
       Comma-separated key=value pairs for OTLP exporter headers.
-      Example: "apikey=YOUR_KEY"
-    required: true
+      Example: "apikey=YOUR_KEY". Takes precedence over `apiKey` when both are set.
+    required: false
+  apiKey:
+    description: >
+      Optional groundcover API key. When provided, the action derives
+      `Authorization=Bearer <apiKey>` for OTLP export.
+    required: false
   githubToken:
     description: >
       GitHub token with actions:read permission. Required for private repos.
@@ -46,6 +51,11 @@ inputs:
     description: >
       Optional comma-separated glob patterns for JUnit XML test result files.
       Matching files are parsed and summarized onto the workflow root span.
+    required: false
+  exportLogs:
+    description: >
+      Optional. When set to true, download GitHub Actions job logs and attach them to exported job spans.
+      Log content is truncated before export.
     required: false
 
 outputs:

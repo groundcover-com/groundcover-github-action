@@ -78,4 +78,35 @@ async function listLabelsOnIssue(context: Context, octokit: Octokit, prNumber: n
   );
 }
 
-export { getWorkflowRun, listJobsForWorkflowRun, getJobsAnnotations, getPRsLabels, type Octokit };
+async function getJobsLogs(context: Context, octokit: Octokit, jobIds: number[]): Promise<Record<number, string>> {
+  const logs: Record<number, string> = {};
+
+  for (const jobId of jobIds) {
+    logs[jobId] = await downloadJobLog(context, octokit, jobId);
+  }
+
+  return logs;
+}
+
+async function downloadJobLog(context: Context, octokit: Octokit, jobId: number): Promise<string> {
+  const response = await octokit.rest.actions.downloadJobLogsForWorkflowRun({
+    ...context.repo,
+    job_id: jobId,
+  });
+
+  const location = response.headers.location;
+  if (!location) {
+    throw new Error(`Missing log download URL for job ${jobId}`);
+  }
+
+  const downloadResponse = await fetch(location);
+  if (!downloadResponse.ok) {
+    throw new Error(
+      `Failed to download logs for job ${jobId}: ${downloadResponse.status} ${downloadResponse.statusText}`,
+    );
+  }
+
+  return await downloadResponse.text();
+}
+
+export { getWorkflowRun, listJobsForWorkflowRun, getJobsAnnotations, getPRsLabels, getJobsLogs, type Octokit };

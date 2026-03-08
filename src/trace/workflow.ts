@@ -28,6 +28,7 @@ function traceWorkflowRun(
   prLabels: Record<number, string[]>,
   parentContext?: Context,
   testResults?: TestResultsSummary,
+  jobLogs?: Record<number, string>,
 ): string {
   const tracer = trace.getTracer("otel-cicd-export-action");
 
@@ -60,7 +61,7 @@ function traceWorkflowRun(
       }
 
       for (const job of jobs) {
-        traceJob(job, jobAnnotations[job.id]);
+        traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id]);
       }
 
       rootSpan.end(new Date(workflowRun.updated_at));

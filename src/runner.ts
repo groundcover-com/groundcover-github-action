@@ -7,7 +7,7 @@ import { ATTR_SERVICE_INSTANCE_ID, ATTR_SERVICE_NAMESPACE } from "@opentelemetry
 import { findTestResultsSummary } from "./test-results";
 import { traceWorkflowRun } from "./trace/workflow";
 import { createTracerProvider, extractParentContext, stringToRecord } from "./tracer";
-import { getJobsAnnotations, getPRsLabels, getWorkflowRun, listJobsForWorkflowRun } from "./github";
+import { getJobsAnnotations, getJobsLogs, getPRsLabels, getWorkflowRun, listJobsForWorkflowRun } from "./github";
 
 function isOctokitError(err: unknown): err is RequestError {
   return !!err && typeof err === "object" && "status" in err;
@@ -17,10 +17,23 @@ interface GithubData {
   workflowRun: Awaited<ReturnType<typeof getWorkflowRun>>;
   jobs: Awaited<ReturnType<typeof listJobsForWorkflowRun>>;
   jobAnnotations: Record<number, Awaited<ReturnType<typeof getJobsAnnotations>>[number]>;
+  jobLogs: Record<number, string>;
   prLabels: Record<number, string[]>;
 }
 
-async function fetchGithub(token: string, runId: number): Promise<GithubData> {
+function resolveOtlpHeaders(otlpHeaders: string, apiKey: string): string {
+  if (otlpHeaders) {
+    return otlpHeaders;
+  }
+
+  if (apiKey) {
+    return `Authorization=Bearer ${apiKey}`;
+  }
+
+  throw new Error("Either otlpHeaders or apiKey is required");
+}
+
+async function fetchGithub(token: string, runId: number, exportLogs: boolean): Promise<GithubData> {
   const octokit = getOctokit(token);
 
   core.info(`Get workflow run for ${runId}`);
@@ -32,6 +45,7 @@ async function fetchGithub(token: string, runId: number): Promise<GithubData> {
   core.info("Get job annotations");
   const jobsId = jobs.map((job) => job.id);
   let jobAnnotations: Record<number, Awaited<ReturnType<typeof getJobsAnnotations>>[number]> = {};
+  let jobLogs: Record<number, string> = {};
   try {
     jobAnnotations = await getJobsAnnotations(context, octokit, jobsId);
   } catch (error: unknown) {
@@ -39,6 +53,16 @@ async function fetchGithub(token: string, runId: number): Promise<GithubData> {
       core.info(`Failed to get job annotations: ${error.message}`);
     } else {
       throw error;
+    }
+  }
+
+  if (exportLogs) {
+    core.info("Get job logs");
+    try {
+      jobLogs = await getJobsLogs(context, octokit, jobsId);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      core.info(`Failed to get job logs: ${message}`);
     }
   }
 
@@ -55,28 +79,30 @@ async function fetchGithub(token: string, runId: number): Promise<GithubData> {
     }
   }
 
-  return { workflowRun, jobs, jobAnnotations, prLabels };
+  return { workflowRun, jobs, jobAnnotations, jobLogs, prLabels };
 }
 
 async function run(): Promise<void> {
   try {
     const otlpEndpoint = core.getInput("otlpEndpoint");
     const otlpHeaders = core.getInput("otlpHeaders");
+    const apiKey = core.getInput("apiKey");
+    const resolvedOtlpHeaders = resolveOtlpHeaders(otlpHeaders, apiKey);
     const otelServiceName = core.getInput("otelServiceName") || process.env["OTEL_SERVICE_NAME"] || "";
     const runId = Number.parseInt(core.getInput("runId") || `${context.runId}`, 10);
     const extraAttributes = stringToRecord(core.getInput("extraAttributes"));
     const testResultsGlob = core.getInput("testResultsGlob");
+    const exportLogs = core.getInput("exportLogs") === "true";
     const env = core.getInput("env") || undefined;
     const workload = core.getInput("workload") || undefined;
     const ghToken = core.getInput("githubToken") || process.env["GITHUB_TOKEN"] || "";
     const traceparent = core.getInput("traceparent") || undefined;
 
-    if (otlpHeaders) {
-      core.setSecret(otlpHeaders);
-    }
+    if (apiKey) core.setSecret(apiKey);
+    core.setSecret(resolvedOtlpHeaders);
 
     core.info("Use Github API to fetch workflow data");
-    const { workflowRun, jobs, jobAnnotations, prLabels } = await fetchGithub(ghToken, runId);
+    const { workflowRun, jobs, jobAnnotations, jobLogs, prLabels } = await fetchGithub(ghToken, runId, exportLogs);
 
     const testResults = await findTestResultsSummary(testResultsGlob);
 
@@ -96,12 +122,12 @@ async function run(): Promise<void> {
       ...(env ? { env } : {}),
       ...extraAttributes,
     };
-    const provider = createTracerProvider(otlpEndpoint, otlpHeaders, attributes);
+    const provider = createTracerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes);
 
     const parentContext = extractParentContext(traceparent);
 
     core.info(`Trace workflow run for ${runId} and export to ${otlpEndpoint}`);
-    const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults);
+    const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs);
 
     core.setOutput("traceId", traceId);
     core.info(`traceId: ${traceId}`);
@@ -116,4 +142,4 @@ async function run(): Promise<void> {
   }
 }
 
-export { run, isOctokitError };
+export { run, isOctokitError, resolveOtlpHeaders };

@@ -1,6 +1,13 @@
 import { jest, describe, it, expect, afterEach } from "@jest/globals";
 import type { context as ghContext } from "@actions/github";
-import { getWorkflowRun, listJobsForWorkflowRun, getJobsAnnotations, getPRsLabels, type Octokit } from "./github.js";
+import {
+  getWorkflowRun,
+  listJobsForWorkflowRun,
+  getJobsAnnotations,
+  getPRsLabels,
+  getJobsLogs,
+  type Octokit,
+} from "./github.js";
 
 type Context = typeof ghContext;
 
@@ -8,6 +15,7 @@ type Context = typeof ghContext;
 function createMocks() {
   const getWorkflowRunFn = jest.fn<() => Promise<unknown>>();
   const listJobsForWorkflowRunFn = jest.fn<() => Promise<unknown>>();
+  const downloadJobLogsForWorkflowRunFn = jest.fn<() => Promise<unknown>>();
   const listAnnotationsFn = jest.fn<() => Promise<unknown>>();
   const listLabelsOnIssueFn = jest.fn<() => Promise<unknown>>();
   const paginate = jest.fn<() => Promise<unknown>>();
@@ -21,6 +29,7 @@ function createMocks() {
       actions: {
         getWorkflowRun: getWorkflowRunFn,
         listJobsForWorkflowRun: listJobsForWorkflowRunFn,
+        downloadJobLogsForWorkflowRun: downloadJobLogsForWorkflowRunFn,
       },
       checks: {
         listAnnotations: listAnnotationsFn,
@@ -38,6 +47,7 @@ function createMocks() {
     getWorkflowRunFn,
     paginate,
     listJobsForWorkflowRunFn,
+    downloadJobLogsForWorkflowRunFn,
     listAnnotationsFn,
     listLabelsOnIssueFn,
   };
@@ -46,6 +56,66 @@ function createMocks() {
 describe("github", () => {
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  describe("getJobsLogs", () => {
+    it("downloads plain text logs for each job", async () => {
+      const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
+      const originalFetch = global.fetch;
+      const fetchMock = jest.fn<typeof fetch>();
+      global.fetch = fetchMock;
+
+      downloadJobLogsForWorkflowRunFn
+        .mockResolvedValueOnce({ headers: { location: "https://logs.example/1" } })
+        .mockResolvedValueOnce({ headers: { location: "https://logs.example/2" } });
+      fetchMock
+        .mockResolvedValueOnce({ ok: true, text: jest.fn(() => Promise.resolve("job-1 logs")) } as unknown as Response)
+        .mockResolvedValueOnce({ ok: true, text: jest.fn(() => Promise.resolve("job-2 logs")) } as unknown as Response);
+
+      const result = await getJobsLogs(mockContext, mockOctokit, [100, 200]);
+
+      expect(result).toEqual({ 100: "job-1 logs", 200: "job-2 logs" });
+      expect(downloadJobLogsForWorkflowRunFn).toHaveBeenCalledWith({
+        owner: "test-owner",
+        repo: "test-repo",
+        job_id: 100,
+      });
+      expect(downloadJobLogsForWorkflowRunFn).toHaveBeenCalledWith({
+        owner: "test-owner",
+        repo: "test-repo",
+        job_id: 200,
+      });
+      expect(fetchMock).toHaveBeenCalledWith("https://logs.example/1");
+      expect(fetchMock).toHaveBeenCalledWith("https://logs.example/2");
+
+      global.fetch = originalFetch;
+    });
+
+    it("fails when GitHub does not return a download URL", async () => {
+      const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
+
+      downloadJobLogsForWorkflowRunFn.mockResolvedValue({ headers: {} });
+
+      await expect(getJobsLogs(mockContext, mockOctokit, [100])).rejects.toThrow(
+        "Missing log download URL for job 100",
+      );
+    });
+
+    it("fails when the redirected log download is not successful", async () => {
+      const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
+      const originalFetch = global.fetch;
+      const fetchMock = jest.fn<typeof fetch>();
+      global.fetch = fetchMock;
+
+      downloadJobLogsForWorkflowRunFn.mockResolvedValue({ headers: { location: "https://logs.example/1" } });
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 502, statusText: "Bad Gateway" } as Response);
+
+      await expect(getJobsLogs(mockContext, mockOctokit, [100])).rejects.toThrow(
+        "Failed to download logs for job 100: 502 Bad Gateway",
+      );
+
+      global.fetch = originalFetch;
+    });
   });
 
   describe("getWorkflowRun", () => {

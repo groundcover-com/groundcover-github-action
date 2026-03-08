@@ -18,7 +18,7 @@ jobs:
       - uses: ./
         with:
           otlpEndpoint: ${{ secrets.GC_OTLP_ENDPOINT }}/v1/traces
-          otlpHeaders: "apikey=${{ secrets.GC_KEY_HEADER }}"
+          apiKey: ${{ secrets.GC_API_KEY }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           runId: ${{ github.event.workflow_run.id }}
         env:

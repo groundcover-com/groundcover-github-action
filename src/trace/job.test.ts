@@ -148,6 +148,22 @@ describe("traceJob", () => {
     expect(span?.attributes["github.job.annotations.0.message"]).toBe("Potential issue");
   });
 
+  it("includes exported job logs", () => {
+    traceJob(buildJob(), undefined, "line 1\nline 2");
+
+    const span = exporter.getFinishedSpans()[0];
+    expect(span?.attributes["github.job.logs"]).toBe("line 1\nline 2");
+  });
+
+  it("truncates oversized job logs", () => {
+    traceJob(buildJob(), undefined, `${"a".repeat(33000)}tail`);
+
+    const span = exporter.getFinishedSpans()[0];
+    const logs = span?.attributes["github.job.logs"];
+    expect(typeof logs).toBe("string");
+    expect(logs).toContain("...[truncated]");
+  });
+
   it("maps task run results and worker attributes", () => {
     traceJob(buildJob({ id: 20, conclusion: "success" }));
     traceJob(buildJob({ id: 21, conclusion: "failure" }));

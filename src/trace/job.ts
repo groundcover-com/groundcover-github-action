@@ -21,8 +21,13 @@ import {
 import { traceStep } from "./step";
 
 type CompletedJob = components["schemas"]["job"] & { completed_at: string };
+const MAX_JOB_LOG_LENGTH = 32768;
 
-function traceJob(job: components["schemas"]["job"], annotations?: components["schemas"]["check-annotation"][]): void {
+function traceJob(
+  job: components["schemas"]["job"],
+  annotations?: components["schemas"]["check-annotation"][],
+  logs?: string,
+): void {
   const tracer = trace.getTracer("otel-cicd-export-action");
 
   if (!job.completed_at) {
@@ -34,7 +39,7 @@ function traceJob(job: components["schemas"]["job"], annotations?: components["s
   const startTime = new Date(completedJob.started_at);
   const completedTime = new Date(completedJob.completed_at);
   const attributes = {
-    ...jobToAttributes(completedJob),
+    ...jobToAttributes(completedJob, logs),
     ...annotationsToAttributes(annotations),
   };
 
@@ -51,7 +56,7 @@ function traceJob(job: components["schemas"]["job"], annotations?: components["s
   });
 }
 
-function jobToAttributes(job: CompletedJob): Attributes {
+function jobToAttributes(job: CompletedJob, logs?: string): Attributes {
   let taskType: string | undefined;
   if (job.name.toLowerCase().includes("build")) {
     taskType = CICD_PIPELINE_TASK_TYPE_VALUE_BUILD;
@@ -60,6 +65,8 @@ function jobToAttributes(job: CompletedJob): Attributes {
   } else if (job.name.toLowerCase().includes("deploy")) {
     taskType = CICD_PIPELINE_TASK_TYPE_VALUE_DEPLOY;
   }
+
+  const jobLog = truncateJobLog(logs);
 
   return {
     [ATTR_CICD_PIPELINE_TASK_NAME]: job.name,
@@ -92,8 +99,21 @@ function jobToAttributes(job: CompletedJob): Attributes {
     "github.job.check_run_url": job.check_run_url,
     "github.job.workflow_name": job.workflow_name ?? undefined,
     "github.job.head_branch": job.head_branch ?? undefined,
+    ...(jobLog ? { "github.job.logs": jobLog } : {}),
     error: job.conclusion === "failure",
   };
+}
+
+function truncateJobLog(logs: string | undefined): string | undefined {
+  if (!logs) {
+    return undefined;
+  }
+
+  if (logs.length <= MAX_JOB_LOG_LENGTH) {
+    return logs;
+  }
+
+  return `${logs.slice(0, MAX_JOB_LOG_LENGTH)}\n...[truncated]`;
 }
 
 function toTaskResult(conclusion: components["schemas"]["job"]["conclusion"]): string | undefined {
