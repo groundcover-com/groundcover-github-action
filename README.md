@@ -37,9 +37,16 @@ For groundcover setup details, see:
 - [Create a Third Party ingestion key](https://docs.groundcover.com/use-groundcover/remote-access-and-apis/ingestion-keys)
 - [More docs](https://docs.groundcover.com)
 
-## For AI Assistants
+## Instructions
 
-If you're using Claude, Cursor, GitHub Copilot, or another coding assistant to add this action to a workflow, start with this minimal setup:
+### For Humans
+
+Use the Quick Start example above, then configure these two secrets in your repository or organization:
+
+- `GROUNDCOVER_OTLP_ENDPOINT`
+- `GROUNDCOVER_INGESTION_KEY`
+
+Minimal groundcover setup:
 
 ```yaml
 - uses: groundcover-com/groundcover-github-action@v1
@@ -55,7 +62,11 @@ permissions:
   actions: read
 ```
 
-Important rules for AI-generated integrations:
+### For LLM Agents
+
+If you are using Claude, Cursor, GitHub Copilot, or another coding agent, start with the repo-local instructions in [`llms.txt`](./llms.txt).
+
+Use these rules when generating workflows or modifying this repository:
 
 - Treat `action.yml` as the canonical input/output contract.
 - For groundcover OTLP ingest, use a workspace-specific endpoint and a `Third Party` ingestion key.
