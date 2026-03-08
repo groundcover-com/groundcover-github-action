@@ -7,6 +7,7 @@ Export GitHub Actions workflow runs as OpenTelemetry traces to any OTLP-compatib
 - GitHub Actions workflow with `actions: read` permission
 - Node 20 runtime (handled automatically by GitHub Actions)
 - OTLP endpoint and credentials (`otlpEndpoint`, `otlpHeaders`)
+- For groundcover, use your managed OTLP endpoint and a `Third Party` ingestion key
 
 ## Quick Start
 
@@ -26,9 +27,42 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v1
         with:
-          otlpEndpoint: https://otel.groundcover.com/v1/traces
-          otlpHeaders: "authorization=Bearer ${{ secrets.GROUNDCOVER_API_KEY }}"
+          otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+          otlpHeaders: "apikey=${{ secrets.GROUNDCOVER_INGESTION_KEY }}"
 ```
+
+For groundcover setup details, see:
+
+- [Sending from an OpenTelemetry Collector](https://docs.groundcover.com/integrations/data-sources/opentelemetry/sending-from-an-opentelemetry-collector)
+- [Create a Third Party ingestion key](https://docs.groundcover.com/use-groundcover/remote-access-and-apis/ingestion-keys)
+- [More docs](https://docs.groundcover.com)
+
+## For AI Assistants
+
+If you're using Claude, Cursor, GitHub Copilot, or another coding assistant to add this action to a workflow, start with this minimal setup:
+
+```yaml
+- uses: groundcover-com/groundcover-github-action@v1
+  with:
+    otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+    otlpHeaders: "apikey=${{ secrets.GROUNDCOVER_INGESTION_KEY }}"
+```
+
+Required permissions:
+
+```yaml
+permissions:
+  actions: read
+```
+
+Important rules for AI-generated integrations:
+
+- Treat `action.yml` as the canonical input/output contract.
+- For groundcover OTLP ingest, use a workspace-specific endpoint and a `Third Party` ingestion key.
+- Do not use `Authorization: Bearer ...` for OTLP ingestion. That is for groundcover REST API usage, not this action.
+- Preserve `traceparent` when linking CI/CD and application traces.
+- Keep `source=github-actions`, configurable `workload`, and optional `env` resource attributes.
+- If you change this repository, run `npm run all` and rebuild `dist/` before committing.
 
 ## Features
 
@@ -101,7 +135,9 @@ jobs:
 
 ### Link CI/CD + Application Traces
 
-This pattern connects your CI/CD traces to the application traces produced by your deployment. The action generates a `traceparent` during the build job, which gets passed to your application and then forwarded to the export action. This creates a single trace spanning both CI and production.
+This pattern connects your CI/CD traces to the application traces produced by your deployment. The action uses a `traceparent` created during the build or deploy flow, passes it into your application, and forwards it to the export action. This creates a single trace spanning both CI and production.
+
+This works best in the same workflow, but it can also work with a separate export workflow if the original workflow persists the `traceparent` somewhere the export workflow can read it back from, such as an artifact or deployment metadata.
 
 ```yaml
 name: CI + Deploy
@@ -153,8 +189,8 @@ jobs:
 ```yaml
 - uses: groundcover-com/groundcover-github-action@v1
   with:
-    otlpEndpoint: https://otel.groundcover.com/v1/traces
-    otlpHeaders: "authorization=Bearer ${{ secrets.GROUNDCOVER_API_KEY }}"
+    otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+    otlpHeaders: "apikey=${{ secrets.GROUNDCOVER_INGESTION_KEY }}"
     otelServiceName: my-service
     env: production
     workload: payments-api
@@ -163,39 +199,17 @@ jobs:
 
 The action always adds `source=github-actions` as a resource attribute.
 
-### Honeycomb
+Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared URL. groundcover documents the endpoint format and OpenTelemetry setup here:
 
-```yaml
-- uses: groundcover-com/groundcover-github-action@v1
-  with:
-    otlpEndpoint: grpc://api.honeycomb.io:443
-    otlpHeaders: "x-honeycomb-team=${{ secrets.HONEYCOMB_API_KEY }},x-honeycomb-dataset=github-actions"
-```
-
-### Axiom
-
-```yaml
-- uses: groundcover-com/groundcover-github-action@v1
-  with:
-    otlpEndpoint: https://api.axiom.co/v1/traces
-    otlpHeaders: "authorization=Bearer ${{ secrets.AXIOM_API_TOKEN }},x-axiom-dataset=github-actions"
-```
-
-### New Relic
-
-```yaml
-- uses: groundcover-com/groundcover-github-action@v1
-  with:
-    otlpEndpoint: https://otlp.nr-data.net/v1/traces
-    otlpHeaders: "api-key=${{ secrets.NEW_RELIC_LICENSE_KEY }}"
-```
+- [Sending from an OpenTelemetry Collector](https://docs.groundcover.com/integrations/data-sources/opentelemetry/sending-from-an-opentelemetry-collector)
+- [Ingestion keys](https://docs.groundcover.com/use-groundcover/remote-access-and-apis/ingestion-keys)
 
 ## Inputs
 
 | Input             | Required | Default               | Description                                                                                                                                                                                                 |
 | ----------------- | -------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `otlpEndpoint`    | Yes      |                       | OTLP endpoint URL. Supports `https://`, `http://`, and `grpc://` schemes. For HTTP endpoints, include the full path (e.g., `/v1/traces`).                                                                   |
-| `otlpHeaders`     | Yes      |                       | Comma-separated `key=value` pairs sent as OTLP exporter headers. Example: `"apikey=YOUR_KEY"` or `"x-honeycomb-team=KEY,x-honeycomb-dataset=DS"`.                                                           |
+| `otlpHeaders`     | Yes      |                       | Comma-separated `key=value` pairs sent as OTLP exporter headers. For groundcover, use `"apikey=${{ secrets.GROUNDCOVER_INGESTION_KEY }}"`.                                                                  |
 | `githubToken`     | No       | `${{ github.token }}` | GitHub token with `actions:read` permission. Required for private repos. Use `secrets.GITHUB_TOKEN` or a PAT.                                                                                               |
 | `runId`           | No       | Current run           | Workflow Run ID to export. Defaults to the current workflow run. When using `workflow_run`, set this to `${{ github.event.workflow_run.id }}` to export the triggering run.                                 |
 | `otelServiceName` | No       | Workflow name         | Overrides the `service.name` OTEL resource attribute. Defaults to the workflow name.                                                                                                                        |
@@ -281,6 +295,8 @@ By default, the action sets:
 - `source=github-actions`
 - `workload` (from input, defaults to workflow name)
 - `env` (only when input is provided)
+
+For groundcover users, `source`, `workload`, and `env` make it easier to filter and group CI/CD traces consistently with the rest of your telemetry.
 
 ## How Trace Linking Works
 
