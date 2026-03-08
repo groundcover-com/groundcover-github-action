@@ -6,13 +6,12 @@ This repository contains a GitHub Action that exports GitHub Actions workflow ru
 
 - `action.yml`: canonical input and output contract
 - `README.md`: usage, permissions, examples, and operational guidance
-- `GITHUB_ACTION_SPEC.md`: full implementation requirements
 - `CONTRIBUTING.md`: contributor workflow and verification requirements
 
 ## Groundcover usage rules
 
 - Use a workspace-specific OTLP endpoint provided by groundcover.
-- Do not hardcode `https://otel.groundcover.com/v1/traces`.
+- Do not hardcode a specific OTLP endpoint URL.
 - Pass the endpoint through `otlpEndpoint`.
 - Authenticate with a `Third Party` ingestion key using `otlpHeaders: "apikey=..."`.
 - See `https://docs.groundcover.com/integrations/data-sources/opentelemetry/sending-from-an-opentelemetry-collector` for endpoint setup.

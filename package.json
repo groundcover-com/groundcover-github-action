@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@groundcover-com/otel-cicd-export-action",
+  "name": "@groundcover-com/groundcover-github-action",
   "type": "module",
   "version": "1.0.0",
   "description": "Export GitHub Actions workflow runs as OpenTelemetry traces to any OTLP-compatible endpoint",
@@ -30,11 +30,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/groundcover-com/otel-cicd-export-action.git"
+    "url": "git+https://github.com/groundcover-com/groundcover-github-action.git"
   },
-  "homepage": "https://github.com/groundcover-com/otel-cicd-export-action",
+  "homepage": "https://github.com/groundcover-com/groundcover-github-action",
   "bugs": {
-    "url": "https://github.com/groundcover-com/otel-cicd-export-action/issues"
+    "url": "https://github.com/groundcover-com/groundcover-github-action/issues"
   },
   "dependencies": {
     "@actions/core": "^3.0.0",
