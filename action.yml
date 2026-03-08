@@ -1,24 +1,56 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: "groundcover OTEL CI/CD Export"
+description: "Export GitHub Actions workflow runs as OpenTelemetry traces to any OTLP-compatible endpoint"
+author: "groundcover"
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
-branding:
-  icon: heart
-  color: red
-
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
+  otlpEndpoint:
+    description: >
+      OTLP endpoint URL. Supports https://, http://, and grpc:// schemes.
+      For HTTP endpoints, this should be the full URL including /v1/traces path.
     required: true
-    default: '1000'
+  otlpHeaders:
+    description: >
+      Comma-separated key=value pairs for OTLP exporter headers.
+      Example: "apikey=YOUR_KEY" or "x-honeycomb-team=KEY,x-honeycomb-dataset=DS"
+    required: true
+  githubToken:
+    description: >
+      GitHub token with actions:read permission. Required for private repos.
+      Use secrets.GITHUB_TOKEN or a PAT.
+    required: false
+  runId:
+    description: "Workflow Run ID to export. Defaults to the current workflow run."
+    required: false
+  otelServiceName:
+    description: "Override the OTEL service.name resource attribute. Defaults to the workflow name."
+    required: false
+  traceparent:
+    description: >
+      W3C Trace Context traceparent header value (e.g., 00-<trace_id>-<span_id>-01).
+      When provided, the workflow root span becomes a child of this trace context,
+      enabling correlation between CI/CD traces and application traces.
+      When omitted, a new root trace is created.
+    required: false
+  env:
+    description: "Environment name (e.g., production, staging). Added as a resource attribute."
+    required: false
+  workload:
+    description: "Workload name. Defaults to the workflow name."
+    required: false
+  extraAttributes:
+    description: >
+      Extra resource attributes as comma-separated key=value pairs.
+      Example: "team=platform,region=us-east-1"
+    required: false
 
-# Define your outputs here.
 outputs:
-  time:
-    description: Your output description here
+  traceId:
+    description: "The OpenTelemetry Trace ID of the exported trace"
+
+branding:
+  icon: "activity"
+  color: "green"
 
 runs:
-  using: node24
-  main: dist/index.js
+  using: "node20"
+  main: "dist/index.js"
