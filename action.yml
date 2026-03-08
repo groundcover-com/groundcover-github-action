@@ -11,7 +11,7 @@ inputs:
   otlpHeaders:
     description: >
       Comma-separated key=value pairs for OTLP exporter headers.
-      Example: "apikey=YOUR_KEY" or "x-honeycomb-team=KEY,x-honeycomb-dataset=DS"
+      Example: "apikey=YOUR_KEY"
     required: true
   githubToken:
     description: >
