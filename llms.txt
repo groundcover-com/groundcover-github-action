@@ -1,0 +1,46 @@
+# groundcover OTEL CI/CD Export Action
+
+This repository contains a GitHub Action that exports GitHub Actions workflow runs as OpenTelemetry traces.
+
+## Canonical files
+
+- `action.yml`: canonical input and output contract
+- `README.md`: usage, permissions, examples, and operational guidance
+- `GITHUB_ACTION_SPEC.md`: full implementation requirements
+- `CONTRIBUTING.md`: contributor workflow and verification requirements
+
+## Groundcover usage rules
+
+- Use a workspace-specific OTLP endpoint provided by groundcover.
+- Do not hardcode `https://otel.groundcover.com/v1/traces`.
+- Pass the endpoint through `otlpEndpoint`.
+- Authenticate with a `Third Party` ingestion key using `otlpHeaders: "apikey=..."`.
+- See `https://docs.groundcover.com/integrations/data-sources/opentelemetry/sending-from-an-opentelemetry-collector` for endpoint setup.
+- See `https://docs.groundcover.com/use-groundcover/remote-access-and-apis/ingestion-keys` for ingestion key creation.
+- Do not use `Authorization: Bearer ...` for OTLP ingest. That header format is for groundcover REST API usage.
+
+## Supported behavior
+
+- Export workflow runs, jobs, and steps as nested spans.
+- Support `traceparent` to link CI/CD traces with application traces.
+- Support same-workflow export and separate `workflow_run` export.
+- For separate workflow trace linking, persist the `traceparent` in the source workflow and pass it into the export workflow.
+- Always set resource attribute `source=github-actions`.
+- Support configurable `workload` and optional `env` resource attributes.
+
+## Implementation rules
+
+- Keep the runtime on Node 20.
+- Keep TypeScript strict mode enabled.
+- Never log secrets.
+- Mask sensitive OTLP headers with `core.setSecret()`.
+- Preserve committed bundle output in `dist/`.
+- After changes, run `npm run all`.
+
+## Useful paths
+
+- `src/runner.ts`: action orchestration
+- `src/tracer.ts`: OTLP exporter setup and `traceparent` extraction
+- `src/trace/workflow.ts`: workflow root span generation
+- `src/trace/job.ts`: job span generation
+- `src/trace/step.ts`: step span generation
