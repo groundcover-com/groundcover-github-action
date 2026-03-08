@@ -61,6 +61,26 @@ describe("parseJUnitXml", () => {
     });
   });
 
+  it("parses a single nested testsuite node", () => {
+    const summary = parseJUnitXml(
+      '<testsuites><testsuite tests="4" failures="1" skipped="1" errors="0" time="2.0" /></testsuites>',
+    );
+
+    expect(summary).toEqual({
+      suites: 1,
+      total: 4,
+      passed: 2,
+      failed: 1,
+      skipped: 1,
+      errors: 0,
+      duration: 2,
+    });
+  });
+
+  it("returns undefined when nested suites have no usable summary", () => {
+    expect(parseJUnitXml("<testsuites><testsuite /></testsuites>")).toBeUndefined();
+  });
+
   it("returns undefined for unsupported XML", () => {
     expect(parseJUnitXml("<root><value>1</value></root>")).toBeUndefined();
   });
