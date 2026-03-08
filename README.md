@@ -1,305 +1,325 @@
-# Create a GitHub Action Using TypeScript
+# groundcover OTEL CI/CD Export Action
 
-![Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)
-![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
-![Check dist/](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml/badge.svg)
-![CodeQL](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml/badge.svg)
-![Coverage](./badges/coverage.svg)
+Export GitHub Actions workflow runs as OpenTelemetry traces to any OTLP-compatible backend.
 
-Use this template to bootstrap the creation of a TypeScript action. :rocket:
+## Prerequisites
 
-This template includes compilation support, tests, a validation workflow,
-publishing, and versioning guidance.
+- GitHub Actions workflow with `actions: read` permission
+- Node 20 runtime (handled automatically by GitHub Actions)
+- OTLP endpoint and credentials (`otlpEndpoint`, `otlpHeaders`)
 
-If you are new, there's also a simpler introduction in the
-[Hello world JavaScript action repository](https://github.com/actions/hello-world-javascript-action).
-
-## Create Your Own Action
-
-To create your own action, you can use this repository as a template! Just
-follow the below instructions:
-
-1. Click the **Use this template** button at the top of the repository
-1. Select **Create a new repository**
-1. Select an owner and name for your new repository
-1. Click **Create repository**
-1. Clone your new repository
-
-> [!IMPORTANT]
->
-> Make sure to remove or update the [`CODEOWNERS`](./CODEOWNERS) file! For
-> details on how to use this file, see
-> [About code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners).
-
-## Initial Setup
-
-After you've cloned the repository to your local machine or codespace, you'll
-need to perform some initial setup steps before you can develop your action.
-
-> [!NOTE]
->
-> You'll need to have a reasonably modern version of
-> [Node.js](https://nodejs.org) handy (20.x or later should work!). If you are
-> using a version manager like [`nodenv`](https://github.com/nodenv/nodenv) or
-> [`fnm`](https://github.com/Schniz/fnm), this template has a `.node-version`
-> file at the root of the repository that can be used to automatically switch to
-> the correct version when you `cd` into the repository. Additionally, this
-> `.node-version` file is used by GitHub Actions in any `actions/setup-node`
-> actions.
-
-1. :hammer_and_wrench: Install the dependencies
-
-   ```bash
-   npm install
-   ```
-
-1. :building_construction: Package the TypeScript for distribution
-
-   ```bash
-   npm run bundle
-   ```
-
-1. :white_check_mark: Run the tests
-
-   ```bash
-   $ npm test
-
-   PASS  ./index.test.js
-     ✓ throws invalid number (3ms)
-     ✓ wait 500 ms (504ms)
-     ✓ test runs (95ms)
-
-   ...
-   ```
-
-## Update the Action Metadata
-
-The [`action.yml`](action.yml) file defines metadata about your action, such as
-input(s) and output(s). For details about this file, see
-[Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions).
-
-When you copy this repository, update `action.yml` with the name, description,
-inputs, and outputs for your action.
-
-## Update the Action Code
-
-The [`src/`](./src/) directory is the heart of your action! This contains the
-source code that will be run when your action is invoked. You can replace the
-contents of this directory with your own code.
-
-There are a few things to keep in mind when writing your action code:
-
-- Most GitHub Actions toolkit and CI/CD operations are processed asynchronously.
-  In `main.ts`, you will see that the action is run in an `async` function.
-
-  ```javascript
-  import * as core from '@actions/core'
-  //...
-
-  async function run() {
-    try {
-      //...
-    } catch (error) {
-      core.setFailed(error.message)
-    }
-  }
-  ```
-
-  For more information about the GitHub Actions toolkit, see the
-  [documentation](https://github.com/actions/toolkit/blob/main/README.md).
-
-So, what are you waiting for? Go ahead and start customizing your action!
-
-1. Create a new branch
-
-   ```bash
-   git checkout -b releases/v1
-   ```
-
-1. Replace the contents of `src/` with your action code
-1. Add tests to `__tests__/` for your source code
-1. Format, test, and build the action
-
-   ```bash
-   npm run all
-   ```
-
-   > This step is important! It will run [`rollup`](https://rollupjs.org/) to
-   > build the final JavaScript action code with all dependencies included. If
-   > you do not run this step, your action will not work correctly when it is
-   > used in a workflow.
-
-1. (Optional) Test your action locally
-
-   The [`@github/local-action`](https://github.com/github/local-action) utility
-   can be used to test your action locally. It is a simple command-line tool
-   that "stubs" (or simulates) the GitHub Actions Toolkit. This way, you can run
-   your TypeScript action locally without having to commit and push your changes
-   to a repository.
-
-   The `local-action` utility can be run in the following ways:
-   - Visual Studio Code Debugger
-
-     Make sure to review and, if needed, update
-     [`.vscode/launch.json`](./.vscode/launch.json)
-
-   - Terminal/Command Prompt
-
-     ```bash
-     # npx @github/local action <action-yaml-path> <entrypoint> <dotenv-file>
-     npx @github/local-action . src/main.ts .env
-     ```
-
-   You can provide a `.env` file to the `local-action` CLI to set environment
-   variables used by the GitHub Actions Toolkit. For example, setting inputs and
-   event payload data used by your action. For more information, see the example
-   file, [`.env.example`](./.env.example), and the
-   [GitHub Actions Documentation](https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables).
-
-1. Commit your changes
-
-   ```bash
-   git add .
-   git commit -m "My first action is ready!"
-   ```
-
-1. Push them to your repository
-
-   ```bash
-   git push -u origin releases/v1
-   ```
-
-1. Create a pull request and get feedback on your action
-1. Merge the pull request into the `main` branch
-
-Your action is now published! :rocket:
-
-For information about versioning your action, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-## Validate the Action
-
-You can now validate the action by referencing it in a workflow file. For
-example, [`ci.yml`](./.github/workflows/ci.yml) demonstrates how to reference an
-action in the same repository.
+## Quick Start
 
 ```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
+name: Export CI Traces
 
-  - name: Test Local Action
-    id: test-action
-    uses: ./
-    with:
-      milliseconds: 1000
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
 
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
+jobs:
+  export-traces:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - uses: groundcover-com/groundcover-github-action@v1
+        with:
+          otlpEndpoint: https://otel.groundcover.com/v1/traces
+          otlpHeaders: "authorization=Bearer ${{ secrets.GROUNDCOVER_API_KEY }}"
 ```
 
-For example workflow runs, check out the
-[Actions tab](https://github.com/actions/typescript-action/actions)! :rocket:
+## Features
+
+- Exports workflow runs, jobs, and steps as a nested OTEL span hierarchy
+- Links CI/CD traces to application traces via W3C `traceparent`
+- Supports OTLP/HTTP and OTLP/gRPC transports
+- Follows the [OTEL CI/CD semantic conventions](https://opentelemetry.io/docs/specs/semconv/cicd/)
+- Adds resource attributes for `source`, `workload`, and optional `env`
+- Supports additional custom resource attributes for team/region/metadata
 
 ## Usage
 
-After testing, you can create version tag(s) that developers can use to
-reference different stable versions of your action. For more information, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
+### Basic - Separate Workflow (Recommended)
 
-To include the action in a workflow in another repository, you can use the
-`uses` syntax with the `@` symbol to reference a specific branch, tag, or commit
-hash.
+Using `workflow_run` is the recommended approach. It runs after your CI completes, so it doesn't add latency to your pipeline and always captures the full run including the final job status.
 
 ```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
+name: Export CI Traces
 
-  - name: Test Local Action
-    id: test-action
-    uses: actions/typescript-action@v1 # Commit with the `v1` tag
-    with:
-      milliseconds: 1000
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
 
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
+jobs:
+  export-traces:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - uses: groundcover-com/groundcover-github-action@v1
+        with:
+          otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
+          otlpHeaders: ${{ secrets.OTLP_HEADERS }}
+          runId: ${{ github.event.workflow_run.id }}
 ```
 
-## Publishing a New Release
+### Basic - Same Workflow
 
-This project includes a helper script, [`script/release`](./script/release)
-designed to streamline the process of tagging and pushing new releases for
-GitHub Actions.
+You can also add the export step directly to your existing workflow. Use `if: always()` so it runs even when earlier jobs fail.
 
-GitHub Actions allows users to select a specific version of the action to use,
-based on release tags. This script simplifies this process by performing the
-following steps:
+```yaml
+name: CI
 
-1. **Retrieving the latest release tag:** The script starts by fetching the most
-   recent SemVer release tag of the current branch, by looking at the local data
-   available in your repository.
-1. **Prompting for a new release tag:** The user is then prompted to enter a new
-   release tag. To assist with this, the script displays the tag retrieved in
-   the previous step, and validates the format of the inputted tag (vX.X.X). The
-   user is also reminded to update the version field in package.json.
-1. **Tagging the new release:** The script then tags a new release and syncs the
-   separate major tag (e.g. v1, v2) with the new release tag (e.g. v1.0.0,
-   v2.1.2). When the user is creating a new major release, the script
-   auto-detects this and creates a `releases/v#` branch for the previous major
-   version.
-1. **Pushing changes to remote:** Finally, the script pushes the necessary
-   commits, tags and branches to the remote repository. From here, you will need
-   to create a new release in GitHub so users can easily reference the new tags
-   in their workflows.
+on:
+  push:
+    branches: [main]
+  pull_request:
 
-## Dependency License Management
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test
 
-This template includes a GitHub Actions workflow,
-[`licensed.yml`](./.github/workflows/licensed.yml), that uses
-[Licensed](https://github.com/licensee/licensed) to check for dependencies with
-missing or non-compliant licenses. This workflow is initially disabled. To
-enable the workflow, follow the below steps.
-
-1. Open [`licensed.yml`](./.github/workflows/licensed.yml)
-1. Uncomment the following lines:
-
-   ```yaml
-   # pull_request:
-   #   branches:
-   #     - main
-   # push:
-   #   branches:
-   #     - main
-   ```
-
-1. Save and commit the changes
-
-Once complete, this workflow will run any time a pull request is created or
-changes pushed directly to `main`. If the workflow detects any dependencies with
-missing or non-compliant licenses, it will fail the workflow and provide details
-on the issue(s) found.
-
-### Updating Licenses
-
-Whenever you install or update dependencies, you can use the Licensed CLI to
-update the licenses database. To install Licensed, see the project's
-[Readme](https://github.com/licensee/licensed?tab=readme-ov-file#installation).
-
-To update the cached licenses, run the following command:
-
-```bash
-licensed cache
+  export-traces:
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: always()
+    permissions:
+      actions: read
+    steps:
+      - uses: groundcover-com/groundcover-github-action@v1
+        with:
+          otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
+          otlpHeaders: ${{ secrets.OTLP_HEADERS }}
 ```
 
-To check the status of cached licenses, run the following command:
+### Link CI/CD + Application Traces
 
-```bash
-licensed status
+This pattern connects your CI/CD traces to the application traces produced by your deployment. The action generates a `traceparent` during the build job, which gets passed to your application and then forwarded to the export action. This creates a single trace spanning both CI and production.
+
+```yaml
+name: CI + Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      traceparent: ${{ steps.traceparent.outputs.traceparent }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Generate a traceparent to link CI and app traces
+      - name: Generate traceparent
+        id: traceparent
+        run: |
+          TRACE_ID=$(openssl rand -hex 16)
+          SPAN_ID=$(openssl rand -hex 8)
+          echo "traceparent=00-${TRACE_ID}-${SPAN_ID}-01" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Deploy
+        env:
+          TRACEPARENT: ${{ steps.traceparent.outputs.traceparent }}
+        run: ./deploy.sh # your app picks up TRACEPARENT from the environment
+
+  export-traces:
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: always()
+    permissions:
+      actions: read
+    steps:
+      - uses: groundcover-com/groundcover-github-action@v1
+        with:
+          otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
+          otlpHeaders: ${{ secrets.OTLP_HEADERS }}
+          traceparent: ${{ needs.build.outputs.traceparent }}
 ```
+
+### groundcover
+
+```yaml
+- uses: groundcover-com/groundcover-github-action@v1
+  with:
+    otlpEndpoint: https://otel.groundcover.com/v1/traces
+    otlpHeaders: "authorization=Bearer ${{ secrets.GROUNDCOVER_API_KEY }}"
+    otelServiceName: my-service
+    env: production
+    workload: payments-api
+    extraAttributes: "team=platform"
+```
+
+The action always adds `source=github-actions` as a resource attribute.
+
+### Honeycomb
+
+```yaml
+- uses: groundcover-com/groundcover-github-action@v1
+  with:
+    otlpEndpoint: grpc://api.honeycomb.io:443
+    otlpHeaders: "x-honeycomb-team=${{ secrets.HONEYCOMB_API_KEY }},x-honeycomb-dataset=github-actions"
+```
+
+### Axiom
+
+```yaml
+- uses: groundcover-com/groundcover-github-action@v1
+  with:
+    otlpEndpoint: https://api.axiom.co/v1/traces
+    otlpHeaders: "authorization=Bearer ${{ secrets.AXIOM_API_TOKEN }},x-axiom-dataset=github-actions"
+```
+
+### New Relic
+
+```yaml
+- uses: groundcover-com/groundcover-github-action@v1
+  with:
+    otlpEndpoint: https://otlp.nr-data.net/v1/traces
+    otlpHeaders: "api-key=${{ secrets.NEW_RELIC_LICENSE_KEY }}"
+```
+
+## Inputs
+
+| Input             | Required | Default               | Description                                                                                                                                                                                                 |
+| ----------------- | -------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `otlpEndpoint`    | Yes      |                       | OTLP endpoint URL. Supports `https://`, `http://`, and `grpc://` schemes. For HTTP endpoints, include the full path (e.g., `/v1/traces`).                                                                   |
+| `otlpHeaders`     | Yes      |                       | Comma-separated `key=value` pairs sent as OTLP exporter headers. Example: `"apikey=YOUR_KEY"` or `"x-honeycomb-team=KEY,x-honeycomb-dataset=DS"`.                                                           |
+| `githubToken`     | No       | `${{ github.token }}` | GitHub token with `actions:read` permission. Required for private repos. Use `secrets.GITHUB_TOKEN` or a PAT.                                                                                               |
+| `runId`           | No       | Current run           | Workflow Run ID to export. Defaults to the current workflow run. When using `workflow_run`, set this to `${{ github.event.workflow_run.id }}` to export the triggering run.                                 |
+| `otelServiceName` | No       | Workflow name         | Overrides the `service.name` OTEL resource attribute. Defaults to the workflow name.                                                                                                                        |
+| `traceparent`     | No       |                       | W3C Trace Context `traceparent` value (e.g., `00-<trace_id>-<span_id>-01`). When provided, the workflow root span becomes a child of this trace, enabling correlation between CI/CD and application traces. |
+| `env`             | No       |                       | Environment name added to resource attributes (e.g., `production`, `staging`).                                                                                                                              |
+| `workload`        | No       | Workflow name         | Workload name added to resource attributes. Use this to group traces by service/workload.                                                                                                                   |
+| `extraAttributes` | No       |                       | Extra resource attributes as comma-separated `key=value` pairs. Example: `"team=platform,region=us-east-1"`. Prefer using dedicated `env` and `workload` inputs when applicable.                            |
+
+## Outputs
+
+| Output    | Description                                                                                                    |
+| --------- | -------------------------------------------------------------------------------------------------------------- |
+| `traceId` | The OpenTelemetry Trace ID of the exported trace. Use this to link to the trace in your observability backend. |
+
+## Permissions
+
+**Required:**
+
+```yaml
+permissions:
+  actions: read
+```
+
+**Optional:**
+
+```yaml
+permissions:
+  actions: read
+  contents: read # required for private repositories
+  checks: read # enables exporting check annotations
+  pull-requests: read # enables exporting PR labels
+```
+
+## Private Repositories
+
+For private repositories, the default `GITHUB_TOKEN` may not have sufficient permissions to read workflow run data. You have two options:
+
+**Option 1:** Grant `contents: read` in your workflow permissions block (recommended):
+
+```yaml
+permissions:
+  actions: read
+  contents: read
+```
+
+**Option 2:** Use a Personal Access Token with `repo` scope:
+
+```yaml
+- uses: groundcover-com/groundcover-github-action@v1
+  with:
+    otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
+    otlpHeaders: ${{ secrets.OTLP_HEADERS }}
+    githubToken: ${{ secrets.MY_PAT }}
+```
+
+## Trace Structure
+
+Each workflow run is exported as a tree of spans:
+
+```
+workflow_run (root span)
+  job: build
+    step: Checkout
+    step: npm ci
+    step: npm test
+  job: lint
+    step: Checkout
+    step: Run linter
+  job: export-traces
+    step: groundcover OTEL CI/CD Export
+```
+
+Span attributes follow the [OTEL CI/CD semantic conventions](https://opentelemetry.io/docs/specs/semconv/cicd/), including `cicd.pipeline.name`, `cicd.pipeline.run.id`, `cicd.pipeline.task.name`, `cicd.pipeline.task.run.id`, and `cicd.pipeline.task.run.url.full`.
+
+## Resource Attributes
+
+By default, the action sets:
+
+- `service.name` (workflow name unless overridden via `otelServiceName`)
+- `service.namespace` (GitHub `owner/repo`)
+- `service.version` (workflow head SHA)
+- `service.instance.id` (`owner/repo/workflow_id/run_id/run_attempt`)
+- `source=github-actions`
+- `workload` (from input, defaults to workflow name)
+- `env` (only when input is provided)
+
+## How Trace Linking Works
+
+When you provide a `traceparent` input, the workflow root span is created as a child of that trace context. This means:
+
+1. Your build job (or deploy logic) generates a `traceparent` (a trace ID + span ID pair).
+2. You pass that `traceparent` to your application at deploy time (e.g., as an environment variable).
+3. Your application starts its own spans as children of that context.
+4. You pass the same `traceparent` to this action.
+5. The action creates the CI/CD trace as a child of the same root.
+
+The result is a single trace in your observability backend that spans from the first CI step through to production request handling.
+
+## Troubleshooting
+
+**The action exports the wrong workflow run.**
+
+When using `workflow_run`, the action defaults to the current run (the export workflow itself). Set `runId: ${{ github.event.workflow_run.id }}` to export the triggering workflow instead.
+
+**I'm getting 401 or 403 errors from the OTLP endpoint.**
+
+Check that your `otlpHeaders` secret contains the correct API key and that the header name matches what your backend expects. Header names are case-sensitive for some backends.
+
+**Jobs or steps are missing from the trace.**
+
+The action reads job and step data from the GitHub API. For private repositories, ensure `contents: read` is included in your permissions. If steps are still missing, the GitHub API may not have finished indexing the run data; adding a short `sleep` before the export step can help.
+
+**The action fails with "Resource not accessible by integration".**
+
+Your token doesn't have `actions: read`. Add it to your workflow's `permissions` block.
+
+**gRPC connections are timing out.**
+
+Ensure your `otlpEndpoint` uses the `grpc://` scheme and that port 443 is reachable from GitHub Actions runners. Some backends require TLS; use `grpcs://` if plain `grpc://` doesn't work.
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## License
+
+Apache-2.0. See [LICENSE](./LICENSE).

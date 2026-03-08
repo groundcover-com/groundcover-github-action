@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/groundcover-com/groundcover-github-action/security/policy
+    about: Please report security vulnerabilities through our security policy
+  - name: groundcover Documentation
+    url: https://docs.groundcover.com
+    about: Visit groundcover docs for general platform questions
