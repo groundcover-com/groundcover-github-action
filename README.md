@@ -1,6 +1,6 @@
 # groundcover OTEL CI/CD Export Action
 
-Export GitHub Actions workflow runs as OpenTelemetry traces to any OTLP-compatible backend.
+Export GitHub Actions workflow runs as OpenTelemetry traces and logs to any OTLP-compatible backend.
 
 ## Prerequisites
 
