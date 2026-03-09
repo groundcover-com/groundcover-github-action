@@ -7,5 +7,6 @@ coverage
 .DS_Store
 Thumbs.db
 *.tsbuildinfo
+dist/index.js.map
 .idea
 *.code-workspace
