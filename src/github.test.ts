@@ -1,13 +1,15 @@
 import { jest, describe, it, expect, afterEach } from "@jest/globals";
 import type { context as ghContext } from "@actions/github";
-import {
-  getWorkflowRun,
-  listJobsForWorkflowRun,
-  getJobsAnnotations,
-  getPRsLabels,
-  getJobsLogs,
-  type Octokit,
-} from "./github.js";
+import type { Octokit } from "./github.js";
+
+const coreMock = {
+  warning: jest.fn<(message: string) => void>(),
+};
+
+jest.unstable_mockModule("@actions/core", () => coreMock);
+
+const { getWorkflowRun, listJobsForWorkflowRun, getJobsAnnotations, getPRsLabels, getJobsLogs } =
+  await import("./github.js");
 
 type Context = typeof ghContext;
 
@@ -56,6 +58,7 @@ function createMocks() {
 describe("github", () => {
   afterEach(() => {
     jest.restoreAllMocks();
+    coreMock.warning.mockClear();
   });
 
   describe("getJobsLogs", () => {
@@ -91,17 +94,18 @@ describe("github", () => {
       global.fetch = originalFetch;
     });
 
-    it("fails when GitHub does not return a download URL", async () => {
+    it("warns and skips when GitHub does not return a download URL", async () => {
       const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
 
       downloadJobLogsForWorkflowRunFn.mockResolvedValue({ headers: {} });
 
-      await expect(getJobsLogs(mockContext, mockOctokit, [100])).rejects.toThrow(
-        "Missing log download URL for job 100",
-      );
+      const result = await getJobsLogs(mockContext, mockOctokit, [100]);
+
+      expect(result).toEqual({});
+      expect(coreMock.warning).toHaveBeenCalledWith("Skipping logs for job 100: Missing log download URL for job 100");
     });
 
-    it("fails when the redirected log download is not successful", async () => {
+    it("warns and skips when the redirected log download is not successful", async () => {
       const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
       const originalFetch = global.fetch;
       const fetchMock = jest.fn<typeof fetch>();
@@ -110,9 +114,45 @@ describe("github", () => {
       downloadJobLogsForWorkflowRunFn.mockResolvedValue({ headers: { location: "https://logs.example/1" } });
       fetchMock.mockResolvedValueOnce({ ok: false, status: 502, statusText: "Bad Gateway" } as Response);
 
-      await expect(getJobsLogs(mockContext, mockOctokit, [100])).rejects.toThrow(
-        "Failed to download logs for job 100: 502 Bad Gateway",
+      const result = await getJobsLogs(mockContext, mockOctokit, [100]);
+
+      expect(result).toEqual({});
+      expect(coreMock.warning).toHaveBeenCalledWith(
+        "Skipping logs for job 100: Failed to download logs for job 100: 502 Bad Gateway",
       );
+
+      global.fetch = originalFetch;
+    });
+
+    it("handles non-Error throw values gracefully", async () => {
+      const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
+
+      downloadJobLogsForWorkflowRunFn.mockRejectedValue("string error");
+
+      const result = await getJobsLogs(mockContext, mockOctokit, [100]);
+
+      expect(result).toEqual({});
+      expect(coreMock.warning).toHaveBeenCalledWith("Skipping logs for job 100: string error");
+    });
+
+    it("returns partial results when some jobs fail", async () => {
+      const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
+      const originalFetch = global.fetch;
+      const fetchMock = jest.fn<typeof fetch>();
+      global.fetch = fetchMock;
+
+      downloadJobLogsForWorkflowRunFn
+        .mockResolvedValueOnce({ headers: { location: "https://logs.example/1" } })
+        .mockResolvedValueOnce({ headers: {} });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        text: jest.fn(() => Promise.resolve("job-1 logs")),
+      } as unknown as Response);
+
+      const result = await getJobsLogs(mockContext, mockOctokit, [100, 200]);
+
+      expect(result).toEqual({ 100: "job-1 logs" });
+      expect(coreMock.warning).toHaveBeenCalledWith("Skipping logs for job 200: Missing log download URL for job 200");
 
       global.fetch = originalFetch;
     });

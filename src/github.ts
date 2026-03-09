@@ -1,3 +1,4 @@
+import * as core from "@actions/core";
 import type { context } from "@actions/github";
 import type { GitHub } from "@actions/github/lib/utils";
 import type { components } from "@octokit/openapi-types";
@@ -82,7 +83,12 @@ async function getJobsLogs(context: Context, octokit: Octokit, jobIds: number[])
   const logs: Record<number, string> = {};
 
   for (const jobId of jobIds) {
-    logs[jobId] = await downloadJobLog(context, octokit, jobId);
+    try {
+      logs[jobId] = await downloadJobLog(context, octokit, jobId);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      core.warning(`Skipping logs for job ${jobId}: ${message}`);
+    }
   }
 
   return logs;
