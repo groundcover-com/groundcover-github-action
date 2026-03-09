@@ -120,9 +120,9 @@ describe("github", () => {
     it("returns partial results when some jobs fail", async () => {
       const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
 
-      downloadJobLogsForWorkflowRunFn
-        .mockResolvedValueOnce({ data: "job-1 logs" })
-        .mockResolvedValueOnce({ data: "" });
+      downloadJobLogsForWorkflowRunFn.mockResolvedValueOnce({ data: "job-1 logs" }).mockResolvedValueOnce({
+        data: "",
+      });
 
       const result = await getJobsLogs(mockContext, mockOctokit, [100, 200]);
 

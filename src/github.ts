@@ -103,8 +103,8 @@ async function downloadJobLog(context: Context, octokit: Octokit, jobId: number)
   // Octokit auto-follows the 302 redirect, so response.data contains the log
   // content directly. The OpenAPI spec types the 302 as content: never, but at
   // runtime data is the plain-text log body from the redirect target.
-  const data = response.data as unknown as string;
-  if (!data) {
+  const { data } = response;
+  if (typeof data !== "string" || data.length === 0) {
     throw new Error(`Empty log content for job ${jobId}`);
   }
 
