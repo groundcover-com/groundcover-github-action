@@ -43,3 +43,4 @@ This repository contains a GitHub Action that exports GitHub Actions workflow ru
 - `src/trace/workflow.ts`: workflow root span generation
 - `src/trace/job.ts`: job span generation
 - `src/trace/step.ts`: step span generation
+- `src/github.ts`: GitHub API interactions (workflow runs, jobs, logs, annotations)
