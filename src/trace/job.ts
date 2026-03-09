@@ -25,6 +25,9 @@ type CompletedJob = components["schemas"]["job"] & { completed_at: string };
 
 const GITHUB_LOG_LINE_REGEX = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s(.*)$/;
 
+/** 1-second buffer to account for API second precision vs sub-second log timestamps */
+const STEP_TIME_BUFFER_MS = 1000;
+
 interface ParsedLogLine {
   timestamp: number;
   body: string;
@@ -33,7 +36,9 @@ interface ParsedLogLine {
 }
 
 function parseGitHubLogLines(rawLog: string): ParsedLogLine[] {
-  const lines = rawLog.split("\n");
+  // GitHub log downloads may start with a UTF-8 BOM that prevents the
+  // timestamp regex from matching the first line.
+  const lines = rawLog.replace(/^\uFEFF/, "").split("\n");
   const result: ParsedLogLine[] = [];
 
   for (const line of lines) {
@@ -61,9 +66,56 @@ function parseGitHubLogLines(rawLog: string): ParsedLogLine[] {
   return result;
 }
 
-function emitJobLogs(rawLog: string, jobId: number, jobName: string): void {
+type Step = NonNullable<components["schemas"]["job"]["steps"]>[number];
+
+interface CorrelatedLogs {
+  /** Log lines keyed by step number */
+  byStep: Map<number, ParsedLogLine[]>;
+  /** Lines that didn't fall into any step's time window */
+  unmatched: ParsedLogLine[];
+}
+
+function correlateLogsByStep(logLines: ParsedLogLine[], steps: Step[]): CorrelatedLogs {
+  const byStep = new Map<number, ParsedLogLine[]>();
+  const unmatched: ParsedLogLine[] = [];
+
+  // Build sorted time windows for completed, non-skipped steps
+  const windows = steps
+    .filter(
+      (s): s is Step & { started_at: string; completed_at: string } =>
+        !!(s.started_at && s.completed_at) && s.conclusion !== "skipped",
+    )
+    .map((s) => ({
+      number: s.number,
+      start: new Date(s.started_at).getTime(),
+      end: new Date(s.completed_at).getTime() + STEP_TIME_BUFFER_MS,
+    }))
+    .sort((a, b) => a.start - b.start);
+
+  for (const line of logLines) {
+    let matched = false;
+    for (const w of windows) {
+      if (line.timestamp >= w.start && line.timestamp <= w.end) {
+        let bucket = byStep.get(w.number);
+        if (!bucket) {
+          bucket = [];
+          byStep.set(w.number, bucket);
+        }
+        bucket.push(line);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      unmatched.push(line);
+    }
+  }
+
+  return { byStep, unmatched };
+}
+
+function emitJobLogs(logLines: ParsedLogLine[], jobId: number, jobName: string): void {
   const logger = logs.getLogger("otel-cicd-export-action");
-  const logLines = parseGitHubLogLines(rawLog);
   const activeContext = context.active();
 
   for (const line of logLines) {
@@ -105,12 +157,18 @@ function traceJob(
     const code = job.conclusion === "failure" ? SpanStatusCode.ERROR : SpanStatusCode.OK;
     span.setStatus({ code });
 
-    for (const step of job.steps ?? []) {
-      traceStep(step);
+    const steps = job.steps ?? [];
+    const logLines = jobLog ? parseGitHubLogLines(jobLog) : [];
+    const correlated = logLines.length > 0 ? correlateLogsByStep(logLines, steps) : undefined;
+
+    for (const step of steps) {
+      const stepLogs = correlated?.byStep.get(step.number);
+      traceStep(step, stepLogs);
     }
 
-    if (jobLog) {
-      emitJobLogs(jobLog, job.id, job.name);
+    // Emit unmatched log lines at job level as fallback
+    if (correlated && correlated.unmatched.length > 0) {
+      emitJobLogs(correlated.unmatched, job.id, job.name);
     }
 
     // Some skipped and post jobs return completed_at dates that are older than started_at
@@ -197,4 +255,4 @@ function annotationsToAttributes(annotations: components["schemas"]["check-annot
   return attributes;
 }
 
-export { traceJob, emitJobLogs, parseGitHubLogLines };
+export { traceJob, emitJobLogs, parseGitHubLogLines, correlateLogsByStep, type ParsedLogLine };

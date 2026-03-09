@@ -34,7 +34,7 @@ jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
   SeverityNumber,
 }));
 
-const { traceJob, parseGitHubLogLines, emitJobLogs } = await import("./job.js");
+const { traceJob, parseGitHubLogLines, emitJobLogs, correlateLogsByStep } = await import("./job.js");
 
 function hrTimeToMs(value: [number, number]): number {
   return value[0] * 1000 + value[1] / 1_000_000;
@@ -223,21 +223,42 @@ describe("traceJob", () => {
     nowSpy.mockRestore();
   });
 
+  it("strips UTF-8 BOM from the start of the log so the first line timestamp is parsed", () => {
+    const parsed = parseGitHubLogLines(
+      "\uFEFF2024-01-01T00:00:00.0000000Z first line\n2024-01-01T00:00:01.0000000Z second line",
+    );
+
+    expect(parsed).toEqual([
+      {
+        timestamp: new Date("2024-01-01T00:00:00.0000000Z").getTime(),
+        body: "first line",
+        severityNumber: SeverityNumber.INFO,
+        severityText: "INFO",
+      },
+      {
+        timestamp: new Date("2024-01-01T00:00:01.0000000Z").getTime(),
+        body: "second line",
+        severityNumber: SeverityNumber.INFO,
+        severityText: "INFO",
+      },
+    ]);
+  });
+
   it("emits one OTEL log record per parsed line with active context and job attributes", () => {
     const tracer = trace.getTracer("otel-cicd-export-action");
     let activeSpanContext = context.active();
 
+    const logLines = parseGitHubLogLines(
+      [
+        "2024-01-01T00:00:00.0000000Z hello",
+        "2024-01-01T00:00:01.0000000Z ##[warning]careful",
+        "2024-01-01T00:00:02.0000000Z ##[error]boom",
+      ].join("\n"),
+    );
+
     tracer.startActiveSpan("job-log-test", (span) => {
       activeSpanContext = context.active();
-      emitJobLogs(
-        [
-          "2024-01-01T00:00:00.0000000Z hello",
-          "2024-01-01T00:00:01.0000000Z ##[warning]careful",
-          "2024-01-01T00:00:02.0000000Z ##[error]boom",
-        ].join("\n"),
-        10,
-        "Build",
-      );
+      emitJobLogs(logLines, 10, "Build");
       span.end();
     });
 
@@ -359,5 +380,184 @@ describe("traceJob", () => {
 
     const span = exporter.getFinishedSpans()[0];
     expect(span?.attributes[ATTR_CICD_PIPELINE_TASK_TYPE]).toBeUndefined();
+  });
+
+  describe("correlateLogsByStep", () => {
+    it("assigns log lines to the correct step based on timestamp", () => {
+      const logLines = parseGitHubLogLines(
+        [
+          "2026-01-29T17:16:21.0000000Z setting up",
+          "2026-01-29T17:16:30.0000000Z running checkout",
+          "2026-01-29T17:16:40.0000000Z running npm ci",
+        ].join("\n"),
+      );
+
+      const steps = [
+        {
+          name: "Set up job",
+          number: 1,
+          status: "completed",
+          conclusion: "success",
+          started_at: "2026-01-29T17:16:20Z",
+          completed_at: "2026-01-29T17:16:25Z",
+        },
+        {
+          name: "Run checkout",
+          number: 2,
+          status: "completed",
+          conclusion: "success",
+          started_at: "2026-01-29T17:16:25Z",
+          completed_at: "2026-01-29T17:16:35Z",
+        },
+        {
+          name: "Run npm ci",
+          number: 3,
+          status: "completed",
+          conclusion: "success",
+          started_at: "2026-01-29T17:16:35Z",
+          completed_at: "2026-01-29T17:16:45Z",
+        },
+      ] as NonNullable<Job["steps"]>;
+
+      const result = correlateLogsByStep(logLines, steps);
+
+      expect(result.byStep.get(1)).toHaveLength(1);
+      expect(result.byStep.get(1)?.[0]?.body).toBe("setting up");
+      expect(result.byStep.get(2)).toHaveLength(1);
+      expect(result.byStep.get(2)?.[0]?.body).toBe("running checkout");
+      expect(result.byStep.get(3)).toHaveLength(1);
+      expect(result.byStep.get(3)?.[0]?.body).toBe("running npm ci");
+      expect(result.unmatched).toHaveLength(0);
+    });
+
+    it("puts lines outside any step window into unmatched", () => {
+      const logLines = parseGitHubLogLines(
+        [
+          "2026-01-29T17:16:10.0000000Z before any step",
+          "2026-01-29T17:16:21.0000000Z inside step",
+          "2026-01-29T17:17:00.0000000Z after all steps",
+        ].join("\n"),
+      );
+
+      const steps = [
+        {
+          name: "Step 1",
+          number: 1,
+          status: "completed",
+          conclusion: "success",
+          started_at: "2026-01-29T17:16:20Z",
+          completed_at: "2026-01-29T17:16:30Z",
+        },
+      ] as NonNullable<Job["steps"]>;
+
+      const result = correlateLogsByStep(logLines, steps);
+
+      expect(result.byStep.get(1)).toHaveLength(1);
+      expect(result.unmatched).toHaveLength(2);
+      expect(result.unmatched[0]?.body).toBe("before any step");
+      expect(result.unmatched[1]?.body).toBe("after all steps");
+    });
+
+    it("includes the 1-second buffer after completed_at", () => {
+      const logLines = parseGitHubLogLines(
+        "2026-01-29T17:16:30.5000000Z within buffer\n2026-01-29T17:16:31.5000000Z outside buffer",
+      );
+
+      const steps = [
+        {
+          name: "Step 1",
+          number: 1,
+          status: "completed",
+          conclusion: "success",
+          started_at: "2026-01-29T17:16:20Z",
+          completed_at: "2026-01-29T17:16:30Z",
+        },
+      ] as NonNullable<Job["steps"]>;
+
+      const result = correlateLogsByStep(logLines, steps);
+
+      expect(result.byStep.get(1)).toHaveLength(1);
+      expect(result.byStep.get(1)?.[0]?.body).toBe("within buffer");
+      expect(result.unmatched).toHaveLength(1);
+    });
+
+    it("skips skipped steps", () => {
+      const logLines = parseGitHubLogLines("2026-01-29T17:16:25.0000000Z a log line");
+
+      const steps = [
+        {
+          name: "Skipped",
+          number: 1,
+          status: "completed",
+          conclusion: "skipped",
+          started_at: "2026-01-29T17:16:20Z",
+          completed_at: "2026-01-29T17:16:30Z",
+        },
+      ] as NonNullable<Job["steps"]>;
+
+      const result = correlateLogsByStep(logLines, steps);
+
+      expect(result.byStep.size).toBe(0);
+      expect(result.unmatched).toHaveLength(1);
+    });
+
+    it("handles empty log lines and empty steps", () => {
+      expect(correlateLogsByStep([], []).unmatched).toHaveLength(0);
+      expect(correlateLogsByStep([], []).byStep.size).toBe(0);
+    });
+  });
+
+  it("emits logs correlated to steps when job has steps and logs", () => {
+    const steps = [
+      {
+        name: "Set up job",
+        number: 1,
+        status: "completed",
+        conclusion: "success",
+        started_at: "2026-01-29T17:16:20Z",
+        completed_at: "2026-01-29T17:16:30Z",
+      },
+      {
+        name: "Run npm ci",
+        number: 2,
+        status: "completed",
+        conclusion: "success",
+        started_at: "2026-01-29T17:16:30Z",
+        completed_at: "2026-01-29T17:16:40Z",
+      },
+    ] as NonNullable<Job["steps"]>;
+
+    const jobLog = [
+      "2026-01-29T17:16:25.0000000Z setup line",
+      "2026-01-29T17:16:35.0000000Z npm line",
+      "2026-01-29T17:16:50.0000000Z orphan line",
+    ].join("\n");
+
+    traceJob(buildJob({ steps }), undefined, jobLog);
+
+    // 2 step logs + 1 unmatched job-level log
+    expect(emit).toHaveBeenCalledTimes(3);
+
+    // Step-correlated logs have step attributes
+    expect(emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "setup line",
+        attributes: { "github.job.step.name": "Set up job", "github.job.step.number": 1 },
+      }),
+    );
+    expect(emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "npm line",
+        attributes: { "github.job.step.name": "Run npm ci", "github.job.step.number": 2 },
+      }),
+    );
+
+    // Unmatched log falls back to job-level attributes
+    expect(emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "orphan line",
+        attributes: { "github.job.id": 10, "github.job.name": "Build" },
+      }),
+    );
   });
 });

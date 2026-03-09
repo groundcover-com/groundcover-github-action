@@ -1,11 +1,13 @@
 import * as core from "@actions/core";
 import type { components } from "@octokit/openapi-types";
-import { type Attributes, SpanStatusCode, trace } from "@opentelemetry/api";
+import { type Attributes, context, SpanStatusCode, trace } from "@opentelemetry/api";
+import { logs } from "@opentelemetry/api-logs";
+import type { ParsedLogLine } from "./job";
 
 type Step = NonNullable<components["schemas"]["job"]["steps"]>[number];
 type CompletedStep = Step & { started_at: string; completed_at: string };
 
-function traceStep(step: Step): void {
+function traceStep(step: Step, logLines?: ParsedLogLine[]): void {
   const tracer = trace.getTracer("otel-cicd-export-action");
 
   if (!(step.completed_at && step.started_at)) {
@@ -26,6 +28,25 @@ function traceStep(step: Step): void {
   tracer.startActiveSpan(step.name, { attributes, startTime }, (span) => {
     const code = step.conclusion === "failure" ? SpanStatusCode.ERROR : SpanStatusCode.OK;
     span.setStatus({ code });
+
+    if (logLines && logLines.length > 0) {
+      const logger = logs.getLogger("otel-cicd-export-action");
+      const activeContext = context.active();
+
+      for (const line of logLines) {
+        logger.emit({
+          timestamp: line.timestamp,
+          body: line.body,
+          severityNumber: line.severityNumber,
+          severityText: line.severityText,
+          context: activeContext,
+          attributes: {
+            "github.job.step.name": step.name,
+            "github.job.step.number": step.number,
+          },
+        });
+      }
+    }
 
     // Some skipped and post jobs return completed_at dates that are older than started_at
     span.end(new Date(Math.max(startTime.getTime(), completedTime.getTime())));
