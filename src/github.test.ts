@@ -64,16 +64,10 @@ describe("github", () => {
   describe("getJobsLogs", () => {
     it("downloads plain text logs for each job", async () => {
       const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
-      const originalFetch = global.fetch;
-      const fetchMock = jest.fn<typeof fetch>();
-      global.fetch = fetchMock;
 
       downloadJobLogsForWorkflowRunFn
-        .mockResolvedValueOnce({ headers: { location: "https://logs.example/1" } })
-        .mockResolvedValueOnce({ headers: { location: "https://logs.example/2" } });
-      fetchMock
-        .mockResolvedValueOnce({ ok: true, text: jest.fn(() => Promise.resolve("job-1 logs")) } as unknown as Response)
-        .mockResolvedValueOnce({ ok: true, text: jest.fn(() => Promise.resolve("job-2 logs")) } as unknown as Response);
+        .mockResolvedValueOnce({ data: "job-1 logs" })
+        .mockResolvedValueOnce({ data: "job-2 logs" });
 
       const result = await getJobsLogs(mockContext, mockOctokit, [100, 200]);
 
@@ -88,40 +82,28 @@ describe("github", () => {
         repo: "test-repo",
         job_id: 200,
       });
-      expect(fetchMock).toHaveBeenCalledWith("https://logs.example/1");
-      expect(fetchMock).toHaveBeenCalledWith("https://logs.example/2");
-
-      global.fetch = originalFetch;
     });
 
-    it("warns and skips when GitHub does not return a download URL", async () => {
+    it("warns and skips when response data is empty", async () => {
       const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
 
-      downloadJobLogsForWorkflowRunFn.mockResolvedValue({ headers: {} });
+      downloadJobLogsForWorkflowRunFn.mockResolvedValue({ data: "" });
 
       const result = await getJobsLogs(mockContext, mockOctokit, [100]);
 
       expect(result).toEqual({});
-      expect(coreMock.warning).toHaveBeenCalledWith("Skipping logs for job 100: Missing log download URL for job 100");
+      expect(coreMock.warning).toHaveBeenCalledWith("Skipping logs for job 100: Empty log content for job 100");
     });
 
-    it("warns and skips when the redirected log download is not successful", async () => {
+    it("warns and skips when response data is undefined", async () => {
       const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
-      const originalFetch = global.fetch;
-      const fetchMock = jest.fn<typeof fetch>();
-      global.fetch = fetchMock;
 
-      downloadJobLogsForWorkflowRunFn.mockResolvedValue({ headers: { location: "https://logs.example/1" } });
-      fetchMock.mockResolvedValueOnce({ ok: false, status: 502, statusText: "Bad Gateway" } as Response);
+      downloadJobLogsForWorkflowRunFn.mockResolvedValue({ data: undefined });
 
       const result = await getJobsLogs(mockContext, mockOctokit, [100]);
 
       expect(result).toEqual({});
-      expect(coreMock.warning).toHaveBeenCalledWith(
-        "Skipping logs for job 100: Failed to download logs for job 100: 502 Bad Gateway",
-      );
-
-      global.fetch = originalFetch;
+      expect(coreMock.warning).toHaveBeenCalledWith("Skipping logs for job 100: Empty log content for job 100");
     });
 
     it("handles non-Error throw values gracefully", async () => {
@@ -137,24 +119,15 @@ describe("github", () => {
 
     it("returns partial results when some jobs fail", async () => {
       const { mockContext, mockOctokit, downloadJobLogsForWorkflowRunFn } = createMocks();
-      const originalFetch = global.fetch;
-      const fetchMock = jest.fn<typeof fetch>();
-      global.fetch = fetchMock;
 
       downloadJobLogsForWorkflowRunFn
-        .mockResolvedValueOnce({ headers: { location: "https://logs.example/1" } })
-        .mockResolvedValueOnce({ headers: {} });
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        text: jest.fn(() => Promise.resolve("job-1 logs")),
-      } as unknown as Response);
+        .mockResolvedValueOnce({ data: "job-1 logs" })
+        .mockResolvedValueOnce({ data: "" });
 
       const result = await getJobsLogs(mockContext, mockOctokit, [100, 200]);
 
       expect(result).toEqual({ 100: "job-1 logs" });
-      expect(coreMock.warning).toHaveBeenCalledWith("Skipping logs for job 200: Missing log download URL for job 200");
-
-      global.fetch = originalFetch;
+      expect(coreMock.warning).toHaveBeenCalledWith("Skipping logs for job 200: Empty log content for job 200");
     });
   });
 

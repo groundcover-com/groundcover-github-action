@@ -100,19 +100,15 @@ async function downloadJobLog(context: Context, octokit: Octokit, jobId: number)
     job_id: jobId,
   });
 
-  const location = response.headers.location;
-  if (!location) {
-    throw new Error(`Missing log download URL for job ${jobId}`);
+  // Octokit auto-follows the 302 redirect, so response.data contains the log
+  // content directly. The OpenAPI spec types the 302 as content: never, but at
+  // runtime data is the plain-text log body from the redirect target.
+  const data = response.data as unknown as string;
+  if (!data) {
+    throw new Error(`Empty log content for job ${jobId}`);
   }
 
-  const downloadResponse = await fetch(location);
-  if (!downloadResponse.ok) {
-    throw new Error(
-      `Failed to download logs for job ${jobId}: ${downloadResponse.status} ${downloadResponse.statusText}`,
-    );
-  }
-
-  return await downloadResponse.text();
+  return data;
 }
 
 export { getWorkflowRun, listJobsForWorkflowRun, getJobsAnnotations, getPRsLabels, getJobsLogs, type Octokit };
