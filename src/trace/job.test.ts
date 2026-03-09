@@ -223,6 +223,27 @@ describe("traceJob", () => {
     nowSpy.mockRestore();
   });
 
+  it("strips UTF-8 BOM from the start of the log so the first line timestamp is parsed", () => {
+    const parsed = parseGitHubLogLines(
+      "\uFEFF2024-01-01T00:00:00.0000000Z first line\n2024-01-01T00:00:01.0000000Z second line",
+    );
+
+    expect(parsed).toEqual([
+      {
+        timestamp: new Date("2024-01-01T00:00:00.0000000Z").getTime(),
+        body: "first line",
+        severityNumber: SeverityNumber.INFO,
+        severityText: "INFO",
+      },
+      {
+        timestamp: new Date("2024-01-01T00:00:01.0000000Z").getTime(),
+        body: "second line",
+        severityNumber: SeverityNumber.INFO,
+        severityText: "INFO",
+      },
+    ]);
+  });
+
   it("emits one OTEL log record per parsed line with active context and job attributes", () => {
     const tracer = trace.getTracer("otel-cicd-export-action");
     let activeSpanContext = context.active();
