@@ -87,6 +87,8 @@ Use these rules when generating workflows or modifying this repository:
 
 ## Usage
 
+Opening or updating a pull request triggers CI, and the `Self Test` workflow exports the completed CI run.
+
 ### Basic - Separate Workflow (Recommended)
 
 Using `workflow_run` is the recommended approach. It runs after your CI completes, so it doesn't add latency to your pipeline and always captures the full run including the final job status.
