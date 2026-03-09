@@ -1,11 +1,15 @@
 import * as core from "@actions/core";
 import { credentials, Metadata } from "@grpc/grpc-js";
 import { type Attributes, type Context, context, ROOT_CONTEXT, trace } from "@opentelemetry/api";
+import { logs } from "@opentelemetry/api-logs";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { W3CTraceContextPropagator } from "@opentelemetry/core";
+import { OTLPLogExporter as GrpcOTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-grpc";
+import { OTLPLogExporter as ProtoOTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto";
 import { OTLPTraceExporter as GrpcOTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc";
 import { OTLPTraceExporter as ProtoOTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { Resource } from "@opentelemetry/resources";
+import { BatchLogRecordProcessor, type LogRecordExporter, LoggerProvider } from "@opentelemetry/sdk-logs";
 import {
   BasicTracerProvider,
   BatchSpanProcessor,
@@ -54,6 +58,45 @@ function extractParentContext(traceparent: string | undefined): Context {
     get: (c: Record<string, string>, key: string) => c[key],
     keys: (c: Record<string, string>) => Object.keys(c),
   });
+}
+
+function deriveLogsEndpoint(traceEndpoint: string): string {
+  if (!isHttpEndpoint(traceEndpoint)) {
+    return traceEndpoint;
+  }
+  return traceEndpoint.replace(/\/v1\/traces\/?$/, "/v1/logs");
+}
+
+function createLoggerProvider(endpoint: string, headers: string, attributes: Attributes): LoggerProvider {
+  let exporter: LogRecordExporter | undefined;
+
+  if (!OTEL_CONSOLE_ONLY) {
+    const logsEndpoint = deriveLogsEndpoint(endpoint);
+    if (isHttpEndpoint(logsEndpoint)) {
+      exporter = new ProtoOTLPLogExporter({
+        url: logsEndpoint,
+        headers: stringToRecord(headers),
+      });
+    } else {
+      exporter = new GrpcOTLPLogExporter({
+        url: logsEndpoint,
+        credentials: credentials.createSsl(),
+        metadata: Metadata.fromHttp2Headers(stringToRecord(headers)),
+      });
+    }
+  }
+
+  // Cast through unknown to bridge the version mismatch between @opentelemetry/resources 1.x
+  // (trace SDK) and 2.x (sdk-logs). The runtime shape is identical.
+  const resource = Resource.default().merge(new Resource(attributes));
+  const config: Record<string, unknown> = { resource };
+  if (exporter) {
+    config["processors"] = [new BatchLogRecordProcessor(exporter)];
+  }
+  const provider = new LoggerProvider(config as ConstructorParameters<typeof LoggerProvider>[0]);
+
+  logs.setGlobalLoggerProvider(provider);
+  return provider;
 }
 
 function createTracerProvider(endpoint: string, headers: string, attributes: Attributes): BasicTracerProvider {
@@ -136,4 +179,4 @@ class DeterministicIdGenerator implements IdGenerator {
   }
 }
 
-export { stringToRecord, createTracerProvider, extractParentContext };
+export { stringToRecord, createTracerProvider, createLoggerProvider, deriveLogsEndpoint, extractParentContext };

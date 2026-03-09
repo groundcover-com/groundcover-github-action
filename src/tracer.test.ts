@@ -141,6 +141,185 @@ describe("tracer", () => {
     });
   });
 
+  it("derives logs endpoint from HTTP trace endpoint", async () => {
+    const { deriveLogsEndpoint } = await import("./tracer.js");
+
+    expect(deriveLogsEndpoint("https://otel.example/v1/traces")).toBe("https://otel.example/v1/logs");
+    expect(deriveLogsEndpoint("https://otel.example/v1/traces/")).toBe("https://otel.example/v1/logs");
+  });
+
+  it("keeps gRPC endpoint unchanged when deriving logs endpoint", async () => {
+    const { deriveLogsEndpoint } = await import("./tracer.js");
+
+    expect(deriveLogsEndpoint("localhost:4317")).toBe("localhost:4317");
+  });
+
+  it("uses OTLP HTTP log exporter for HTTP endpoints", async () => {
+    const warning = jest.fn<(message: string) => void>();
+    const fakeExporter = {
+      export: jest.fn(),
+      shutdown: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      forceFlush: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    };
+    const fakeBatchProcessor = { process: jest.fn() };
+    const fakeLoggerProvider = {
+      forceFlush: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      shutdown: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    };
+
+    const protoConstructor = jest.fn(() => fakeExporter);
+    const grpcConstructor = jest.fn(() => fakeExporter);
+    const batchLogRecordProcessorConstructor = jest.fn(() => fakeBatchProcessor);
+    const loggerProviderConstructor = jest.fn(() => fakeLoggerProvider);
+    const setGlobalLoggerProvider = jest.fn();
+
+    process.env["OTEL_CONSOLE_ONLY"] = "false";
+
+    jest.unstable_mockModule("@actions/core", () => ({ warning }));
+    jest.unstable_mockModule("@opentelemetry/exporter-logs-otlp-proto", () => ({
+      OTLPLogExporter: protoConstructor,
+    }));
+    jest.unstable_mockModule("@opentelemetry/exporter-logs-otlp-grpc", () => ({
+      OTLPLogExporter: grpcConstructor,
+    }));
+    jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
+      logs: { setGlobalLoggerProvider },
+      SeverityNumber: {},
+    }));
+    jest.unstable_mockModule("@opentelemetry/sdk-logs", () => ({
+      LoggerProvider: loggerProviderConstructor,
+      BatchLogRecordProcessor: batchLogRecordProcessorConstructor,
+    }));
+    jest.unstable_mockModule("@grpc/grpc-js", () => ({
+      credentials: { createSsl: jest.fn(() => "ssl") },
+      Metadata: { fromHttp2Headers: jest.fn(() => "metadata") },
+    }));
+
+    const { createLoggerProvider } = await import("./tracer.js");
+    const provider = createLoggerProvider("https://otel.example/v1/traces", "a=1,b=2", {
+      "service.name": "svc-http",
+    });
+
+    expect(protoConstructor).toHaveBeenCalledWith({
+      url: "https://otel.example/v1/logs",
+      headers: { a: "1", b: "2" },
+    });
+    expect(grpcConstructor).not.toHaveBeenCalled();
+    expect(batchLogRecordProcessorConstructor).toHaveBeenCalledWith(fakeExporter);
+    expect(loggerProviderConstructor).toHaveBeenCalledWith(
+      expect.objectContaining({ processors: [fakeBatchProcessor] }),
+    );
+    expect(setGlobalLoggerProvider).toHaveBeenCalledWith(fakeLoggerProvider);
+    expect(provider).toBe(fakeLoggerProvider);
+  });
+
+  it("uses OTLP gRPC log exporter for non HTTP endpoints", async () => {
+    const warning = jest.fn<(message: string) => void>();
+    const fakeExporter = {
+      export: jest.fn(),
+      shutdown: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      forceFlush: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    };
+    const fakeBatchProcessor = { process: jest.fn() };
+    const fakeLoggerProvider = {
+      forceFlush: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      shutdown: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    };
+
+    const protoConstructor = jest.fn(() => fakeExporter);
+    const grpcConstructor = jest.fn(() => fakeExporter);
+    const createSsl = jest.fn(() => "ssl");
+    const fromHttp2Headers = jest.fn((headers: Record<string, string>) => ({ headers }));
+    const batchLogRecordProcessorConstructor = jest.fn(() => fakeBatchProcessor);
+    const loggerProviderConstructor = jest.fn(() => fakeLoggerProvider);
+    const setGlobalLoggerProvider = jest.fn();
+
+    process.env["OTEL_CONSOLE_ONLY"] = "false";
+
+    jest.unstable_mockModule("@actions/core", () => ({ warning }));
+    jest.unstable_mockModule("@opentelemetry/exporter-logs-otlp-proto", () => ({
+      OTLPLogExporter: protoConstructor,
+    }));
+    jest.unstable_mockModule("@opentelemetry/exporter-logs-otlp-grpc", () => ({
+      OTLPLogExporter: grpcConstructor,
+    }));
+    jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
+      logs: { setGlobalLoggerProvider },
+      SeverityNumber: {},
+    }));
+    jest.unstable_mockModule("@opentelemetry/sdk-logs", () => ({
+      LoggerProvider: loggerProviderConstructor,
+      BatchLogRecordProcessor: batchLogRecordProcessorConstructor,
+    }));
+    jest.unstable_mockModule("@grpc/grpc-js", () => ({
+      credentials: { createSsl },
+      Metadata: { fromHttp2Headers },
+    }));
+
+    const { createLoggerProvider } = await import("./tracer.js");
+    createLoggerProvider("localhost:4317", "authorization=Bearer token", {
+      "service.name": "svc-grpc",
+    });
+
+    expect(protoConstructor).not.toHaveBeenCalled();
+    expect(createSsl).toHaveBeenCalledTimes(1);
+    expect(fromHttp2Headers).toHaveBeenCalledWith({ authorization: "Bearer token" });
+    expect(grpcConstructor).toHaveBeenCalledWith({
+      url: "localhost:4317",
+      credentials: "ssl",
+      metadata: { headers: { authorization: "Bearer token" } },
+    });
+    expect(batchLogRecordProcessorConstructor).toHaveBeenCalledWith(fakeExporter);
+    expect(loggerProviderConstructor).toHaveBeenCalledWith(
+      expect.objectContaining({ processors: [fakeBatchProcessor] }),
+    );
+    expect(setGlobalLoggerProvider).toHaveBeenCalledWith(fakeLoggerProvider);
+  });
+
+  it("creates logger provider without exporter when OTEL_CONSOLE_ONLY is enabled", async () => {
+    const warning = jest.fn<(message: string) => void>();
+    const protoConstructor = jest.fn();
+    const grpcConstructor = jest.fn();
+    const batchLogRecordProcessorConstructor = jest.fn();
+    const fakeLoggerProvider = {
+      forceFlush: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      shutdown: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    };
+    const loggerProviderConstructor = jest.fn(() => fakeLoggerProvider);
+    const setGlobalLoggerProvider = jest.fn();
+
+    process.env["OTEL_CONSOLE_ONLY"] = "true";
+
+    jest.unstable_mockModule("@actions/core", () => ({ warning }));
+    jest.unstable_mockModule("@opentelemetry/exporter-logs-otlp-proto", () => ({
+      OTLPLogExporter: protoConstructor,
+    }));
+    jest.unstable_mockModule("@opentelemetry/exporter-logs-otlp-grpc", () => ({
+      OTLPLogExporter: grpcConstructor,
+    }));
+    jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
+      logs: { setGlobalLoggerProvider },
+      SeverityNumber: {},
+    }));
+    jest.unstable_mockModule("@opentelemetry/sdk-logs", () => ({
+      LoggerProvider: loggerProviderConstructor,
+      BatchLogRecordProcessor: batchLogRecordProcessorConstructor,
+    }));
+
+    const { createLoggerProvider } = await import("./tracer.js");
+    createLoggerProvider("https://otel.example/v1/traces", "a=1", {
+      "service.name": "svc-console-only",
+    });
+
+    expect(protoConstructor).not.toHaveBeenCalled();
+    expect(grpcConstructor).not.toHaveBeenCalled();
+    expect(batchLogRecordProcessorConstructor).not.toHaveBeenCalled();
+    expect(loggerProviderConstructor).toHaveBeenCalledWith(
+      expect.not.objectContaining({ processors: expect.anything() }),
+    );
+    expect(setGlobalLoggerProvider).toHaveBeenCalledWith(fakeLoggerProvider);
+  });
+
   it("extracts a valid traceparent into a span context", async () => {
     const warning = jest.fn<(message: string) => void>();
     jest.unstable_mockModule("@actions/core", () => ({ warning }));

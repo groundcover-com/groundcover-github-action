@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from "@jest/globals";
-import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { context, SpanStatusCode, trace } from "@opentelemetry/api";
 import {
   ATTR_CICD_PIPELINE_TASK_RUN_RESULT,
   ATTR_CICD_PIPELINE_TASK_TYPE,
@@ -20,9 +20,21 @@ import type { components } from "@octokit/openapi-types";
 type Job = components["schemas"]["job"];
 
 const info = jest.fn<(message: string | number) => void>();
-jest.unstable_mockModule("@actions/core", () => ({ info }));
+const emit = jest.fn<(record: Record<string, unknown>) => void>();
+const getLogger = jest.fn(() => ({ emit }));
+const SeverityNumber = {
+  INFO: 9,
+  WARN: 13,
+  ERROR: 17,
+};
 
-const { traceJob } = await import("./job.js");
+jest.unstable_mockModule("@actions/core", () => ({ info }));
+jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
+  logs: { getLogger },
+  SeverityNumber,
+}));
+
+const { traceJob, parseGitHubLogLines, emitJobLogs } = await import("./job.js");
 
 function hrTimeToMs(value: [number, number]): number {
   return value[0] * 1000 + value[1] / 1_000_000;
@@ -70,6 +82,8 @@ describe("traceJob", () => {
   afterEach(() => {
     exporter.reset();
     info.mockClear();
+    emit.mockClear();
+    getLogger.mockClear();
   });
 
   afterAll(() => {
@@ -148,20 +162,111 @@ describe("traceJob", () => {
     expect(span?.attributes["github.job.annotations.0.message"]).toBe("Potential issue");
   });
 
-  it("includes exported job logs", () => {
-    traceJob(buildJob(), undefined, "line 1\nline 2");
+  it("parses GitHub log lines with timestamps and default info severity", () => {
+    const parsed = parseGitHubLogLines("2024-01-01T00:00:00.0000000Z Hello world");
 
-    const span = exporter.getFinishedSpans()[0];
-    expect(span?.attributes["github.job.logs"]).toBe("line 1\nline 2");
+    expect(parsed).toEqual([
+      {
+        timestamp: new Date("2024-01-01T00:00:00.0000000Z").getTime(),
+        body: "Hello world",
+        severityNumber: SeverityNumber.INFO,
+        severityText: "INFO",
+      },
+    ]);
   });
 
-  it("truncates oversized job logs", () => {
-    traceJob(buildJob(), undefined, `${"a".repeat(33000)}tail`);
+  it("detects error and warning prefixes and strips them from log bodies", () => {
+    const parsed = parseGitHubLogLines(
+      ["2024-01-01T00:00:00.0000000Z ##[error]Build failed", "2024-01-01T00:00:01.0000000Z ##[warning]Slow test"].join(
+        "\n",
+      ),
+    );
 
-    const span = exporter.getFinishedSpans()[0];
-    const logs = span?.attributes["github.job.logs"];
-    expect(typeof logs).toBe("string");
-    expect(logs).toContain("...[truncated]");
+    expect(parsed).toEqual([
+      {
+        timestamp: new Date("2024-01-01T00:00:00.0000000Z").getTime(),
+        body: "Build failed",
+        severityNumber: SeverityNumber.ERROR,
+        severityText: "ERROR",
+      },
+      {
+        timestamp: new Date("2024-01-01T00:00:01.0000000Z").getTime(),
+        body: "Slow test",
+        severityNumber: SeverityNumber.WARN,
+        severityText: "WARN",
+      },
+    ]);
+  });
+
+  it("uses Date.now for lines without timestamps, skips empty lines, and handles multiline input", () => {
+    const nowSpy = jest.spyOn(Date, "now").mockReturnValue(1_706_000_000_000);
+
+    const parsed = parseGitHubLogLines(
+      ["", "plain line", "", "2024-01-01T00:00:00.0000000Z another line", ""].join("\n"),
+    );
+
+    expect(parsed).toEqual([
+      {
+        timestamp: 1_706_000_000_000,
+        body: "plain line",
+        severityNumber: SeverityNumber.INFO,
+        severityText: "INFO",
+      },
+      {
+        timestamp: new Date("2024-01-01T00:00:00.0000000Z").getTime(),
+        body: "another line",
+        severityNumber: SeverityNumber.INFO,
+        severityText: "INFO",
+      },
+    ]);
+
+    nowSpy.mockRestore();
+  });
+
+  it("emits one OTEL log record per parsed line with active context and job attributes", () => {
+    const tracer = trace.getTracer("otel-cicd-export-action");
+    let activeSpanContext = context.active();
+
+    tracer.startActiveSpan("job-log-test", (span) => {
+      activeSpanContext = context.active();
+      emitJobLogs(
+        [
+          "2024-01-01T00:00:00.0000000Z hello",
+          "2024-01-01T00:00:01.0000000Z ##[warning]careful",
+          "2024-01-01T00:00:02.0000000Z ##[error]boom",
+        ].join("\n"),
+        10,
+        "Build",
+      );
+      span.end();
+    });
+
+    expect(getLogger).toHaveBeenCalledWith("otel-cicd-export-action");
+    expect(emit).toHaveBeenCalledTimes(3);
+    expect(emit).toHaveBeenNthCalledWith(1, {
+      timestamp: new Date("2024-01-01T00:00:00.0000000Z").getTime(),
+      body: "hello",
+      severityNumber: SeverityNumber.INFO,
+      severityText: "INFO",
+      context: activeSpanContext,
+      attributes: { "github.job.id": 10, "github.job.name": "Build" },
+    });
+    expect(emit).toHaveBeenNthCalledWith(2, {
+      timestamp: new Date("2024-01-01T00:00:01.0000000Z").getTime(),
+      body: "careful",
+      severityNumber: SeverityNumber.WARN,
+      severityText: "WARN",
+      context: activeSpanContext,
+      attributes: { "github.job.id": 10, "github.job.name": "Build" },
+    });
+    expect(emit).toHaveBeenNthCalledWith(3, {
+      timestamp: new Date("2024-01-01T00:00:02.0000000Z").getTime(),
+      body: "boom",
+      severityNumber: SeverityNumber.ERROR,
+      severityText: "ERROR",
+      context: activeSpanContext,
+      attributes: { "github.job.id": 10, "github.job.name": "Build" },
+    });
   });
 
   it("maps task run results and worker attributes", () => {

@@ -22,6 +22,12 @@ const createTracerProvider = jest.fn(() => ({
   forceFlush: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
   shutdown: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
 }));
+const loggerForceFlush = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+const loggerShutdown = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+const createLoggerProvider = jest.fn(() => ({
+  forceFlush: loggerForceFlush,
+  shutdown: loggerShutdown,
+}));
 const extractParentContext = jest.fn<() => undefined>(() => undefined);
 const stringToRecord = jest.fn<() => Record<string, string>>(() => ({}));
 const traceWorkflowRun = jest.fn<() => string>(() => "trace-id");
@@ -38,6 +44,7 @@ jest.unstable_mockModule("./github.js", () => ({
 }));
 jest.unstable_mockModule("./tracer.js", () => ({
   createTracerProvider,
+  createLoggerProvider,
   extractParentContext,
   stringToRecord,
 }));
@@ -60,6 +67,9 @@ describe("run branch coverage", () => {
     getJobsLogs.mockReset();
     getPRsLabels.mockReset();
     createTracerProvider.mockClear();
+    createLoggerProvider.mockClear();
+    loggerForceFlush.mockClear();
+    loggerShutdown.mockClear();
     extractParentContext.mockClear();
     stringToRecord.mockClear();
     traceWorkflowRun.mockClear();
@@ -98,6 +108,73 @@ describe("run branch coverage", () => {
     expect(traceWorkflowRun).toHaveBeenCalledWith(expect.any(Object), [{ id: 10 }], {}, {}, undefined, undefined, {
       10: "job logs",
     });
+    expect(createLoggerProvider).toHaveBeenCalledWith(
+      "https://localhost/v1/traces",
+      "Authorization=Bearer gc-secret",
+      expect.objectContaining({
+        "github.repository": "o/r",
+        source: "github-actions",
+      }),
+    );
+    expect(loggerForceFlush).toHaveBeenCalledTimes(1);
+    expect(loggerShutdown).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not create a logger provider when exportLogs is enabled but no job logs exist", async () => {
+    core.getInput.mockImplementation((name: string) => {
+      if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      if (name === "apiKey") return "gc-secret";
+      if (name === "exportLogs") return "true";
+      return "";
+    });
+    getWorkflowRun.mockResolvedValue({
+      id: 1,
+      workflow_id: 2,
+      run_attempt: 1,
+      name: "CI",
+      head_sha: "abc",
+      repository: { full_name: "o/r" },
+      pull_requests: [],
+      updated_at: "2024-01-01T00:00:00Z",
+    });
+    listJobsForWorkflowRun.mockResolvedValue([{ id: 10 }]);
+    getJobsAnnotations.mockResolvedValue({});
+    getJobsLogs.mockResolvedValue({});
+    getPRsLabels.mockResolvedValue({});
+
+    await run();
+
+    expect(createLoggerProvider).not.toHaveBeenCalled();
+    expect(loggerForceFlush).not.toHaveBeenCalled();
+    expect(loggerShutdown).not.toHaveBeenCalled();
+  });
+
+  it("flushes and shuts down logger provider during provider lifecycle", async () => {
+    core.getInput.mockImplementation((name: string) => {
+      if (name === "otlpEndpoint") return "https://localhost/v1/traces";
+      if (name === "apiKey") return "gc-secret";
+      if (name === "exportLogs") return "true";
+      return "";
+    });
+    getWorkflowRun.mockResolvedValue({
+      id: 1,
+      workflow_id: 2,
+      run_attempt: 1,
+      name: "CI",
+      head_sha: "abc",
+      repository: { full_name: "o/r" },
+      pull_requests: [],
+      updated_at: "2024-01-01T00:00:00Z",
+    });
+    listJobsForWorkflowRun.mockResolvedValue([{ id: 10 }]);
+    getJobsAnnotations.mockResolvedValue({});
+    getJobsLogs.mockResolvedValue({ 10: "job logs" });
+    getPRsLabels.mockResolvedValue({});
+
+    await run();
+
+    expect(loggerForceFlush).toHaveBeenCalledTimes(1);
+    expect(loggerShutdown).toHaveBeenCalledTimes(1);
   });
 
   it("logs and continues when job log export fails", async () => {

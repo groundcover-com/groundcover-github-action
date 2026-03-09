@@ -6,7 +6,7 @@ import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic
 import { ATTR_SERVICE_INSTANCE_ID } from "@opentelemetry/semantic-conventions/incubating";
 import { findTestResultsSummary } from "./test-results";
 import { traceWorkflowRun } from "./trace/workflow";
-import { createTracerProvider, extractParentContext, stringToRecord } from "./tracer";
+import { createLoggerProvider, createTracerProvider, extractParentContext, stringToRecord } from "./tracer";
 import { getJobsAnnotations, getJobsLogs, getPRsLabels, getWorkflowRun, listJobsForWorkflowRun } from "./github";
 
 function isOctokitError(err: unknown): err is RequestError {
@@ -124,6 +124,9 @@ async function run(): Promise<void> {
     };
     const provider = createTracerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes);
 
+    const hasLogs = exportLogs && Object.keys(jobLogs).length > 0;
+    const loggerProvider = hasLogs ? createLoggerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes) : undefined;
+
     const parentContext = extractParentContext(traceparent);
 
     core.info(`Trace workflow run for ${runId} and export to ${otlpEndpoint}`);
@@ -132,10 +135,16 @@ async function run(): Promise<void> {
     core.setOutput("traceId", traceId);
     core.info(`traceId: ${traceId}`);
 
-    core.info("Flush and shutdown tracer provider");
+    core.info("Flush and shutdown providers");
     await provider.forceFlush();
+    if (loggerProvider) {
+      await loggerProvider.forceFlush();
+    }
     await provider.shutdown();
-    core.info("Provider shutdown");
+    if (loggerProvider) {
+      await loggerProvider.shutdown();
+    }
+    core.info("Providers shutdown");
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : JSON.stringify(error);
     core.setFailed(message);
