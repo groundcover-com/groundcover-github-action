@@ -203,7 +203,7 @@ describe("run branch coverage", () => {
       expect.objectContaining({
         "service.name": "svc-from-env",
         "service.instance.id": "o/r/22/11/1",
-        "service.namespace": "o/r",
+        "github.repository": "o/r",
         "service.version": "abc",
         source: "github-actions",
         workload: "22",

@@ -19,6 +19,7 @@ jobs:
         with:
           otlpEndpoint: ${{ secrets.GC_OTLP_ENDPOINT }}/v1/traces
           apiKey: ${{ secrets.GC_API_KEY }}
+          exportLogs: "true"
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           runId: ${{ github.event.workflow_run.id }}
         env:

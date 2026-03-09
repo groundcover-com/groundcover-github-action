@@ -3,7 +3,7 @@ import { context, getOctokit } from "@actions/github";
 import type { RequestError } from "@octokit/request-error";
 import type { Attributes } from "@opentelemetry/api";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
-import { ATTR_SERVICE_INSTANCE_ID, ATTR_SERVICE_NAMESPACE } from "@opentelemetry/semantic-conventions/incubating";
+import { ATTR_SERVICE_INSTANCE_ID } from "@opentelemetry/semantic-conventions/incubating";
 import { findTestResultsSummary } from "./test-results";
 import { traceWorkflowRun } from "./trace/workflow";
 import { createTracerProvider, extractParentContext, stringToRecord } from "./tracer";
@@ -115,8 +115,8 @@ async function run(): Promise<void> {
         `${workflowRun.id}`,
         `${workflowRun.run_attempt ?? 1}`,
       ].join("/"),
-      [ATTR_SERVICE_NAMESPACE]: workflowRun.repository.full_name,
       [ATTR_SERVICE_VERSION]: workflowRun.head_sha,
+      "github.repository": workflowRun.repository.full_name,
       source: "github-actions",
       workload: workload || workflowRun.name || `${workflowRun.workflow_id}`,
       ...(env ? { env } : {}),
