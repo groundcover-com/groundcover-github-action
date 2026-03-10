@@ -125,11 +125,7 @@ async function run(): Promise<void> {
     const provider = createTracerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes);
 
     const hasLogs = exportLogs && Object.keys(jobLogs).length > 0;
-    core.info(`Export logs: ${exportLogs}, job logs fetched: ${Object.keys(jobLogs).length}, hasLogs: ${hasLogs}`);
     const loggerProvider = hasLogs ? createLoggerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes) : undefined;
-    if (loggerProvider) {
-      core.info("Logger provider created");
-    }
 
     const parentContext = extractParentContext(traceparent);
 
