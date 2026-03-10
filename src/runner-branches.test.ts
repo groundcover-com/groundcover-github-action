@@ -293,7 +293,7 @@ describe("run branch coverage", () => {
     expect(core.setFailed).not.toHaveBeenCalled();
   });
 
-  it("derives Authorization header from apiKey input", async () => {
+  it("derives apikey header from apiKey input", async () => {
     core.getInput.mockImplementation((name: string) => {
       if (name === "otlpEndpoint") return "https://localhost/v1/traces";
       if (name === "apiKey") return "gc-secret";
@@ -568,7 +568,7 @@ describe("resolveOtlpHeaders", () => {
     expect(resolveOtlpHeaders("authorization=custom", "gc-secret")).toBe("authorization=custom");
   });
 
-  it("builds bearer authorization from apiKey", () => {
+  it("builds apikey header from apiKey", () => {
     expect(resolveOtlpHeaders("", "gc-secret")).toBe("apikey=gc-secret");
   });
 });

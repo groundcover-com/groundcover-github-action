@@ -52,7 +52,7 @@ Minimal groundcover setup:
 - uses: groundcover-com/groundcover-github-action@v2
   with:
     otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
-    otlpHeaders: "apikey=${{ secrets.GROUNDCOVER_INGESTION_KEY }}"
+    apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
 ```
 
 Required permissions:
