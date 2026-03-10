@@ -25,7 +25,7 @@ jobs:
     permissions:
       actions: read
     steps:
-      - uses: groundcover-com/groundcover-github-action@v1
+      - uses: groundcover-com/groundcover-github-action@v2
         with:
           otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
           otlpHeaders: "apikey=${{ secrets.GROUNDCOVER_INGESTION_KEY }}"
@@ -49,7 +49,7 @@ Use the Quick Start example above, then configure these two secrets in your repo
 Minimal groundcover setup:
 
 ```yaml
-- uses: groundcover-com/groundcover-github-action@v1
+- uses: groundcover-com/groundcover-github-action@v2
   with:
     otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
     otlpHeaders: "apikey=${{ secrets.GROUNDCOVER_INGESTION_KEY }}"
@@ -107,7 +107,7 @@ jobs:
     permissions:
       actions: read
     steps:
-      - uses: groundcover-com/groundcover-github-action@v1
+      - uses: groundcover-com/groundcover-github-action@v2
         with:
           otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
           otlpHeaders: ${{ secrets.OTLP_HEADERS }}
@@ -141,7 +141,7 @@ jobs:
     permissions:
       actions: read
     steps:
-      - uses: groundcover-com/groundcover-github-action@v1
+      - uses: groundcover-com/groundcover-github-action@v2
         with:
           otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
           otlpHeaders: ${{ secrets.OTLP_HEADERS }}
@@ -191,7 +191,7 @@ jobs:
     permissions:
       actions: read
     steps:
-      - uses: groundcover-com/groundcover-github-action@v1
+      - uses: groundcover-com/groundcover-github-action@v2
         with:
           otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
           otlpHeaders: ${{ secrets.OTLP_HEADERS }}
@@ -201,7 +201,7 @@ jobs:
 ### groundcover
 
 ```yaml
-- uses: groundcover-com/groundcover-github-action@v1
+- uses: groundcover-com/groundcover-github-action@v2
   with:
     otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
     otlpHeaders: "apikey=${{ secrets.GROUNDCOVER_INGESTION_KEY }}"
@@ -274,7 +274,7 @@ permissions:
 **Option 2:** Use a Personal Access Token with `repo` scope:
 
 ```yaml
-- uses: groundcover-com/groundcover-github-action@v1
+- uses: groundcover-com/groundcover-github-action@v2
   with:
     otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
     otlpHeaders: ${{ secrets.OTLP_HEADERS }}
