@@ -18,10 +18,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./
         with:
-          otlpEndpoint: ${{ secrets.GC_OTLP_ENDPOINT }}/v1/traces
+          groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
           apiKey: ${{ secrets.GC_API_KEY }}
           exportLogs: "true"
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           runId: ${{ github.event.workflow_run.id }}
         env:
-          OTEL_CONSOLE_ONLY: ${{ secrets.GC_OTLP_ENDPOINT == '' && 'true' || 'false' }}
+          OTEL_CONSOLE_ONLY: ${{ secrets.GC_ENDPOINT == '' && 'true' || 'false' }}

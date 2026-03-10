@@ -1,6 +1,6 @@
 # groundcover OTEL CI/CD Export Action
 
-This repository contains a GitHub Action that exports GitHub Actions workflow runs as OpenTelemetry traces.
+This repository contains a GitHub Action that exports GitHub Actions workflow runs as OpenTelemetry traces to groundcover.
 
 ## Canonical files
 
@@ -8,15 +8,14 @@ This repository contains a GitHub Action that exports GitHub Actions workflow ru
 - `README.md`: usage, permissions, examples, and operational guidance
 - `CONTRIBUTING.md`: contributor workflow and verification requirements
 
-## Groundcover usage rules
+## groundcover usage rules
 
-- Use a workspace-specific OTLP endpoint provided by groundcover.
+- Use a workspace-specific OTLP endpoint provided by groundcover via `groundcoverEndpoint`.
 - Do not hardcode a specific OTLP endpoint URL.
-- Pass the endpoint through `otlpEndpoint`.
-- Authenticate with a `Third Party` ingestion key using `otlpHeaders: "apikey=..."`.
+- Do not include `/v1/traces` in `groundcoverEndpoint` — the exporter appends it automatically.
+- Pass the groundcover ingestion key via `apiKey`.
 - See `https://docs.groundcover.com/integrations/data-sources/opentelemetry/sending-from-an-opentelemetry-collector` for endpoint setup.
 - See `https://docs.groundcover.com/use-groundcover/remote-access-and-apis/ingestion-keys` for ingestion key creation.
-- Do not use `Authorization: Bearer ...` for OTLP ingest. That header format is for groundcover REST API usage.
 
 ## Supported behavior
 

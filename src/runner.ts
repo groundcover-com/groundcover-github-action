@@ -84,7 +84,7 @@ async function fetchGithub(token: string, runId: number, exportLogs: boolean): P
 
 async function run(): Promise<void> {
   try {
-    const otlpEndpoint = core.getInput("otlpEndpoint");
+    const otlpEndpoint = core.getInput("groundcoverEndpoint");
     const otlpHeaders = core.getInput("otlpHeaders");
     const apiKey = core.getInput("apiKey");
     const resolvedOtlpHeaders = resolveOtlpHeaders(otlpHeaders, apiKey);
