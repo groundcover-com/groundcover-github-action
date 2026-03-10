@@ -38,7 +38,7 @@ interface ParsedLogLine {
 function parseGitHubLogLines(rawLog: string): ParsedLogLine[] {
   // GitHub log downloads may start with a UTF-8 BOM that prevents the
   // timestamp regex from matching the first line.
-  const lines = rawLog.replace(/^\uFEFF/, "").split("\n");
+  const lines = rawLog.replace(/^\uFEFF/, "").split(/\r?\n/);
   const result: ParsedLogLine[] = [];
 
   for (const line of lines) {

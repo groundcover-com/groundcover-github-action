@@ -244,6 +244,27 @@ describe("traceJob", () => {
     ]);
   });
 
+  it("handles Windows-style \\r\\n line endings", () => {
+    const parsed = parseGitHubLogLines(
+      "2024-01-01T00:00:00.0000000Z   git switch -\r\n2024-01-01T00:00:01.0000000Z done\r\n",
+    );
+
+    expect(parsed).toEqual([
+      {
+        timestamp: new Date("2024-01-01T00:00:00.0000000Z").getTime(),
+        body: "  git switch -",
+        severityNumber: SeverityNumber.INFO,
+        severityText: "INFO",
+      },
+      {
+        timestamp: new Date("2024-01-01T00:00:01.0000000Z").getTime(),
+        body: "done",
+        severityNumber: SeverityNumber.INFO,
+        severityText: "INFO",
+      },
+    ]);
+  });
+
   it("emits a single merged OTEL log record with highest severity and joined body", () => {
     const tracer = trace.getTracer("otel-cicd-export-action");
     let activeSpanContext = context.active();
