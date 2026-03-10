@@ -140,11 +140,11 @@ describe("traceWorkflowRun", () => {
     expect(rootSpan?.attributes[ATTR_ERROR_TYPE]).toBe("failure");
   });
 
-  it("sets OK status for successful workflows", () => {
+  it("leaves Unset status for successful workflows", () => {
     traceWorkflowRun(makeWorkflowRun({ conclusion: "success" }), [makeJob()], {}, {});
 
     const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
-    expect(rootSpan?.status.code).toBe(SpanStatusCode.OK);
+    expect(rootSpan?.status.code).toBe(SpanStatusCode.UNSET);
   });
 
   it("does not set error.type for successful workflows", () => {
@@ -169,6 +169,22 @@ describe("traceWorkflowRun", () => {
 
     const queuedSpan = exporter.getFinishedSpans().find((s) => s.name === "Queued");
     expect(queuedSpan).toBeDefined();
+  });
+
+  it("uses earliest job started_at for Queued span end time when jobs are out of order", () => {
+    const jobs = [
+      makeJob({ id: 1, name: "late", started_at: "2024-01-01T00:01:00Z" }),
+      makeJob({ id: 2, name: "early", started_at: "2024-01-01T00:00:10Z" }),
+    ];
+
+    traceWorkflowRun(makeWorkflowRun({ run_started_at: "2024-01-01T00:00:00Z" }), jobs, {}, {});
+
+    const queuedSpan = exporter.getFinishedSpans().find((s) => s.name === "Queued");
+    expect(queuedSpan).toBeDefined();
+    if (!queuedSpan) return;
+
+    const endMs = queuedSpan.endTime[0] * 1000 + queuedSpan.endTime[1] / 1_000_000;
+    expect(endMs).toBe(new Date("2024-01-01T00:00:10Z").getTime());
   });
 
   it("processes all jobs as child spans", () => {

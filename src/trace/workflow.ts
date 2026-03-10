@@ -63,18 +63,19 @@ function traceWorkflowRun(
   return tracer.startActiveSpan(spanName, spanOptions, activeContext, (rootSpan) => {
     const isFailure =
       pipelineResult === CICD_PIPELINE_RESULT_VALUE_FAILURE || pipelineResult === CICD_PIPELINE_RESULT_VALUE_ERROR;
-    const code = isFailure ? SpanStatusCode.ERROR : SpanStatusCode.OK;
-    rootSpan.setStatus({ code });
-
     if (isFailure) {
+      rootSpan.setStatus({ code: SpanStatusCode.ERROR });
       rootSpan.setAttribute(ATTR_ERROR_TYPE, workflowRun.conclusion ?? workflowRun.status ?? "unknown");
     }
 
-    const firstJob = jobs[0];
-    if (firstJob) {
-      // "Queued" span represents the time between the workflow started and the first job pickup
+    if (jobs.length > 0) {
+      // "Queued" span represents the time between the workflow started and the earliest job pickup
+      const earliestStart = jobs.reduce((min, j) => {
+        const t = new Date(j.started_at).getTime();
+        return t < min ? t : min;
+      }, Infinity);
       const queuedSpan = tracer.startSpan("Queued", { startTime }, context.active());
-      queuedSpan.end(new Date(firstJob.started_at));
+      queuedSpan.end(new Date(earliestStart));
     }
 
     for (const job of jobs) {

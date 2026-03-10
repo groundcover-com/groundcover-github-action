@@ -129,11 +129,11 @@ describe("traceStep", () => {
   });
 
   it("sets cicd.pipeline.task.* semconv attributes on step spans", () => {
-    traceStep(buildStep({ name: "Run tests", number: 3, conclusion: "success" }));
+    traceStep(buildStep({ name: "Run tests", number: 3, conclusion: "success" }), undefined, 10);
 
     const span = exporter.getFinishedSpans()[0];
     expect(span?.attributes[ATTR_CICD_PIPELINE_TASK_NAME]).toBe("Run tests");
-    expect(span?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_ID]).toBe(3);
+    expect(span?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_ID]).toBe("10:3");
     expect(span?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS);
   });
 

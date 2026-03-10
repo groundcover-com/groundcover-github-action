@@ -34,15 +34,13 @@ function traceStep(step: Step, logLines?: ParsedLogLine[], jobId?: number, jobNa
   const completedStep: CompletedStep = { ...step, started_at: step.started_at, completed_at: step.completed_at };
   const startTime = new Date(completedStep.started_at);
   const completedTime = new Date(completedStep.completed_at);
-  const attributes = stepToAttributes(completedStep);
+  const attributes = stepToAttributes(completedStep, jobId);
 
   tracer.startActiveSpan(step.name, { attributes, startTime, kind: SpanKind.INTERNAL }, (span) => {
     const taskResult = toStepResult(step.conclusion);
     const isFailure = taskResult === CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE;
-    const code = isFailure ? SpanStatusCode.ERROR : SpanStatusCode.OK;
-    span.setStatus({ code });
-
     if (isFailure) {
+      span.setStatus({ code: SpanStatusCode.ERROR });
       span.setAttribute(ATTR_ERROR_TYPE, step.conclusion ?? "unknown");
     }
 
@@ -71,10 +69,10 @@ function traceStep(step: Step, logLines?: ParsedLogLine[], jobId?: number, jobNa
   });
 }
 
-function stepToAttributes(step: CompletedStep): Attributes {
+function stepToAttributes(step: CompletedStep, jobId?: number): Attributes {
   return {
     [ATTR_CICD_PIPELINE_TASK_NAME]: step.name,
-    [ATTR_CICD_PIPELINE_TASK_RUN_ID]: step.number,
+    [ATTR_CICD_PIPELINE_TASK_RUN_ID]: jobId != null ? `${jobId}:${step.number}` : String(step.number),
     [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: toStepResult(step.conclusion),
     "github.job.step.status": step.status,
     "github.job.step.conclusion": step.conclusion ?? undefined,

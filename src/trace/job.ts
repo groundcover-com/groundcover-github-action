@@ -177,10 +177,8 @@ function traceJob(
   tracer.startActiveSpan(job.name, { attributes, startTime, kind: SpanKind.INTERNAL }, (span) => {
     const taskResult = toTaskResult(job.conclusion);
     const isFailure = taskResult === CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE;
-    const code = isFailure ? SpanStatusCode.ERROR : SpanStatusCode.OK;
-    span.setStatus({ code });
-
     if (isFailure) {
+      span.setStatus({ code: SpanStatusCode.ERROR });
       span.setAttribute(ATTR_ERROR_TYPE, job.conclusion ?? "unknown");
     }
 
