@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+          groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
           apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
 ```
 
@@ -50,7 +50,7 @@ Minimal groundcover setup:
 ```yaml
 - uses: groundcover-com/groundcover-github-action@v2
   with:
-    otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+    groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
     apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
 ```
 
@@ -68,7 +68,7 @@ If you are using Claude, Cursor, GitHub Copilot, or another coding agent, start 
 Use these rules when generating workflows or modifying this repository:
 
 - Treat `action.yml` as the canonical input/output contract.
-- Use `apiKey` with your groundcover ingestion key and a workspace-specific `otlpEndpoint`.
+- Use `apiKey` with your groundcover ingestion key and a workspace-specific `groundcoverEndpoint`.
 - Preserve `traceparent` when linking CI/CD and application traces.
 - Keep `source=github-actions`, configurable `workload`, and optional `env` resource attributes.
 - If you change this repository, run `npm run all` and rebuild `dist/` before committing.
@@ -107,7 +107,7 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+          groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
           apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
           runId: ${{ github.event.workflow_run.id }}
 ```
@@ -141,7 +141,7 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+          groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
           apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
 ```
 
@@ -191,7 +191,7 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+          groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
           apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
           traceparent: ${{ needs.build.outputs.traceparent }}
 ```
@@ -201,7 +201,7 @@ jobs:
 ```yaml
 - uses: groundcover-com/groundcover-github-action@v2
   with:
-    otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+    groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
     apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
     otelServiceName: my-service
     env: production
@@ -221,7 +221,7 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 
 | Input             | Required | Default               | Description                                                                                                                                                                                                 |
 | ----------------- | -------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `otlpEndpoint`    | Yes      |                       | OTLP endpoint base URL. Supports `https://`, `http://`, and `grpc://` schemes. Do not include `/v1/traces` — the exporter appends it automatically.                                                         |
+| `groundcoverEndpoint`    | Yes      |                       | OTLP endpoint base URL. Supports `https://`, `http://`, and `grpc://` schemes. Do not include `/v1/traces` — the exporter appends it automatically.                                                         |
 | `apiKey`          | Yes      |                       | groundcover ingestion key.                                                                                                                                                                                   |
 | `otlpHeaders`     | No       |                       | Comma-separated `key=value` pairs sent as OTLP exporter headers. Advanced — takes precedence over `apiKey` when both are set.                                                                               |
 | `githubToken`     | No       | `${{ github.token }}` | GitHub token with `actions:read` permission. Required for private repos. Use `secrets.GITHUB_TOKEN` or a PAT.                                                                                               |
@@ -275,7 +275,7 @@ permissions:
 ```yaml
 - uses: groundcover-com/groundcover-github-action@v2
   with:
-    otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+    groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
     apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
     githubToken: ${{ secrets.MY_PAT }}
 ```
@@ -359,7 +359,7 @@ Your token doesn't have `actions: read`. Add it to your workflow's `permissions`
 
 **gRPC connections are timing out.**
 
-Ensure your `otlpEndpoint` uses the `grpc://` scheme and that port 443 is reachable from GitHub Actions runners. Some backends require TLS; use `grpcs://` if plain `grpc://` doesn't work.
+Ensure your `groundcoverEndpoint` uses the `grpc://` scheme and that port 443 is reachable from GitHub Actions runners. Some backends require TLS; use `grpcs://` if plain `grpc://` doesn't work.
 
 ## Contributing
 

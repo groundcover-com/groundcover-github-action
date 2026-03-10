@@ -3,9 +3,9 @@ description: "Export GitHub Actions workflow runs as OpenTelemetry traces to gro
 author: "groundcover"
 
 inputs:
-  otlpEndpoint:
+  groundcoverEndpoint:
     description: >
-      OTLP endpoint base URL. Supports https://, http://, and grpc:// schemes.
+      groundcover OTLP endpoint base URL. Supports https://, http://, and grpc:// schemes.
       Do not include /v1/traces — the exporter appends it automatically.
     required: true
   otlpHeaders:
