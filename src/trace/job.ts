@@ -183,7 +183,7 @@ function traceJob(
 
     for (const step of steps) {
       const stepLogs = correlated?.byStep.get(step.number);
-      traceStep(step, stepLogs);
+      traceStep(step, stepLogs, job.id, job.name);
     }
 
     // Emit unmatched log lines at job level as fallback

@@ -7,7 +7,7 @@ import { type ParsedLogLine, mergeLogLines } from "./job";
 type Step = NonNullable<components["schemas"]["job"]["steps"]>[number];
 type CompletedStep = Step & { started_at: string; completed_at: string };
 
-function traceStep(step: Step, logLines?: ParsedLogLine[]): void {
+function traceStep(step: Step, logLines?: ParsedLogLine[], jobId?: number, jobName?: string): void {
   const tracer = trace.getTracer("otel-cicd-export-action");
 
   if (!(step.completed_at && step.started_at)) {
@@ -41,6 +41,8 @@ function traceStep(step: Step, logLines?: ParsedLogLine[]): void {
         severityText: merged.severityText,
         context: activeContext,
         attributes: {
+          "github.job.id": jobId,
+          "github.job.name": jobName,
           "github.job.step.name": step.name,
           "github.job.step.number": step.number,
         },
