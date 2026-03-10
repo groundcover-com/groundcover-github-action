@@ -27,7 +27,7 @@ function resolveOtlpHeaders(otlpHeaders: string, apiKey: string): string {
   }
 
   if (apiKey) {
-    return `apikey=${apiKey}`;
+    return `Authorization=Bearer ${apiKey}`;
   }
 
   throw new Error("Either otlpHeaders or apiKey is required");

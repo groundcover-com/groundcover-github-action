@@ -111,7 +111,7 @@ describe("run branch coverage", () => {
     });
     expect(createLoggerProvider).toHaveBeenCalledWith(
       "https://localhost/v1/traces",
-      "apikey=gc-secret",
+      "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "github.repository": "o/r",
         source: "github-actions",
@@ -277,7 +277,7 @@ describe("run branch coverage", () => {
     expect(extractParentContext).toHaveBeenCalledWith("00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbb-01");
     expect(createTracerProvider).toHaveBeenCalledWith(
       "https://localhost/v1/traces",
-      "apikey=gc-secret",
+      "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "service.name": "svc-from-env",
         "service.instance.id": "o/r/22/11/1",
@@ -289,11 +289,11 @@ describe("run branch coverage", () => {
       }),
     );
     expect(core.setSecret).toHaveBeenCalledWith("gc-secret");
-    expect(core.setSecret).toHaveBeenCalledWith("apikey=gc-secret");
+    expect(core.setSecret).toHaveBeenCalledWith("Authorization=Bearer gc-secret");
     expect(core.setFailed).not.toHaveBeenCalled();
   });
 
-  it("derives apikey header from apiKey input", async () => {
+  it("derives Authorization header from apiKey input", async () => {
     core.getInput.mockImplementation((name: string) => {
       if (name === "otlpEndpoint") return "https://localhost/v1/traces";
       if (name === "apiKey") return "gc-secret";
@@ -317,11 +317,11 @@ describe("run branch coverage", () => {
 
     expect(createTracerProvider).toHaveBeenCalledWith(
       "https://localhost/v1/traces",
-      "apikey=gc-secret",
+      "Authorization=Bearer gc-secret",
       expect.any(Object),
     );
     expect(core.setSecret).toHaveBeenCalledWith("gc-secret");
-    expect(core.setSecret).toHaveBeenCalledWith("apikey=gc-secret");
+    expect(core.setSecret).toHaveBeenCalledWith("Authorization=Bearer gc-secret");
   });
 
   it("prefers explicit inputs for service name, workload, headers, and run id", async () => {
@@ -409,7 +409,7 @@ describe("run branch coverage", () => {
 
     expect(createTracerProvider).toHaveBeenCalledWith(
       "https://localhost/v1/traces",
-      "apikey=gc-secret",
+      "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "service.name": "Workflow Name",
       }),
@@ -441,7 +441,7 @@ describe("run branch coverage", () => {
 
     expect(createTracerProvider).toHaveBeenCalledWith(
       "https://localhost/v1/traces",
-      "apikey=gc-secret",
+      "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "service.name": "99",
         workload: "99",
@@ -568,7 +568,7 @@ describe("resolveOtlpHeaders", () => {
     expect(resolveOtlpHeaders("authorization=custom", "gc-secret")).toBe("authorization=custom");
   });
 
-  it("builds apikey header from apiKey", () => {
-    expect(resolveOtlpHeaders("", "gc-secret")).toBe("apikey=gc-secret");
+  it("builds Authorization bearer header from apiKey", () => {
+    expect(resolveOtlpHeaders("", "gc-secret")).toBe("Authorization=Bearer gc-secret");
   });
 });

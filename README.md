@@ -107,8 +107,8 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
-          otlpHeaders: ${{ secrets.OTLP_HEADERS }}
+          otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+          apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
           runId: ${{ github.event.workflow_run.id }}
 ```
 
@@ -141,8 +141,8 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
-          otlpHeaders: ${{ secrets.OTLP_HEADERS }}
+          otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+          apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
 ```
 
 ### Link CI/CD + Application Traces
@@ -191,8 +191,8 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
-          otlpHeaders: ${{ secrets.OTLP_HEADERS }}
+          otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+          apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
           traceparent: ${{ needs.build.outputs.traceparent }}
 ```
 
@@ -275,8 +275,8 @@ permissions:
 ```yaml
 - uses: groundcover-com/groundcover-github-action@v2
   with:
-    otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}
-    otlpHeaders: ${{ secrets.OTLP_HEADERS }}
+    otlpEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
+    apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
     githubToken: ${{ secrets.MY_PAT }}
 ```
 
@@ -347,7 +347,7 @@ When using `workflow_run`, the action defaults to the current run (the export wo
 
 **I'm getting 401 or 403 errors from the OTLP endpoint.**
 
-Check that your `otlpHeaders` secret contains the correct API key and that the header name matches what your backend expects. Header names are case-sensitive for some backends.
+Check that your `apiKey` secret contains the correct groundcover ingestion key. If using `otlpHeaders` for a custom setup, verify the header name and value match what your backend expects.
 
 **Jobs or steps are missing from the trace.**
 
