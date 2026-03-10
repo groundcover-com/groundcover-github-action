@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import type { components } from "@octokit/openapi-types";
-import { type Attributes, context, SpanStatusCode, trace } from "@opentelemetry/api";
+import { type Attributes, context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 import {
   ATTR_CICD_PIPELINE_TASK_NAME,
@@ -19,6 +19,7 @@ import {
   CICD_PIPELINE_TASK_TYPE_VALUE_DEPLOY,
   CICD_PIPELINE_TASK_TYPE_VALUE_TEST,
 } from "@opentelemetry/semantic-conventions/incubating";
+import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import { traceStep } from "./step";
 
 type CompletedJob = components["schemas"]["job"] & { completed_at: string };
@@ -173,9 +174,15 @@ function traceJob(
     ...annotationsToAttributes(annotations),
   };
 
-  tracer.startActiveSpan(job.name, { attributes, startTime }, (span) => {
-    const code = job.conclusion === "failure" ? SpanStatusCode.ERROR : SpanStatusCode.OK;
+  tracer.startActiveSpan(job.name, { attributes, startTime, kind: SpanKind.INTERNAL }, (span) => {
+    const taskResult = toTaskResult(job.conclusion);
+    const isFailure = taskResult === CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE;
+    const code = isFailure ? SpanStatusCode.ERROR : SpanStatusCode.OK;
     span.setStatus({ code });
+
+    if (isFailure) {
+      span.setAttribute(ATTR_ERROR_TYPE, job.conclusion ?? "unknown");
+    }
 
     const steps = job.steps ?? [];
     const logLines = jobLog ? parseGitHubLogLines(jobLog) : [];

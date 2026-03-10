@@ -1,7 +1,15 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from "@jest/globals";
-import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import { BasicTracerProvider, InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import type { components } from "@octokit/openapi-types";
+import {
+  ATTR_CICD_PIPELINE_TASK_NAME,
+  ATTR_CICD_PIPELINE_TASK_RUN_ID,
+  ATTR_CICD_PIPELINE_TASK_RUN_RESULT,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS,
+} from "@opentelemetry/semantic-conventions/incubating";
+import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 
 type Step = NonNullable<components["schemas"]["job"]["steps"]>[number];
 
@@ -118,5 +126,36 @@ describe("traceStep", () => {
     const span = exporter.getFinishedSpans()[0];
     expect(span?.attributes["github.job.step.started_at"]).toBe("2026-01-29T17:16:45Z");
     expect(span?.attributes["github.job.step.completed_at"]).toBe("2026-01-29T17:16:50Z");
+  });
+
+  it("sets cicd.pipeline.task.* semconv attributes on step spans", () => {
+    traceStep(buildStep({ name: "Run tests", number: 3, conclusion: "success" }));
+
+    const span = exporter.getFinishedSpans()[0];
+    expect(span?.attributes[ATTR_CICD_PIPELINE_TASK_NAME]).toBe("Run tests");
+    expect(span?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_ID]).toBe(3);
+    expect(span?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS);
+  });
+
+  it("sets error.type on failed steps", () => {
+    traceStep(buildStep({ conclusion: "failure" }));
+
+    const span = exporter.getFinishedSpans()[0];
+    expect(span?.attributes[ATTR_ERROR_TYPE]).toBe("failure");
+    expect(span?.attributes[ATTR_CICD_PIPELINE_TASK_RUN_RESULT]).toBe(CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE);
+  });
+
+  it("does not set error.type on successful steps", () => {
+    traceStep(buildStep({ conclusion: "success" }));
+
+    const span = exporter.getFinishedSpans()[0];
+    expect(span?.attributes[ATTR_ERROR_TYPE]).toBeUndefined();
+  });
+
+  it("uses INTERNAL span kind for steps", () => {
+    traceStep(buildStep());
+
+    const span = exporter.getFinishedSpans()[0];
+    expect(span?.kind).toBe(SpanKind.INTERNAL);
   });
 });

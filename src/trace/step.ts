@@ -1,8 +1,19 @@
 import * as core from "@actions/core";
 import type { components } from "@octokit/openapi-types";
-import { type Attributes, context, SpanStatusCode, trace } from "@opentelemetry/api";
+import { type Attributes, context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { type ParsedLogLine, mergeLogLines } from "./job";
+import {
+  ATTR_CICD_PIPELINE_TASK_NAME,
+  ATTR_CICD_PIPELINE_TASK_RUN_ID,
+  ATTR_CICD_PIPELINE_TASK_RUN_RESULT,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_CANCELLATION,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SKIP,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS,
+  CICD_PIPELINE_TASK_RUN_RESULT_VALUE_TIMEOUT,
+} from "@opentelemetry/semantic-conventions/incubating";
+import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 
 type Step = NonNullable<components["schemas"]["job"]["steps"]>[number];
 type CompletedStep = Step & { started_at: string; completed_at: string };
@@ -25,9 +36,15 @@ function traceStep(step: Step, logLines?: ParsedLogLine[], jobId?: number, jobNa
   const completedTime = new Date(completedStep.completed_at);
   const attributes = stepToAttributes(completedStep);
 
-  tracer.startActiveSpan(step.name, { attributes, startTime }, (span) => {
-    const code = step.conclusion === "failure" ? SpanStatusCode.ERROR : SpanStatusCode.OK;
+  tracer.startActiveSpan(step.name, { attributes, startTime, kind: SpanKind.INTERNAL }, (span) => {
+    const taskResult = toStepResult(step.conclusion);
+    const isFailure = taskResult === CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE;
+    const code = isFailure ? SpanStatusCode.ERROR : SpanStatusCode.OK;
     span.setStatus({ code });
+
+    if (isFailure) {
+      span.setAttribute(ATTR_ERROR_TYPE, step.conclusion ?? "unknown");
+    }
 
     if (logLines && logLines.length > 0) {
       const logger = logs.getLogger("otel-cicd-export-action");
@@ -56,6 +73,9 @@ function traceStep(step: Step, logLines?: ParsedLogLine[], jobId?: number, jobNa
 
 function stepToAttributes(step: CompletedStep): Attributes {
   return {
+    [ATTR_CICD_PIPELINE_TASK_NAME]: step.name,
+    [ATTR_CICD_PIPELINE_TASK_RUN_ID]: step.number,
+    [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: toStepResult(step.conclusion),
     "github.job.step.status": step.status,
     "github.job.step.conclusion": step.conclusion ?? undefined,
     "github.job.step.name": step.name,
@@ -64,6 +84,25 @@ function stepToAttributes(step: CompletedStep): Attributes {
     "github.job.step.completed_at": step.completed_at,
     error: step.conclusion === "failure",
   };
+}
+
+function toStepResult(conclusion: Step["conclusion"]): string | undefined {
+  switch (conclusion) {
+    case "failure":
+    case "action_required":
+      return CICD_PIPELINE_TASK_RUN_RESULT_VALUE_FAILURE;
+    case "success":
+    case "neutral":
+      return CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS;
+    case "cancelled":
+      return CICD_PIPELINE_TASK_RUN_RESULT_VALUE_CANCELLATION;
+    case "skipped":
+      return CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SKIP;
+    case "timed_out":
+      return CICD_PIPELINE_TASK_RUN_RESULT_VALUE_TIMEOUT;
+    default:
+      return undefined;
+  }
 }
 
 export { traceStep };

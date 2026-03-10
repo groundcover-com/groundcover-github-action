@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from "@jest/globals";
-import { context, SpanStatusCode, trace } from "@opentelemetry/api";
+import { context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import {
   ATTR_CICD_PIPELINE_TASK_RUN_RESULT,
   ATTR_CICD_PIPELINE_TASK_TYPE,
@@ -14,6 +14,7 @@ import {
   CICD_PIPELINE_TASK_TYPE_VALUE_DEPLOY,
   CICD_PIPELINE_TASK_TYPE_VALUE_TEST,
 } from "@opentelemetry/semantic-conventions/incubating";
+import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import { BasicTracerProvider, InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import type { components } from "@octokit/openapi-types";
 
@@ -361,6 +362,27 @@ describe("traceJob", () => {
 
     const span = exporter.getFinishedSpans()[0];
     expect(span?.status.code).toBe(SpanStatusCode.ERROR);
+  });
+
+  it("sets error.type on failed jobs", () => {
+    traceJob(buildJob({ conclusion: "failure" }));
+
+    const span = exporter.getFinishedSpans()[0];
+    expect(span?.attributes[ATTR_ERROR_TYPE]).toBe("failure");
+  });
+
+  it("does not set error.type on successful jobs", () => {
+    traceJob(buildJob({ conclusion: "success" }));
+
+    const span = exporter.getFinishedSpans()[0];
+    expect(span?.attributes[ATTR_ERROR_TYPE]).toBeUndefined();
+  });
+
+  it("uses INTERNAL span kind for jobs", () => {
+    traceJob(buildJob());
+
+    const span = exporter.getFinishedSpans()[0];
+    expect(span?.kind).toBe(SpanKind.INTERNAL);
   });
 
   it("handles jobs with no steps", () => {

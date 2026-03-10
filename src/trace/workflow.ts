@@ -1,5 +1,13 @@
 import type { components } from "@octokit/openapi-types";
-import { type Attributes, type Context, context, ROOT_CONTEXT, SpanStatusCode, trace } from "@opentelemetry/api";
+import {
+  type Attributes,
+  type Context,
+  context,
+  ROOT_CONTEXT,
+  SpanKind,
+  SpanStatusCode,
+  trace,
+} from "@opentelemetry/api";
 import {
   ATTR_CICD_PIPELINE_ACTION_NAME,
   ATTR_CICD_PIPELINE_NAME,
@@ -18,6 +26,7 @@ import {
   CICD_PIPELINE_RUN_STATE_VALUE_FINALIZING,
   CICD_PIPELINE_RUN_STATE_VALUE_PENDING,
 } from "@opentelemetry/semantic-conventions/incubating";
+import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { TestResultsSummary } from "../test-results";
 import { traceJob } from "./job";
 
@@ -39,35 +48,42 @@ function traceWorkflowRun(
   };
   const activeContext = parentContext ?? ROOT_CONTEXT;
 
+  const pipelineResult = toPipelineResult(workflowRun.status, workflowRun.conclusion);
   const spanOptions = {
     attributes,
     startTime,
+    kind: SpanKind.SERVER,
     ...(activeContext === ROOT_CONTEXT ? { root: true as const } : {}),
   };
 
-  return tracer.startActiveSpan(
-    workflowRun.name ?? workflowRun.display_title,
-    spanOptions,
-    activeContext,
-    (rootSpan) => {
-      const code = workflowRun.conclusion === "failure" ? SpanStatusCode.ERROR : SpanStatusCode.OK;
-      rootSpan.setStatus({ code });
+  const actionName = CICD_PIPELINE_ACTION_NAME_VALUE_RUN;
+  const pipelineName = workflowRun.name;
+  const spanName = pipelineName ? `${actionName} ${pipelineName}` : actionName;
 
-      const firstJob = jobs[0];
-      if (firstJob) {
-        // "Queued" span represents the time between the workflow started and the first job pickup
-        const queuedSpan = tracer.startSpan("Queued", { startTime }, context.active());
-        queuedSpan.end(new Date(firstJob.started_at));
-      }
+  return tracer.startActiveSpan(spanName, spanOptions, activeContext, (rootSpan) => {
+    const isFailure =
+      pipelineResult === CICD_PIPELINE_RESULT_VALUE_FAILURE || pipelineResult === CICD_PIPELINE_RESULT_VALUE_ERROR;
+    const code = isFailure ? SpanStatusCode.ERROR : SpanStatusCode.OK;
+    rootSpan.setStatus({ code });
 
-      for (const job of jobs) {
-        traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id]);
-      }
+    if (isFailure) {
+      rootSpan.setAttribute(ATTR_ERROR_TYPE, workflowRun.conclusion ?? workflowRun.status ?? "unknown");
+    }
 
-      rootSpan.end(new Date(workflowRun.updated_at));
-      return rootSpan.spanContext().traceId;
-    },
-  );
+    const firstJob = jobs[0];
+    if (firstJob) {
+      // "Queued" span represents the time between the workflow started and the first job pickup
+      const queuedSpan = tracer.startSpan("Queued", { startTime }, context.active());
+      queuedSpan.end(new Date(firstJob.started_at));
+    }
+
+    for (const job of jobs) {
+      traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id]);
+    }
+
+    rootSpan.end(new Date(workflowRun.updated_at));
+    return rootSpan.spanContext().traceId;
+  });
 }
 
 function testResultsToAttributes(testResults: TestResultsSummary | undefined): Attributes {
