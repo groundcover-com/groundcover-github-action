@@ -5,18 +5,20 @@ author: "groundcover"
 inputs:
   otlpEndpoint:
     description: >
-      OTLP endpoint URL. Supports https://, http://, and grpc:// schemes.
-      For HTTP endpoints, this should be the full URL including /v1/traces path.
+      OTLP endpoint base URL. Supports https://, http://, and grpc:// schemes.
+      Do not include /v1/traces — the exporter appends it automatically.
     required: true
   otlpHeaders:
     description: >
       Comma-separated key=value pairs for OTLP exporter headers.
-      Example: "apikey=YOUR_KEY". Takes precedence over `apiKey` when both are set.
+      For non-groundcover backends that need custom auth headers.
+      Takes precedence over `apiKey` when both are set.
     required: false
   apiKey:
     description: >
-      Optional groundcover API key. When provided, the action derives
-      `Authorization=Bearer <apiKey>` for OTLP export.
+      groundcover ingestion key. The simplest way to authenticate —
+      just pass your Third Party ingestion key. Use `otlpHeaders` instead
+      for non-groundcover backends that need custom header formats.
     required: false
   githubToken:
     description: >
