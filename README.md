@@ -1,13 +1,12 @@
 # groundcover OTEL CI/CD Export Action
 
-Export GitHub Actions workflow runs as OpenTelemetry traces and logs to any OTLP-compatible backend.
+Export GitHub Actions workflow runs as OpenTelemetry traces and logs to groundcover.
 
 ## Prerequisites
 
 - GitHub Actions workflow with `actions: read` permission
 - Node 20 runtime (handled automatically by GitHub Actions)
-- OTLP endpoint and credentials (`otlpEndpoint`, `apiKey`)
-- For groundcover, use your managed OTLP endpoint and a `Third Party` ingestion key
+- groundcover OTLP endpoint and ingestion key
 
 ## Quick Start
 
@@ -34,7 +33,7 @@ jobs:
 For groundcover setup details, see:
 
 - [Sending from an OpenTelemetry Collector](https://docs.groundcover.com/integrations/data-sources/opentelemetry/sending-from-an-opentelemetry-collector)
-- [Create a Third Party ingestion key](https://docs.groundcover.com/use-groundcover/remote-access-and-apis/ingestion-keys)
+- [Create an ingestion key](https://docs.groundcover.com/use-groundcover/remote-access-and-apis/ingestion-keys)
 - [More docs](https://docs.groundcover.com)
 
 ## Instructions
@@ -69,8 +68,7 @@ If you are using Claude, Cursor, GitHub Copilot, or another coding agent, start 
 Use these rules when generating workflows or modifying this repository:
 
 - Treat `action.yml` as the canonical input/output contract.
-- For groundcover, use `apiKey` with a `Third Party` ingestion key and a workspace-specific `otlpEndpoint`.
-- Use `otlpHeaders` only for non-groundcover backends that need custom header formats.
+- Use `apiKey` with your groundcover ingestion key and a workspace-specific `otlpEndpoint`.
 - Preserve `traceparent` when linking CI/CD and application traces.
 - Keep `source=github-actions`, configurable `workload`, and optional `env` resource attributes.
 - If you change this repository, run `npm run all` and rebuild `dist/` before committing.
@@ -224,8 +222,8 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 | Input             | Required | Default               | Description                                                                                                                                                                                                 |
 | ----------------- | -------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `otlpEndpoint`    | Yes      |                       | OTLP endpoint base URL. Supports `https://`, `http://`, and `grpc://` schemes. Do not include `/v1/traces` — the exporter appends it automatically.                                                         |
-| `apiKey`          | No       |                       | groundcover ingestion key. The simplest way to authenticate — just pass your `Third Party` ingestion key.                                                                                                    |
-| `otlpHeaders`     | No       |                       | Comma-separated `key=value` pairs sent as OTLP exporter headers. For non-groundcover backends that need custom auth headers. Takes precedence over `apiKey`.                                                |
+| `apiKey`          | Yes      |                       | groundcover ingestion key.                                                                                                                                                                                   |
+| `otlpHeaders`     | No       |                       | Comma-separated `key=value` pairs sent as OTLP exporter headers. Advanced — takes precedence over `apiKey` when both are set.                                                                               |
 | `githubToken`     | No       | `${{ github.token }}` | GitHub token with `actions:read` permission. Required for private repos. Use `secrets.GITHUB_TOKEN` or a PAT.                                                                                               |
 | `runId`           | No       | Current run           | Workflow Run ID to export. Defaults to the current workflow run. When using `workflow_run`, set this to `${{ github.event.workflow_run.id }}` to export the triggering run.                                 |
 | `otelServiceName` | No       | Workflow name         | Overrides the `service.name` OTEL resource attribute. Defaults to the workflow name.                                                                                                                        |

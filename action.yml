@@ -1,5 +1,5 @@
 name: "groundcover OTEL CI/CD Export"
-description: "Export GitHub Actions workflow runs as OpenTelemetry traces to any OTLP-compatible endpoint"
+description: "Export GitHub Actions workflow runs as OpenTelemetry traces to groundcover"
 author: "groundcover"
 
 inputs:
@@ -10,15 +10,12 @@ inputs:
     required: true
   otlpHeaders:
     description: >
-      Comma-separated key=value pairs for OTLP exporter headers.
-      For non-groundcover backends that need custom auth headers.
+      Advanced. Comma-separated key=value pairs for OTLP exporter headers.
       Takes precedence over `apiKey` when both are set.
     required: false
   apiKey:
     description: >
-      groundcover ingestion key. The simplest way to authenticate —
-      just pass your Third Party ingestion key. Use `otlpHeaders` instead
-      for non-groundcover backends that need custom header formats.
+      groundcover ingestion key.
     required: false
   githubToken:
     description: >
