@@ -467,7 +467,7 @@ describe("run branch coverage", () => {
       updated_at: "2024-01-01T00:00:00Z",
     });
     listJobsForWorkflowRun.mockResolvedValue([]);
-    getJobsAnnotations.mockRejectedValue({ status: 403, message: "annotations forbidden" });
+    getJobsAnnotations.mockRejectedValue(Object.assign(new Error("annotations forbidden"), { status: 403 }));
     getPRsLabels.mockResolvedValue({});
 
     await run();
@@ -495,7 +495,7 @@ describe("run branch coverage", () => {
     });
     listJobsForWorkflowRun.mockResolvedValue([]);
     getJobsAnnotations.mockResolvedValue({});
-    getPRsLabels.mockRejectedValue({ status: 404, message: "labels unavailable" });
+    getPRsLabels.mockRejectedValue(Object.assign(new Error("labels unavailable"), { status: 404 }));
 
     await run();
 

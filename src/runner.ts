@@ -10,7 +10,7 @@ import { createLoggerProvider, createTracerProvider, extractParentContext, strin
 import { getJobsAnnotations, getJobsLogs, getPRsLabels, getWorkflowRun, listJobsForWorkflowRun } from "./github";
 
 function isOctokitError(err: unknown): err is RequestError {
-  return !!err && typeof err === "object" && "status" in err;
+  return err instanceof Error && "status" in err;
 }
 
 interface GithubData {

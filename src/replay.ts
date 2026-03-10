@@ -9,7 +9,7 @@ import type { OctokitResponse, RequestMethod } from "@octokit/types";
 import callerCallsite from "caller-callsite";
 
 function isOctokitError(err: unknown): err is RequestError {
-  return !!err && typeof err === "object" && "status" in err;
+  return err instanceof Error && "status" in err;
 }
 
 async function recordOctokit(name: string, token: string): Promise<InstanceType<typeof GitHub>> {
