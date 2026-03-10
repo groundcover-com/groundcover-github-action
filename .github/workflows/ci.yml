@@ -21,9 +21,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
-      - name: Check for capitalized Groundcover (must be lowercase groundcover)
+      - name: Enforce lowercase groundcover
         run: |
-          if git grep -n 'Groundcover' -- ':!dist/' ':!package-lock.json' ':!node_modules/' ':!.github/workflows/ci.yml'; then
+          if git grep -n -w 'Groundcover' -- ':!dist/' ':!package-lock.json' ':!node_modules/'; then
             echo "::error::Found 'Groundcover' with capital G. Use 'groundcover' (lowercase) instead."
             exit 1
           fi
