@@ -35,7 +35,7 @@ function traceStep(step: Step, logLines?: ParsedLogLine[]): void {
       const merged = mergeLogLines(logLines);
 
       logger.emit({
-        timestamp: merged.timestamp,
+        timestamp: new Date(merged.timestamp),
         body: merged.body,
         severityNumber: merged.severityNumber,
         severityText: merged.severityText,

@@ -141,7 +141,7 @@ function emitJobLogs(logLines: ParsedLogLine[], jobId: number, jobName: string):
   const merged = mergeLogLines(logLines);
 
   logger.emit({
-    timestamp: merged.timestamp,
+    timestamp: new Date(merged.timestamp),
     body: merged.body,
     severityNumber: merged.severityNumber,
     severityText: merged.severityText,

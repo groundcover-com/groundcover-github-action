@@ -286,7 +286,7 @@ describe("traceJob", () => {
     expect(getLogger).toHaveBeenCalledWith("otel-cicd-export-action");
     expect(emit).toHaveBeenCalledTimes(1);
     expect(emit).toHaveBeenCalledWith({
-      timestamp: new Date("2024-01-01T00:00:00.0000000Z").getTime(),
+      timestamp: new Date("2024-01-01T00:00:00.0000000Z"),
       body: "hello\ncareful\nboom",
       severityNumber: SeverityNumber.ERROR,
       severityText: "ERROR",
