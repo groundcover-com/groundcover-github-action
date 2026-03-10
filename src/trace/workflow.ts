@@ -127,8 +127,11 @@ function workflowRunToAttributes(
     "github.head_branch": workflowRun.head_branch ?? undefined,
     "github.head_sha": workflowRun.head_sha,
     "github.path": workflowRun.path,
+    "github.actor": workflowRun.actor?.login,
+    "github.triggering_actor": workflowRun.triggering_actor?.login,
+    "github.repository": workflowRun.repository.full_name,
     error: workflowRun.conclusion === "failure",
-    ...prsToAttributes(workflowRun.pull_requests, prLabels),
+    ...prsToAttributes(workflowRun.pull_requests, workflowRun.repository.html_url, prLabels),
   };
 }
 
@@ -211,6 +214,7 @@ function headCommitToAttributes(head_commit: components["schemas"]["nullable-sim
 
 function prsToAttributes(
   pullRequests: components["schemas"]["pull-request-minimal"][] | null,
+  repoHtmlUrl: string,
   prLabels: Record<number, string[]>,
 ): Attributes {
   const firstPR = pullRequests?.[0];
@@ -226,6 +230,7 @@ function prsToAttributes(
       const prefix = `github.pull_requests.${i}`;
       attributes[`${prefix}.id`] = pr.id;
       attributes[`${prefix}.url`] = pr.url;
+      attributes[`${prefix}.html_url`] = `${repoHtmlUrl}/pull/${pr.number}`;
       attributes[`${prefix}.number`] = pr.number;
       attributes[`${prefix}.labels`] = prLabels[pr.number];
       attributes[`${prefix}.head.sha`] = pr.head.sha;

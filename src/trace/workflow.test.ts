@@ -58,7 +58,9 @@ function makeWorkflowRun(overrides: Partial<WorkflowRun> = {}): WorkflowRun {
       author: { name: "Test", email: "test@test.com" },
       committer: { name: "Test", email: "test@test.com" },
     },
-    repository: { full_name: "o/r" },
+    actor: { login: "octocat", id: 1 },
+    triggering_actor: { login: "octocat", id: 1 },
+    repository: { full_name: "o/r", html_url: "https://github.com/o/r" },
     head_repository: { full_name: "o/r" },
     ...overrides,
   } as WorkflowRun;
@@ -383,7 +385,25 @@ describe("traceWorkflowRun", () => {
     expect(rootSpan?.attributes["github.head_ref"]).toBe("feature");
     expect(rootSpan?.attributes["github.base_ref"]).toBe("main");
     expect(rootSpan?.attributes["github.pull_requests.0.number"]).toBe(7);
+    expect(rootSpan?.attributes["github.pull_requests.0.html_url"]).toBe("https://github.com/o/r/pull/7");
     expect(rootSpan?.attributes["github.pull_requests.0.labels"]).toEqual(["bug", "priority"]);
+  });
+
+  it("includes actor and repository attributes", () => {
+    traceWorkflowRun(
+      makeWorkflowRun({
+        actor: { login: "alice", id: 42 },
+        triggering_actor: { login: "bob", id: 43 },
+      } as unknown as Partial<WorkflowRun>),
+      [makeJob()],
+      {},
+      {},
+    );
+
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    expect(rootSpan?.attributes["github.actor"]).toBe("alice");
+    expect(rootSpan?.attributes["github.triggering_actor"]).toBe("bob");
+    expect(rootSpan?.attributes["github.repository"]).toBe("o/r");
   });
 
   it("includes parsed test result summary attributes", () => {
