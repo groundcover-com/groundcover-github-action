@@ -26,8 +26,8 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
-          apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
+          groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
+          apiKey: ${{ secrets.GC_API_KEY }}
 ```
 
 For groundcover setup details, see:
@@ -42,16 +42,16 @@ For groundcover setup details, see:
 
 Use the Quick Start example above, then configure these two secrets in your repository or organization:
 
-- `GROUNDCOVER_OTLP_ENDPOINT`
-- `GROUNDCOVER_INGESTION_KEY`
+- `GC_ENDPOINT`
+- `GC_API_KEY`
 
 Minimal groundcover setup:
 
 ```yaml
 - uses: groundcover-com/groundcover-github-action@v2
   with:
-    groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
-    apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
+    groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
+    apiKey: ${{ secrets.GC_API_KEY }}
 ```
 
 Required permissions:
@@ -107,8 +107,8 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
-          apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
+          groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
+          apiKey: ${{ secrets.GC_API_KEY }}
           runId: ${{ github.event.workflow_run.id }}
 ```
 
@@ -141,8 +141,8 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
-          apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
+          groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
+          apiKey: ${{ secrets.GC_API_KEY }}
 ```
 
 ### Link CI/CD + Application Traces
@@ -191,8 +191,8 @@ jobs:
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
-          groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
-          apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
+          groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
+          apiKey: ${{ secrets.GC_API_KEY }}
           traceparent: ${{ needs.build.outputs.traceparent }}
 ```
 
@@ -201,8 +201,8 @@ jobs:
 ```yaml
 - uses: groundcover-com/groundcover-github-action@v2
   with:
-    groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
-    apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
+    groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
+    apiKey: ${{ secrets.GC_API_KEY }}
     otelServiceName: my-service
     env: production
     workload: payments-api
@@ -275,8 +275,8 @@ permissions:
 ```yaml
 - uses: groundcover-com/groundcover-github-action@v2
   with:
-    groundcoverEndpoint: ${{ secrets.GROUNDCOVER_OTLP_ENDPOINT }}
-    apiKey: ${{ secrets.GROUNDCOVER_INGESTION_KEY }}
+    groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
+    apiKey: ${{ secrets.GC_API_KEY }}
     githubToken: ${{ secrets.MY_PAT }}
 ```
 
