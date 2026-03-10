@@ -115,8 +115,12 @@ function correlateLogsByStep(logLines: ParsedLogLine[], steps: Step[]): Correlat
 }
 
 function mergeLogLines(logLines: ParsedLogLine[]): ParsedLogLine {
+  const first = logLines[0];
+  if (!first) {
+    throw new Error("mergeLogLines requires at least one log line");
+  }
   const body = logLines.map((l) => l.body).join("\n");
-  const timestamp = logLines[0]?.timestamp ?? Date.now();
+  const timestamp = first.timestamp;
 
   // Use the highest severity found across all lines
   let severityNumber = SeverityNumber.INFO;

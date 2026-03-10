@@ -301,6 +301,10 @@ describe("traceJob", () => {
       expect(merged.severityNumber).toBe(SeverityNumber.INFO);
       expect(merged.severityText).toBe("INFO");
     });
+
+    it("throws on empty input", () => {
+      expect(() => mergeLogLines([])).toThrow("mergeLogLines requires at least one log line");
+    });
   });
 
   it("maps task run results and worker attributes", () => {
