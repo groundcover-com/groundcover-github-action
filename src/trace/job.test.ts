@@ -34,7 +34,7 @@ jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
   SeverityNumber,
 }));
 
-const { traceJob, parseGitHubLogLines, emitJobLogs, correlateLogsByStep } = await import("./job.js");
+const { traceJob, parseGitHubLogLines, emitJobLogs, correlateLogsByStep, mergeLogLines } = await import("./job.js");
 
 function hrTimeToMs(value: [number, number]): number {
   return value[0] * 1000 + value[1] / 1_000_000;
@@ -244,7 +244,7 @@ describe("traceJob", () => {
     ]);
   });
 
-  it("emits one OTEL log record per parsed line with active context and job attributes", () => {
+  it("emits a single merged OTEL log record with highest severity and joined body", () => {
     const tracer = trace.getTracer("otel-cicd-export-action");
     let activeSpanContext = context.active();
 
@@ -263,30 +263,43 @@ describe("traceJob", () => {
     });
 
     expect(getLogger).toHaveBeenCalledWith("otel-cicd-export-action");
-    expect(emit).toHaveBeenCalledTimes(3);
-    expect(emit).toHaveBeenNthCalledWith(1, {
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith({
       timestamp: new Date("2024-01-01T00:00:00.0000000Z").getTime(),
-      body: "hello",
-      severityNumber: SeverityNumber.INFO,
-      severityText: "INFO",
-      context: activeSpanContext,
-      attributes: { "github.job.id": 10, "github.job.name": "Build" },
-    });
-    expect(emit).toHaveBeenNthCalledWith(2, {
-      timestamp: new Date("2024-01-01T00:00:01.0000000Z").getTime(),
-      body: "careful",
-      severityNumber: SeverityNumber.WARN,
-      severityText: "WARN",
-      context: activeSpanContext,
-      attributes: { "github.job.id": 10, "github.job.name": "Build" },
-    });
-    expect(emit).toHaveBeenNthCalledWith(3, {
-      timestamp: new Date("2024-01-01T00:00:02.0000000Z").getTime(),
-      body: "boom",
+      body: "hello\ncareful\nboom",
       severityNumber: SeverityNumber.ERROR,
       severityText: "ERROR",
       context: activeSpanContext,
       attributes: { "github.job.id": 10, "github.job.name": "Build" },
+    });
+  });
+
+  describe("mergeLogLines", () => {
+    it("joins bodies with newlines and uses the highest severity", () => {
+      const logLines = parseGitHubLogLines(
+        [
+          "2024-01-01T00:00:00.0000000Z line one",
+          "2024-01-01T00:00:01.0000000Z ##[warning]line two",
+          "2024-01-01T00:00:02.0000000Z ##[error]line three",
+          "2024-01-01T00:00:03.0000000Z line four",
+        ].join("\n"),
+      );
+
+      const merged = mergeLogLines(logLines);
+
+      expect(merged.body).toBe("line one\nline two\nline three\nline four");
+      expect(merged.timestamp).toBe(new Date("2024-01-01T00:00:00.0000000Z").getTime());
+      expect(merged.severityNumber).toBe(SeverityNumber.ERROR);
+      expect(merged.severityText).toBe("ERROR");
+    });
+
+    it("uses INFO when all lines are INFO", () => {
+      const logLines = parseGitHubLogLines("2024-01-01T00:00:00.0000000Z a\n2024-01-01T00:00:01.0000000Z b");
+
+      const merged = mergeLogLines(logLines);
+
+      expect(merged.severityNumber).toBe(SeverityNumber.INFO);
+      expect(merged.severityText).toBe("INFO");
     });
   });
 
@@ -507,7 +520,7 @@ describe("traceJob", () => {
     });
   });
 
-  it("emits logs correlated to steps when job has steps and logs", () => {
+  it("emits one merged log per step and one for unmatched lines", () => {
     const steps = [
       {
         name: "Set up job",
@@ -528,20 +541,21 @@ describe("traceJob", () => {
     ] as NonNullable<Job["steps"]>;
 
     const jobLog = [
-      "2026-01-29T17:16:25.0000000Z setup line",
+      "2026-01-29T17:16:25.0000000Z setup line 1",
+      "2026-01-29T17:16:26.0000000Z setup line 2",
       "2026-01-29T17:16:35.0000000Z npm line",
       "2026-01-29T17:16:50.0000000Z orphan line",
     ].join("\n");
 
     traceJob(buildJob({ steps }), undefined, jobLog);
 
-    // 2 step logs + 1 unmatched job-level log
+    // 1 merged log per step + 1 unmatched job-level log
     expect(emit).toHaveBeenCalledTimes(3);
 
-    // Step-correlated logs have step attributes
+    // Step logs are merged into a single multiline body
     expect(emit).toHaveBeenCalledWith(
       expect.objectContaining({
-        body: "setup line",
+        body: "setup line 1\nsetup line 2",
         attributes: { "github.job.step.name": "Set up job", "github.job.step.number": 1 },
       }),
     );

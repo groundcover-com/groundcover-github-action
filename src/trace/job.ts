@@ -114,23 +114,39 @@ function correlateLogsByStep(logLines: ParsedLogLine[], steps: Step[]): Correlat
   return { byStep, unmatched };
 }
 
+function mergeLogLines(logLines: ParsedLogLine[]): ParsedLogLine {
+  const body = logLines.map((l) => l.body).join("\n");
+  const timestamp = logLines[0]!.timestamp;
+
+  // Use the highest severity found across all lines
+  let severityNumber = SeverityNumber.INFO;
+  let severityText = "INFO";
+  for (const line of logLines) {
+    if (line.severityNumber > severityNumber) {
+      severityNumber = line.severityNumber;
+      severityText = line.severityText;
+    }
+  }
+
+  return { timestamp, body, severityNumber, severityText };
+}
+
 function emitJobLogs(logLines: ParsedLogLine[], jobId: number, jobName: string): void {
   const logger = logs.getLogger("otel-cicd-export-action");
   const activeContext = context.active();
+  const merged = mergeLogLines(logLines);
 
-  for (const line of logLines) {
-    logger.emit({
-      timestamp: line.timestamp,
-      body: line.body,
-      severityNumber: line.severityNumber,
-      severityText: line.severityText,
-      context: activeContext,
-      attributes: {
-        "github.job.id": jobId,
-        "github.job.name": jobName,
-      },
-    });
-  }
+  logger.emit({
+    timestamp: merged.timestamp,
+    body: merged.body,
+    severityNumber: merged.severityNumber,
+    severityText: merged.severityText,
+    context: activeContext,
+    attributes: {
+      "github.job.id": jobId,
+      "github.job.name": jobName,
+    },
+  });
 }
 
 function traceJob(
@@ -255,4 +271,4 @@ function annotationsToAttributes(annotations: components["schemas"]["check-annot
   return attributes;
 }
 
-export { traceJob, emitJobLogs, parseGitHubLogLines, correlateLogsByStep, type ParsedLogLine };
+export { traceJob, emitJobLogs, parseGitHubLogLines, correlateLogsByStep, mergeLogLines, type ParsedLogLine };
