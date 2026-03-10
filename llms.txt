@@ -14,7 +14,6 @@ This repository contains a GitHub Action that exports GitHub Actions workflow ru
 - Do not hardcode a specific OTLP endpoint URL.
 - Do not include `/v1/traces` in `otlpEndpoint` — the exporter appends it automatically.
 - Pass the groundcover ingestion key via `apiKey`.
-- Use `otlpHeaders` only for non-groundcover backends that need custom header formats.
 - See `https://docs.groundcover.com/integrations/data-sources/opentelemetry/sending-from-an-opentelemetry-collector` for endpoint setup.
 - See `https://docs.groundcover.com/use-groundcover/remote-access-and-apis/ingestion-keys` for ingestion key creation.
 
