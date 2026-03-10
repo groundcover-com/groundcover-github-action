@@ -581,13 +581,23 @@ describe("traceJob", () => {
     expect(emit).toHaveBeenCalledWith(
       expect.objectContaining({
         body: "setup line 1\nsetup line 2",
-        attributes: { "github.job.id": 10, "github.job.name": "Build", "github.job.step.name": "Set up job", "github.job.step.number": 1 },
+        attributes: {
+          "github.job.id": 10,
+          "github.job.name": "Build",
+          "github.job.step.name": "Set up job",
+          "github.job.step.number": 1,
+        },
       }),
     );
     expect(emit).toHaveBeenCalledWith(
       expect.objectContaining({
         body: "npm line",
-        attributes: { "github.job.id": 10, "github.job.name": "Build", "github.job.step.name": "Run npm ci", "github.job.step.number": 2 },
+        attributes: {
+          "github.job.id": 10,
+          "github.job.name": "Build",
+          "github.job.step.name": "Run npm ci",
+          "github.job.step.number": 2,
+        },
       }),
     );
 
