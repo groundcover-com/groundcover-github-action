@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import type { RequestError } from "@octokit/request-error";
+import { RequestError } from "@octokit/request-error";
 import type { Attributes } from "@opentelemetry/api";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 import { ATTR_SERVICE_INSTANCE_ID } from "@opentelemetry/semantic-conventions/incubating";
@@ -10,7 +10,7 @@ import { createLoggerProvider, createTracerProvider, extractParentContext, strin
 import { getJobsAnnotations, getJobsLogs, getPRsLabels, getWorkflowRun, listJobsForWorkflowRun } from "./github";
 
 function isOctokitError(err: unknown): err is RequestError {
-  return err instanceof Error && "status" in err;
+  return err instanceof RequestError;
 }
 
 interface GithubData {

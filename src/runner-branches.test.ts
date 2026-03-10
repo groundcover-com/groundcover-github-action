@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { RequestError } from "@octokit/request-error";
 
 const core = {
   getInput: jest.fn<(name: string) => string>(),
@@ -467,7 +468,12 @@ describe("run branch coverage", () => {
       updated_at: "2024-01-01T00:00:00Z",
     });
     listJobsForWorkflowRun.mockResolvedValue([]);
-    getJobsAnnotations.mockRejectedValue(Object.assign(new Error("annotations forbidden"), { status: 403 }));
+    getJobsAnnotations.mockRejectedValue(
+      new RequestError("annotations forbidden", 403, {
+        response: { headers: {}, status: 403, url: "", data: {} },
+        request: { method: "GET", url: "/test", headers: {} },
+      }),
+    );
     getPRsLabels.mockResolvedValue({});
 
     await run();
@@ -495,7 +501,12 @@ describe("run branch coverage", () => {
     });
     listJobsForWorkflowRun.mockResolvedValue([]);
     getJobsAnnotations.mockResolvedValue({});
-    getPRsLabels.mockRejectedValue(Object.assign(new Error("labels unavailable"), { status: 404 }));
+    getPRsLabels.mockRejectedValue(
+      new RequestError("labels unavailable", 404, {
+        response: { headers: {}, status: 404, url: "", data: {} },
+        request: { method: "GET", url: "/test", headers: {} },
+      }),
+    );
 
     await run();
 
