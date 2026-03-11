@@ -65,7 +65,7 @@ describe("run", () => {
   it("exports a successful workflow run and outputs trace ID", async () => {
     core.getInput.mockImplementation((name: string) => {
       if (name === "runId") return "21487811823";
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "otlpHeaders") return "auth=token";
       return "";
     });
@@ -80,7 +80,7 @@ describe("run", () => {
   it("exports a failed workflow run without calling setFailed", async () => {
     core.getInput.mockImplementation((name: string) => {
       if (name === "runId") return "21458831126";
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "otlpHeaders") return "auth=token";
       return "";
     });
@@ -96,7 +96,7 @@ describe("run", () => {
 
     core.getInput.mockImplementation((name: string) => {
       if (name === "runId") return "16620109074";
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "otlpHeaders") return "auth=token";
       return "";
     });
@@ -114,7 +114,7 @@ describe("run", () => {
 
     core.getInput.mockImplementation((name: string) => {
       if (name === "runId") return "111";
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "otlpHeaders") return "auth=token";
       return "";
     });

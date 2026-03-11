@@ -83,7 +83,7 @@ describe("tracer", () => {
     }));
 
     const { createTracerProvider } = await import("./tracer.js");
-    const provider = createTracerProvider("https://otel.example/v1/traces", "a=1, b=2", {
+    const provider = createTracerProvider("https://otel.example", "a=1, b=2", {
       "service.name": "svc-http",
     });
 
@@ -141,17 +141,20 @@ describe("tracer", () => {
     });
   });
 
-  it("derives logs endpoint from HTTP trace endpoint", async () => {
-    const { deriveLogsEndpoint } = await import("./tracer.js");
+  it("builds signal URL for HTTP endpoints", async () => {
+    const { buildSignalUrl } = await import("./tracer.js");
 
-    expect(deriveLogsEndpoint("https://otel.example/v1/traces")).toBe("https://otel.example/v1/logs");
-    expect(deriveLogsEndpoint("https://otel.example/v1/traces/")).toBe("https://otel.example/v1/logs");
+    expect(buildSignalUrl("https://otel.example", "v1/traces")).toBe("https://otel.example/v1/traces");
+    expect(buildSignalUrl("https://otel.example/", "v1/traces")).toBe("https://otel.example/v1/traces");
+    expect(buildSignalUrl("https://otel.example", "v1/logs")).toBe("https://otel.example/v1/logs");
+    expect(buildSignalUrl("http://localhost:4318", "v1/traces")).toBe("http://localhost:4318/v1/traces");
   });
 
-  it("keeps gRPC endpoint unchanged when deriving logs endpoint", async () => {
-    const { deriveLogsEndpoint } = await import("./tracer.js");
+  it("keeps gRPC endpoint unchanged when building signal URL", async () => {
+    const { buildSignalUrl } = await import("./tracer.js");
 
-    expect(deriveLogsEndpoint("localhost:4317")).toBe("localhost:4317");
+    expect(buildSignalUrl("localhost:4317", "v1/traces")).toBe("localhost:4317");
+    expect(buildSignalUrl("localhost:4317", "v1/logs")).toBe("localhost:4317");
   });
 
   it("uses OTLP HTTP log exporter for HTTP endpoints", async () => {
@@ -196,7 +199,7 @@ describe("tracer", () => {
     }));
 
     const { createLoggerProvider } = await import("./tracer.js");
-    const provider = createLoggerProvider("https://otel.example/v1/traces", "a=1,b=2", {
+    const provider = createLoggerProvider("https://otel.example", "a=1,b=2", {
       "service.name": "svc-http",
     });
 
@@ -307,7 +310,7 @@ describe("tracer", () => {
     }));
 
     const { createLoggerProvider } = await import("./tracer.js");
-    createLoggerProvider("https://otel.example/v1/traces", "a=1", {
+    createLoggerProvider("https://otel.example", "a=1", {
       "service.name": "svc-console-only",
     });
 

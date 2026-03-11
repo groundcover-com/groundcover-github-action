@@ -83,7 +83,7 @@ describe("run branch coverage", () => {
 
   it("exports job logs when exportLogs is enabled", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "apiKey") return "gc-secret";
       if (name === "exportLogs") return "true";
       return "";
@@ -110,7 +110,7 @@ describe("run branch coverage", () => {
       10: "job logs",
     });
     expect(createLoggerProvider).toHaveBeenCalledWith(
-      "https://localhost/v1/traces",
+      "https://localhost",
       "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "github.repository": "o/r",
@@ -123,7 +123,7 @@ describe("run branch coverage", () => {
 
   it("does not create a logger provider when exportLogs is enabled but no job logs exist", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "apiKey") return "gc-secret";
       if (name === "exportLogs") return "true";
       return "";
@@ -152,7 +152,7 @@ describe("run branch coverage", () => {
 
   it("flushes and shuts down logger provider during provider lifecycle", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "apiKey") return "gc-secret";
       if (name === "exportLogs") return "true";
       return "";
@@ -180,7 +180,7 @@ describe("run branch coverage", () => {
 
   it("logs and continues when job log export fails", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "apiKey") return "gc-secret";
       if (name === "exportLogs") return "true";
       return "";
@@ -209,7 +209,7 @@ describe("run branch coverage", () => {
 
   it("stringifies non-Error job log failures", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "apiKey") return "gc-secret";
       if (name === "exportLogs") return "true";
       return "";
@@ -247,7 +247,7 @@ describe("run branch coverage", () => {
     process.env["GITHUB_TOKEN"] = "token-from-env";
 
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "apiKey") return "gc-secret";
       if (name === "extraAttributes") return "team=platform";
       if (name === "env") return "prod";
@@ -276,7 +276,7 @@ describe("run branch coverage", () => {
     expect(stringToRecord).toHaveBeenCalledWith("team=platform");
     expect(extractParentContext).toHaveBeenCalledWith("00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbb-01");
     expect(createTracerProvider).toHaveBeenCalledWith(
-      "https://localhost/v1/traces",
+      "https://localhost",
       "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "service.name": "svc-from-env",
@@ -295,7 +295,7 @@ describe("run branch coverage", () => {
 
   it("derives Authorization header from apiKey input", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "apiKey") return "gc-secret";
       return "";
     });
@@ -316,7 +316,7 @@ describe("run branch coverage", () => {
     await run();
 
     expect(createTracerProvider).toHaveBeenCalledWith(
-      "https://localhost/v1/traces",
+      "https://localhost",
       "Authorization=Bearer gc-secret",
       expect.any(Object),
     );
@@ -326,7 +326,7 @@ describe("run branch coverage", () => {
 
   it("prefers explicit inputs for service name, workload, headers, and run id", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "otlpHeaders") return "auth=token";
       if (name === "apiKey") return "gc-secret";
       if (name === "otelServiceName") return "svc-input";
@@ -354,7 +354,7 @@ describe("run branch coverage", () => {
     expect(github.getOctokit).toHaveBeenCalledWith("token-input");
     expect(getWorkflowRun).toHaveBeenCalledWith(github.context, { mocked: true }, 789);
     expect(createTracerProvider).toHaveBeenCalledWith(
-      "https://localhost/v1/traces",
+      "https://localhost",
       "auth=token",
       expect.objectContaining({
         "service.name": "svc-input",
@@ -368,7 +368,7 @@ describe("run branch coverage", () => {
 
   it("fails when neither otlpHeaders nor apiKey is provided", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       return "";
     });
 
@@ -379,7 +379,7 @@ describe("run branch coverage", () => {
 
   it("falls back to workflow name for service name and stringifies non-Error failures", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "apiKey") return "gc-secret";
       return "";
     });
@@ -408,7 +408,7 @@ describe("run branch coverage", () => {
     await run();
 
     expect(createTracerProvider).toHaveBeenCalledWith(
-      "https://localhost/v1/traces",
+      "https://localhost",
       "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "service.name": "Workflow Name",
@@ -419,7 +419,7 @@ describe("run branch coverage", () => {
 
   it("falls back to workflow id when neither input, env, nor workflow name exist", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "apiKey") return "gc-secret";
       return "";
     });
@@ -440,7 +440,7 @@ describe("run branch coverage", () => {
     await run();
 
     expect(createTracerProvider).toHaveBeenCalledWith(
-      "https://localhost/v1/traces",
+      "https://localhost",
       "Authorization=Bearer gc-secret",
       expect.objectContaining({
         "service.name": "99",
@@ -453,7 +453,7 @@ describe("run branch coverage", () => {
 
   it("logs and continues when job annotations throw an Octokit-style error", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "otlpHeaders") return "auth=token";
       return "";
     });
@@ -485,7 +485,7 @@ describe("run branch coverage", () => {
 
   it("logs and continues when PR labels throw an Octokit-style error", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "otlpHeaders") return "auth=token";
       return "";
     });
@@ -517,7 +517,7 @@ describe("run branch coverage", () => {
 
   it("fails when job annotations throw a non-Octokit error", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "otlpHeaders") return "auth=token";
       return "";
     });
@@ -540,7 +540,7 @@ describe("run branch coverage", () => {
 
   it("fails when PR labels throw a non-Octokit error", async () => {
     core.getInput.mockImplementation((name: string) => {
-      if (name === "groundcoverEndpoint") return "https://localhost/v1/traces";
+      if (name === "groundcoverEndpoint") return "https://localhost";
       if (name === "otlpHeaders") return "auth=token";
       return "";
     });
