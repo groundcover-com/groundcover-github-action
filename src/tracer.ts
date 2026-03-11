@@ -60,18 +60,23 @@ function extractParentContext(traceparent: string | undefined): Context {
   });
 }
 
-function deriveLogsEndpoint(traceEndpoint: string): string {
-  if (!isHttpEndpoint(traceEndpoint)) {
-    return traceEndpoint;
+function buildSignalUrl(baseEndpoint: string, signalPath: string): string {
+  if (!isHttpEndpoint(baseEndpoint)) {
+    return baseEndpoint;
   }
-  return traceEndpoint.replace(/\/v1\/traces\/?$/, "/v1/logs");
+  const trimmedBase = baseEndpoint.replace(/\/+$/, "");
+  if (trimmedBase.endsWith(`/${signalPath}`)) {
+    return trimmedBase;
+  }
+  const normalizedBase = trimmedBase.replace(/\/v1\/(?:traces|logs)$/, "");
+  return `${normalizedBase}/${signalPath}`;
 }
 
 function createLoggerProvider(endpoint: string, headers: string, attributes: Attributes): LoggerProvider {
   let exporter: LogRecordExporter | undefined;
 
   if (!OTEL_CONSOLE_ONLY) {
-    const logsEndpoint = deriveLogsEndpoint(endpoint);
+    const logsEndpoint = buildSignalUrl(endpoint, "v1/logs");
     if (isHttpEndpoint(logsEndpoint)) {
       exporter = new ProtoOTLPLogExporter({
         url: logsEndpoint,
@@ -109,7 +114,7 @@ function createTracerProvider(endpoint: string, headers: string, attributes: Att
   if (!OTEL_CONSOLE_ONLY) {
     if (isHttpEndpoint(endpoint)) {
       exporter = new ProtoOTLPTraceExporter({
-        url: endpoint,
+        url: buildSignalUrl(endpoint, "v1/traces"),
         headers: stringToRecord(headers),
       });
     } else {
@@ -179,4 +184,4 @@ class DeterministicIdGenerator implements IdGenerator {
   }
 }
 
-export { stringToRecord, createTracerProvider, createLoggerProvider, deriveLogsEndpoint, extractParentContext };
+export { stringToRecord, createTracerProvider, createLoggerProvider, buildSignalUrl, extractParentContext };
