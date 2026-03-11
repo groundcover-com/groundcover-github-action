@@ -46,11 +46,19 @@ function resolveOtlpHeaders(otlpHeaders: string, apiKey: string): string {
   throw new Error("Either otlpHeaders or apiKey is required");
 }
 
-async function fetchGithub(token: string, runId: number, exportLogs: boolean): Promise<GithubData> {
+async function fetchWorkflowRun(token: string, runId: number): Promise<GithubData["workflowRun"]> {
   const octokit = getOctokit(token);
-
   core.info(`Get workflow run for ${runId}`);
-  const workflowRun = await getWorkflowRun(context, octokit, runId);
+  return getWorkflowRun(context, octokit, runId);
+}
+
+async function fetchGithubDetails(
+  token: string,
+  runId: number,
+  workflowRun: GithubData["workflowRun"],
+  exportLogs: boolean,
+): Promise<Omit<GithubData, "workflowRun">> {
+  const octokit = getOctokit(token);
 
   core.info("Get jobs");
   const jobs = await listJobsForWorkflowRun(context, octokit, runId);
@@ -92,7 +100,7 @@ async function fetchGithub(token: string, runId: number, exportLogs: boolean): P
     }
   }
 
-  return { workflowRun, jobs, jobAnnotations, jobLogs, prLabels };
+  return { jobs, jobAnnotations, jobLogs, prLabels };
 }
 
 function normalizeBaseUrl(url: string): string {
@@ -121,9 +129,9 @@ function buildPrTracesUrl(baseUrl: string, prIndex: number, prNumber: number, op
 async function upsertPrTraceComments(
   token: string,
   workflowRun: GithubData["workflowRun"],
-  traceId: string,
   groundcoverBaseUrl: string,
   traceLinkOptions: TraceLinkOptions,
+  traceId?: string,
 ): Promise<void> {
   const pullRequests = workflowRun.pull_requests ?? [];
   if (pullRequests.length === 0) {
@@ -135,18 +143,18 @@ async function upsertPrTraceComments(
     workflowRun.html_url || `https://github.com/${workflowRun.repository.full_name}/actions/runs/${workflowRun.id}`;
   for (const [prIndex, pullRequest] of pullRequests.entries()) {
     const tracesUrl = buildPrTracesUrl(groundcoverBaseUrl, prIndex, pullRequest.number, traceLinkOptions);
-    const commentBody = [
+    const lines = [
       "<details>",
       `<summary><a href="${tracesUrl}">Open in groundcover</a></summary>`,
       "<p>",
       "",
       `- PR: #${pullRequest.number}`,
-      `- Trace ID: \`${traceId}\``,
-      `- Workflow run: [View run](${runUrl})`,
-      "",
-      "</p>",
-      "</details>",
-    ].join("\n");
+    ];
+    if (traceId) {
+      lines.push(`- Trace ID: \`${traceId}\``);
+    }
+    lines.push(`- Workflow run: [View run](${runUrl})`, "", "</p>", "</details>");
+    const commentBody = lines.join("\n");
 
     try {
       await upsertPrTraceComment(context, octokit, { prNumber: pullRequest.number, body: commentBody });
@@ -181,8 +189,27 @@ async function run(): Promise<void> {
     if (apiKey) core.setSecret(apiKey);
     core.setSecret(resolvedOtlpHeaders);
 
-    core.info("Use Github API to fetch workflow data");
-    const { workflowRun, jobs, jobAnnotations, jobLogs, prLabels } = await fetchGithub(ghToken, runId, exportLogs);
+    const traceLinkOptions: TraceLinkOptions = {
+      duration: groundcoverDuration,
+      ...(groundcoverBackendId ? { backendId: groundcoverBackendId } : {}),
+      ...(groundcoverTenantUUID ? { tenantUUID: groundcoverTenantUUID } : {}),
+    };
+
+    core.info("Use Github API to fetch workflow run");
+    const workflowRun = await fetchWorkflowRun(ghToken, runId);
+
+    if (commentOnPr) {
+      core.info("Post early PR comment with groundcover link");
+      await upsertPrTraceComments(ghToken, workflowRun, groundcoverBaseUrl, traceLinkOptions);
+    }
+
+    core.info("Use Github API to fetch workflow details");
+    const { jobs, jobAnnotations, jobLogs, prLabels } = await fetchGithubDetails(
+      ghToken,
+      runId,
+      workflowRun,
+      exportLogs,
+    );
 
     const testResults = await findTestResultsSummary(testResultsGlob);
 
@@ -222,12 +249,8 @@ async function run(): Promise<void> {
     }
 
     if (commentOnPr) {
-      const traceLinkOptions: TraceLinkOptions = {
-        duration: groundcoverDuration,
-        ...(groundcoverBackendId ? { backendId: groundcoverBackendId } : {}),
-        ...(groundcoverTenantUUID ? { tenantUUID: groundcoverTenantUUID } : {}),
-      };
-      await upsertPrTraceComments(ghToken, workflowRun, traceId, groundcoverBaseUrl, traceLinkOptions);
+      core.info("Update PR comment with trace ID");
+      await upsertPrTraceComments(ghToken, workflowRun, groundcoverBaseUrl, traceLinkOptions, traceId);
     }
 
     await provider.shutdown();
