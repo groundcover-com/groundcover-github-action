@@ -71,11 +71,13 @@ function traceWorkflowRun(
     if (jobs.length > 0) {
       // "Queued" span represents the time between the workflow started and the earliest job pickup
       const earliestStart = jobs.reduce((min, j) => {
-        const t = new Date(j.started_at).getTime();
+        const t = j.started_at ? new Date(j.started_at).getTime() : NaN;
         return t < min ? t : min;
       }, Infinity);
-      const queuedSpan = tracer.startSpan("Queued", { startTime }, context.active());
-      queuedSpan.end(new Date(earliestStart));
+      if (Number.isFinite(earliestStart)) {
+        const queuedSpan = tracer.startSpan("Queued", { startTime }, context.active());
+        queuedSpan.end(new Date(earliestStart));
+      }
     }
 
     for (const job of jobs) {
