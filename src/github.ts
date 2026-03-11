@@ -111,4 +111,55 @@ async function downloadJobLog(context: Context, octokit: Octokit, jobId: number)
   return data;
 }
 
-export { getWorkflowRun, listJobsForWorkflowRun, getJobsAnnotations, getPRsLabels, getJobsLogs, type Octokit };
+const TRACE_COMMENT_MARKER = "<!-- groundcover-trace-comment -->";
+
+interface UpsertPrTraceCommentInput {
+  prNumber: number;
+  body: string;
+}
+
+async function upsertPrTraceComment(
+  context: Context,
+  octokit: Octokit,
+  input: UpsertPrTraceCommentInput,
+): Promise<void> {
+  const commentBody = `${TRACE_COMMENT_MARKER}\n${input.body}`;
+  const comments = await octokit.paginate(octokit.rest.issues.listComments, {
+    ...context.repo,
+    issue_number: input.prNumber,
+    per_page: 100,
+  });
+
+  const existingComment = [...comments]
+    .reverse()
+    .find((comment) => typeof comment.body === "string" && comment.body.startsWith(`${TRACE_COMMENT_MARKER}\n`));
+
+  if (!existingComment) {
+    await octokit.rest.issues.createComment({
+      ...context.repo,
+      issue_number: input.prNumber,
+      body: commentBody,
+    });
+    return;
+  }
+
+  if (existingComment.body === commentBody) {
+    return;
+  }
+
+  await octokit.rest.issues.updateComment({
+    ...context.repo,
+    comment_id: existingComment.id,
+    body: commentBody,
+  });
+}
+
+export {
+  getWorkflowRun,
+  listJobsForWorkflowRun,
+  getJobsAnnotations,
+  getPRsLabels,
+  getJobsLogs,
+  upsertPrTraceComment,
+  type Octokit,
+};

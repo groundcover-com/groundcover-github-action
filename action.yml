@@ -56,6 +56,31 @@ inputs:
       Optional. When set to true, download GitHub Actions job logs and attach them to exported job spans.
       Log content is truncated before export.
     required: false
+  groundcoverBaseUrl:
+    description: >
+      Base URL for your groundcover web app, used in PR comments that link to traces.
+      Defaults to https://app.groundcover.com.
+    required: false
+    default: "https://app.groundcover.com"
+  commentOnPr:
+    description: >
+      Optional. When set to true, upsert a single PR comment with the trace ID,
+      a groundcover traces link pre-filtered by PR number, and the workflow run link.
+    required: false
+    default: "false"
+  groundcoverDuration:
+    description: >
+      Duration window for the PR comment traces link. Defaults to "Last 6 hours".
+    required: false
+    default: "Last 6 hours"
+  groundcoverBackendId:
+    description: >
+      Optional backendId query parameter for the PR comment traces link.
+    required: false
+  groundcoverTenantUUID:
+    description: >
+      Optional tenantUUID query parameter for the PR comment traces link.
+    required: false
 
 outputs:
   traceId:

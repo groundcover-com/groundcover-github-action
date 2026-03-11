@@ -8,7 +8,7 @@ const coreMock = {
 
 jest.unstable_mockModule("@actions/core", () => coreMock);
 
-const { getWorkflowRun, listJobsForWorkflowRun, getJobsAnnotations, getPRsLabels, getJobsLogs } =
+const { getWorkflowRun, listJobsForWorkflowRun, getJobsAnnotations, getPRsLabels, getJobsLogs, upsertPrTraceComment } =
   await import("./github.js");
 
 type Context = typeof ghContext;
@@ -20,6 +20,9 @@ function createMocks() {
   const downloadJobLogsForWorkflowRunFn = jest.fn<() => Promise<unknown>>();
   const listAnnotationsFn = jest.fn<() => Promise<unknown>>();
   const listLabelsOnIssueFn = jest.fn<() => Promise<unknown>>();
+  const listCommentsFn = jest.fn<() => Promise<unknown>>();
+  const createCommentFn = jest.fn<() => Promise<unknown>>();
+  const updateCommentFn = jest.fn<() => Promise<unknown>>();
   const paginate = jest.fn<() => Promise<unknown>>();
 
   const mockContext = {
@@ -38,6 +41,9 @@ function createMocks() {
       },
       issues: {
         listLabelsOnIssue: listLabelsOnIssueFn,
+        listComments: listCommentsFn,
+        createComment: createCommentFn,
+        updateComment: updateCommentFn,
       },
     },
     paginate,
@@ -52,6 +58,9 @@ function createMocks() {
     downloadJobLogsForWorkflowRunFn,
     listAnnotationsFn,
     listLabelsOnIssueFn,
+    listCommentsFn,
+    createCommentFn,
+    updateCommentFn,
   };
 }
 
@@ -230,6 +239,54 @@ describe("github", () => {
       const result = await getPRsLabels(mockContext, mockOctokit, []);
 
       expect(result).toEqual({});
+    });
+  });
+
+  describe("upsertPrTraceComment", () => {
+    it("creates a new comment when marker comment does not exist", async () => {
+      const { mockContext, mockOctokit, paginate, listCommentsFn, createCommentFn, updateCommentFn } = createMocks();
+      paginate.mockResolvedValue([{ id: 10, body: "unrelated" }]);
+
+      await upsertPrTraceComment(mockContext, mockOctokit, { prNumber: 5, body: "Trace content" });
+
+      expect(paginate).toHaveBeenCalledWith(listCommentsFn, {
+        owner: "test-owner",
+        repo: "test-repo",
+        issue_number: 5,
+        per_page: 100,
+      });
+      expect(createCommentFn).toHaveBeenCalledWith({
+        owner: "test-owner",
+        repo: "test-repo",
+        issue_number: 5,
+        body: "<!-- groundcover-trace-comment -->\nTrace content",
+      });
+      expect(updateCommentFn).not.toHaveBeenCalled();
+    });
+
+    it("updates existing marker comment when body changed", async () => {
+      const { mockContext, mockOctokit, paginate, updateCommentFn, createCommentFn } = createMocks();
+      paginate.mockResolvedValue([{ id: 12, body: "<!-- groundcover-trace-comment -->\nOld" }]);
+
+      await upsertPrTraceComment(mockContext, mockOctokit, { prNumber: 7, body: "New" });
+
+      expect(updateCommentFn).toHaveBeenCalledWith({
+        owner: "test-owner",
+        repo: "test-repo",
+        comment_id: 12,
+        body: "<!-- groundcover-trace-comment -->\nNew",
+      });
+      expect(createCommentFn).not.toHaveBeenCalled();
+    });
+
+    it("does not update marker comment when body is unchanged", async () => {
+      const { mockContext, mockOctokit, paginate, updateCommentFn, createCommentFn } = createMocks();
+      paginate.mockResolvedValue([{ id: 15, body: "<!-- groundcover-trace-comment -->\nSame" }]);
+
+      await upsertPrTraceComment(mockContext, mockOctokit, { prNumber: 9, body: "Same" });
+
+      expect(updateCommentFn).not.toHaveBeenCalled();
+      expect(createCommentFn).not.toHaveBeenCalled();
     });
   });
 });
