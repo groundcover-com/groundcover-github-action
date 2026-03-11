@@ -10,3 +10,4 @@ Thumbs.db
 dist/index.js.map
 .idea
 *.code-workspace
+.sisyphus/

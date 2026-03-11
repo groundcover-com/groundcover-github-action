@@ -258,6 +258,7 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 permissions:
   actions: read
   issues: write # required for PR trace comments (enabled by default)
+  pull-requests: write # required for PR trace comments via workflow_run triggers
 ```
 
 **Optional:**
@@ -266,9 +267,9 @@ permissions:
 permissions:
   actions: read
   issues: write
+  pull-requests: write
   contents: read # required for private repositories
   checks: read # enables exporting check annotations
-  pull-requests: read # enables exporting PR labels
 ```
 
 ## Private Repositories

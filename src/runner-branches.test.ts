@@ -518,6 +518,65 @@ describe("run branch coverage", () => {
     expect(core.setFailed).not.toHaveBeenCalled();
   });
 
+  it("does not post PR comments when commentOnPr is disabled", async () => {
+    core.getInput.mockImplementation((name: string) => {
+      if (name === "groundcoverEndpoint") return "https://localhost";
+      if (name === "otlpHeaders") return "auth=token";
+      return "";
+    });
+    getWorkflowRun.mockResolvedValue({
+      id: 42,
+      workflow_id: 2,
+      run_attempt: 1,
+      name: "CI",
+      head_sha: "abc",
+      repository: { full_name: "o/r" },
+      pull_requests: [{ number: 7 }],
+      updated_at: "2024-01-01T00:00:00Z",
+    });
+    listJobsForWorkflowRun.mockResolvedValue([]);
+    getJobsAnnotations.mockResolvedValue({});
+    getPRsLabels.mockResolvedValue({});
+
+    await run();
+
+    expect(upsertPrTraceComment).not.toHaveBeenCalled();
+    expect(core.setOutput).toHaveBeenCalledWith("traceId", "trace-id");
+  });
+
+  it("posts early comment without trace ID then updates with trace ID after export", async () => {
+    core.getInput.mockImplementation((name: string) => {
+      if (name === "groundcoverEndpoint") return "https://localhost";
+      if (name === "otlpHeaders") return "auth=token";
+      if (name === "commentOnPr") return "true";
+      return "";
+    });
+    getWorkflowRun.mockResolvedValue({
+      id: 42,
+      workflow_id: 2,
+      run_attempt: 1,
+      name: "CI",
+      head_sha: "abc",
+      repository: { full_name: "o/r" },
+      html_url: "https://github.com/o/r/actions/runs/42",
+      pull_requests: [{ number: 7 }],
+      updated_at: "2024-01-01T00:00:00Z",
+    });
+    listJobsForWorkflowRun.mockResolvedValue([]);
+    getJobsAnnotations.mockResolvedValue({});
+    getPRsLabels.mockResolvedValue({});
+
+    await run();
+
+    expect(upsertPrTraceComment).toHaveBeenCalledTimes(2);
+    const earlyBody = (upsertPrTraceComment.mock.calls[0] as unknown[])[2] as { body: string };
+    const finalBody = (upsertPrTraceComment.mock.calls[1] as unknown[])[2] as { body: string };
+    expect(earlyBody.body).not.toContain("Trace ID");
+    expect(earlyBody.body).toContain("Open in groundcover");
+    expect(finalBody.body).toContain("Trace ID: `trace-id`");
+    expect(finalBody.body).toContain("Open in groundcover");
+  });
+
   it("upserts a PR comment with trace details when workflow run is linked to PRs", async () => {
     core.getInput.mockImplementation((name: string) => {
       if (name === "groundcoverEndpoint") return "https://localhost";
@@ -542,8 +601,31 @@ describe("run branch coverage", () => {
 
     await run();
 
-    expect(upsertPrTraceComment).toHaveBeenCalledTimes(2);
-    expect(upsertPrTraceComment).toHaveBeenCalledWith(
+    expect(upsertPrTraceComment).toHaveBeenCalledTimes(4);
+
+    // Early comment (no trace ID)
+    expect(upsertPrTraceComment).toHaveBeenNthCalledWith(
+      1,
+      github.context,
+      { mocked: true },
+      {
+        prNumber: 7,
+        body: expect.not.stringContaining("Trace ID"),
+      },
+    );
+    expect(upsertPrTraceComment).toHaveBeenNthCalledWith(
+      2,
+      github.context,
+      { mocked: true },
+      {
+        prNumber: 8,
+        body: expect.not.stringContaining("Trace ID"),
+      },
+    );
+
+    // Final comment (with trace ID)
+    expect(upsertPrTraceComment).toHaveBeenNthCalledWith(
+      3,
       github.context,
       { mocked: true },
       {
@@ -551,7 +633,8 @@ describe("run branch coverage", () => {
         body: expect.stringContaining("Trace ID: `trace-id`"),
       },
     );
-    expect(upsertPrTraceComment).toHaveBeenCalledWith(
+    expect(upsertPrTraceComment).toHaveBeenNthCalledWith(
+      4,
       github.context,
       { mocked: true },
       {
@@ -687,7 +770,7 @@ describe("run branch coverage", () => {
 
     await run();
 
-    expect(upsertPrTraceComment).toHaveBeenCalledTimes(2);
+    expect(upsertPrTraceComment).toHaveBeenCalledTimes(4);
     expect(core.info).toHaveBeenCalledWith("Failed to upsert PR trace comment for #7: first failed");
     expect(core.setOutput).toHaveBeenCalledWith("traceId", "trace-id");
     expect(core.setFailed).not.toHaveBeenCalled();
