@@ -64,10 +64,11 @@ inputs:
     default: "https://app.groundcover.com"
   commentOnPr:
     description: >
-      Optional. When set to true, upsert a single PR comment with the trace ID,
+      When true, upsert a single PR comment with the trace ID,
       a groundcover traces link pre-filtered by PR number, and the workflow run link.
+      Requires issues: write permission.
     required: false
-    default: "false"
+    default: "true"
   groundcoverDuration:
     description: >
       Duration window for the PR comment traces link. Defaults to "Last 6 hours".

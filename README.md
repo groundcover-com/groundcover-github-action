@@ -4,7 +4,7 @@ Export GitHub Actions workflow runs as OpenTelemetry traces and logs to groundco
 
 ## Prerequisites
 
-- GitHub Actions workflow with `actions: read` permission
+- GitHub Actions workflow with `actions: read` and `issues: write` permissions
 - Node 20 runtime (handled automatically by GitHub Actions)
 - groundcover OTLP endpoint and ingestion key
 
@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
+      issues: write
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
@@ -59,6 +60,7 @@ Required permissions:
 ```yaml
 permissions:
   actions: read
+  issues: write
 ```
 
 ### For LLM Agents
@@ -105,6 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
+      issues: write
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
@@ -139,6 +142,7 @@ jobs:
     if: always()
     permissions:
       actions: read
+      issues: write
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
@@ -189,6 +193,7 @@ jobs:
     if: always()
     permissions:
       actions: read
+      issues: write
     steps:
       - uses: groundcover-com/groundcover-github-action@v2
         with:
@@ -234,7 +239,7 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 | `testResultsGlob`       | No       |                               | Comma-separated glob patterns for JUnit XML test result files. Matching files are parsed and summarized onto the workflow root span.                                                                        |
 | `extraAttributes`       | No       |                               | Extra resource attributes as comma-separated `key=value` pairs. Example: `"team=platform,region=us-east-1"`. Prefer using dedicated `env` and `workload` inputs when applicable.                            |
 | `groundcoverBaseUrl`    | No       | `https://app.groundcover.com` | Base URL used for the PR comment link to the groundcover Traces page. Use your workspace URL for self-hosted or custom domains.                                                                             |
-| `commentOnPr`           | No       | `false`                       | When `true`, upserts a single PR comment with trace details and a Traces link pre-filtered by PR number.                                                                                                    |
+| `commentOnPr`           | No       | `true`                        | Upserts a single PR comment with trace details and a Traces link pre-filtered by PR number. Requires `issues: write` permission. Set to `false` to disable.                                                 |
 | `groundcoverDuration`   | No       | `Last 6 hours`                | Duration query parameter used in the PR comment traces link.                                                                                                                                                |
 | `groundcoverBackendId`  | No       |                               | Optional `backendId` query parameter for the PR comment traces link.                                                                                                                                        |
 | `groundcoverTenantUUID` | No       |                               | Optional `tenantUUID` query parameter for the PR comment traces link.                                                                                                                                       |
@@ -252,6 +257,7 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 ```yaml
 permissions:
   actions: read
+  issues: write # required for PR trace comments (enabled by default)
 ```
 
 **Optional:**
@@ -259,10 +265,10 @@ permissions:
 ```yaml
 permissions:
   actions: read
+  issues: write
   contents: read # required for private repositories
   checks: read # enables exporting check annotations
   pull-requests: read # enables exporting PR labels
-  issues: write # enables upserting the PR trace comment
 ```
 
 ## Private Repositories

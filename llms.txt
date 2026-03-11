@@ -25,6 +25,8 @@ This repository contains a GitHub Action that exports GitHub Actions workflow ru
 - For separate workflow trace linking, persist the `traceparent` in the source workflow and pass it into the export workflow.
 - Always set resource attribute `source=github-actions`.
 - Support configurable `workload` and optional `env` resource attributes.
+- By default, upsert a PR comment with a groundcover traces link filtered by PR number (`commentOnPr` defaults to `true`).
+- PR commenting requires `issues: write` permission. Always include it in workflow permissions.
 
 ## Implementation rules
 

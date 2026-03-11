@@ -9,6 +9,7 @@ permissions:
   actions: read
   contents: read
   checks: read
+  issues: write
 
 jobs:
   self-test:
