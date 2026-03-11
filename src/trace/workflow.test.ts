@@ -1,5 +1,5 @@
 import { jest, describe, it, expect, beforeAll, afterEach, afterAll } from "@jest/globals";
-import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import {
   ATTR_CICD_PIPELINE_ACTION_NAME,
   ATTR_CICD_PIPELINE_RESULT,
@@ -16,6 +16,7 @@ import {
   CICD_PIPELINE_RUN_STATE_VALUE_FINALIZING,
   CICD_PIPELINE_RUN_STATE_VALUE_PENDING,
 } from "@opentelemetry/semantic-conventions/incubating";
+import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import { BasicTracerProvider, InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import type { components } from "@octokit/openapi-types";
 
@@ -115,33 +116,50 @@ describe("traceWorkflowRun", () => {
     trace.disable();
   });
 
-  it("creates root span with workflow name", () => {
+  it("creates root span with semconv span name format", () => {
     traceWorkflowRun(makeWorkflowRun({ name: "My CI" }), [makeJob()], {}, {});
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "My CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN My CI");
     expect(rootSpan).toBeDefined();
+    expect(rootSpan?.kind).toBe(SpanKind.SERVER);
   });
 
-  it("falls back to display_title when name is null", () => {
+  it("falls back to action name only when pipeline name is null", () => {
     traceWorkflowRun(makeWorkflowRun({ name: null, display_title: "Fallback Title" }), [makeJob()], {}, {});
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "Fallback Title");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN");
     expect(rootSpan).toBeDefined();
   });
 
   it("sets ERROR status for failed workflows", () => {
     traceWorkflowRun(makeWorkflowRun({ conclusion: "failure" }), [makeJob()], {}, {});
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan?.status.code).toBe(SpanStatusCode.ERROR);
     expect(rootSpan?.attributes["error"]).toBe(true);
+    expect(rootSpan?.attributes[ATTR_ERROR_TYPE]).toBe("failure");
   });
 
-  it("sets OK status for successful workflows", () => {
+  it("leaves Unset status for successful workflows", () => {
     traceWorkflowRun(makeWorkflowRun({ conclusion: "success" }), [makeJob()], {}, {});
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
-    expect(rootSpan?.status.code).toBe(SpanStatusCode.OK);
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
+    expect(rootSpan?.status.code).toBe(SpanStatusCode.UNSET);
+  });
+
+  it("does not set error.type for successful workflows", () => {
+    traceWorkflowRun(makeWorkflowRun({ conclusion: "success" }), [makeJob()], {}, {});
+
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
+    expect(rootSpan?.attributes[ATTR_ERROR_TYPE]).toBeUndefined();
+  });
+
+  it("sets error.type for error pipeline result (status failure)", () => {
+    traceWorkflowRun(makeWorkflowRun({ status: "failure", conclusion: null }), [makeJob()], {}, {});
+
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
+    expect(rootSpan?.status.code).toBe(SpanStatusCode.ERROR);
+    expect(rootSpan?.attributes[ATTR_ERROR_TYPE]).toBe("failure");
   });
 
   it("creates a Queued span before the first job", () => {
@@ -151,6 +169,22 @@ describe("traceWorkflowRun", () => {
 
     const queuedSpan = exporter.getFinishedSpans().find((s) => s.name === "Queued");
     expect(queuedSpan).toBeDefined();
+  });
+
+  it("uses earliest job started_at for Queued span end time when jobs are out of order", () => {
+    const jobs = [
+      makeJob({ id: 1, name: "late", started_at: "2024-01-01T00:01:00Z" }),
+      makeJob({ id: 2, name: "early", started_at: "2024-01-01T00:00:10Z" }),
+    ];
+
+    traceWorkflowRun(makeWorkflowRun({ run_started_at: "2024-01-01T00:00:00Z" }), jobs, {}, {});
+
+    const queuedSpan = exporter.getFinishedSpans().find((s) => s.name === "Queued");
+    expect(queuedSpan).toBeDefined();
+    if (!queuedSpan) return;
+
+    const endMs = queuedSpan.endTime[0] * 1000 + queuedSpan.endTime[1] / 1_000_000;
+    expect(endMs).toBe(new Date("2024-01-01T00:00:10Z").getTime());
   });
 
   it("processes all jobs as child spans", () => {
@@ -182,7 +216,7 @@ describe("traceWorkflowRun", () => {
   it("creates root span with no parent when no parentContext", () => {
     traceWorkflowRun(makeWorkflowRun(), [makeJob()], {}, {});
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan).toBeDefined();
     expect(rootSpan?.parentSpanId).toBeFalsy();
   });
@@ -200,7 +234,7 @@ describe("traceWorkflowRun", () => {
 
     traceWorkflowRun(makeWorkflowRun(), [makeJob()], {}, {}, parentCtx);
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan).toBeDefined();
     expect(rootSpan?.parentSpanId).toBe("b7ad6b7169203331");
   });
@@ -208,7 +242,7 @@ describe("traceWorkflowRun", () => {
   it("sets workflow attributes correctly", () => {
     traceWorkflowRun(makeWorkflowRun(), [makeJob()], {}, {});
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan?.attributes["cicd.pipeline.name"]).toBe("CI");
     expect(rootSpan?.attributes["cicd.pipeline.run.id"]).toBe(1000);
     expect(rootSpan?.attributes[ATTR_CICD_PIPELINE_ACTION_NAME]).toBe(CICD_PIPELINE_ACTION_NAME_VALUE_RUN);
@@ -241,7 +275,7 @@ describe("traceWorkflowRun", () => {
     traceWorkflowRun(makeWorkflowRun({ id: 2013, status: "expected", conclusion: null }), [makeJob()], {}, {});
     traceWorkflowRun(makeWorkflowRun({ id: 2014, status: "startup_failure", conclusion: null }), [makeJob()], {}, {});
 
-    const spans = exporter.getFinishedSpans().filter((span) => span.name === "CI");
+    const spans = exporter.getFinishedSpans().filter((span) => span.name === "RUN CI");
     expect(spans[0]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_SUCCESS);
     expect(spans[0]?.attributes[ATTR_CICD_PIPELINE_RUN_STATE]).toBe(CICD_PIPELINE_RUN_STATE_VALUE_FINALIZING);
     expect(spans[1]?.attributes[ATTR_CICD_PIPELINE_RESULT]).toBe(CICD_PIPELINE_RESULT_VALUE_FAILURE);
@@ -280,7 +314,7 @@ describe("traceWorkflowRun", () => {
       {},
     );
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan?.attributes["github.workflow_url"]).toBe(
       "https://api.github.com/repos/o/r/actions/workflows/ci.yml",
     );
@@ -309,7 +343,7 @@ describe("traceWorkflowRun", () => {
 
     traceWorkflowRun(makeWorkflowRun({ referenced_workflows: referencedWorkflows }), [makeJob()], {}, {});
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan?.attributes["github.referenced_workflows.0.path"]).toBe(".github/workflows/reusable.yml");
     expect(rootSpan?.attributes["github.referenced_workflows.0.sha"]).toBe("abc123");
     expect(rootSpan?.attributes["github.referenced_workflows.0.ref"]).toBe("refs/heads/main");
@@ -319,7 +353,7 @@ describe("traceWorkflowRun", () => {
   it("handles null and empty referenced workflows", () => {
     traceWorkflowRun(makeWorkflowRun({ referenced_workflows: null }), [makeJob()], {}, {});
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan).toBeDefined();
   });
 
@@ -347,7 +381,7 @@ describe("traceWorkflowRun", () => {
       {},
     );
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI #100");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN");
     expect(rootSpan).toBeDefined();
     expect(rootSpan?.attributes["cicd.pipeline.name"]).toBeUndefined();
     expect(rootSpan?.attributes["github.status"]).toBeUndefined();
@@ -362,7 +396,7 @@ describe("traceWorkflowRun", () => {
       {},
     );
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan?.attributes["github.run_attempt"]).toBe(1);
   });
 
@@ -381,7 +415,7 @@ describe("traceWorkflowRun", () => {
 
     traceWorkflowRun(makeWorkflowRun({ pull_requests: pullRequests }), [makeJob()], {}, prLabels);
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan?.attributes["github.head_ref"]).toBe("feature");
     expect(rootSpan?.attributes["github.base_ref"]).toBe("main");
     expect(rootSpan?.attributes["github.pull_requests.0.number"]).toBe(7);
@@ -400,7 +434,7 @@ describe("traceWorkflowRun", () => {
       {},
     );
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan?.attributes["github.actor"]).toBe("alice");
     expect(rootSpan?.attributes["github.triggering_actor"]).toBe("bob");
     expect(rootSpan?.attributes["github.repository"]).toBe("o/r");
@@ -417,7 +451,7 @@ describe("traceWorkflowRun", () => {
       duration: 12.5,
     });
 
-    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "CI");
+    const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan?.attributes["test.suites"]).toBe(2);
     expect(rootSpan?.attributes["test.total"]).toBe(10);
     expect(rootSpan?.attributes["test.passed"]).toBe(8);
