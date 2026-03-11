@@ -7,7 +7,14 @@ import { ATTR_SERVICE_INSTANCE_ID } from "@opentelemetry/semantic-conventions/in
 import { findTestResultsSummary } from "./test-results";
 import { traceWorkflowRun } from "./trace/workflow";
 import { createLoggerProvider, createTracerProvider, extractParentContext, stringToRecord } from "./tracer";
-import { getJobsAnnotations, getJobsLogs, getPRsLabels, getWorkflowRun, listJobsForWorkflowRun } from "./github";
+import {
+  getJobsAnnotations,
+  getJobsLogs,
+  getPRsLabels,
+  getWorkflowRun,
+  listJobsForWorkflowRun,
+  upsertPrTraceComment,
+} from "./github";
 
 function isOctokitError(err: unknown): err is RequestError {
   return err instanceof RequestError;
@@ -19,6 +26,12 @@ interface GithubData {
   jobAnnotations: Record<number, Awaited<ReturnType<typeof getJobsAnnotations>>[number]>;
   jobLogs: Record<number, string>;
   prLabels: Record<number, string[]>;
+}
+
+interface TraceLinkOptions {
+  duration: string;
+  backendId?: string;
+  tenantUUID?: string;
 }
 
 function resolveOtlpHeaders(otlpHeaders: string, apiKey: string): string {
@@ -82,6 +95,68 @@ async function fetchGithub(token: string, runId: number, exportLogs: boolean): P
   return { workflowRun, jobs, jobAnnotations, jobLogs, prLabels };
 }
 
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, "");
+}
+
+function buildTracesUrl(baseUrl: string): string {
+  return `${normalizeBaseUrl(baseUrl)}/traces`;
+}
+
+function buildPrTracesUrl(baseUrl: string, prIndex: number, prNumber: number, options: TraceLinkOptions): string {
+  const tracesUrl = buildTracesUrl(baseUrl);
+  const filterQuery = `github.pull_requests.${prIndex}.number:${prNumber}`;
+  const filters = JSON.stringify([filterQuery]);
+  const encodedFilters = encodeURIComponent(filters);
+  const params = new URLSearchParams({ duration: options.duration, filters: encodedFilters });
+  if (options.backendId) {
+    params.set("backendId", options.backendId);
+  }
+  if (options.tenantUUID) {
+    params.set("tenantUUID", options.tenantUUID);
+  }
+  return `${tracesUrl}?${params.toString()}`;
+}
+
+async function upsertPrTraceComments(
+  token: string,
+  workflowRun: GithubData["workflowRun"],
+  traceId: string,
+  groundcoverBaseUrl: string,
+  traceLinkOptions: TraceLinkOptions,
+): Promise<void> {
+  const pullRequests = workflowRun.pull_requests ?? [];
+  if (pullRequests.length === 0) {
+    return;
+  }
+
+  const octokit = getOctokit(token);
+  const runUrl =
+    workflowRun.html_url || `https://github.com/${workflowRun.repository.full_name}/actions/runs/${workflowRun.id}`;
+  for (const [prIndex, pullRequest] of pullRequests.entries()) {
+    const tracesUrl = buildPrTracesUrl(groundcoverBaseUrl, prIndex, pullRequest.number, traceLinkOptions);
+    const commentBody = [
+      "<details>",
+      `<summary><a href="${tracesUrl}">Open in groundcover</a></summary>`,
+      "<p>",
+      "",
+      `- PR: #${pullRequest.number}`,
+      `- Trace ID: \`${traceId}\``,
+      `- Workflow run: [View run](${runUrl})`,
+      "",
+      "</p>",
+      "</details>",
+    ].join("\n");
+
+    try {
+      await upsertPrTraceComment(context, octokit, { prNumber: pullRequest.number, body: commentBody });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      core.info(`Failed to upsert PR trace comment for #${pullRequest.number}: ${message}`);
+    }
+  }
+}
+
 async function run(): Promise<void> {
   try {
     const otlpEndpoint = core.getInput("groundcoverEndpoint");
@@ -97,6 +172,11 @@ async function run(): Promise<void> {
     const workload = core.getInput("workload") || undefined;
     const ghToken = core.getInput("githubToken") || process.env["GITHUB_TOKEN"] || "";
     const traceparent = core.getInput("traceparent") || undefined;
+    const groundcoverBaseUrl = core.getInput("groundcoverBaseUrl") || "https://app.groundcover.com";
+    const commentOnPr = core.getInput("commentOnPr") === "true";
+    const groundcoverDuration = core.getInput("groundcoverDuration") || "Last 6 hours";
+    const groundcoverBackendId = core.getInput("groundcoverBackendId") || undefined;
+    const groundcoverTenantUUID = core.getInput("groundcoverTenantUUID") || undefined;
 
     if (apiKey) core.setSecret(apiKey);
     core.setSecret(resolvedOtlpHeaders);
@@ -140,6 +220,16 @@ async function run(): Promise<void> {
     if (loggerProvider) {
       await loggerProvider.forceFlush();
     }
+
+    if (commentOnPr) {
+      const traceLinkOptions: TraceLinkOptions = {
+        duration: groundcoverDuration,
+        ...(groundcoverBackendId ? { backendId: groundcoverBackendId } : {}),
+        ...(groundcoverTenantUUID ? { tenantUUID: groundcoverTenantUUID } : {}),
+      };
+      await upsertPrTraceComments(ghToken, workflowRun, traceId, groundcoverBaseUrl, traceLinkOptions);
+    }
+
     await provider.shutdown();
     if (loggerProvider) {
       await loggerProvider.shutdown();
@@ -151,4 +241,4 @@ async function run(): Promise<void> {
   }
 }
 
-export { run, isOctokitError, resolveOtlpHeaders };
+export { run, isOctokitError, resolveOtlpHeaders, buildTracesUrl, buildPrTracesUrl };

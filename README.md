@@ -82,6 +82,7 @@ Use these rules when generating workflows or modifying this repository:
 - Adds resource attributes for `source`, `workload`, and optional `env`
 - Can parse JUnit XML test results and attach a summary to the workflow root span
 - Supports additional custom resource attributes for team/region/metadata
+- Upserts a single PR comment with trace details and a link to groundcover traces
 
 ## Usage
 
@@ -219,19 +220,24 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 
 ## Inputs
 
-| Input             | Required | Default               | Description                                                                                                                                                                                                 |
-| ----------------- | -------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `groundcoverEndpoint`    | Yes      |                       | OTLP endpoint base URL. Supports `https://`, `http://`, and `grpc://` schemes. Do not include `/v1/traces` — the exporter appends it automatically.                                                         |
-| `apiKey`          | Yes      |                       | groundcover ingestion key.                                                                                                                                                                                   |
-| `otlpHeaders`     | No       |                       | Comma-separated `key=value` pairs sent as OTLP exporter headers. Advanced — takes precedence over `apiKey` when both are set.                                                                               |
-| `githubToken`     | No       | `${{ github.token }}` | GitHub token with `actions:read` permission. Required for private repos. Use `secrets.GITHUB_TOKEN` or a PAT.                                                                                               |
-| `runId`           | No       | Current run           | Workflow Run ID to export. Defaults to the current workflow run. When using `workflow_run`, set this to `${{ github.event.workflow_run.id }}` to export the triggering run.                                 |
-| `otelServiceName` | No       | Workflow name         | Overrides the `service.name` OTEL resource attribute. Defaults to the workflow name.                                                                                                                        |
-| `traceparent`     | No       |                       | W3C Trace Context `traceparent` value (e.g., `00-<trace_id>-<span_id>-01`). When provided, the workflow root span becomes a child of this trace, enabling correlation between CI/CD and application traces. |
-| `env`             | No       |                       | Environment name added to resource attributes (e.g., `production`, `staging`).                                                                                                                              |
-| `workload`        | No       | Workflow name         | Workload name added to resource attributes. Use this to group traces by service/workload.                                                                                                                   |
-| `testResultsGlob` | No       |                       | Comma-separated glob patterns for JUnit XML test result files. Matching files are parsed and summarized onto the workflow root span.                                                                        |
-| `extraAttributes` | No       |                       | Extra resource attributes as comma-separated `key=value` pairs. Example: `"team=platform,region=us-east-1"`. Prefer using dedicated `env` and `workload` inputs when applicable.                            |
+| Input                   | Required | Default                       | Description                                                                                                                                                                                                 |
+| ----------------------- | -------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groundcoverEndpoint`   | Yes      |                               | OTLP endpoint base URL. Supports `https://`, `http://`, and `grpc://` schemes. Do not include `/v1/traces` — the exporter appends it automatically.                                                         |
+| `apiKey`                | Yes      |                               | groundcover ingestion key.                                                                                                                                                                                  |
+| `otlpHeaders`           | No       |                               | Comma-separated `key=value` pairs sent as OTLP exporter headers. Advanced — takes precedence over `apiKey` when both are set.                                                                               |
+| `githubToken`           | No       | `${{ github.token }}`         | GitHub token with `actions:read` permission. Required for private repos. Use `secrets.GITHUB_TOKEN` or a PAT.                                                                                               |
+| `runId`                 | No       | Current run                   | Workflow Run ID to export. Defaults to the current workflow run. When using `workflow_run`, set this to `${{ github.event.workflow_run.id }}` to export the triggering run.                                 |
+| `otelServiceName`       | No       | Workflow name                 | Overrides the `service.name` OTEL resource attribute. Defaults to the workflow name.                                                                                                                        |
+| `traceparent`           | No       |                               | W3C Trace Context `traceparent` value (e.g., `00-<trace_id>-<span_id>-01`). When provided, the workflow root span becomes a child of this trace, enabling correlation between CI/CD and application traces. |
+| `env`                   | No       |                               | Environment name added to resource attributes (e.g., `production`, `staging`).                                                                                                                              |
+| `workload`              | No       | Workflow name                 | Workload name added to resource attributes. Use this to group traces by service/workload.                                                                                                                   |
+| `testResultsGlob`       | No       |                               | Comma-separated glob patterns for JUnit XML test result files. Matching files are parsed and summarized onto the workflow root span.                                                                        |
+| `extraAttributes`       | No       |                               | Extra resource attributes as comma-separated `key=value` pairs. Example: `"team=platform,region=us-east-1"`. Prefer using dedicated `env` and `workload` inputs when applicable.                            |
+| `groundcoverBaseUrl`    | No       | `https://app.groundcover.com` | Base URL used for the PR comment link to the groundcover Traces page. Use your workspace URL for self-hosted or custom domains.                                                                             |
+| `commentOnPr`           | No       | `false`                       | When `true`, upserts a single PR comment with trace details and a Traces link pre-filtered by PR number.                                                                                                    |
+| `groundcoverDuration`   | No       | `Last 6 hours`                | Duration query parameter used in the PR comment traces link.                                                                                                                                                |
+| `groundcoverBackendId`  | No       |                               | Optional `backendId` query parameter for the PR comment traces link.                                                                                                                                        |
+| `groundcoverTenantUUID` | No       |                               | Optional `tenantUUID` query parameter for the PR comment traces link.                                                                                                                                       |
 
 ## Outputs
 
@@ -256,6 +262,7 @@ permissions:
   contents: read # required for private repositories
   checks: read # enables exporting check annotations
   pull-requests: read # enables exporting PR labels
+  issues: write # enables upserting the PR trace comment
 ```
 
 ## Private Repositories
