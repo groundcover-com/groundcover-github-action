@@ -2,6 +2,7 @@
 
 This repository contains a GitHub Action that exports GitHub Actions workflow runs as OpenTelemetry traces to groundcover.
 
+
 ## Canonical files
 
 - `action.yml`: canonical input and output contract
