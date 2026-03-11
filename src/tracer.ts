@@ -64,8 +64,12 @@ function buildSignalUrl(baseEndpoint: string, signalPath: string): string {
   if (!isHttpEndpoint(baseEndpoint)) {
     return baseEndpoint;
   }
-  const base = baseEndpoint.endsWith("/") ? baseEndpoint.slice(0, -1) : baseEndpoint;
-  return `${base}/${signalPath}`;
+  const trimmedBase = baseEndpoint.replace(/\/+$/, "");
+  if (trimmedBase.endsWith(`/${signalPath}`)) {
+    return trimmedBase;
+  }
+  const normalizedBase = trimmedBase.replace(/\/v1\/(?:traces|logs)$/, "");
+  return `${normalizedBase}/${signalPath}`;
 }
 
 function createLoggerProvider(endpoint: string, headers: string, attributes: Attributes): LoggerProvider {

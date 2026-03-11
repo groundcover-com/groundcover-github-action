@@ -157,6 +157,16 @@ describe("tracer", () => {
     expect(buildSignalUrl("localhost:4317", "v1/logs")).toBe("localhost:4317");
   });
 
+  it("normalizes legacy full-path endpoints to avoid double signal paths", async () => {
+    const { buildSignalUrl } = await import("./tracer.js");
+
+    // Legacy endpoint already containing /v1/traces
+    expect(buildSignalUrl("https://otel.example/v1/traces", "v1/traces")).toBe("https://otel.example/v1/traces");
+    expect(buildSignalUrl("https://otel.example/v1/traces/", "v1/traces")).toBe("https://otel.example/v1/traces");
+    expect(buildSignalUrl("https://otel.example/v1/traces", "v1/logs")).toBe("https://otel.example/v1/logs");
+    expect(buildSignalUrl("https://otel.example/v1/logs", "v1/traces")).toBe("https://otel.example/v1/traces");
+  });
+
   it("uses OTLP HTTP log exporter for HTTP endpoints", async () => {
     const warning = jest.fn<(message: string) => void>();
     const fakeExporter = {
