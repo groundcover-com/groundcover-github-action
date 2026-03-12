@@ -53,6 +53,7 @@ jest.unstable_mockModule("./tracer.js", () => ({
 }));
 jest.unstable_mockModule("./trace/workflow.js", () => ({ traceWorkflowRun }));
 jest.unstable_mockModule("./test-results.js", () => ({ findTestResultsSummary }));
+jest.unstable_mockModule("../package.json", () => ({ version: "0.0.0-test" }));
 
 const { run, resolveOtlpHeaders, buildTracesUrl, buildPrTracesUrl } = await import("./runner.js");
 
@@ -289,6 +290,8 @@ describe("run branch coverage", () => {
         source: "github-actions",
         workload: "22",
         env: "prod",
+        "groundcover.github_action.name": "groundcover-github-action",
+        "groundcover.github_action.version": "0.0.0-test",
       }),
     );
     expect(core.setSecret).toHaveBeenCalledWith("gc-secret");
