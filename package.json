@@ -2,7 +2,7 @@
   "private": true,
   "name": "@groundcover-com/groundcover-github-action",
   "type": "module",
-  "version": "2.0.0",
+  "version": "2.4.0",
   "description": "Export GitHub Actions workflow runs as OpenTelemetry traces to groundcover",
   "scripts": {
     "lint": "eslint src/",
