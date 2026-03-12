@@ -7,6 +7,7 @@ import { replayOctokit } from "./replay.js";
 
 jest.unstable_mockModule("@actions/core", () => core);
 jest.unstable_mockModule("@actions/github", () => github);
+jest.unstable_mockModule("../package.json", () => ({ version: "0.0.0-test" }));
 
 process.env["OTEL_CONSOLE_ONLY"] = "true";
 process.env["OTEL_ID_SEED"] = "123";

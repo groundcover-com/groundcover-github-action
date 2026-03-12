@@ -19,7 +19,8 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "noEmit": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules", "coverage", "jest.config.ts", "src/**/*.test.ts", "src/__fixtures__/**"]

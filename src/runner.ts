@@ -15,6 +15,7 @@ import {
   listJobsForWorkflowRun,
   upsertPrTraceComment,
 } from "./github";
+import { version as ACTION_VERSION } from "../package.json";
 
 function isOctokitError(err: unknown): err is RequestError {
   return err instanceof RequestError;
@@ -226,6 +227,8 @@ async function run(): Promise<void> {
       "github.repository": workflowRun.repository.full_name,
       source: "github-actions",
       workload: workload || workflowRun.name || `${workflowRun.workflow_id}`,
+      "groundcover.github_action.name": "groundcover-github-action",
+      "groundcover.github_action.version": ACTION_VERSION,
       ...(env ? { env } : {}),
       ...extraAttributes,
     };
