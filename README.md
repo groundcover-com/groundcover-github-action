@@ -82,6 +82,7 @@ Use these rules when generating workflows or modifying this repository:
 - Supports OTLP/HTTP and OTLP/gRPC transports
 - Follows the [OTEL CI/CD semantic conventions](https://opentelemetry.io/docs/specs/semconv/cicd/)
 - Adds resource attributes for `source`, `workload`, and optional `env`
+- Exports GitHub Actions job logs as OpenTelemetry log records correlated with job and step spans (enabled by default)
 - Can parse JUnit XML test results and attach a summary to the workflow root span
 - Supports additional custom resource attributes for team/region/metadata
 - Upserts a single PR comment with trace details and a link to groundcover traces
@@ -237,6 +238,7 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 | `env`                   | No       |                               | Environment name added to resource attributes (e.g., `production`, `staging`).                                                                                                                              |
 | `workload`              | No       | Workflow name                 | Workload name added to resource attributes. Use this to group traces by service/workload.                                                                                                                   |
 | `testResultsGlob`       | No       |                               | Comma-separated glob patterns for JUnit XML test result files. Matching files are parsed and summarized onto the workflow root span.                                                                        |
+| `exportLogs`            | No       | `true`                        | Export GitHub Actions job logs as OpenTelemetry log records correlated with job and step spans. Set to `false` to disable.                                                                                  |
 | `extraAttributes`       | No       |                               | Extra resource attributes as comma-separated `key=value` pairs. Example: `"team=platform,region=us-east-1"`. Prefer using dedicated `env` and `workload` inputs when applicable.                            |
 | `groundcoverBaseUrl`    | No       | `https://app.groundcover.com` | Base URL used for the PR comment link to the groundcover Traces page. Use your workspace URL for self-hosted or custom domains.                                                                             |
 | `commentOnPr`           | No       | `true`                        | Upserts a single PR comment with trace details and a Traces link pre-filtered by PR number. Requires `issues: write` permission. Set to `false` to disable.                                                 |
@@ -340,6 +342,27 @@ If your workflow produces JUnit XML reports, set `testResultsGlob` to one or mor
 - `test.duration`
 
 The matching XML files must exist on disk in the job running this action. In a separate `workflow_run` export workflow, download the test result artifacts first if you want them included.
+
+## Log Export
+
+By default, the action downloads GitHub Actions job logs and exports them as OpenTelemetry log records to your OTLP endpoint (`/v1/logs`). Each log record is correlated with the matching job or step span via trace context, so logs appear alongside spans in your observability backend.
+
+The action parses GitHub's log format to extract:
+
+- **Timestamps** from the ISO 8601 prefixes on each log line
+- **Severity** from `##[error]` and `##[warning]` markers (defaults to INFO)
+
+Log lines are matched to steps by timestamp. Lines that fall outside any step's time window are attached to the parent job span instead.
+
+To disable log export, set `exportLogs: false`:
+
+```yaml
+- uses: groundcover-com/groundcover-github-action@v2
+  with:
+    groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
+    apiKey: ${{ secrets.GC_API_KEY }}
+    exportLogs: false
+```
 
 ## How Trace Linking Works
 
