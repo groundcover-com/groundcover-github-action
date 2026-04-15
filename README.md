@@ -5,7 +5,7 @@ Export GitHub Actions workflow runs as OpenTelemetry traces and logs to groundco
 ## Prerequisites
 
 - GitHub Actions workflow with `actions: read` and `issues: write` permissions
-- Node 20 runtime (handled automatically by GitHub Actions)
+- Node 24 runtime (handled automatically by GitHub Actions)
 - groundcover OTLP endpoint and ingestion key
 
 ## Quick Start
