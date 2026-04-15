@@ -1,7 +1,10 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from "@jest/globals";
 import { context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import {
+  ATTR_CICD_PIPELINE_TASK_NAME,
+  ATTR_CICD_PIPELINE_TASK_RUN_ID,
   ATTR_CICD_PIPELINE_TASK_RUN_RESULT,
+  ATTR_CICD_PIPELINE_TASK_RUN_URL_FULL,
   ATTR_CICD_PIPELINE_TASK_TYPE,
   ATTR_CICD_WORKER_ID,
   ATTR_CICD_WORKER_NAME,
@@ -280,7 +283,7 @@ describe("traceJob", () => {
 
     tracer.startActiveSpan("job-log-test", (span) => {
       activeSpanContext = context.active();
-      emitJobLogs(logLines, 10, "Build");
+      emitJobLogs(logLines, 10, "Build", "success", "https://github.com/org/repo/actions/runs/1/jobs/10");
       span.end();
     });
 
@@ -292,7 +295,14 @@ describe("traceJob", () => {
       severityNumber: SeverityNumber.ERROR,
       severityText: "ERROR",
       context: activeSpanContext,
-      attributes: { "github.job.id": 10, "github.job.name": "Build" },
+      attributes: {
+        [ATTR_CICD_PIPELINE_TASK_NAME]: "Build",
+        [ATTR_CICD_PIPELINE_TASK_RUN_ID]: 10,
+        [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS,
+        [ATTR_CICD_PIPELINE_TASK_RUN_URL_FULL]: "https://github.com/org/repo/actions/runs/1/jobs/10",
+        "github.job.id": 10,
+        "github.job.name": "Build",
+      },
     });
   });
 
@@ -604,6 +614,9 @@ describe("traceJob", () => {
       expect.objectContaining({
         body: "setup line 1\nsetup line 2",
         attributes: {
+          [ATTR_CICD_PIPELINE_TASK_NAME]: "Set up job",
+          [ATTR_CICD_PIPELINE_TASK_RUN_ID]: "10:1",
+          [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS,
           "github.job.id": 10,
           "github.job.name": "Build",
           "github.job.step.name": "Set up job",
@@ -615,6 +628,9 @@ describe("traceJob", () => {
       expect.objectContaining({
         body: "npm line",
         attributes: {
+          [ATTR_CICD_PIPELINE_TASK_NAME]: "Run npm ci",
+          [ATTR_CICD_PIPELINE_TASK_RUN_ID]: "10:2",
+          [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS,
           "github.job.id": 10,
           "github.job.name": "Build",
           "github.job.step.name": "Run npm ci",
@@ -627,7 +643,14 @@ describe("traceJob", () => {
     expect(emit).toHaveBeenCalledWith(
       expect.objectContaining({
         body: "orphan line",
-        attributes: { "github.job.id": 10, "github.job.name": "Build" },
+        attributes: {
+          [ATTR_CICD_PIPELINE_TASK_NAME]: "Build",
+          [ATTR_CICD_PIPELINE_TASK_RUN_ID]: 10,
+          [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS,
+          [ATTR_CICD_PIPELINE_TASK_RUN_URL_FULL]: "https://github.com/acme/repo/actions/runs/20/job/10",
+          "github.job.id": 10,
+          "github.job.name": "Build",
+        },
       }),
     );
   });

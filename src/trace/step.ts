@@ -56,6 +56,9 @@ function traceStep(step: Step, logLines?: ParsedLogLine[], jobId?: number, jobNa
         severityText: merged.severityText,
         context: activeContext,
         attributes: {
+          [ATTR_CICD_PIPELINE_TASK_NAME]: step.name,
+          [ATTR_CICD_PIPELINE_TASK_RUN_ID]: jobId != null ? `${jobId}:${step.number}` : String(step.number),
+          [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: toStepResult(step.conclusion),
           "github.job.id": jobId,
           "github.job.name": jobName,
           "github.job.step.name": step.name,
