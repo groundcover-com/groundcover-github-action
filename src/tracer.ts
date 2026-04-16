@@ -8,7 +8,7 @@ import { OTLPLogExporter as GrpcOTLPLogExporter } from "@opentelemetry/exporter-
 import { OTLPLogExporter as ProtoOTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto";
 import { OTLPTraceExporter as GrpcOTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc";
 import { OTLPTraceExporter as ProtoOTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
-import { Resource } from "@opentelemetry/resources";
+import { defaultResource, resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchLogRecordProcessor, type LogRecordExporter, LoggerProvider } from "@opentelemetry/sdk-logs";
 import {
   BasicTracerProvider,
@@ -93,7 +93,7 @@ function createLoggerProvider(endpoint: string, headers: string, attributes: Att
 
   // Cast through unknown to bridge the version mismatch between @opentelemetry/resources 1.x
   // (trace SDK) and 2.x (sdk-logs). The runtime shape is identical.
-  const resource = Resource.default().merge(new Resource(attributes));
+  const resource = defaultResource().merge(resourceFromAttributes(attributes));
   const config: Record<string, unknown> = { resource };
   if (exporter) {
     config["processors"] = [new BatchLogRecordProcessor(exporter)];
@@ -126,7 +126,7 @@ function createTracerProvider(endpoint: string, headers: string, attributes: Att
     }
   }
 
-  const resource = Resource.default().merge(new Resource(attributes));
+  const resource = defaultResource().merge(resourceFromAttributes(attributes));
 
   const provider = new BasicTracerProvider({
     resource,

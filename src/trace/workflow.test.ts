@@ -218,7 +218,7 @@ describe("traceWorkflowRun", () => {
 
     const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan).toBeDefined();
-    expect(rootSpan?.parentSpanId).toBeFalsy();
+    expect(rootSpan?.parentSpanContext?.spanId).toBeFalsy();
   });
 
   it("uses trace ID from traceparent when parentContext is provided", () => {
@@ -236,7 +236,7 @@ describe("traceWorkflowRun", () => {
 
     const rootSpan = exporter.getFinishedSpans().find((s) => s.name === "RUN CI");
     expect(rootSpan).toBeDefined();
-    expect(rootSpan?.parentSpanId).toBe("b7ad6b7169203331");
+    expect(rootSpan?.parentSpanContext?.spanId).toBe("b7ad6b7169203331");
   });
 
   it("sets workflow attributes correctly", () => {
