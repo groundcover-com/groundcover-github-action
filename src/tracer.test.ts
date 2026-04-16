@@ -93,11 +93,12 @@ describe("tracer", () => {
     });
     expect(grpcConstructor).not.toHaveBeenCalled();
 
-    const providerWithResource = provider as unknown as {
-      resource: { attributes: Record<string, unknown> };
-    };
-    expect(providerWithResource.resource.attributes["service.name"]).toBe("svc-http");
-    expect(providerWithResource.resource.attributes["telemetry.sdk.language"]).toBe("nodejs");
+    const tracer = provider.getTracer("test");
+    const span = tracer.startSpan("probe");
+    span.end();
+    const attrs = (span as unknown as { resource: { attributes: Record<string, unknown> } }).resource.attributes;
+    expect(attrs["service.name"]).toBe("svc-http");
+    expect(attrs["telemetry.sdk.language"]).toBe("nodejs");
   });
 
   it("uses OTLP gRPC exporter for non HTTP endpoints", async () => {
