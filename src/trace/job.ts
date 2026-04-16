@@ -155,7 +155,7 @@ function emitJobLogs(
     context: activeContext,
     attributes: {
       [ATTR_CICD_PIPELINE_TASK_NAME]: jobName,
-      [ATTR_CICD_PIPELINE_TASK_RUN_ID]: jobId,
+      [ATTR_CICD_PIPELINE_TASK_RUN_ID]: String(jobId),
       [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: toTaskResult(conclusion),
       [ATTR_CICD_PIPELINE_TASK_RUN_URL_FULL]: htmlUrl ?? undefined,
       "github.job.id": jobId,

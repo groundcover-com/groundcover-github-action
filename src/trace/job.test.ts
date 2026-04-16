@@ -297,7 +297,7 @@ describe("traceJob", () => {
       context: activeSpanContext,
       attributes: {
         [ATTR_CICD_PIPELINE_TASK_NAME]: "Build",
-        [ATTR_CICD_PIPELINE_TASK_RUN_ID]: 10,
+        [ATTR_CICD_PIPELINE_TASK_RUN_ID]: "10",
         [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS,
         [ATTR_CICD_PIPELINE_TASK_RUN_URL_FULL]: "https://github.com/org/repo/actions/runs/1/jobs/10",
         "github.job.id": 10,
@@ -645,7 +645,7 @@ describe("traceJob", () => {
         body: "orphan line",
         attributes: {
           [ATTR_CICD_PIPELINE_TASK_NAME]: "Build",
-          [ATTR_CICD_PIPELINE_TASK_RUN_ID]: 10,
+          [ATTR_CICD_PIPELINE_TASK_RUN_ID]: "10",
           [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: CICD_PIPELINE_TASK_RUN_RESULT_VALUE_SUCCESS,
           [ATTR_CICD_PIPELINE_TASK_RUN_URL_FULL]: "https://github.com/acme/repo/actions/runs/20/job/10",
           "github.job.id": 10,
