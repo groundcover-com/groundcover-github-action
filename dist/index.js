@@ -47707,6 +47707,9 @@ function traceStep(step, logLines, jobId, jobName) {
                 severityText: merged.severityText,
                 context: activeContext,
                 attributes: {
+                    [ATTR_CICD_PIPELINE_TASK_NAME]: step.name,
+                    [ATTR_CICD_PIPELINE_TASK_RUN_ID]: jobId != null ? `${jobId}:${step.number}` : String(step.number),
+                    [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: toStepResult(step.conclusion),
                     "github.job.id": jobId,
                     "github.job.name": jobName,
                     "github.job.step.name": step.name,
@@ -47831,7 +47834,7 @@ function mergeLogLines(logLines) {
     }
     return { timestamp, body, severityNumber, severityText };
 }
-function emitJobLogs(logLines, jobId, jobName) {
+function emitJobLogs(logLines, jobId, jobName, conclusion, htmlUrl) {
     const logger = logs.getLogger("otel-cicd-export-action");
     const activeContext = context.active();
     const merged = mergeLogLines(logLines);
@@ -47842,6 +47845,10 @@ function emitJobLogs(logLines, jobId, jobName) {
         severityText: merged.severityText,
         context: activeContext,
         attributes: {
+            [ATTR_CICD_PIPELINE_TASK_NAME]: jobName,
+            [ATTR_CICD_PIPELINE_TASK_RUN_ID]: String(jobId),
+            [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: toTaskResult(conclusion),
+            [ATTR_CICD_PIPELINE_TASK_RUN_URL_FULL]: htmlUrl ?? undefined,
             "github.job.id": jobId,
             "github.job.name": jobName,
         },
@@ -47876,7 +47883,7 @@ function traceJob(job, annotations, jobLog) {
         }
         // Emit unmatched log lines at job level as fallback
         if (correlated && correlated.unmatched.length > 0) {
-            emitJobLogs(correlated.unmatched, job.id, job.name);
+            emitJobLogs(correlated.unmatched, job.id, job.name, job.conclusion, job.html_url);
         }
         // Some skipped and post jobs return completed_at dates that are older than started_at
         span.end(new Date(Math.max(startTime.getTime(), completedTime.getTime())));

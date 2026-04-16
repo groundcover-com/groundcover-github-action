@@ -136,7 +136,13 @@ function mergeLogLines(logLines: ParsedLogLine[]): ParsedLogLine {
   return { timestamp, body, severityNumber, severityText };
 }
 
-function emitJobLogs(logLines: ParsedLogLine[], jobId: number, jobName: string): void {
+function emitJobLogs(
+  logLines: ParsedLogLine[],
+  jobId: number,
+  jobName: string,
+  conclusion: components["schemas"]["job"]["conclusion"],
+  htmlUrl: string | null,
+): void {
   const logger = logs.getLogger("otel-cicd-export-action");
   const activeContext = context.active();
   const merged = mergeLogLines(logLines);
@@ -148,6 +154,10 @@ function emitJobLogs(logLines: ParsedLogLine[], jobId: number, jobName: string):
     severityText: merged.severityText,
     context: activeContext,
     attributes: {
+      [ATTR_CICD_PIPELINE_TASK_NAME]: jobName,
+      [ATTR_CICD_PIPELINE_TASK_RUN_ID]: String(jobId),
+      [ATTR_CICD_PIPELINE_TASK_RUN_RESULT]: toTaskResult(conclusion),
+      [ATTR_CICD_PIPELINE_TASK_RUN_URL_FULL]: htmlUrl ?? undefined,
       "github.job.id": jobId,
       "github.job.name": jobName,
     },
@@ -193,7 +203,7 @@ function traceJob(
 
     // Emit unmatched log lines at job level as fallback
     if (correlated && correlated.unmatched.length > 0) {
-      emitJobLogs(correlated.unmatched, job.id, job.name);
+      emitJobLogs(correlated.unmatched, job.id, job.name, job.conclusion, job.html_url);
     }
 
     // Some skipped and post jobs return completed_at dates that are older than started_at
