@@ -53,9 +53,10 @@ inputs:
     required: false
   exportLogs:
     description: >
-      Optional. When set to true, download GitHub Actions job logs and attach them to exported job spans.
-      Log content is truncated before export.
+      Download GitHub Actions job logs and export them as OpenTelemetry log records
+      correlated with the matching job and step spans. Set to false to disable.
     required: false
+    default: "true"
   groundcoverBaseUrl:
     description: >
       Base URL for your groundcover web app, used in PR comments that link to traces.

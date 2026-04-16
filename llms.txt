@@ -20,6 +20,7 @@ This repository contains a GitHub Action that exports GitHub Actions workflow ru
 ## Supported behavior
 
 - Export workflow runs, jobs, and steps as nested spans.
+- By default, export GitHub Actions job logs as OpenTelemetry log records correlated with job and step spans (`exportLogs` defaults to `true`). Set `exportLogs: false` to disable.
 - Support `traceparent` to link CI/CD traces with application traces.
 - Support same-workflow export and separate `workflow_run` export.
 - For separate workflow trace linking, persist the `traceparent` in the source workflow and pass it into the export workflow.
