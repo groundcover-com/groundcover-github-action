@@ -347,12 +347,7 @@ The matching XML files must exist on disk in the job running this action. In a s
 
 By default, the action downloads GitHub Actions job logs and exports them as OpenTelemetry log records to your OTLP endpoint (`/v1/logs`). Each log record is correlated with the matching job or step span via trace context, so logs appear alongside spans in your observability backend.
 
-The action parses GitHub's log format to extract:
-
-- **Timestamps** from the ISO 8601 prefixes on each log line
-- **Severity** from `##[error]` and `##[warning]` markers (defaults to INFO)
-
-Log lines are matched to steps by timestamp. Lines that fall outside any step's time window are attached to the parent job span instead.
+The action parses GitHub's log format to extract timestamps and severity levels, then merges all lines within each step into a single log record. The record's timestamp is taken from the first line, and its severity is the highest found across all lines in that step (e.g., if any line is `##[error]`, the merged record is ERROR). Lines that fall outside any step's time window are merged and attached to the parent job span instead.
 
 To disable log export, set `exportLogs: false`:
 
