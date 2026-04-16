@@ -5,7 +5,7 @@ Export GitHub Actions workflow runs as OpenTelemetry traces and logs to groundco
 ## Prerequisites
 
 - GitHub Actions workflow with `actions: read` and `issues: write` permissions
-- Node 20 runtime (handled automatically by GitHub Actions)
+- Node 24 runtime (requires GitHub Actions runner v2.327.1+; self-hosted runners must be updated separately)
 - groundcover OTLP endpoint and ingestion key
 
 ## Quick Start
@@ -25,7 +25,7 @@ jobs:
       actions: read
       issues: write
     steps:
-      - uses: groundcover-com/groundcover-github-action@v2
+      - uses: groundcover-com/groundcover-github-action@v3
         with:
           groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
           apiKey: ${{ secrets.GC_API_KEY }}
@@ -49,7 +49,7 @@ Use the Quick Start example above, then configure these two secrets in your repo
 Minimal groundcover setup:
 
 ```yaml
-- uses: groundcover-com/groundcover-github-action@v2
+- uses: groundcover-com/groundcover-github-action@v3
   with:
     groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
     apiKey: ${{ secrets.GC_API_KEY }}
@@ -109,7 +109,7 @@ jobs:
       actions: read
       issues: write
     steps:
-      - uses: groundcover-com/groundcover-github-action@v2
+      - uses: groundcover-com/groundcover-github-action@v3
         with:
           groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
           apiKey: ${{ secrets.GC_API_KEY }}
@@ -144,7 +144,7 @@ jobs:
       actions: read
       issues: write
     steps:
-      - uses: groundcover-com/groundcover-github-action@v2
+      - uses: groundcover-com/groundcover-github-action@v3
         with:
           groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
           apiKey: ${{ secrets.GC_API_KEY }}
@@ -195,7 +195,7 @@ jobs:
       actions: read
       issues: write
     steps:
-      - uses: groundcover-com/groundcover-github-action@v2
+      - uses: groundcover-com/groundcover-github-action@v3
         with:
           groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
           apiKey: ${{ secrets.GC_API_KEY }}
@@ -205,7 +205,7 @@ jobs:
 ### groundcover
 
 ```yaml
-- uses: groundcover-com/groundcover-github-action@v2
+- uses: groundcover-com/groundcover-github-action@v3
   with:
     groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
     apiKey: ${{ secrets.GC_API_KEY }}
@@ -287,7 +287,7 @@ permissions:
 **Option 2:** Use a Personal Access Token with `repo` scope:
 
 ```yaml
-- uses: groundcover-com/groundcover-github-action@v2
+- uses: groundcover-com/groundcover-github-action@v3
   with:
     groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
     apiKey: ${{ secrets.GC_API_KEY }}
