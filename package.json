@@ -42,7 +42,7 @@
     "@grpc/grpc-js": "^1.12.0",
     "@octokit/openapi-types": "^27.0.0",
     "@octokit/request-error": "^7.1.0",
-    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/api-logs": "^0.213.0",
     "@opentelemetry/context-async-hooks": "^2.6.0",
     "@opentelemetry/core": "^2.6.0",
