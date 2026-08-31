@@ -146,10 +146,11 @@ function createTracerProvider(endpoint: string, headers: string, attributes: Att
       exporter = new ProtoOTLPTraceExporter({
         url: buildSignalUrl(endpoint, "v1/traces"),
         headers: stringToRecord(headers),
-        // Runs with tens of thousands of test-case spans flush dozens of
-        // batches at once; endpoints shed that burst and the dropped batches
-        // vanish silently. Trickle them instead.
-        concurrencyLimit: 2,
+        // forceFlush fires every pending batch at once, and the exporter
+        // REJECTS (not queues) exports beyond concurrencyLimit — silently.
+        // Keep the ceiling above the worst-case batch count implied by the
+        // span processor config below (65536 / 2048 = 32 batches).
+        concurrencyLimit: 64,
       });
     } else {
       exporter = new GrpcOTLPTraceExporter({
@@ -166,8 +167,9 @@ function createTracerProvider(endpoint: string, headers: string, attributes: Att
     resource,
     // The whole run's spans are created in one synchronous burst before the
     // final flush; the default queue (2048) silently drops everything past it
-    // on runs with thousands of test-case spans.
-    spanProcessors: [new BatchSpanProcessor(exporter, { maxQueueSize: 65_536 })],
+    // on runs with thousands of test-case spans. Bigger batches keep the
+    // flush-time batch count under the exporter's concurrencyLimit above.
+    spanProcessors: [new BatchSpanProcessor(exporter, { maxQueueSize: 65_536, maxExportBatchSize: 2048 })],
     ...(OTEL_ID_SEED ? { idGenerator: new DeterministicIdGenerator(OTEL_ID_SEED) } : {}),
   });
 
