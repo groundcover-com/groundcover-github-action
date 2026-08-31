@@ -101617,7 +101617,32 @@ function createLoggerProvider(endpoint, headers, attributes) {
     logs.setGlobalLoggerProvider(provider);
     return provider;
 }
+function formatDiagArg(arg) {
+    if (arg instanceof Error) {
+        return arg.stack ?? arg.message;
+    }
+    if (typeof arg === "string") {
+        return arg;
+    }
+    return JSON.stringify(arg, Object.getOwnPropertyNames(arg ?? {}));
+}
+/** Surface OTEL SDK errors (e.g. dropped export batches) legibly in the action log. */
+function enableDiagLogging() {
+    const log = (message, args) => `OTEL: ${[message, ...args.map(formatDiagArg)].join(" ")}`;
+    diag.setLogger({
+        error: (message, ...args) => {
+            warning(log(message, args));
+        },
+        warn: (message, ...args) => {
+            warning(log(message, args));
+        },
+        info: () => undefined,
+        debug: () => undefined,
+        verbose: () => undefined,
+    }, DiagLogLevel.WARN);
+}
 function createTracerProvider(endpoint, headers, attributes) {
+    enableDiagLogging();
     const contextManager = new srcExports$2.AsyncLocalStorageContextManager();
     contextManager.enable();
     context.setGlobalContextManager(contextManager);
@@ -101627,6 +101652,10 @@ function createTracerProvider(endpoint, headers, attributes) {
             exporter = new OTLPTraceExporter({
                 url: buildSignalUrl(endpoint, "v1/traces"),
                 headers: stringToRecord(headers),
+                // Runs with tens of thousands of test-case spans flush dozens of
+                // batches at once; endpoints shed that burst and the dropped batches
+                // vanish silently. Trickle them instead.
+                concurrencyLimit: 2,
             });
         }
         else {

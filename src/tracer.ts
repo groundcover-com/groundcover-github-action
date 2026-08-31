@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { credentials, Metadata } from "@grpc/grpc-js";
-import { type Attributes, type Context, context, ROOT_CONTEXT, trace } from "@opentelemetry/api";
+import { type Attributes, type Context, context, diag, DiagLogLevel, ROOT_CONTEXT, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { W3CTraceContextPropagator } from "@opentelemetry/core";
@@ -104,7 +104,37 @@ function createLoggerProvider(endpoint: string, headers: string, attributes: Att
   return provider;
 }
 
+function formatDiagArg(arg: unknown): string {
+  if (arg instanceof Error) {
+    return arg.stack ?? arg.message;
+  }
+  if (typeof arg === "string") {
+    return arg;
+  }
+  return JSON.stringify(arg, Object.getOwnPropertyNames(arg ?? {}));
+}
+
+/** Surface OTEL SDK errors (e.g. dropped export batches) legibly in the action log. */
+function enableDiagLogging(): void {
+  const log = (message: string, args: unknown[]): string => `OTEL: ${[message, ...args.map(formatDiagArg)].join(" ")}`;
+  diag.setLogger(
+    {
+      error: (message, ...args) => {
+        core.warning(log(message, args));
+      },
+      warn: (message, ...args) => {
+        core.warning(log(message, args));
+      },
+      info: () => undefined,
+      debug: () => undefined,
+      verbose: () => undefined,
+    },
+    DiagLogLevel.WARN,
+  );
+}
+
 function createTracerProvider(endpoint: string, headers: string, attributes: Attributes): BasicTracerProvider {
+  enableDiagLogging();
   const contextManager = new AsyncLocalStorageContextManager();
   contextManager.enable();
   context.setGlobalContextManager(contextManager);
@@ -116,6 +146,10 @@ function createTracerProvider(endpoint: string, headers: string, attributes: Att
       exporter = new ProtoOTLPTraceExporter({
         url: buildSignalUrl(endpoint, "v1/traces"),
         headers: stringToRecord(headers),
+        // Runs with tens of thousands of test-case spans flush dozens of
+        // batches at once; endpoints shed that burst and the dropped batches
+        // vanish silently. Trickle them instead.
+        concurrencyLimit: 2,
       });
     } else {
       exporter = new GrpcOTLPTraceExporter({
