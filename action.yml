@@ -51,6 +51,18 @@ inputs:
       Optional comma-separated glob patterns for JUnit XML test result files.
       Matching files are parsed and summarized onto the workflow root span.
     required: false
+  testResultsArtifactPrefix:
+    description: >
+      Optional prefix of workflow-run artifacts holding JUnit XML test reports
+      (e.g. "test-reports-"). Matching artifacts are downloaded and every test
+      case becomes a span under its job span, so this works in workflow_run mode
+      where testResultsGlob cannot see the test jobs' files. Each artifact must
+      be named "<prefix><sanitized job name>", where the sanitized job name is
+      the job's display name (its tail after " / " for reusable workflows) with
+      every run of characters outside [A-Za-z0-9_.-] replaced by "-". Uploading
+      jobs should use actions/upload-artifact with overwrite: true so reruns
+      replace the previous attempt's reports.
+    required: false
   exportLogs:
     description: >
       Download GitHub Actions job logs and export them as OpenTelemetry log records

@@ -20,7 +20,9 @@ import {
   CICD_PIPELINE_TASK_TYPE_VALUE_TEST,
 } from "@opentelemetry/semantic-conventions/incubating";
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
+import type { TestCase } from "../test-results";
 import { traceStep } from "./step";
+import { traceTestCases } from "./test";
 
 type CompletedJob = components["schemas"]["job"] & { completed_at: string };
 
@@ -168,6 +170,7 @@ function traceJob(
   job: components["schemas"]["job"],
   annotations?: components["schemas"]["check-annotation"][],
   jobLog?: string,
+  testCases?: TestCase[],
 ): void {
   const tracer = trace.getTracer("otel-cicd-export-action");
 
@@ -204,6 +207,10 @@ function traceJob(
     // Emit unmatched log lines at job level as fallback
     if (correlated && correlated.unmatched.length > 0) {
       emitJobLogs(correlated.unmatched, job.id, job.name, job.conclusion, job.html_url);
+    }
+
+    if (testCases && testCases.length > 0) {
+      traceTestCases(testCases, completedJob);
     }
 
     // Some skipped and post jobs return completed_at dates that are older than started_at

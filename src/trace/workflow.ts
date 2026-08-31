@@ -27,7 +27,7 @@ import {
   CICD_PIPELINE_RUN_STATE_VALUE_PENDING,
 } from "@opentelemetry/semantic-conventions/incubating";
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
-import type { TestResultsSummary } from "../test-results";
+import type { TestCase, TestResultsSummary } from "../test-results";
 import { traceJob } from "./job";
 
 function traceWorkflowRun(
@@ -38,6 +38,7 @@ function traceWorkflowRun(
   parentContext?: Context,
   testResults?: TestResultsSummary,
   jobLogs?: Record<number, string>,
+  testCasesByJobId?: Record<number, TestCase[]>,
 ): string {
   const tracer = trace.getTracer("otel-cicd-export-action");
 
@@ -81,7 +82,7 @@ function traceWorkflowRun(
     }
 
     for (const job of jobs) {
-      traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id]);
+      traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id], testCasesByJobId?.[job.id]);
     }
 
     rootSpan.end(new Date(workflowRun.updated_at));

@@ -4,7 +4,8 @@ import { RequestError } from "@octokit/request-error";
 import type { Attributes } from "@opentelemetry/api";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 import { ATTR_SERVICE_INSTANCE_ID } from "@opentelemetry/semantic-conventions/incubating";
-import { findTestResultsSummary } from "./test-results";
+import { findTestResultsSummary, summarizeTestCases, type TestCase } from "./test-results";
+import { collectTestCasesFromArtifacts } from "./test-artifacts";
 import { traceWorkflowRun } from "./trace/workflow";
 import { createLoggerProvider, createTracerProvider, extractParentContext, stringToRecord } from "./tracer";
 import {
@@ -176,6 +177,7 @@ async function run(): Promise<void> {
     const runId = Number.parseInt(core.getInput("runId") || `${context.runId}`, 10);
     const extraAttributes = stringToRecord(core.getInput("extraAttributes"));
     const testResultsGlob = core.getInput("testResultsGlob");
+    const testResultsArtifactPrefix = core.getInput("testResultsArtifactPrefix");
     const exportLogs = core.getInput("exportLogs") === "true";
     const env = core.getInput("env") || undefined;
     const workload = core.getInput("workload") || undefined;
@@ -212,7 +214,17 @@ async function run(): Promise<void> {
       exportLogs,
     );
 
-    const testResults = await findTestResultsSummary(testResultsGlob);
+    let testCasesByJobId: Record<number, TestCase[]> = {};
+    if (testResultsArtifactPrefix) {
+      core.info(`Collect test results from run artifacts prefixed "${testResultsArtifactPrefix}"`);
+      const octokit = getOctokit(ghToken);
+      testCasesByJobId = await collectTestCasesFromArtifacts(context, octokit, runId, testResultsArtifactPrefix, jobs);
+    }
+
+    const allTestCases = Object.values(testCasesByJobId).flat();
+    const testResults =
+      (await findTestResultsSummary(testResultsGlob)) ??
+      (allTestCases.length > 0 ? summarizeTestCases(allTestCases) : undefined);
 
     core.info(`Create tracer provider for ${otlpEndpoint}`);
     const attributes: Attributes = {
@@ -240,7 +252,16 @@ async function run(): Promise<void> {
     const parentContext = extractParentContext(traceparent);
 
     core.info(`Trace workflow run for ${runId} and export to ${otlpEndpoint}`);
-    const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs);
+    const traceId = traceWorkflowRun(
+      workflowRun,
+      jobs,
+      jobAnnotations,
+      prLabels,
+      parentContext,
+      testResults,
+      jobLogs,
+      testCasesByJobId,
+    );
 
     core.setOutput("traceId", traceId);
     core.info(`traceId: ${traceId}`);

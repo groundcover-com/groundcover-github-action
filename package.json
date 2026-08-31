@@ -55,7 +55,8 @@
     "@opentelemetry/sdk-trace-base": "^2.6.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "fast-glob": "^3.3.3",
-    "fast-xml-parser": "^5.4.2"
+    "fast-xml-parser": "^5.4.2",
+    "fflate": "^0.8.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
