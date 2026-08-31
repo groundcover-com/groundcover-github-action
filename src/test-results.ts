@@ -152,9 +152,24 @@ function parseJUnitXml(content: string): TestResultsSummary | undefined {
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_OUTPUT_LENGTH = 16_384;
 
-/** A zero-duration failure means the framework aborted before the test ran (e.g. Go -failfast). */
-function isCollateral(status: TestCaseStatus, timeSeconds: number): boolean {
-  return (status === "failed" || status === "error") && timeSeconds === 0;
+/**
+ * A zero-duration failure that produced no output means the framework aborted
+ * before the test ran (e.g. Go -failfast / suite abort). A zero-duration
+ * failure WITH a body demonstrably ran — an instant assertion failure.
+ */
+function isCollateral(status: TestCaseStatus, timeSeconds: number, hasFailureBody: boolean): boolean {
+  return (status === "failed" || status === "error") && timeSeconds === 0 && !hasFailureBody;
+}
+
+function hasBody(node: XmlFailureNode | XmlFailureNode[] | string | number | undefined): boolean {
+  const first = Array.isArray(node) ? node[0] : node;
+  if (first === undefined) {
+    return false;
+  }
+  if (typeof first === "string" || typeof first === "number") {
+    return String(first) !== "";
+  }
+  return first["#text"] !== undefined && first["#text"] !== "";
 }
 
 function extractMessage(
@@ -208,7 +223,7 @@ function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf
       status,
       ...(message !== undefined ? { message } : {}),
       ...(output !== undefined ? { output } : {}),
-      collateral: isCollateral(status, timeSeconds),
+      collateral: isCollateral(status, timeSeconds, hasBody(testCase.failure ?? testCase.error)),
     });
   }
 

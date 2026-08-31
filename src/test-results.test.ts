@@ -123,13 +123,24 @@ describe("parseJUnitTestCases", () => {
     expect(byName.get("TestOther")?.leaf).toBe(true);
   });
 
-  it("flags zero-duration failures as collateral, but not zero-duration skips or passes", () => {
+  it("flags zero-duration bodyless failures as collateral, but not zero-duration skips or passes", () => {
     const cases = parseJUnitTestCases(goJUnit);
     const byName = new Map(cases?.map((c) => [c.name, c]));
 
     expect(byName.get("TestMetricsV2TestSuite/TestAll/wildcard_-_with_limit")?.collateral).toBe(true);
     expect(byName.get("TestMetricsV2TestSuite/TestAll/wildcard_-_all_metrics")?.collateral).toBe(false);
     expect(byName.get("TestSkipped")?.collateral).toBe(false);
+  });
+
+  it("does not flag a zero-duration failure that produced output — it demonstrably ran", () => {
+    const xml = `<testsuite name="s"><testcase classname="c" name="TestInstantFail" time="0"><failure message="Failed">=== RUN TestInstantFail
+    fixture_test.go:12: expected 1, got 2
+--- FAIL: TestInstantFail (0.00s)</failure></testcase></testsuite>`;
+
+    const cases = parseJUnitTestCases(xml);
+
+    expect(cases?.[0]?.status).toBe("failed");
+    expect(cases?.[0]?.collateral).toBe(false);
   });
 
   it("combines the failure message attribute and body, capped", () => {

@@ -45090,9 +45090,23 @@ function parseJUnitXml(content) {
 }
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_OUTPUT_LENGTH = 16_384;
-/** A zero-duration failure means the framework aborted before the test ran (e.g. Go -failfast). */
-function isCollateral(status, timeSeconds) {
-    return (status === "failed" || status === "error") && timeSeconds === 0;
+/**
+ * A zero-duration failure that produced no output means the framework aborted
+ * before the test ran (e.g. Go -failfast / suite abort). A zero-duration
+ * failure WITH a body demonstrably ran — an instant assertion failure.
+ */
+function isCollateral(status, timeSeconds, hasFailureBody) {
+    return (status === "failed" || status === "error") && timeSeconds === 0 && !hasFailureBody;
+}
+function hasBody(node) {
+    const first = Array.isArray(node) ? node[0] : node;
+    if (first === undefined) {
+        return false;
+    }
+    if (typeof first === "string" || typeof first === "number") {
+        return String(first) !== "";
+    }
+    return first["#text"] !== undefined && first["#text"] !== "";
 }
 function extractMessage(node, maxLength = MAX_MESSAGE_LENGTH) {
     const first = Array.isArray(node) ? node[0] : node;
@@ -45138,7 +45152,7 @@ function collectTestCases(node, cases) {
             status,
             ...(message !== undefined ? { message } : {}),
             ...(output !== undefined ? { output } : {}),
-            collateral: isCollateral(status, timeSeconds),
+            collateral: isCollateral(status, timeSeconds, hasBody(testCase.failure ?? testCase.error)),
         });
     }
     for (const child of toArray(node.testsuite)) {
