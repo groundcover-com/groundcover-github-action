@@ -1,9 +1,19 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "@jest/globals";
-import { context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
+import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from "@jest/globals";
+import { type Context, context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { BasicTracerProvider, InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import type { TestCase } from "../test-results";
-import { traceTestCases, type TestCaseJobContext } from "./test";
+
+const emit = jest.fn<(record: Record<string, unknown>) => void>();
+const getLogger = jest.fn(() => ({ emit }));
+const SeverityNumber = { INFO: 9, WARN: 13, ERROR: 17 };
+jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
+  logs: { getLogger },
+  SeverityNumber,
+}));
+
+const { traceTestCases } = await import("./test.js");
+type TestCaseJobContext = Parameters<typeof traceTestCases>[1];
 
 function hrTimeToMs(value: [number, number]): number {
   return value[0] * 1000 + value[1] / 1_000_000;
@@ -47,6 +57,7 @@ describe("traceTestCases", () => {
 
   afterEach(() => {
     exporter.reset();
+    emit.mockClear();
   });
 
   afterAll(() => {
@@ -127,5 +138,37 @@ describe("traceTestCases", () => {
     const span = exporter.getFinishedSpans()[0];
     expect(span?.attributes["test.status"]).toBe("skipped");
     expect(span?.status.code).not.toBe(SpanStatusCode.ERROR);
+  });
+
+  it("emits a log record with the failure output, correlated to the failed test's span", () => {
+    traceTestCases(
+      [
+        buildCase({ name: "TestFails", status: "failed", message: "Not equal: 5 != 4", output: "=== RUN TestFails" }),
+        buildCase({ name: "TestPasses", output: "chatty pass" }),
+      ],
+      jobContext,
+    );
+
+    expect(emit).toHaveBeenCalledTimes(1);
+    const record = emit.mock.calls[0]?.[0];
+    expect(record?.["severityText"]).toBe("ERROR");
+    expect(record?.["body"]).toContain("Not equal: 5 != 4");
+    expect(record?.["body"]).toContain("=== RUN TestFails");
+    expect(record?.["attributes"]).toMatchObject({
+      "test.name": "TestFails",
+      "test.status": "failed",
+      "github.job.name": "test / router:test",
+    });
+
+    const failedSpan = exporter.getFinishedSpans().find((s) => s.name === "TestFails");
+    const recordSpan = trace.getSpan(record?.["context"] as Context);
+    expect(recordSpan?.spanContext().spanId).toBe(failedSpan?.spanContext().spanId);
+    expect(recordSpan?.spanContext().traceId).toBe(failedSpan?.spanContext().traceId);
+  });
+
+  it("emits no log record for failures without message or output", () => {
+    traceTestCases([buildCase({ name: "TestFails", status: "failed" })], jobContext);
+
+    expect(emit).not.toHaveBeenCalled();
   });
 });

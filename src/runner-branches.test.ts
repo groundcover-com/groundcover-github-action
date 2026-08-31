@@ -1025,4 +1025,32 @@ describe("run with testResultsArtifactPrefix", () => {
     expect(collectTestCasesFromArtifacts).not.toHaveBeenCalled();
     expect(summarizeTestCases).not.toHaveBeenCalled();
   });
+
+  it("creates a logger provider for failed test cases even when job-log export is off", async () => {
+    createLoggerProvider.mockClear();
+    mockRun({
+      groundcoverEndpoint: "https://localhost",
+      apiKey: "gc-secret",
+      testResultsArtifactPrefix: "test-reports-",
+    });
+    collectTestCasesFromArtifacts.mockResolvedValue({ 10: [{ name: "TestA", status: "failed" }] } as never);
+
+    await run();
+
+    expect(createLoggerProvider).toHaveBeenCalledTimes(1);
+  });
+
+  it("creates no logger provider when all test cases passed and job-log export is off", async () => {
+    createLoggerProvider.mockClear();
+    mockRun({
+      groundcoverEndpoint: "https://localhost",
+      apiKey: "gc-secret",
+      testResultsArtifactPrefix: "test-reports-",
+    });
+    collectTestCasesFromArtifacts.mockResolvedValue({ 10: [{ name: "TestA", status: "passed" }] } as never);
+
+    await run();
+
+    expect(createLoggerProvider).not.toHaveBeenCalled();
+  });
 });

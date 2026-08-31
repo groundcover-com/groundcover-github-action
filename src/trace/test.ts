@@ -1,4 +1,5 @@
-import { type Attributes, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
+import { type Attributes, context, type Span, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
+import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { TestCase } from "../test-results";
 
@@ -34,10 +35,40 @@ function traceTestCases(testCases: TestCase[], job: TestCaseJobContext): void {
     if (testCase.status === "failed" || testCase.status === "error") {
       span.setStatus({ code: SpanStatusCode.ERROR, ...(testCase.message ? { message: testCase.message } : {}) });
       span.setAttribute(ATTR_ERROR_TYPE, testCase.status);
+      emitTestFailureLog(testCase, job, span, startTime);
     }
 
     span.end(new Date(startTime.getTime() + testCase.timeSeconds * 1000));
   }
+}
+
+/**
+ * Ship a failed test's output as a log record correlated with its span, so
+ * opening the red test span in the backend shows what the test printed.
+ * Only failures: passing-test stdout has no consumer and real volume.
+ */
+function emitTestFailureLog(testCase: TestCase, job: TestCaseJobContext, span: Span, startTime: Date): void {
+  const body = [testCase.message, testCase.output].filter(Boolean).join("\n");
+  if (!body) {
+    return;
+  }
+
+  const logger = logs.getLogger("otel-cicd-export-action");
+  logger.emit({
+    timestamp: startTime,
+    body,
+    severityNumber: SeverityNumber.ERROR,
+    severityText: "ERROR",
+    context: trace.setSpan(context.active(), span),
+    attributes: {
+      "test.name": testCase.name,
+      "test.classname": testCase.classname,
+      "test.suite": testCase.suite,
+      "test.status": testCase.status,
+      "github.job.id": job.id,
+      "github.job.name": job.name,
+    },
+  });
 }
 
 function testCaseToAttributes(testCase: TestCase, job: TestCaseJobContext): Attributes {

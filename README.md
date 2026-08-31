@@ -384,6 +384,8 @@ Each test case becomes a span under its job span with these attributes:
 
 Failed and errored cases are marked as error spans. JUnit reports carry durations but no per-test timestamps, so test spans are anchored at the job start time; durations are exact and overlaps are expected. When `testResultsGlob` is not set, the root-span summary attributes above are computed from the artifact-parsed cases instead.
 
+Each **failed** case additionally ships its failure message and captured `<system-out>` as an OTLP log record correlated with the test's span, so opening a red test span shows what the test printed (passing-test output is not exported). These log records are sent even when `exportLogs` is `false`.
+
 ## Log Export
 
 By default, the action downloads GitHub Actions job logs and exports them as OpenTelemetry log records to your OTLP endpoint (`/v1/logs`). Each log record is correlated with the matching job or step span via trace context, so logs appear alongside spans in your observability backend.

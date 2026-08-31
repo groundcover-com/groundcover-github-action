@@ -247,7 +247,13 @@ async function run(): Promise<void> {
     const provider = createTracerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes);
 
     const hasLogs = exportLogs && Object.keys(jobLogs).length > 0;
-    const loggerProvider = hasLogs ? createLoggerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes) : undefined;
+    // Failed test cases ship their output as span-correlated log records even
+    // when job-log export is off, so those also need a logger provider.
+    const hasFailedTestCases = allTestCases.some(
+      (testCase) => testCase.status === "failed" || testCase.status === "error",
+    );
+    const loggerProvider =
+      hasLogs || hasFailedTestCases ? createLoggerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes) : undefined;
 
     const parentContext = extractParentContext(traceparent);
 

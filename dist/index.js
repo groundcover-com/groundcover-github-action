@@ -45089,20 +45089,21 @@ function parseJUnitXml(content) {
     return extractNodeSummary(parsed.testsuites) ?? extractNodeSummary(parsed.testsuite);
 }
 const MAX_MESSAGE_LENGTH = 4096;
+const MAX_OUTPUT_LENGTH = 16_384;
 /** A zero-duration failure means the framework aborted before the test ran (e.g. Go -failfast). */
 function isCollateral(status, timeSeconds) {
     return (status === "failed" || status === "error") && timeSeconds === 0;
 }
-function extractMessage(node) {
+function extractMessage(node, maxLength = MAX_MESSAGE_LENGTH) {
     const first = Array.isArray(node) ? node[0] : node;
     if (first === undefined) {
         return undefined;
     }
     if (typeof first === "string" || typeof first === "number") {
-        return String(first).slice(0, MAX_MESSAGE_LENGTH) || undefined;
+        return String(first).slice(0, maxLength) || undefined;
     }
     const parts = [first.message, first["#text"]].filter((part) => part !== undefined && part !== "").map(String);
-    return parts.length > 0 ? parts.join("\n").slice(0, MAX_MESSAGE_LENGTH) : undefined;
+    return parts.length > 0 ? parts.join("\n").slice(0, maxLength) : undefined;
 }
 function toCaseStatus(node) {
     if (node.error !== undefined) {
@@ -45128,6 +45129,7 @@ function collectTestCases(node, cases) {
         const status = toCaseStatus(testCase);
         const timeSeconds = Number(testCase.time ?? 0) || 0;
         const message = extractMessage(testCase.failure ?? testCase.error);
+        const output = extractMessage(testCase["system-out"], MAX_OUTPUT_LENGTH);
         cases.push({
             name: String(testCase.name),
             classname: testCase.classname === undefined ? "" : String(testCase.classname),
@@ -45135,6 +45137,7 @@ function collectTestCases(node, cases) {
             timeSeconds,
             status,
             ...(message !== undefined ? { message } : {}),
+            ...(output !== undefined ? { output } : {}),
             collateral: isCollateral(status, timeSeconds),
         });
     }
@@ -48528,9 +48531,37 @@ function traceTestCases(testCases, job) {
         if (testCase.status === "failed" || testCase.status === "error") {
             span.setStatus({ code: SpanStatusCode.ERROR, ...(testCase.message ? { message: testCase.message } : {}) });
             span.setAttribute(ATTR_ERROR_TYPE, testCase.status);
+            emitTestFailureLog(testCase, job, span, startTime);
         }
         span.end(new Date(startTime.getTime() + testCase.timeSeconds * 1000));
     }
+}
+/**
+ * Ship a failed test's output as a log record correlated with its span, so
+ * opening the red test span in the backend shows what the test printed.
+ * Only failures: passing-test stdout has no consumer and real volume.
+ */
+function emitTestFailureLog(testCase, job, span, startTime) {
+    const body = [testCase.message, testCase.output].filter(Boolean).join("\n");
+    if (!body) {
+        return;
+    }
+    const logger = logs.getLogger("otel-cicd-export-action");
+    logger.emit({
+        timestamp: startTime,
+        body,
+        severityNumber: SeverityNumber.ERROR,
+        severityText: "ERROR",
+        context: trace.setSpan(context.active(), span),
+        attributes: {
+            "test.name": testCase.name,
+            "test.classname": testCase.classname,
+            "test.suite": testCase.suite,
+            "test.status": testCase.status,
+            "github.job.id": job.id,
+            "github.job.name": job.name,
+        },
+    });
 }
 function testCaseToAttributes(testCase, job) {
     return {
@@ -101899,7 +101930,10 @@ async function run() {
         };
         const provider = createTracerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes);
         const hasLogs = exportLogs && Object.keys(jobLogs).length > 0;
-        const loggerProvider = hasLogs ? createLoggerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes) : undefined;
+        // Failed test cases ship their output as span-correlated log records even
+        // when job-log export is off, so those also need a logger provider.
+        const hasFailedTestCases = allTestCases.some((testCase) => testCase.status === "failed" || testCase.status === "error");
+        const loggerProvider = hasLogs || hasFailedTestCases ? createLoggerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes) : undefined;
         const parentContext = extractParentContext(traceparent);
         info(`Trace workflow run for ${runId} and export to ${otlpEndpoint}`);
         const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs, testCasesByJobId);

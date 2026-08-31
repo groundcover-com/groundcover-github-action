@@ -142,6 +142,22 @@ describe("parseJUnitTestCases", () => {
     expect(cases?.[0]?.message?.length).toBeLessThanOrEqual(4096);
   });
 
+  it("captures per-test system-out as output, capped", () => {
+    const longOut = "y".repeat(40_000);
+    const xml = `<testsuite name="s"><testcase classname="c" name="TestX" time="1"><failure message="boom">body</failure><system-out>${longOut}</system-out></testcase></testsuite>`;
+
+    const cases = parseJUnitTestCases(xml);
+
+    expect(cases?.[0]?.output).toContain("yyy");
+    expect(cases?.[0]?.output?.length).toBeLessThanOrEqual(16_384);
+  });
+
+  it("leaves output unset when there is no system-out", () => {
+    const xml = `<testsuite name="s"><testcase classname="c" name="TestX" time="1"/></testsuite>`;
+
+    expect(parseJUnitTestCases(xml)?.[0]?.output).toBeUndefined();
+  });
+
   it("classifies error elements as errors", () => {
     const xml = `<testsuite name="s"><testcase classname="c" name="TestX" time="1"><error message="panic"/></testcase></testsuite>`;
 

@@ -26,6 +26,8 @@ interface TestCase {
   status: TestCaseStatus;
   /** Failure/error message and body, capped at MAX_MESSAGE_LENGTH. */
   message?: string;
+  /** The testcase's captured system-out, capped at MAX_OUTPUT_LENGTH. */
+  output?: string;
   /** False when another case in the same classname extends this name (a Go subtest ancestor). */
   leaf: boolean;
   /** A zero-duration failure: the framework aborted before the test ran (e.g. Go -failfast). */
@@ -44,6 +46,7 @@ interface XmlTestCaseNode {
   failure?: XmlFailureNode | XmlFailureNode[] | string | number;
   error?: XmlFailureNode | XmlFailureNode[] | string | number;
   skipped?: unknown;
+  "system-out"?: XmlFailureNode | XmlFailureNode[] | string | number;
 }
 
 interface XmlNode {
@@ -147,23 +150,27 @@ function parseJUnitXml(content: string): TestResultsSummary | undefined {
 }
 
 const MAX_MESSAGE_LENGTH = 4096;
+const MAX_OUTPUT_LENGTH = 16_384;
 
 /** A zero-duration failure means the framework aborted before the test ran (e.g. Go -failfast). */
 function isCollateral(status: TestCaseStatus, timeSeconds: number): boolean {
   return (status === "failed" || status === "error") && timeSeconds === 0;
 }
 
-function extractMessage(node: XmlFailureNode | XmlFailureNode[] | string | number | undefined): string | undefined {
+function extractMessage(
+  node: XmlFailureNode | XmlFailureNode[] | string | number | undefined,
+  maxLength = MAX_MESSAGE_LENGTH,
+): string | undefined {
   const first = Array.isArray(node) ? node[0] : node;
   if (first === undefined) {
     return undefined;
   }
   if (typeof first === "string" || typeof first === "number") {
-    return String(first).slice(0, MAX_MESSAGE_LENGTH) || undefined;
+    return String(first).slice(0, maxLength) || undefined;
   }
 
   const parts = [first.message, first["#text"]].filter((part) => part !== undefined && part !== "").map(String);
-  return parts.length > 0 ? parts.join("\n").slice(0, MAX_MESSAGE_LENGTH) : undefined;
+  return parts.length > 0 ? parts.join("\n").slice(0, maxLength) : undefined;
 }
 
 function toCaseStatus(node: XmlTestCaseNode): TestCaseStatus {
@@ -192,6 +199,7 @@ function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf
     const status = toCaseStatus(testCase);
     const timeSeconds = Number(testCase.time ?? 0) || 0;
     const message = extractMessage(testCase.failure ?? testCase.error);
+    const output = extractMessage(testCase["system-out"], MAX_OUTPUT_LENGTH);
     cases.push({
       name: String(testCase.name),
       classname: testCase.classname === undefined ? "" : String(testCase.classname),
@@ -199,6 +207,7 @@ function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf
       timeSeconds,
       status,
       ...(message !== undefined ? { message } : {}),
+      ...(output !== undefined ? { output } : {}),
       collateral: isCollateral(status, timeSeconds),
     });
   }
