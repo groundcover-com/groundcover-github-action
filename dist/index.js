@@ -101640,7 +101640,10 @@ function createTracerProvider(endpoint, headers, attributes) {
     const resource = defaultResource().merge(resourceFromAttributes(attributes));
     const provider = new BasicTracerProvider({
         resource,
-        spanProcessors: [new BatchSpanProcessor(exporter)],
+        // The whole run's spans are created in one synchronous burst before the
+        // final flush; the default queue (2048) silently drops everything past it
+        // on runs with thousands of test-case spans.
+        spanProcessors: [new BatchSpanProcessor(exporter, { maxQueueSize: 65_536 })],
         ...(OTEL_ID_SEED ? { idGenerator: new DeterministicIdGenerator(OTEL_ID_SEED) } : {}),
     });
     trace.setGlobalTracerProvider(provider);
