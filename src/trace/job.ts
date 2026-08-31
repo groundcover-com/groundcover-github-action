@@ -22,7 +22,7 @@ import {
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { TestCase } from "../test-results";
 import { traceStep } from "./step";
-import { traceTestCases } from "./test";
+import { traceTestCases } from "./test-trace";
 
 type CompletedJob = components["schemas"]["job"] & { completed_at: string };
 

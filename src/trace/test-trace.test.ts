@@ -12,7 +12,7 @@ jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
   SeverityNumber,
 }));
 
-const { traceTestCases } = await import("./test.js");
+const { traceTestCases } = await import("./test-trace.js");
 type TestCaseJobContext = Parameters<typeof traceTestCases>[1];
 
 function hrTimeToMs(value: [number, number]): number {
