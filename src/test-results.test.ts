@@ -2,12 +2,14 @@ import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { aPackageName, aTestName, unique } from "./__fixtures__/builders";
 
 const info = jest.fn<(message: string | number) => void>();
 const warning = jest.fn<(message: string | Error) => void>();
 jest.unstable_mockModule("@actions/core", () => ({ info, warning }));
 
 const { findTestResultsSummary, parseJUnitXml, parseJUnitTestCases } = await import("./test-results.js");
+type TestCase = NonNullable<ReturnType<typeof parseJUnitTestCases>>[number];
 
 describe("parseJUnitXml", () => {
   afterEach(() => {
@@ -87,101 +89,119 @@ describe("parseJUnitXml", () => {
 });
 
 describe("parseJUnitTestCases", () => {
-  const goJUnit = `<testsuites>
-    <testsuite name="groundcover.com/internal/services/router/api/metrics/v2" tests="6" failures="4" errors="0" time="12.5">
-      <testcase classname="metrics/v2" name="TestMetricsV2TestSuite" time="10.1"><failure message="Failed">=== FAIL output</failure></testcase>
-      <testcase classname="metrics/v2" name="TestMetricsV2TestSuite/TestAll" time="10.0"><failure message="Failed"></failure></testcase>
-      <testcase classname="metrics/v2" name="TestMetricsV2TestSuite/TestAll/wildcard_-_all_metrics" time="3.2"><failure message="Not equal: expected 5 got 4">diff body</failure></testcase>
-      <testcase classname="metrics/v2" name="TestMetricsV2TestSuite/TestAll/wildcard_-_with_limit" time="0"><failure message="aborted"></failure></testcase>
-      <testcase classname="metrics/v2" name="TestOther" time="0.5"></testcase>
-      <testcase classname="metrics/v2" name="TestSkipped" time="0"><skipped/></testcase>
+  const suite = aPackageName();
+  const pkg = aPackageName();
+  const parentTest = aTestName();
+  const midTest = `${parentTest}/TestAll`;
+  const leafTest = `${midTest}/${aTestName()}`;
+  const abortedTest = `${midTest}/${aTestName()}`;
+  const passingTest = aTestName();
+  const skippedTest = aTestName();
+  const leafFailureMessage = `not equal ${unique()}`;
+
+  const junitWithSubtests = `<testsuites>
+    <testsuite name="${suite}" tests="6" failures="4" errors="0" time="12.5">
+      <testcase classname="${pkg}" name="${parentTest}" time="10.1"><failure message="Failed">parent output</failure></testcase>
+      <testcase classname="${pkg}" name="${midTest}" time="10.0"><failure message="Failed"></failure></testcase>
+      <testcase classname="${pkg}" name="${leafTest}" time="3.2"><failure message="${leafFailureMessage}">diff body</failure></testcase>
+      <testcase classname="${pkg}" name="${abortedTest}" time="0"><failure message="aborted"></failure></testcase>
+      <testcase classname="${pkg}" name="${passingTest}" time="0.5"></testcase>
+      <testcase classname="${pkg}" name="${skippedTest}" time="0"><skipped/></testcase>
     </testsuite>
   </testsuites>`;
 
+  function casesByName(xml: string): Map<string, TestCase> {
+    return new Map((parseJUnitTestCases(xml) ?? []).map((testCase) => [testCase.name, testCase]));
+  }
+
   it("extracts every testcase with status and duration", () => {
-    const cases = parseJUnitTestCases(goJUnit);
+    const cases = parseJUnitTestCases(junitWithSubtests);
 
     expect(cases).toHaveLength(6);
-    const byName = new Map(cases?.map((c) => [c.name, c]));
-    expect(byName.get("TestOther")).toMatchObject({
-      classname: "metrics/v2",
-      suite: "groundcover.com/internal/services/router/api/metrics/v2",
+    const byName = casesByName(junitWithSubtests);
+    expect(byName.get(passingTest)).toMatchObject({
+      classname: pkg,
+      suite,
       status: "passed",
       timeSeconds: 0.5,
     });
-    expect(byName.get("TestSkipped")?.status).toBe("skipped");
-    expect(byName.get("TestMetricsV2TestSuite/TestAll/wildcard_-_all_metrics")?.status).toBe("failed");
+    expect(byName.get(skippedTest)?.status).toBe("skipped");
+    expect(byName.get(leafTest)?.status).toBe("failed");
   });
 
-  it("marks Go subtest ancestors as non-leaf and leaves as leaf", () => {
-    const cases = parseJUnitTestCases(goJUnit);
-    const byName = new Map(cases?.map((c) => [c.name, c]));
+  it("marks subtest ancestors as non-leaf and leaves as leaf", () => {
+    const byName = casesByName(junitWithSubtests);
 
-    expect(byName.get("TestMetricsV2TestSuite")?.leaf).toBe(false);
-    expect(byName.get("TestMetricsV2TestSuite/TestAll")?.leaf).toBe(false);
-    expect(byName.get("TestMetricsV2TestSuite/TestAll/wildcard_-_all_metrics")?.leaf).toBe(true);
-    expect(byName.get("TestOther")?.leaf).toBe(true);
+    expect(byName.get(parentTest)?.leaf).toBe(false);
+    expect(byName.get(midTest)?.leaf).toBe(false);
+    expect(byName.get(leafTest)?.leaf).toBe(true);
+    expect(byName.get(passingTest)?.leaf).toBe(true);
   });
 
   it("flags zero-duration bodyless failures as collateral, but not zero-duration skips or passes", () => {
-    const cases = parseJUnitTestCases(goJUnit);
-    const byName = new Map(cases?.map((c) => [c.name, c]));
+    const byName = casesByName(junitWithSubtests);
 
-    expect(byName.get("TestMetricsV2TestSuite/TestAll/wildcard_-_with_limit")?.collateral).toBe(true);
-    expect(byName.get("TestMetricsV2TestSuite/TestAll/wildcard_-_all_metrics")?.collateral).toBe(false);
-    expect(byName.get("TestSkipped")?.collateral).toBe(false);
+    expect(byName.get(abortedTest)?.collateral).toBe(true);
+    expect(byName.get(leafTest)?.collateral).toBe(false);
+    expect(byName.get(skippedTest)?.collateral).toBe(false);
   });
 
   it("does not flag a zero-duration failure that produced output — it demonstrably ran", () => {
-    const xml = `<testsuite name="s"><testcase classname="c" name="TestInstantFail" time="0"><failure message="Failed">=== RUN TestInstantFail
-    fixture_test.go:12: expected 1, got 2
---- FAIL: TestInstantFail (0.00s)</failure></testcase></testsuite>`;
+    const name = aTestName();
+    const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="0"><failure message="Failed">an assertion diff</failure></testcase></testsuite>`;
 
-    const cases = parseJUnitTestCases(xml);
+    const testCase = casesByName(xml).get(name);
 
-    expect(cases?.[0]?.status).toBe("failed");
-    expect(cases?.[0]?.collateral).toBe(false);
+    expect(testCase?.status).toBe("failed");
+    expect(testCase?.collateral).toBe(false);
   });
 
   it("combines the failure message attribute and body, capped", () => {
+    const name = aTestName();
+    const message = `boom ${unique()}`;
     const longBody = "x".repeat(10_000);
-    const xml = `<testsuite name="s"><testcase classname="c" name="TestX" time="1"><failure message="boom">${longBody}</failure></testcase></testsuite>`;
+    const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"><failure message="${message}">${longBody}</failure></testcase></testsuite>`;
 
-    const cases = parseJUnitTestCases(xml);
+    const testCase = casesByName(xml).get(name);
 
-    expect(cases?.[0]?.message).toContain("boom");
-    expect(cases?.[0]?.message?.length).toBeLessThanOrEqual(4096);
+    expect(testCase?.message).toContain(message);
+    expect(testCase?.message?.length).toBeLessThanOrEqual(4096);
   });
 
   it("captures per-test system-out as output, capped", () => {
+    const name = aTestName();
     const longOut = "y".repeat(40_000);
-    const xml = `<testsuite name="s"><testcase classname="c" name="TestX" time="1"><failure message="boom">body</failure><system-out>${longOut}</system-out></testcase></testsuite>`;
+    const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"><failure message="boom">body</failure><system-out>${longOut}</system-out></testcase></testsuite>`;
 
-    const cases = parseJUnitTestCases(xml);
+    const testCase = casesByName(xml).get(name);
 
-    expect(cases?.[0]?.output).toContain("yyy");
-    expect(cases?.[0]?.output?.length).toBeLessThanOrEqual(16_384);
+    expect(testCase?.output).toContain("yyy");
+    expect(testCase?.output?.length).toBeLessThanOrEqual(16_384);
   });
 
   it("leaves output unset when there is no system-out", () => {
-    const xml = `<testsuite name="s"><testcase classname="c" name="TestX" time="1"/></testsuite>`;
+    const name = aTestName();
+    const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"/></testsuite>`;
 
-    expect(parseJUnitTestCases(xml)?.[0]?.output).toBeUndefined();
+    expect(casesByName(xml).get(name)?.output).toBeUndefined();
   });
 
   it("classifies error elements as errors", () => {
-    const xml = `<testsuite name="s"><testcase classname="c" name="TestX" time="1"><error message="panic"/></testcase></testsuite>`;
+    const name = aTestName();
+    const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"><error message="panic"/></testcase></testsuite>`;
 
-    expect(parseJUnitTestCases(xml)?.[0]?.status).toBe("error");
+    expect(casesByName(xml).get(name)?.status).toBe("error");
   });
 
   it("handles a single testcase object and nested testsuites", () => {
-    const xml = `<testsuites><testsuite name="outer"><testsuite name="inner"><testcase classname="c" name="TestOnly" time="0.1"/></testsuite></testsuite></testsuites>`;
+    const name = aTestName();
+    const innerSuite = aPackageName();
+    const xml = `<testsuites><testsuite name="${aPackageName()}"><testsuite name="${innerSuite}"><testcase classname="${aPackageName()}" name="${name}" time="0.1"/></testsuite></testsuite></testsuites>`;
 
     const cases = parseJUnitTestCases(xml);
 
     expect(cases).toHaveLength(1);
-    expect(cases?.[0]).toMatchObject({ name: "TestOnly", suite: "inner", leaf: true });
+    expect(cases?.[0]).toMatchObject({ name, suite: innerSuite, leaf: true });
   });
 
   it("returns undefined for XML without testcases", () => {

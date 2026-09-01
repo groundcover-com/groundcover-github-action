@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { RequestError } from "@octokit/request-error";
+import { aTestName } from "./__fixtures__/builders";
 
 const core = {
   getInput: jest.fn<(name: string) => string>(),
@@ -969,7 +970,9 @@ describe("run with testResultsArtifactPrefix", () => {
       apiKey: "gc-secret",
       testResultsArtifactPrefix: "test-reports-",
     });
-    const cases = { 10: [{ name: "TestA" }, { name: "TestB" }] };
+    const firstTest = aTestName();
+    const secondTest = aTestName();
+    const cases = { 10: [{ name: firstTest }, { name: secondTest }] };
     collectTestCasesFromArtifacts.mockResolvedValue(cases as never);
 
     await run();
@@ -977,7 +980,7 @@ describe("run with testResultsArtifactPrefix", () => {
     expect(collectTestCasesFromArtifacts).toHaveBeenCalledWith(github.context, { mocked: true }, 123, "test-reports-", [
       { id: 10 },
     ]);
-    expect(summarizeTestCases).toHaveBeenCalledWith([{ name: "TestA" }, { name: "TestB" }]);
+    expect(summarizeTestCases).toHaveBeenCalledWith([{ name: firstTest }, { name: secondTest }]);
     expect(traceWorkflowRun).toHaveBeenCalledWith(
       expect.any(Object),
       [{ id: 10 }],
@@ -998,7 +1001,8 @@ describe("run with testResultsArtifactPrefix", () => {
       testResultsArtifactPrefix: "test-reports-",
       testResultsGlob: "reports/*.xml",
     });
-    collectTestCasesFromArtifacts.mockResolvedValue({ 10: [{ name: "TestA" }] } as never);
+    const passingTest = aTestName();
+    collectTestCasesFromArtifacts.mockResolvedValue({ 10: [{ name: passingTest }] } as never);
     const globSummary = { suites: 9, total: 9, passed: 9, failed: 0, skipped: 0, errors: 0, duration: 1 };
     findTestResultsSummary.mockResolvedValue(globSummary as never);
 
@@ -1013,7 +1017,7 @@ describe("run with testResultsArtifactPrefix", () => {
       undefined,
       globSummary,
       {},
-      { 10: [{ name: "TestA" }] },
+      { 10: [{ name: passingTest }] },
     );
   });
 
@@ -1033,7 +1037,7 @@ describe("run with testResultsArtifactPrefix", () => {
       apiKey: "gc-secret",
       testResultsArtifactPrefix: "test-reports-",
     });
-    collectTestCasesFromArtifacts.mockResolvedValue({ 10: [{ name: "TestA", status: "failed" }] } as never);
+    collectTestCasesFromArtifacts.mockResolvedValue({ 10: [{ name: aTestName(), status: "failed" }] } as never);
 
     await run();
 
@@ -1047,7 +1051,7 @@ describe("run with testResultsArtifactPrefix", () => {
       apiKey: "gc-secret",
       testResultsArtifactPrefix: "test-reports-",
     });
-    collectTestCasesFromArtifacts.mockResolvedValue({ 10: [{ name: "TestA", status: "passed" }] } as never);
+    collectTestCasesFromArtifacts.mockResolvedValue({ 10: [{ name: aTestName(), status: "passed" }] } as never);
 
     await run();
 

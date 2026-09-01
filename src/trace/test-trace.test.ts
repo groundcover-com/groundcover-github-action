@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from "@jes
 import { type Context, context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { BasicTracerProvider, InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import type { TestCase } from "../test-results";
+import { aJobContext, aJobName, aTestCase, aTestName } from "../__fixtures__/builders";
 
 const emit = jest.fn<(record: Record<string, unknown>) => void>();
 const getLogger = jest.fn(() => ({ emit }));
@@ -13,34 +13,10 @@ jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
 }));
 
 const { traceTestCases } = await import("./test-trace.js");
-type TestCaseJobContext = Parameters<typeof traceTestCases>[1];
 
 function hrTimeToMs(value: [number, number]): number {
   return value[0] * 1000 + value[1] / 1_000_000;
 }
-
-function buildCase(overrides: Partial<TestCase> = {}): TestCase {
-  return {
-    name: "TestSuite/TestAll/leaf_case",
-    classname: "metrics/v2",
-    suite: "groundcover.com/internal/services/router/api/metrics/v2",
-    timeSeconds: 1.5,
-    status: "passed",
-    leaf: true,
-    collateral: false,
-    ...overrides,
-  };
-}
-
-const jobContext: TestCaseJobContext = {
-  id: 10,
-  name: "test / router:test",
-  run_id: 20,
-  run_attempt: 2,
-  head_sha: "0123456789abcdef0123456789abcdef01234567",
-  head_branch: "shaiyallin/dx-657",
-  started_at: "2026-01-29T17:16:20Z",
-};
 
 describe("traceTestCases", () => {
   const exporter = new InMemorySpanExporter();
@@ -65,13 +41,14 @@ describe("traceTestCases", () => {
   });
 
   it("emits one span per test case, parented to the active (job) span", () => {
-    const tracer = trace.getTracer("test");
-    tracer.startActiveSpan("test / router:test", (jobSpan) => {
-      traceTestCases([buildCase(), buildCase({ name: "TestOther" })], jobContext);
+    const job = aJobContext();
+    const jobSpanName = aJobName();
+
+    trace.getTracer("test").startActiveSpan(jobSpanName, (jobSpan) => {
+      traceTestCases([aTestCase(), aTestCase()], job);
       jobSpan.end();
 
-      const spans = exporter.getFinishedSpans();
-      const testSpans = spans.filter((s) => s.name !== "test / router:test");
+      const testSpans = exporter.getFinishedSpans().filter((span) => span.name !== jobSpanName);
       expect(testSpans).toHaveLength(2);
       for (const span of testSpans) {
         expect(span.parentSpanContext?.spanId).toBe(jobSpan.spanContext().spanId);
@@ -82,58 +59,62 @@ describe("traceTestCases", () => {
   });
 
   it("sets test and github attributes on each span", () => {
-    traceTestCases([buildCase()], jobContext);
+    const testCase = aTestCase();
+    const job = aJobContext();
 
-    const span = exporter.getFinishedSpans()[0];
-    expect(span?.attributes).toMatchObject({
-      "test.name": "TestSuite/TestAll/leaf_case",
-      "test.classname": "metrics/v2",
-      "test.suite": "groundcover.com/internal/services/router/api/metrics/v2",
-      "test.status": "passed",
-      "test.duration_ms": 1500,
-      "test.leaf": true,
-      "test.collateral": false,
-      "github.job.id": 10,
-      "github.job.name": "test / router:test",
-      "github.run_id": 20,
-      "github.run_attempt": 2,
-      "github.head_sha": "0123456789abcdef0123456789abcdef01234567",
-      "github.head_branch": "shaiyallin/dx-657",
+    traceTestCases([testCase], job);
+
+    expect(exporter.getFinishedSpans()[0]?.attributes).toMatchObject({
+      "test.name": testCase.name,
+      "test.classname": testCase.classname,
+      "test.suite": testCase.suite,
+      "test.status": testCase.status,
+      "test.duration_ms": Math.round(testCase.timeSeconds * 1000),
+      "test.leaf": testCase.leaf,
+      "test.collateral": testCase.collateral,
+      "github.job.id": job.id,
+      "github.job.name": job.name,
+      "github.run_id": job.run_id,
+      "github.run_attempt": job.run_attempt,
+      "github.head_sha": job.head_sha,
+      "github.head_branch": job.head_branch,
     });
   });
 
   it("anchors span timing at the job start with the case duration", () => {
-    traceTestCases([buildCase({ timeSeconds: 3 })], jobContext);
+    const testCase = aTestCase();
+    const job = aJobContext();
+
+    traceTestCases([testCase], job);
 
     const span = exporter.getFinishedSpans()[0];
     expect(span).toBeDefined();
     if (!span) return;
 
-    expect(hrTimeToMs(span.startTime)).toBe(new Date(jobContext.started_at).getTime());
-    expect(hrTimeToMs(span.endTime) - hrTimeToMs(span.startTime)).toBeCloseTo(3000);
+    expect(hrTimeToMs(span.startTime)).toBe(new Date(job.started_at).getTime());
+    expect(hrTimeToMs(span.endTime) - hrTimeToMs(span.startTime)).toBeCloseTo(testCase.timeSeconds * 1000);
   });
 
   it("marks failed and errored cases as error spans with the failure message", () => {
-    traceTestCases(
-      [
-        buildCase({ name: "TestFails", status: "failed", message: "Not equal: 5 != 4" }),
-        buildCase({ name: "TestErrors", status: "error" }),
-        buildCase({ name: "TestPasses" }),
-      ],
-      jobContext,
-    );
+    const failed = aTestCase({ status: "failed", message: `assertion mismatch ${aTestName()}` });
+    const errored = aTestCase({ status: "error" });
+    const passed = aTestCase();
 
-    const byName = new Map(exporter.getFinishedSpans().map((s) => [s.name, s]));
-    expect(byName.get("TestFails")?.status.code).toBe(SpanStatusCode.ERROR);
-    expect(byName.get("TestFails")?.attributes["test.failure.message"]).toBe("Not equal: 5 != 4");
-    expect(byName.get("TestFails")?.attributes["error"]).toBe(true);
-    expect(byName.get("TestErrors")?.status.code).toBe(SpanStatusCode.ERROR);
-    expect(byName.get("TestPasses")?.status.code).not.toBe(SpanStatusCode.ERROR);
-    expect(byName.get("TestPasses")?.attributes["error"]).toBe(false);
+    traceTestCases([failed, errored, passed], aJobContext());
+
+    const byName = new Map(exporter.getFinishedSpans().map((span) => [span.name, span]));
+    expect(byName.get(failed.name)?.status.code).toBe(SpanStatusCode.ERROR);
+    expect(byName.get(failed.name)?.attributes["test.failure.message"]).toBe(failed.message);
+    expect(byName.get(failed.name)?.attributes["error"]).toBe(true);
+    expect(byName.get(errored.name)?.status.code).toBe(SpanStatusCode.ERROR);
+    expect(byName.get(passed.name)?.status.code).not.toBe(SpanStatusCode.ERROR);
+    expect(byName.get(passed.name)?.attributes["error"]).toBe(false);
   });
 
   it("emits skipped cases with a skipped status and no error", () => {
-    traceTestCases([buildCase({ name: "TestSkipped", status: "skipped", timeSeconds: 0 })], jobContext);
+    const skipped = aTestCase({ status: "skipped", timeSeconds: 0 });
+
+    traceTestCases([skipped], aJobContext());
 
     const span = exporter.getFinishedSpans()[0];
     expect(span?.attributes["test.status"]).toBe("skipped");
@@ -141,33 +122,35 @@ describe("traceTestCases", () => {
   });
 
   it("emits a log record with the failure output, correlated to the failed test's span", () => {
-    traceTestCases(
-      [
-        buildCase({ name: "TestFails", status: "failed", message: "Not equal: 5 != 4", output: "=== RUN TestFails" }),
-        buildCase({ name: "TestPasses", output: "chatty pass" }),
-      ],
-      jobContext,
-    );
+    const failed = aTestCase({
+      status: "failed",
+      message: `assertion mismatch ${aTestName()}`,
+      output: `stdout ${aTestName()}`,
+    });
+    const passed = aTestCase({ output: `stdout ${aTestName()}` });
+    const job = aJobContext();
+
+    traceTestCases([failed, passed], job);
 
     expect(emit).toHaveBeenCalledTimes(1);
     const record = emit.mock.calls[0]?.[0];
     expect(record?.["severityText"]).toBe("ERROR");
-    expect(record?.["body"]).toContain("Not equal: 5 != 4");
-    expect(record?.["body"]).toContain("=== RUN TestFails");
+    expect(record?.["body"]).toContain(failed.message);
+    expect(record?.["body"]).toContain(failed.output);
     expect(record?.["attributes"]).toMatchObject({
-      "test.name": "TestFails",
-      "test.status": "failed",
-      "github.job.name": "test / router:test",
+      "test.name": failed.name,
+      "test.status": failed.status,
+      "github.job.name": job.name,
     });
 
-    const failedSpan = exporter.getFinishedSpans().find((s) => s.name === "TestFails");
+    const failedSpan = exporter.getFinishedSpans().find((span) => span.name === failed.name);
     const recordSpan = trace.getSpan(record?.["context"] as Context);
     expect(recordSpan?.spanContext().spanId).toBe(failedSpan?.spanContext().spanId);
     expect(recordSpan?.spanContext().traceId).toBe(failedSpan?.spanContext().traceId);
   });
 
   it("emits no log record for failures without message or output", () => {
-    traceTestCases([buildCase({ name: "TestFails", status: "failed" })], jobContext);
+    traceTestCases([aTestCase({ status: "failed" })], aJobContext());
 
     expect(emit).not.toHaveBeenCalled();
   });
