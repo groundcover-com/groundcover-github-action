@@ -2612,7 +2612,13 @@ function requireRequest$1 () {
 	      } else if (typeof val[i] === 'object') {
 	        throw new InvalidArgumentError(`invalid ${key} header`)
 	      } else {
-	        arr.push(`${val[i]}`);
+	        // Coerce primitives (and reject unsafe coercions such as functions
+	        // with a crafted toString/Symbol.toPrimitive).
+	        const str = `${val[i]}`;
+	        if (!isValidHeaderValue(str)) {
+	          throw new InvalidArgumentError(`invalid ${key} header`)
+	        }
+	        arr.push(str);
 	      }
 	    }
 	    val = arr;
@@ -2623,7 +2629,12 @@ function requireRequest$1 () {
 	  } else if (val === null) {
 	    val = '';
 	  } else {
+	    // Coerce primitives (and reject unsafe coercions such as functions
+	    // with a crafted toString/Symbol.toPrimitive).
 	    val = `${val}`;
+	    if (!isValidHeaderValue(val)) {
+	      throw new InvalidArgumentError(`invalid ${key} header`)
+	    }
 	  }
 
 	  if (headerName === 'host') {
@@ -2774,6 +2785,7 @@ function requireDispatcherBase () {
 
 	  get webSocketOptions () {
 	    return {
+	      maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
 	      maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
 	    }
 	  }
@@ -8693,6 +8705,7 @@ function requireClientH1 () {
 	  RequestContentLengthMismatchError,
 	  ResponseContentLengthMismatchError,
 	  RequestAbortedError,
+	  InvalidArgumentError,
 	  HeadersTimeoutError,
 	  HeadersOverflowError,
 	  SocketError,
@@ -8740,6 +8753,9 @@ function requireClientH1 () {
 	const FastBuffer = Buffer[Symbol.species];
 	const addListener = util.addListener;
 	const removeAllListeners = util.removeAllListeners;
+	const kIdleSocketValidation = Symbol('kIdleSocketValidation');
+	const kIdleSocketValidationTimeout = Symbol('kIdleSocketValidationTimeout');
+	const kSocketUsed = Symbol('kSocketUsed');
 
 	let extractBody;
 
@@ -8962,27 +8978,69 @@ function requireClientH1 () {
 
 	      const offset = llhttp.llhttp_get_error_pos(this.ptr) - currentBufferPtr;
 
-	      if (ret === constants.ERROR.PAUSED_UPGRADE) {
-	        this.onUpgrade(data.slice(offset));
-	      } else if (ret === constants.ERROR.PAUSED) {
-	        this.paused = true;
-	        socket.unshift(data.slice(offset));
-	      } else if (ret !== constants.ERROR.OK) {
-	        const ptr = llhttp.llhttp_get_error_reason(this.ptr);
-	        let message = '';
-	        /* istanbul ignore else: difficult to make a test case for */
-	        if (ptr) {
-	          const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0);
-	          message =
-	            'Response does not match the HTTP/1.1 protocol (' +
-	            Buffer.from(llhttp.memory.buffer, ptr, len).toString() +
-	            ')';
+	      if (ret !== constants.ERROR.OK) {
+	        const body = data.subarray(offset);
+
+	        if (ret === constants.ERROR.PAUSED_UPGRADE) {
+	          this.onUpgrade(body);
+	        } else if (ret === constants.ERROR.PAUSED) {
+	          this.paused = true;
+	          socket.unshift(body);
+	        } else {
+	          throw this.createError(ret, body)
 	        }
-	        throw new HTTPParserError(message, constants.ERROR[ret], data.slice(offset))
 	      }
 	    } catch (err) {
 	      util.destroy(socket, err);
 	    }
+	  }
+
+	  finish () {
+	    assert(currentParser === null);
+	    assert(this.ptr != null);
+	    assert(!this.paused);
+
+	    const { llhttp } = this;
+
+	    let ret;
+
+	    try {
+	      currentParser = this;
+	      ret = llhttp.llhttp_finish(this.ptr);
+	    } finally {
+	      currentParser = null;
+	    }
+
+	    if (ret === constants.ERROR.OK) {
+	      return null
+	    }
+
+	    if (ret === constants.ERROR.PAUSED || ret === constants.ERROR.PAUSED_UPGRADE) {
+	      this.paused = true;
+	      return null
+	    }
+
+	    return this.createError(ret, EMPTY_BUF)
+	  }
+
+	  createError (ret, data) {
+	    const { llhttp, contentLength, bytesRead } = this;
+
+	    if (contentLength && bytesRead !== parseInt(contentLength, 10)) {
+	      return new ResponseContentLengthMismatchError()
+	    }
+
+	    const ptr = llhttp.llhttp_get_error_reason(this.ptr);
+	    let message = '';
+	    if (ptr) {
+	      const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0);
+	      message =
+	        'Response does not match the HTTP/1.1 protocol (' +
+	        Buffer.from(llhttp.memory.buffer, ptr, len).toString() +
+	        ')';
+	    }
+
+	    return new HTTPParserError(message, constants.ERROR[ret], data)
 	  }
 
 	  destroy () {
@@ -9009,6 +9067,11 @@ function requireClientH1 () {
 
 	    /* istanbul ignore next: difficult to make a test case for */
 	    if (socket.destroyed) {
+	      return -1
+	    }
+
+	    if (client[kRunning] === 0) {
+	      util.destroy(socket, new SocketError('bad response', util.getSocketInfo(socket)));
 	      return -1
 	    }
 
@@ -9112,6 +9175,11 @@ function requireClientH1 () {
 
 	    /* istanbul ignore next: difficult to make a test case for */
 	    if (socket.destroyed) {
+	      return -1
+	    }
+
+	    if (client[kRunning] === 0) {
+	      util.destroy(socket, new SocketError('bad response', util.getSocketInfo(socket)));
 	      return -1
 	    }
 
@@ -9288,6 +9356,7 @@ function requireClientH1 () {
 	    request.onComplete(headers);
 
 	    client[kQueue][client[kRunningIdx]++] = null;
+	    socket[kSocketUsed] = true;
 
 	    if (socket[kWriting]) {
 	      assert(client[kRunning] === 0);
@@ -9346,6 +9415,9 @@ function requireClientH1 () {
 	  socket[kWriting] = false;
 	  socket[kReset] = false;
 	  socket[kBlocking] = false;
+	  socket[kIdleSocketValidation] = 0;
+	  socket[kIdleSocketValidationTimeout] = null;
+	  socket[kSocketUsed] = false;
 	  socket[kParser] = new Parser(client, socket, llhttpInstance);
 
 	  addListener(socket, 'error', function (err) {
@@ -9356,8 +9428,11 @@ function requireClientH1 () {
 	    // On Mac OS, we get an ECONNRESET even if there is a full body to be forwarded
 	    // to the user.
 	    if (err.code === 'ECONNRESET' && parser.statusCode && !parser.shouldKeepAlive) {
-	      // We treat all incoming data so for as a valid response.
-	      parser.onMessageComplete();
+	      const parserErr = parser.finish();
+	      if (parserErr) {
+	        this[kError] = parserErr;
+	        this[kClient][kOnError](parserErr);
+	      }
 	      return
 	    }
 
@@ -9376,8 +9451,10 @@ function requireClientH1 () {
 	    const parser = this[kParser];
 
 	    if (parser.statusCode && !parser.shouldKeepAlive) {
-	      // We treat all incoming data so far as a valid response.
-	      parser.onMessageComplete();
+	      const parserErr = parser.finish();
+	      if (parserErr) {
+	        util.destroy(this, parserErr);
+	      }
 	      return
 	    }
 
@@ -9387,10 +9464,11 @@ function requireClientH1 () {
 	    const client = this[kClient];
 	    const parser = this[kParser];
 
+	    clearIdleSocketValidation(this);
+
 	    if (parser) {
 	      if (!this[kError] && parser.statusCode && !parser.shouldKeepAlive) {
-	        // We treat all incoming data so far as a valid response.
-	        parser.onMessageComplete();
+	        this[kError] = parser.finish() || this[kError];
 	      }
 
 	      this[kParser].destroy();
@@ -9453,7 +9531,7 @@ function requireClientH1 () {
 	      return socket.destroyed
 	    },
 	    busy (request) {
-	      if (socket[kWriting] || socket[kReset] || socket[kBlocking]) {
+	      if (socket[kWriting] || socket[kReset] || socket[kBlocking] || socket[kIdleSocketValidation] === 1) {
 	        return true
 	      }
 
@@ -9491,6 +9569,31 @@ function requireClientH1 () {
 	  }
 	}
 
+	function clearIdleSocketValidation (socket) {
+	  if (socket[kIdleSocketValidationTimeout]) {
+	    clearTimeout(socket[kIdleSocketValidationTimeout]);
+	    socket[kIdleSocketValidationTimeout] = null;
+	  }
+
+	  socket[kIdleSocketValidation] = 0;
+	}
+
+	function scheduleIdleSocketValidation (client, socket) {
+	  socket[kIdleSocketValidation] = 1;
+	  socket[kIdleSocketValidationTimeout] = setTimeout(() => {
+	    socket[kIdleSocketValidationTimeout] = null;
+	    socket[kIdleSocketValidation] = 2;
+
+	    if (client[kSocket] === socket && !socket.destroyed) {
+	      client[kResume]();
+	    }
+	  }, 0);
+	  socket[kIdleSocketValidationTimeout].unref?.();
+	}
+
+	/**
+	 * @param {import('./client.js')} client
+	 */
 	function resumeH1 (client) {
 	  const socket = client[kSocket];
 
@@ -9503,6 +9606,32 @@ function requireClientH1 () {
 	    } else if (socket[kNoRef] && socket.ref) {
 	      socket.ref();
 	      socket[kNoRef] = false;
+	    }
+
+	    if (client[kRunning] === 0 && client[kPending] > 0 && socket[kSocketUsed]) {
+	      if (socket[kIdleSocketValidation] === 0) {
+	        scheduleIdleSocketValidation(client, socket);
+	        socket[kParser].readMore();
+	        if (socket.destroyed) {
+	          return
+	        }
+	        return
+	      }
+
+	      if (socket[kIdleSocketValidation] === 1) {
+	        socket[kParser].readMore();
+	        if (socket.destroyed) {
+	          return
+	        }
+	        return
+	      }
+	    }
+
+	    if (client[kRunning] === 0) {
+	      socket[kParser].readMore();
+	      if (socket.destroyed) {
+	        return
+	      }
 	    }
 
 	    if (client[kSize] === 0) {
@@ -9560,8 +9689,16 @@ function requireClientH1 () {
 	    }
 	    body = bodyStream.stream;
 	    contentLength = bodyStream.length;
-	  } else if (util.isBlobLike(body) && request.contentType == null && body.type) {
-	    headers.push('content-type', body.type);
+	  } else if (util.isBlobLike(body) && request.contentType == null) {
+	    const contentType = body.type;
+	    if (contentType) {
+	      const contentTypeValue = `${contentType}`;
+	      if (!util.isValidHeaderValue(contentTypeValue)) {
+	        util.errorRequest(client, request, new InvalidArgumentError('invalid content-type header'));
+	        return false
+	      }
+	      headers.push('content-type', contentTypeValue);
+	    }
 	  }
 
 	  if (body && typeof body.read === 'function') {
@@ -9598,6 +9735,7 @@ function requireClientH1 () {
 	  }
 
 	  const socket = client[kSocket];
+	  clearIdleSocketValidation(socket);
 
 	  const abort = (err) => {
 	    if (request.aborted || request.completed) {
@@ -12417,7 +12555,6 @@ function requireAgent () {
 
 	class Agent extends DispatcherBase {
 	  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
-
 	    if (typeof factory !== 'function') {
 	      throw new InvalidArgumentError('factory must be a function.')
 	    }
@@ -12999,6 +13136,28 @@ function requireRetryHandler () {
 	  return new Date(retryAfter).getTime() - current
 	}
 
+	function validatePartialResponseContentLength (headers, range, statusCode, retryCount) {
+	  const contentLength = headers['content-length'];
+	  if (contentLength == null) {
+	    return null
+	  }
+
+	  if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
+	    return null
+	  }
+
+	  const length = Number(contentLength);
+	  const expectedLength = range.end - range.start + 1;
+	  if (!Number.isFinite(length) || length !== expectedLength) {
+	    return new RequestRetryError('Content-Length mismatch', statusCode, {
+	      headers,
+	      data: { count: retryCount }
+	    })
+	  }
+
+	  return null
+	}
+
 	class RetryHandler {
 	  constructor (opts, handlers) {
 	    const { retryOptions, ...dispatchOpts } = opts;
@@ -13213,6 +13372,12 @@ function requireRetryHandler () {
 	        return false
 	      }
 
+	      const contentLengthError = validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount);
+	      if (contentLengthError != null) {
+	        this.abort(contentLengthError);
+	        return false
+	      }
+
 	      const { start, size, end = size - 1 } = contentRange;
 
 	      assert(this.start === start, 'content-range mismatch');
@@ -13234,6 +13399,12 @@ function requireRetryHandler () {
 	            resume,
 	            statusMessage
 	          )
+	        }
+
+	        const contentLengthError = validatePartialResponseContentLength(headers, range, statusCode, this.retryCount);
+	        if (contentLengthError != null) {
+	          this.abort(contentLengthError);
+	          return false
 	        }
 
 	        const { start, size, end = size - 1 } = range;
@@ -23633,7 +23804,7 @@ function requireUtil$4 () {
 
 	    if (
 	      code < 0x20 || // exclude CTLs (0-31)
-	      code === 0x7F || // DEL
+	      code > 0x7E || // exclude DEL and non-ascii
 	      code === 0x3B // ;
 	    ) {
 	      throw new Error('Invalid cookie path')
@@ -23642,16 +23813,80 @@ function requireUtil$4 () {
 	}
 
 	/**
-	 * I have no idea why these values aren't allowed to be honest,
-	 * but Deno tests these. - Khafra
+	 * <let-dig> ::= <letter> | <digit>
+	 *
+	 * <letter> ::= any one of the 52 alphabetic characters A through Z in
+	 * upper case and a through z in lower case
+	 *
+	 * <digit> ::= any one of the ten digits 0 through 9r
+	 *
+	 * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+	 * @param {number} code
+	 */
+	function isLetterOrDigit (code) {
+	  return (
+	    (code >= 0x30 && code <= 0x39) || // 0-9
+	    (code >= 0x41 && code <= 0x5A) || // A-Z
+	    (code >= 0x61 && code <= 0x7A) // a-z
+	  )
+	}
+
+	/**
+	 * Validates a cookie domain against the "preferred name syntax".
+	 *
+	 * <domain>      ::= <subdomain> | " "
+	 * <subdomain>   ::= <label> | <subdomain> "." <label>
+	 * <label>       ::= <let-dig> [ [ <ldh-str> ] <let-dig> ]
+	 * <ldh-str>     ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
+	 * <let-dig-hyp> ::= <let-dig> | "-"
+	 *
+	 * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+	 * @see https://www.rfc-editor.org/rfc/rfc1123#section-2.1
+	 * @see https://www.rfc-editor.org/rfc/rfc1035#section-2.3.4
 	 * @param {string} domain
 	 */
 	function validateCookieDomain (domain) {
-	  if (
-	    domain.startsWith('-') ||
-	    domain.endsWith('.') ||
-	    domain.endsWith('-')
-	  ) {
+	  // <domain> ::= <subdomain> | " "
+	  if (domain === ' ') {
+	    return
+	  }
+
+	  if (domain.length > 255) {
+	    throw new Error('Invalid cookie domain')
+	  }
+
+	  let labelLength = 0;
+
+	  for (let i = 0; i < domain.length; ++i) {
+	    const code = domain.charCodeAt(i);
+
+	    if (code === 0x2E) {
+	      if (labelLength === 0) {
+	        throw new Error('Invalid cookie domain')
+	      }
+
+	      if (domain.charCodeAt(i - 1) === 0x2D) { // "-"
+	        throw new Error('Invalid cookie domain')
+	      }
+
+	      labelLength = 0;
+	      continue
+	    }
+
+	    if (labelLength === 0 && !isLetterOrDigit(code)) {
+	      throw new Error('Invalid cookie domain')
+	    }
+
+	    if (!isLetterOrDigit(code) && code !== 0x2D) { // "-"
+	      throw new Error('Invalid cookie domain')
+	    }
+
+	    if (++labelLength > 63) {
+	      throw new Error('Invalid cookie domain')
+	    }
+	  }
+
+	  if (labelLength === 0 || domain.charCodeAt(domain.length - 1) === 0x2D) { // "-"
 	    throw new Error('Invalid cookie domain')
 	  }
 	}
@@ -23794,7 +24029,13 @@ function requireUtil$4 () {
 
 	    const [key, ...value] = part.split('=');
 
-	    out.push(`${key.trim()}=${value.join('=')}`);
+	    const trimmedKey = key.trim();
+	    const joinedValue = value.join('=');
+
+	    validateCookieName(trimmedKey);
+	    validateCookieValue(joinedValue);
+
+	    out.push(`${trimmedKey}=${joinedValue}`);
 	  }
 
 	  return out.join('; ')
@@ -24093,32 +24334,25 @@ function requireParse$3 () {
 	    // If the attribute-name case-insensitively matches the string
 	    // "SameSite", the user agent MUST process the cookie-av as follows:
 
-	    // 1. Let enforcement be "Default".
-	    let enforcement = 'Default';
-
 	    const attributeValueLowercase = attributeValue.toLowerCase();
-	    // 2. If cookie-av's attribute-value is a case-insensitive match for
-	    //    "None", set enforcement to "None".
-	    if (attributeValueLowercase.includes('none')) {
-	      enforcement = 'None';
-	    }
 
-	    // 3. If cookie-av's attribute-value is a case-insensitive match for
-	    //    "Strict", set enforcement to "Strict".
-	    if (attributeValueLowercase.includes('strict')) {
-	      enforcement = 'Strict';
+	    // 1. If cookie-av's attribute-value is a case-insensitive match for
+	    //    "None", append an attribute to the cookie-attribute-list with an
+	    //    attribute-name of "SameSite" and an attribute-value of "None".
+	    if (attributeValueLowercase === 'none') {
+	      cookieAttributeList.sameSite = 'None';
+	    } else if (attributeValueLowercase === 'strict') {
+	      // 2. If cookie-av's attribute-value is a case-insensitive match for
+	      //    "Strict", append an attribute to the cookie-attribute-list with
+	      //    an attribute-name of "SameSite" and an attribute-value of
+	      //    "Strict".
+	      cookieAttributeList.sameSite = 'Strict';
+	    } else if (attributeValueLowercase === 'lax') {
+	      // 3. If cookie-av's attribute-value is a case-insensitive match for
+	      //    "Lax", append an attribute to the cookie-attribute-list with an
+	      //    attribute-name of "SameSite" and an attribute-value of "Lax".
+	      cookieAttributeList.sameSite = 'Lax';
 	    }
-
-	    // 4. If cookie-av's attribute-value is a case-insensitive match for
-	    //    "Lax", set enforcement to "Lax".
-	    if (attributeValueLowercase.includes('lax')) {
-	      enforcement = 'Lax';
-	    }
-
-	    // 5. Append an attribute to the cookie-attribute-list with an
-	    //    attribute-name of "SameSite" and an attribute-value of
-	    //    enforcement.
-	    cookieAttributeList.sameSite = enforcement;
 	  } else {
 	    cookieAttributeList.unparsed ??= [];
 
@@ -25704,6 +25938,11 @@ function requireReceiver () {
 	const { PerMessageDeflate } = requirePermessageDeflate();
 	const { MessageSizeExceededError } = requireErrors();
 
+	function failWebsocketConnectionWithCode (ws, code, reason) {
+	  closeWebSocketConnection(ws, code, reason, Buffer.byteLength(reason));
+	  failWebsocketConnection(ws, reason);
+	}
+
 	// This code was influenced by ws released under the MIT license.
 	// Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
 	// Copyright (c) 2013 Arnout Kazemier and contributors
@@ -25724,18 +25963,22 @@ function requireReceiver () {
 	  #extensions
 
 	  /** @type {number} */
+	  #maxFragments
+
+	  /** @type {number} */
 	  #maxPayloadSize
 
 	  /**
 	   * @param {import('./websocket').WebSocket} ws
 	   * @param {Map<string, string>|null} extensions
-	   * @param {{ maxPayloadSize?: number }} [options]
+	   * @param {{ maxFragments?: number, maxPayloadSize?: number }} [options]
 	   */
 	  constructor (ws, extensions, options = {}) {
 	    super();
 
 	    this.ws = ws;
 	    this.#extensions = extensions == null ? new Map() : extensions;
+	    this.#maxFragments = options.maxFragments ?? 0;
 	    this.#maxPayloadSize = options.maxPayloadSize ?? 0;
 
 	    if (this.#extensions.has('permessage-deflate')) {
@@ -25759,9 +26002,9 @@ function requireReceiver () {
 	    if (
 	      this.#maxPayloadSize > 0 &&
 	      !isControlFrame(this.#info.opcode) &&
-	      this.#info.payloadLength > this.#maxPayloadSize
+	      this.#info.payloadLength + this.#fragmentsBytes > this.#maxPayloadSize
 	    ) {
-	      failWebsocketConnection(this.ws, 'Payload size exceeds maximum allowed size');
+	      failWebsocketConnectionWithCode(this.ws, 1009, 'Payload size exceeds maximum allowed size');
 	      return false
 	    }
 
@@ -25926,10 +26169,12 @@ function requireReceiver () {
 	          this.#state = parserStates.INFO;
 	        } else {
 	          if (!this.#info.compressed) {
-	            this.writeFragments(body);
+	            if (!this.writeFragments(body)) {
+	              return
+	            }
 
 	            if (this.#maxPayloadSize > 0 && this.#fragmentsBytes > this.#maxPayloadSize) {
-	              failWebsocketConnection(this.ws, new MessageSizeExceededError().message);
+	              failWebsocketConnectionWithCode(this.ws, 1009, new MessageSizeExceededError().message);
 	              return
 	            }
 
@@ -25948,14 +26193,17 @@ function requireReceiver () {
 	              this.#info.fin,
 	              (error, data) => {
 	                if (error) {
-	                  failWebsocketConnection(this.ws, error.message);
+	                  const code = error instanceof MessageSizeExceededError ? 1009 : 1007;
+	                  failWebsocketConnectionWithCode(this.ws, code, error.message);
 	                  return
 	                }
 
-	                this.writeFragments(data);
+	                if (!this.writeFragments(data)) {
+	                  return
+	                }
 
 	                if (this.#maxPayloadSize > 0 && this.#fragmentsBytes > this.#maxPayloadSize) {
-	                  failWebsocketConnection(this.ws, new MessageSizeExceededError().message);
+	                  failWebsocketConnectionWithCode(this.ws, 1009, new MessageSizeExceededError().message);
 	                  return
 	                }
 
@@ -26025,8 +26273,17 @@ function requireReceiver () {
 	  }
 
 	  writeFragments (fragment) {
+	    if (
+	      this.#maxFragments > 0 &&
+	      this.#fragments.length === this.#maxFragments
+	    ) {
+	      failWebsocketConnectionWithCode(this.ws, 1008, 'Too many message fragments');
+	      return false
+	    }
+
 	    this.#fragmentsBytes += fragment.length;
 	    this.#fragments.push(fragment);
+	    return true
 	  }
 
 	  consumeFragments () {
@@ -26729,9 +26986,12 @@ function requireWebsocket () {
 	    // once this happens, the connection is open
 	    this[kResponse] = response;
 
-	    const maxPayloadSize = this[kController]?.dispatcher?.webSocketOptions?.maxPayloadSize;
+	    const webSocketOptions = this[kController]?.dispatcher?.webSocketOptions;
+	    const maxFragments = webSocketOptions?.maxFragments;
+	    const maxPayloadSize = webSocketOptions?.maxPayloadSize;
 
 	    const parser = new ByteParser(this, parsedExtensions, {
+	      maxFragments,
 	      maxPayloadSize
 	    });
 	    parser.on('drain', onParserDrain);
@@ -30371,8 +30631,8 @@ function withCustomRequest(customRequest) {
 
 // pkg/dist-src/is-jwt.js
 var b64url = "(?:[a-zA-Z0-9_-]+)";
-var sep = "\\.";
-var jwtRE = new RegExp(`^${b64url}${sep}${b64url}${sep}${b64url}$`);
+var sep$1 = "\\.";
+var jwtRE = new RegExp(`^${b64url}${sep$1}${b64url}${sep$1}${b64url}$`);
 var isJWT = jwtRE.test.bind(jwtRE);
 
 // pkg/dist-src/auth.js
@@ -33648,11 +33908,11 @@ function requireErrno () {
 
 var fs$3 = {};
 
-var hasRequiredFs$3;
+var hasRequiredFs$5;
 
-function requireFs$3 () {
-	if (hasRequiredFs$3) return fs$3;
-	hasRequiredFs$3 = 1;
+function requireFs$5 () {
+	if (hasRequiredFs$5) return fs$3;
+	hasRequiredFs$5 = 1;
 	Object.defineProperty(fs$3, "__esModule", { value: true });
 	fs$3.createDirentFromStats = void 0;
 	class DirentFromStats {
@@ -38843,7 +39103,7 @@ function requireUtils$1 () {
 	utils$3.array = array;
 	const errno = requireErrno();
 	utils$3.errno = errno;
-	const fs = requireFs$3();
+	const fs = requireFs$5();
 	utils$3.fs = fs;
 	const path = requirePath$1();
 	utils$3.path = path;
@@ -39070,11 +39330,11 @@ var settings$3 = {};
 
 var fs$2 = {};
 
-var hasRequiredFs$2;
+var hasRequiredFs$4;
 
-function requireFs$2 () {
-	if (hasRequiredFs$2) return fs$2;
-	hasRequiredFs$2 = 1;
+function requireFs$4 () {
+	if (hasRequiredFs$4) return fs$2;
+	hasRequiredFs$4 = 1;
 	(function (exports$1) {
 		Object.defineProperty(exports$1, "__esModule", { value: true });
 		exports$1.createFileSystemAdapter = exports$1.FILE_SYSTEM_ADAPTER = void 0;
@@ -39102,7 +39362,7 @@ function requireSettings$3 () {
 	if (hasRequiredSettings$3) return settings$3;
 	hasRequiredSettings$3 = 1;
 	Object.defineProperty(settings$3, "__esModule", { value: true });
-	const fs = requireFs$2();
+	const fs = requireFs$4();
 	class Settings {
 	    constructor(_options = {}) {
 	        this._options = _options;
@@ -39262,11 +39522,11 @@ var utils = {};
 
 var fs$1 = {};
 
-var hasRequiredFs$1;
+var hasRequiredFs$3;
 
-function requireFs$1 () {
-	if (hasRequiredFs$1) return fs$1;
-	hasRequiredFs$1 = 1;
+function requireFs$3 () {
+	if (hasRequiredFs$3) return fs$1;
+	hasRequiredFs$3 = 1;
 	Object.defineProperty(fs$1, "__esModule", { value: true });
 	fs$1.createDirentFromStats = void 0;
 	class DirentFromStats {
@@ -39295,7 +39555,7 @@ function requireUtils () {
 	hasRequiredUtils = 1;
 	Object.defineProperty(utils, "__esModule", { value: true });
 	utils.fs = void 0;
-	const fs = requireFs$1();
+	const fs = requireFs$3();
 	utils.fs = fs;
 	return utils;
 }
@@ -39500,11 +39760,11 @@ var settings$2 = {};
 
 var fs = {};
 
-var hasRequiredFs;
+var hasRequiredFs$2;
 
-function requireFs () {
-	if (hasRequiredFs) return fs;
-	hasRequiredFs = 1;
+function requireFs$2 () {
+	if (hasRequiredFs$2) return fs;
+	hasRequiredFs$2 = 1;
 	(function (exports$1) {
 		Object.defineProperty(exports$1, "__esModule", { value: true });
 		exports$1.createFileSystemAdapter = exports$1.FILE_SYSTEM_ADAPTER = void 0;
@@ -39536,7 +39796,7 @@ function requireSettings$2 () {
 	Object.defineProperty(settings$2, "__esModule", { value: true });
 	const path = path__default;
 	const fsStat = requireOut$3();
-	const fs = requireFs();
+	const fs = requireFs$2();
 	class Settings {
 	    constructor(_options = {}) {
 	        this._options = _options;
@@ -41615,9 +41875,102 @@ function readAttributeStr(xmlData, i) {
 }
 
 /**
- * Select all the attributes whether valid or invalid.
+ * Walk `attrStr` once, left to right, splitting it into attribute tokens.
+ *
+ * This replaces a regex that used to do the same job
+ * (`(\s*)([^\s=]+)(\s*=)?(\s*(['"])(([\s\S])*?)\5)?`). That regex led with an
+ * optional whitespace group followed by a required "non-whitespace" group.
+ * On a long run of whitespace that never resolves into an attribute name
+ * (e.g. a tag with thousands of trailing spaces before `>`), the engine
+ * backtracks the whitespace group one character at a time before giving up
+ * and moving to the next starting position — one full backtrack per
+ * position, which is quadratic in the length of the run.
+ *
+ * A single forward-only scan can never backtrack, so it can't be made slow
+ * this way no matter how much whitespace the input contains — it's always
+ * proportional to the length of the string, once.
+ *
+ * Each returned token mirrors the shape the old regex match array had, so
+ * the validation logic below (which reads token[1]..token[6]) didn't need
+ * to change:
+ *   token.startIndex - where this token begins in attrStr
+ *   token[1]          - leading whitespace before the name
+ *   token[2]          - the attribute name
+ *   token[3]          - whitespace + '=' if present, else undefined
+ *   token[4]          - marker (any defined value) if a quoted value was found
+ *   token[5]          - the quote character used ('"' or "'")
+ *   token[6]          - the value's text, without the surrounding quotes
+ *
+ * A malformed leading character (e.g. a stray '=' with no name before it)
+ * is simply skipped over, one character at a time — the same outcome the
+ * old regex produced by failing to match at that position and retrying at
+ * the next one.
  */
-const validAttrStrRegxp = new RegExp('(\\s*)([^\\s=]+)(\\s*=)?(\\s*([\'"])(([\\s\\S])*?)\\5)?', 'g');
+function scanAttributeTokens(attrStr) {
+  const tokens = [];
+  const len = attrStr.length;
+  let i = 0;
+
+  while (i < len) {
+    const tokenStart = i;
+
+    // Leading whitespace before the name.
+    while (i < len && isWhiteSpace(attrStr[i])) i++;
+    if (i >= len) break; // trailing whitespace only — nothing left to read
+
+    if (attrStr[i] === '=') {
+      // No name before this '=' — not a valid attribute start. Move past
+      // just this one character and try again from the next position.
+      i = tokenStart + 1;
+      continue;
+    }
+
+    const leadingWs = attrStr.slice(tokenStart, i);
+
+    // Attribute name — everything up to the next whitespace or '='.
+    const nameStart = i;
+    while (i < len && !isWhiteSpace(attrStr[i]) && attrStr[i] !== '=') i++;
+    const name = attrStr.slice(nameStart, i);
+
+    // Optional whitespace + '='.
+    let equalsGroup; // whitespace + '=' text, or undefined if absent
+    let j = i;
+    while (j < len && isWhiteSpace(attrStr[j])) j++;
+    if (j < len && attrStr[j] === '=') {
+      equalsGroup = attrStr.slice(i, j + 1);
+      i = j + 1;
+    }
+
+    // Optional whitespace + quoted value.
+    let quoteChar;
+    let value;
+    let k = i;
+    while (k < len && isWhiteSpace(attrStr[k])) k++;
+    if (k < len && (attrStr[k] === '"' || attrStr[k] === "'")) {
+      const valueStart = k + 1;
+      const closeIdx = attrStr.indexOf(attrStr[k], valueStart);
+      if (closeIdx !== -1) {
+        quoteChar = attrStr[k];
+        value = attrStr.slice(valueStart, closeIdx);
+        i = closeIdx + 1;
+      }
+      // No closing quote found anywhere in the rest of the string — leave
+      // quoteChar/value undefined, same as the old regex's group failing
+      // to match a backreference-less run.
+    }
+
+    const token = { startIndex: tokenStart };
+    token[1] = leadingWs;
+    token[2] = name;
+    token[3] = equalsGroup;
+    token[4] = quoteChar !== undefined ? true : undefined;
+    token[5] = quoteChar;
+    token[6] = value;
+    tokens.push(token);
+  }
+
+  return tokens;
+}
 
 //attr, ="sd", a="amit's", a="sd"b="saf", ab  cd=""
 
@@ -41626,7 +41979,7 @@ function validateAttributeString(attrStr, options) {
 
   //if(attrStr.trim().length === 0) return true; //empty string
 
-  const matches = getAllMatches(attrStr, validAttrStrRegxp);
+  const matches = scanAttributeTokens(attrStr);
   const attrNames = {};
 
   for (let i = 0; i < matches.length; i++) {
@@ -41729,6 +42082,712 @@ function getPositionFromMatch(match) {
   return match.startIndex + match[1].length;
 }
 
+// ---------------------------------------------------------------------------
+// Complete HTML5 named entity reference
+// Organized by logical categories for easy maintenance and selective importing
+// ---------------------------------------------------------------------------
+
+
+/**
+ * Currency Symbols
+ * @type {Record<string, string>}
+ */
+const CURRENCY = {
+  cent: '¢',
+  pound: '£',
+  curren: '¤',
+  yen: '¥',
+  euro: '€',
+  dollar: '$',
+  fnof: 'ƒ',
+  inr: '₹',
+  af: '؋',
+  birr: 'ብር',
+  peso: '₱',
+  rub: '₽',
+  won: '₩',
+  yuan: '¥',
+  cedil: '¸',
+};
+
+const XML = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  quot: "\""
+};
+const COMMON_HTML = {
+  nbsp: '\u00a0',
+  copy: '\u00a9',
+  reg: '\u00ae',
+  trade: '\u2122',
+  mdash: '\u2014',
+  ndash: '\u2013',
+  hellip: '\u2026',
+  laquo: '\u00ab',
+  raquo: '\u00bb',
+  lsquo: '\u2018',
+  rsquo: '\u2019',
+  ldquo: '\u201c',
+  rdquo: '\u201d',
+  bull: '\u2022',
+  para: '\u00b6',
+  sect: '\u00a7',
+  deg: '\u00b0',
+  frac12: '\u00bd',
+  frac14: '\u00bc',
+  frac34: '\u00be',
+};
+// ---------------------------------------------------------------------------
+// Note: NUMERIC_ENTITIES (&#NNN; / &#xHH;) are handled by the scanner directly
+// via String.fromCodePoint() without any map lookup.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Built-in named entity map  (name → replacement string)
+// No regex, no {regex,val} objects — just flat key/value pairs.
+// ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// Entity hook action constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Action constants for `onExternalEntity` and `onInputEntity` hooks.
+ *
+ * Use these instead of raw strings to avoid typos:
+ *
+ * @example
+ * import EntityDecoder, { ENTITY_ACTION } from './EntityDecoder.js';
+ * const dec = new EntityDecoder({
+ *   onInputEntity: (name, value) => ENTITY_ACTION.BLOCK,
+ * });
+ */
+const ENTITY_ACTION = Object.freeze({
+  /** Resolve and expand the entity normally. */
+  ALLOW: 'allow',
+  /** Silently skip this entity — it will not be registered. */
+  BLOCK: 'block',
+  /** Throw an error, aborting entity registration entirely. */
+  THROW: 'throw',
+});
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const SPECIAL_CHARS = new Set('!?\\\\/[]$%{}^&*()<>|+');
+
+/**
+ * Validate that an entity name contains no dangerous characters.
+ * @param {string} name
+ * @returns {string} the name, unchanged
+ * @throws {Error} on invalid characters
+ */
+function validateEntityName$1(name) {
+  if (name[0] === '#') {
+    throw new Error(`[EntityReplacer] Invalid character '#' in entity name: "${name}"`);
+  }
+  for (const ch of name) {
+    if (SPECIAL_CHARS.has(ch)) {
+      throw new Error(`[EntityReplacer] Invalid character '${ch}' in entity name: "${name}"`);
+    }
+  }
+  return name;
+}
+
+/**
+ * Merge one or more entity maps into a flat name→string map.
+ * Accepts either:
+ *   - plain string values:             { amp: '&' }
+ *   - legacy {regex,val} / {regx,val}: { lt: { regex: /.../, val: '<' } }
+ *
+ * Values containing '&' are skipped (recursive expansion risk).
+ *
+ * @param {...object} maps
+ * @returns {Record<string, string>}
+ */
+function mergeEntityMaps(...maps) {
+  const out = Object.create(null);
+  for (const map of maps) {
+    if (!map) continue;
+    for (const key of Object.keys(map)) {
+      const raw = map[key];
+      if (typeof raw === 'string') {
+        out[key] = raw;
+      } else if (raw && typeof raw === 'object' && raw.val !== undefined) {
+        // Legacy {regex,val} or {regx,val} — extract the string val only
+        const val = raw.val;
+        if (typeof val === 'string') {
+          out[key] = val;
+        }
+        // function vals are not supported in the scanner — skip
+      }
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// applyLimitsTo helpers
+// ---------------------------------------------------------------------------
+
+const LIMIT_TIER_EXTERNAL = 'external'; // input/runtime + persistent external maps
+const LIMIT_TIER_BASE = 'base';     // DEFAULT_XML_ENTITIES + namedEntities (system) maps
+const LIMIT_TIER_ALL = 'all';      // every entity regardless of tier
+
+/**
+ * Resolve `applyLimitsTo` option into a normalised Set of tier strings.
+ * Accepted values: 'external' | 'base' | 'all' | string[]
+ * Default: 'external' (only untrusted injected entities are counted).
+ * @param {string|string[]|undefined} raw
+ * @returns {Set<string>}
+ */
+function parseLimitTiers(raw) {
+  if (!raw || raw === LIMIT_TIER_EXTERNAL) return new Set([LIMIT_TIER_EXTERNAL]);
+  if (raw === LIMIT_TIER_ALL) return new Set([LIMIT_TIER_ALL]);
+  if (raw === LIMIT_TIER_BASE) return new Set([LIMIT_TIER_BASE]);
+  if (Array.isArray(raw)) return new Set(raw);
+  return new Set([LIMIT_TIER_EXTERNAL]); // safe default for unrecognised values
+}
+
+// ---------------------------------------------------------------------------
+// NCR (Numeric Character Reference) classification
+// ---------------------------------------------------------------------------
+
+// Severity order — higher number = stricter action.
+// Used to enforce minimum action levels for specific codepoint ranges.
+const NCR_LEVEL = Object.freeze({ allow: 0, leave: 1, remove: 2, throw: 3 });
+
+// XML 1.0 §2.2: allowed chars are #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+// Restricted C0: U+0001–U+001F excluding U+0009, U+000A, U+000D
+const XML10_ALLOWED_C0 = new Set([0x09, 0x0A, 0x0D]);
+
+/**
+ * Parse the `ncr` constructor option into flat, hot-path-friendly fields.
+ * @param {object|undefined} ncr
+ * @returns {{ xmlVersion: number, onLevel: number, nullLevel: number }}
+ */
+function parseNCRConfig(ncr) {
+  if (!ncr) {
+    return { xmlVersion: 1.0, onLevel: NCR_LEVEL.allow, nullLevel: NCR_LEVEL.remove };
+  }
+  const xmlVersion = ncr.xmlVersion === 1.1 ? 1.1 : 1.0;
+  const onLevel = NCR_LEVEL[ncr.onNCR] ?? NCR_LEVEL.allow;
+  const nullLevel = NCR_LEVEL[ncr.nullNCR] ?? NCR_LEVEL.remove;
+  // 'allow' is not meaningful for null — clamp to at least 'remove'
+  const clampedNull = Math.max(nullLevel, NCR_LEVEL.remove);
+  return { xmlVersion, onLevel, nullLevel: clampedNull };
+}
+
+// ---------------------------------------------------------------------------
+// EntityReplacer
+// ---------------------------------------------------------------------------
+
+/**
+ * Single-pass, zero-regex entity replacer for XML/HTML content.
+ *
+ * Algorithm: scan the string once for '&', read to ';', resolve via map
+ * or direct codepoint conversion, build output chunks, join once at the end.
+ *
+ * Entity lookup priority (highest → lowest):
+ *   1. input / runtime  (DOCTYPE entities for current document)
+ *   2. persistent external (survive across documents)
+ *   3. base named map   (DEFAULT_XML_ENTITIES + user-supplied namedEntities)
+ *
+ * Both input and external resolve as the 'external' tier for limit purposes.
+ * Base map entities resolve as the 'base' tier.
+ *
+ * Numeric / hex references (&#NNN; / &#xHH;) are resolved directly via
+ * String.fromCodePoint() — no map needed. They count as 'base' tier.
+ *
+ * @example
+ * const replacer = new EntityReplacer({ namedEntities: COMMON_HTML });
+ * replacer.setExternalEntities({ brand: 'Acme' });
+ *
+ * const instance = replacer.reset();
+ * instance.addInputEntities({ version: '1.0' });
+ * instance.encode('&brand; v&version; &lt;'); // 'Acme v1.0 <'
+ */
+class EntityDecoder {
+  /**
+   * @param {object} [options]
+   * @param {object|null}  [options.namedEntities]        — extra named entities merged into base map
+   * @param {object}  [options.limit]                 — security limits
+   * @param {number}       [options.limit.maxTotalExpansions=0]  — 0 = unlimited
+   * @param {number}       [options.limit.maxExpandedLength=0]   — 0 = unlimited
+   * @param {'external'|'base'|'all'|string[]} [options.limit.applyLimitsTo='external']
+   *   Which entity tiers count against the security limits:
+   *   - 'external' (default) — only input/runtime + persistent external entities
+   *   - 'base'               — only DEFAULT_XML_ENTITIES + namedEntities
+   *   - 'all'                — every entity regardless of tier
+   *   - string[]             — explicit combination, e.g. ['external', 'base']
+   * @param {((resolved: string, original: string) => string)|null} [options.postCheck=null]
+   * @param {string[]} [options.remove=[]] — entity names (e.g. ['nbsp', '#13']) to delete (replace with empty string)
+   * @param {string[]} [options.leave=[]]  — entity names to keep as literal (unchanged in output)
+   * @param {object}   [options.ncr]       — Numeric Character Reference controls
+   * @param {1.0|1.1}  [options.ncr.xmlVersion=1.0]
+   *   XML version governing which codepoint ranges are restricted:
+   *   - 1.0 — C0 controls U+0001–U+001F (except U+0009/000A/000D) are prohibited
+   *   - 1.1 — C0 controls are allowed when written as NCRs; C1 (U+007F–U+009F) decoded as-is
+   * @param {'allow'|'leave'|'remove'|'throw'} [options.ncr.onNCR='allow']
+   *   Base action for numeric references. Severity order: allow < leave < remove < throw.
+   *   For codepoint ranges that carry a minimum level (surrogates → remove, XML 1.0 C0 → remove),
+   *   the effective action is max(onNCR, rangeMinimum).
+   * @param {'remove'|'throw'} [options.ncr.nullNCR='remove']
+   *   Action for U+0000 (null). 'allow' and 'leave' are clamped to 'remove' since null is never safe.
+   * @param {((name: string, value: string) => 'allow'|'block'|'throw')|null} [options.onExternalEntity=null]
+   *   Hook called when an external entity is registered via `setExternalEntities()` or
+   *   `addExternalEntity()`. Return `ENTITY_ACTION.ALLOW` to accept the entity,
+   *   `ENTITY_ACTION.BLOCK` to silently skip it, or `ENTITY_ACTION.THROW` to abort with an error.
+   * @param {((name: string, value: string) => 'allow'|'block'|'throw')|null} [options.onInputEntity=null]
+   *   Hook called when an input entity is registered via `addInputEntities()`. Return
+   *   `ENTITY_ACTION.ALLOW` to accept, `ENTITY_ACTION.BLOCK` to silently skip, or
+   *   `ENTITY_ACTION.THROW` to abort with an error.
+   */
+  constructor(options = {}) {
+    this._limit = options.limit || {};
+    this._maxTotalExpansions = this._limit.maxTotalExpansions || 0;
+    this._maxExpandedLength = this._limit.maxExpandedLength || 0;
+    this._postCheck = typeof options.postCheck === 'function' ? options.postCheck : r => r;
+    this._limitTiers = parseLimitTiers(this._limit.applyLimitsTo ?? LIMIT_TIER_EXTERNAL);
+    this._numericAllowed = options.numericAllowed ?? true;
+    // Base map: DEFAULT_XML_ENTITIES + user-supplied extras. Immutable after construction.
+    this._baseMap = mergeEntityMaps(XML, options.namedEntities || null);
+
+    // Persistent external entities — survive across documents.
+    // Stored as a separate map so reset() never touches them.
+    /** @type {Record<string, string>} */
+    this._externalMap = Object.create(null);
+
+    // Input / runtime entities — current document only, wiped on reset().
+    /** @type {Record<string, string>} */
+    this._inputMap = Object.create(null);
+
+    // Per-document counters
+    this._totalExpansions = 0;
+    this._expandedLength = 0;
+
+    // --- New: remove / leave sets ---
+    /** @type {Set<string>} */
+    this._removeSet = new Set(options.remove && Array.isArray(options.remove) ? options.remove : []);
+    /** @type {Set<string>} */
+    this._leaveSet = new Set(options.leave && Array.isArray(options.leave) ? options.leave : []);
+
+    // --- NCR config (parsed into flat fields for hot-path speed) ---
+    const ncrCfg = parseNCRConfig(options.ncr);
+    this._ncrXmlVersion = ncrCfg.xmlVersion;
+    this._ncrOnLevel = ncrCfg.onLevel;
+    this._ncrNullLevel = ncrCfg.nullLevel;
+
+    // --- Registration hooks ---
+    /** @type {((name: string, value: string) => 'allow'|'block'|'throw')|null} */
+    this._onExternalEntity = typeof options.onExternalEntity === 'function'
+      ? options.onExternalEntity
+      : null;
+    /** @type {((name: string, value: string) => 'allow'|'block'|'throw')|null} */
+    this._onInputEntity = typeof options.onInputEntity === 'function'
+      ? options.onInputEntity
+      : null;
+  }
+
+  // -------------------------------------------------------------------------
+  // Private: registration hook dispatch
+  // -------------------------------------------------------------------------
+
+  /**
+   * Invoke a registration hook for a single entity name/value pair.
+   * Returns true when the entity should be accepted, false when it should be
+   * silently skipped (BLOCK), and throws when the hook returns THROW.
+   *
+   * @param {((name: string, value: string) => 'allow'|'block'|'throw')|null} hook
+   * @param {string} name
+   * @param {string} value
+   * @param {string} context  — used in error messages ('external' | 'input')
+   * @returns {boolean}  true = accept, false = skip
+   */
+  _applyRegistrationHook(hook, name, value, context) {
+    if (!hook) return true; // no hook → always accept
+    const action = hook(name, value);
+    if (action === ENTITY_ACTION.BLOCK) return false;
+    if (action === ENTITY_ACTION.THROW) {
+      throw new Error(
+        `[EntityDecoder] Registration of ${context} entity "&${name};" was rejected by hook`
+      );
+    }
+    return true; // ALLOW or any unknown return value → accept
+  }
+
+  // -------------------------------------------------------------------------
+  // Persistent external entity registration
+  // -------------------------------------------------------------------------
+
+  /**
+   * Replace the full set of persistent external entities.
+   * All keys are validated — throws on invalid characters.
+   * If `onExternalEntity` is set, it is called once per entry; entries that
+   * return `ENTITY_ACTION.BLOCK` are silently omitted, `ENTITY_ACTION.THROW`
+   * aborts the whole call.
+   * @param {Record<string, string | { regex?: RegExp, val: string }>} map
+   */
+  setExternalEntities(map) {
+    if (map) {
+      for (const key of Object.keys(map)) {
+        validateEntityName$1(key);
+      }
+    }
+    if (!this._onExternalEntity) {
+      this._externalMap = mergeEntityMaps(map);
+      return;
+    }
+    // Hook present — resolve values first, then filter
+    const flat = mergeEntityMaps(map);
+    const filtered = Object.create(null);
+    for (const [name, value] of Object.entries(flat)) {
+      if (this._applyRegistrationHook(this._onExternalEntity, name, value, 'external')) {
+        filtered[name] = value;
+      }
+    }
+    this._externalMap = filtered;
+  }
+
+  /**
+   * Add a single persistent external entity.
+   * If `onExternalEntity` is set it is called before the entity is stored;
+   * `ENTITY_ACTION.BLOCK` silently skips storage, `ENTITY_ACTION.THROW` raises.
+   * @param {string} key
+   * @param {string} value
+   */
+  addExternalEntity(key, value) {
+    validateEntityName$1(key);
+    if (typeof value === 'string' && value.indexOf('&') === -1) {
+      if (this._applyRegistrationHook(this._onExternalEntity, key, value, 'external')) {
+        this._externalMap[key] = value;
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Input / runtime entity registration (per document)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Inject DOCTYPE entities for the current document.
+   * Also resets per-document expansion counters.
+   * If `onInputEntity` is set it is called once per entry; entries returning
+   * `ENTITY_ACTION.BLOCK` are silently omitted, `ENTITY_ACTION.THROW` aborts.
+   * @param {Record<string, string | { regx?: RegExp, regex?: RegExp, val: string }>} map
+   */
+  addInputEntities(map) {
+    this._totalExpansions = 0;
+    this._expandedLength = 0;
+    if (!this._onInputEntity) {
+      this._inputMap = mergeEntityMaps(map);
+      return;
+    }
+    const flat = mergeEntityMaps(map);
+    const filtered = Object.create(null);
+    for (const [name, value] of Object.entries(flat)) {
+      if (this._applyRegistrationHook(this._onInputEntity, name, value, 'input')) {
+        filtered[name] = value;
+      }
+    }
+    this._inputMap = filtered;
+  }
+
+  // -------------------------------------------------------------------------
+  // Per-document reset
+  // -------------------------------------------------------------------------
+
+  /**
+   * Wipe input/runtime entities and reset counters.
+   * Call this before processing each new document.
+   * @returns {this}
+   */
+  reset() {
+    this._inputMap = Object.create(null);
+    this._totalExpansions = 0;
+    this._expandedLength = 0;
+    return this;
+  }
+
+  // -------------------------------------------------------------------------
+  // XML version (can be set after construction, e.g. once parser reads <?xml?>)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Update the XML version used for NCR classification.
+   * Call this as soon as the document's `<?xml version="...">` declaration is parsed.
+   * @param {1.0|1.1|number} version
+   */
+  setXmlVersion(version) {
+    this._ncrXmlVersion = version === 1.1 ? 1.1 : 1.0;
+  }
+
+  // -------------------------------------------------------------------------
+  // Primary API
+  // -------------------------------------------------------------------------
+
+  /**
+   * Replace all entity references in `str` in a single pass.
+   *
+   * @param {string} str
+   * @returns {string}
+   */
+  decode(str) {
+    if (typeof str !== 'string' || str.length === 0) return str;
+    //TODO: check if needed
+    if (str.indexOf('&') === -1) return str; // fast path — no entities at all
+
+    const original = str;
+    const chunks = [];
+    const len = str.length;
+    let last = 0; // start of next unprocessed literal chunk
+    let i = 0;
+
+    const limitExpansions = this._maxTotalExpansions > 0;
+    const limitLength = this._maxExpandedLength > 0;
+    const checkLimits = limitExpansions || limitLength;
+
+    while (i < len) {
+      // Scan forward to next '&'
+      if (str.charCodeAt(i) !== 38 /* '&' */) { i++; continue; }
+
+      // --- Found '&' at position i ---
+
+      // Scan forward to ';'
+      let j = i + 1;
+      while (j < len && str.charCodeAt(j) !== 59 /* ';' */ && (j - i) <= 32) j++;
+
+      if (j >= len || str.charCodeAt(j) !== 59) {
+        // No closing ';' within window — treat '&' as literal
+        i++;
+        continue;
+      }
+
+      // Raw token between '&' and ';' (exclusive)
+      const token = str.slice(i + 1, j);
+      if (token.length === 0) { i++; continue; }
+
+      let replacement;
+      let tier; // which limit tier this entity belongs to
+
+      if (this._removeSet.has(token)) {
+        // Remove entity: replace with empty string
+        replacement = '';
+        // If entity was unknown (replacement undefined), we still need a tier for limits.
+        // Treat as external tier because it's user-directed removal of an unknown reference.
+        if (tier === undefined) {
+          tier = LIMIT_TIER_EXTERNAL;
+        }
+      } else if (this._leaveSet.has(token)) {
+        // Do not replace — keep original &token; as literal
+        i++;
+        continue;
+      } else if (token.charCodeAt(0) === 35 /* '#' */) {
+        // ---- Numeric / NCR reference ----
+        // NCR classification always runs first — prohibited codepoints must be
+        // caught regardless of numericAllowed.
+        const ncrResult = this._resolveNCR(token);
+        if (ncrResult === undefined) {
+          // 'leave' action — keep original &token; as-is
+          i++;
+          continue;
+        }
+        replacement = ncrResult; // '' for remove, char string for allow
+        tier = LIMIT_TIER_BASE;
+      } else {
+        // ---- Named reference ----
+        const resolved = this._resolveName(token);
+        replacement = resolved?.value;
+        tier = resolved?.tier;
+      }
+
+      if (replacement === undefined) {
+        // Unknown entity — leave as-is, advance past '&' only
+        i++;
+        continue;
+      }
+
+      // Flush literal chunk before this entity
+      if (i > last) chunks.push(str.slice(last, i));
+      chunks.push(replacement);
+      last = j + 1; // skip past ';'
+      i = last;
+
+      // Apply expansion limits only if this tier is being tracked
+      if (checkLimits && this._tierCounts(tier)) {
+        if (limitExpansions) {
+          this._totalExpansions++;
+          if (this._totalExpansions > this._maxTotalExpansions) {
+            throw new Error(
+              `[EntityReplacer] Entity expansion count limit exceeded: ` +
+              `${this._totalExpansions} > ${this._maxTotalExpansions}`
+            );
+          }
+        }
+        if (limitLength) {
+          // delta: replacement.length minus the raw &token; length (token.length + 2 for '&' and ';')
+          const delta = replacement.length - (token.length + 2);
+          if (delta > 0) {
+            this._expandedLength += delta;
+            if (this._expandedLength > this._maxExpandedLength) {
+              throw new Error(
+                `[EntityReplacer] Expanded content length limit exceeded: ` +
+                `${this._expandedLength} > ${this._maxExpandedLength}`
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // Flush trailing literal
+    if (last < len) chunks.push(str.slice(last));
+
+    // If nothing was replaced, chunks is empty — return original
+    const result = chunks.length === 0 ? str : chunks.join('');
+
+    return this._postCheck(result, original);
+  }
+
+  // -------------------------------------------------------------------------
+  // Private: limit tier check
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns true if a resolved entity of the given tier should count
+   * against the expansion/length limits.
+   * @param {string} tier  — LIMIT_TIER_EXTERNAL | LIMIT_TIER_BASE
+   * @returns {boolean}
+   */
+  _tierCounts(tier) {
+    if (this._limitTiers.has(LIMIT_TIER_ALL)) return true;
+    return this._limitTiers.has(tier);
+  }
+
+  // -------------------------------------------------------------------------
+  // Private: entity resolution
+  // -------------------------------------------------------------------------
+
+  /**
+   * Resolve a named entity token (without & and ;).
+   * Priority: inputMap > externalMap > baseMap
+   * Returns the resolved value tagged with its limit tier.
+   *
+   * @param {string} name
+   * @returns {{ value: string, tier: string }|undefined}
+   */
+  _resolveName(name) {
+    // input and external both count as 'external' tier for limit purposes —
+    // they are injected at runtime and are the untrusted surface.
+    if (name in this._inputMap) return { value: this._inputMap[name], tier: LIMIT_TIER_EXTERNAL };
+    if (name in this._externalMap) return { value: this._externalMap[name], tier: LIMIT_TIER_EXTERNAL };
+    if (name in this._baseMap) return { value: this._baseMap[name], tier: LIMIT_TIER_BASE };
+    return undefined;
+  }
+
+  /**
+   * Classify a codepoint and return the minimum action level that must be applied.
+   * Returns -1 when no minimum is imposed (normal allow path).
+   *
+   * Ranges checked (in priority order):
+   *   1. U+0000            — null, governed by nullNCR (always ≥ remove)
+   *   2. U+D800–U+DFFF     — surrogates, always prohibited (min: remove)
+   *   3. U+0001–U+001F \ {0x09,0x0A,0x0D}  — XML 1.0 restricted C0 (min: remove)
+   *      (skipped in XML 1.1 — C0 controls are allowed when written as NCRs)
+   *
+   * @param {number} cp  — codepoint
+   * @returns {number}   — minimum NCR_LEVEL value, or -1 for no restriction
+   */
+  _classifyNCR(cp) {
+    // 1. Null
+    if (cp === 0) return this._ncrNullLevel;
+
+    // 2. Surrogates — always prohibited, minimum 'remove'
+    if (cp >= 0xD800 && cp <= 0xDFFF) return NCR_LEVEL.remove;
+
+    // 3. XML 1.0 restricted C0 controls
+    if (this._ncrXmlVersion === 1.0) {
+      if (cp >= 0x01 && cp <= 0x1F && !XML10_ALLOWED_C0.has(cp)) return NCR_LEVEL.remove;
+    }
+
+    return -1; // no restriction
+  }
+
+  /**
+   * Execute a resolved NCR action.
+   *
+   * @param {number} action   — NCR_LEVEL value
+   * @param {string} token    — raw token (e.g. '#38') for error messages
+   * @param {number} cp       — codepoint, used only for error messages
+   * @returns {string|undefined}
+   *   - decoded character string  → 'allow'
+   *   - ''                        → 'remove'
+   *   - undefined                 → 'leave' (caller must skip past '&' only)
+   *   - throws Error              → 'throw'
+   */
+  _applyNCRAction(action, token, cp) {
+    switch (action) {
+      case NCR_LEVEL.allow: return String.fromCodePoint(cp);
+      case NCR_LEVEL.remove: return '';
+      case NCR_LEVEL.leave: return undefined; // signal: keep literal
+      case NCR_LEVEL.throw:
+        throw new Error(
+          `[EntityDecoder] Prohibited numeric character reference ` +
+          `&${token}; (U+${cp.toString(16).toUpperCase().padStart(4, '0')})`
+        );
+      default: return String.fromCodePoint(cp);
+    }
+  }
+
+  /**
+   * Full NCR resolution pipeline for a numeric token.
+   *
+   * Steps:
+   *   1. Parse the codepoint (decimal or hex).
+   *   2. Validate the raw codepoint range (NaN, <0, >0x10FFFF).
+   *   3. If numericAllowed is false and no minimum restriction applies → leave as-is.
+   *   4. Classify the codepoint to find the minimum required action level.
+   *   5. Resolve effective action = max(onNCR, minimum).
+   *   6. Apply and return.
+   *
+   * @param {string} token  — e.g. '#38', '#x26', '#X26'
+   * @returns {string|undefined}
+   *   - string (incl. '')  — replacement ('' = remove)
+   *   - undefined          — leave original &token; as-is
+   */
+  _resolveNCR(token) {
+    // Step 1: parse codepoint
+    const second = token.charCodeAt(1);
+    let cp;
+    if (second === 120 /* x */ || second === 88 /* X */) {
+      cp = parseInt(token.slice(2), 16);
+    } else {
+      cp = parseInt(token.slice(1), 10);
+    }
+
+    // Step 2: out-of-range → leave as-is unconditionally
+    if (Number.isNaN(cp) || cp < 0 || cp > 0x10FFFF) return undefined;
+
+    // Step 3: classify to get minimum action level
+    const minimum = this._classifyNCR(cp);
+
+    // Step 4: if numericAllowed is false and no hard minimum → leave
+    if (!this._numericAllowed && minimum < NCR_LEVEL.remove) return undefined;
+
+    // Step 5: effective action = max(configured onNCR, range minimum)
+    const effective = minimum === -1
+      ? this._ncrOnLevel
+      : Math.max(this._ncrOnLevel, minimum);
+
+    // Step 6: apply
+    return this._applyNCRAction(effective, token, cp);
+  }
+}
+
 const defaultOnDangerousProperty = (name) => {
   if (DANGEROUS_PROPERTY_NAMES.includes(name)) {
     return "__" + name;
@@ -41753,7 +42812,8 @@ const defaultOptions = {
   numberParseOptions: {
     hex: true,
     leadingZeros: true,
-    eNotation: true
+    eNotation: true,
+    unicode: false
   },
   tagValueProcessor: function (tagName, val) {
     return val;
@@ -41768,6 +42828,7 @@ const defaultOptions = {
   unpairedTags: [],
   processEntities: true,
   htmlEntities: false,
+  entityDecoder: null,
   ignoreDeclaration: false,
   ignorePiTags: false,
   transformTagName: false,
@@ -41814,18 +42875,19 @@ function validatePropertyName(propertyName, optionName) {
  * @param {boolean|object} value 
  * @returns {object} Always returns normalized object
  */
-function normalizeProcessEntities(value) {
+function normalizeProcessEntities(value, htmlEntities) {
   // Boolean backward compatibility
   if (typeof value === 'boolean') {
     return {
       enabled: value, // true or false
       maxEntitySize: 10000,
-      maxExpansionDepth: 10,
-      maxTotalExpansions: 1000,
+      maxExpansionDepth: 10000,
+      maxTotalExpansions: Infinity,
       maxExpandedLength: 100000,
-      maxEntityCount: 100,
+      maxEntityCount: 1000,
       allowedTags: null,
-      tagFilter: null
+      tagFilter: null,
+      appliesTo: "all",
     };
   }
 
@@ -41839,7 +42901,8 @@ function normalizeProcessEntities(value) {
       maxExpandedLength: Math.max(1, value.maxExpandedLength ?? 100000),
       maxEntityCount: Math.max(1, value.maxEntityCount ?? 1000),
       allowedTags: value.allowedTags ?? null,
-      tagFilter: value.tagFilter ?? null
+      tagFilter: value.tagFilter ?? null,
+      appliesTo: value.appliesTo ?? "all",
     };
   }
 
@@ -41870,7 +42933,7 @@ const buildOptions = function (options) {
   }
 
   // Always normalize processEntities for backward compatibility and validation
-  built.processEntities = normalizeProcessEntities(built.processEntities);
+  built.processEntities = normalizeProcessEntities(built.processEntities, built.htmlEntities);
   built.unpairedTagsSet = new Set(built.unpairedTags);
   // Convert old-style stopNodes for backward compatibility
   if (built.stopNodes && Array.isArray(built.stopNodes)) {
@@ -41914,10 +42977,24 @@ class XmlNode {
       this.child.push({ [node.tagname]: node.child });
     }
     // if requested, add the startIndex
+    this.addStartIndex(startIndex);
+  }
+
+  addStartIndex(startIndex) {
     if (startIndex !== undefined) {
       // Note: for now we just overwrite the metadata. If we had more complex metadata,
       // we might need to do an object append here:  metadata = { ...metadata, startIndex }
       this.child[this.child.length - 1][METADATA_SYMBOL$1] = { startIndex };
+    }
+  }
+
+  addEndIndex(endIndex) {
+    const lastChild = this.child[this.child.length - 1];
+    // endIndex is write-once: when updateTag drops a node, the last child is a
+    // previously completed sibling whose endIndex must not be overwritten
+    if (lastChild !== undefined && lastChild[METADATA_SYMBOL$1] !== undefined
+      && lastChild[METADATA_SYMBOL$1].endIndex === undefined) {
+      lastChild[METADATA_SYMBOL$1].endIndex = endIndex;
     }
   }
   /** symbol used for metadata */
@@ -41926,12 +43003,170 @@ class XmlNode {
   }
 }
 
+/**
+ * xml-naming
+ * Validates XML Name productions as defined in the XML 1.0 and 1.1 specifications.
+ * Covers: Name, NCName, QName, NMToken, NMTokens
+ *
+ * XML 1.0 spec: https://www.w3.org/TR/xml/#NT-Name
+ * XML 1.1 spec: https://www.w3.org/TR/xml11/#NT-NameStartChar
+ * XML NS spec:  https://www.w3.org/TR/xml-names/#NT-NCName
+ */
+
+// ---------------------------------------------------------------------------
+// Character class strings — XML 1.0
+//
+// NameStartChar ::= ":" | [A-Z] | "_" | [a-z]
+//   | [#xC0-#xD6]   | [#xD8-#xF6]   | [#xF8-#x2FF]
+//   | [#x370-#x37D] | [#x37F-#x1FFF]    <- split to exclude #x0487
+//   | [#x200C-#x200D]
+//   | [#x2070-#x218F] | [#x2C00-#x2FEF]
+//   | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD]
+//
+// NameChar ::= NameStartChar | "-" | "." | [0-9]
+//   | #xB7 | [#x0300-#x036F] | [#x203F-#x2040]
+//
+// Note: \u0487 (Combining Cyrillic Millions Sign) was added in Unicode 4.0,
+// after XML 1.0 was defined against Unicode 2.0. It falls inside the range
+// \u037F-\u1FFF but must be excluded. We split that range into
+// \u037F-\u0486 and \u0488-\u1FFF to exclude it explicitly.
+// ---------------------------------------------------------------------------
+
+const nameStartChar10 =
+  ':A-Za-z_' +
+  '\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF' +
+  '\u0370-\u037D' +
+  '\u037F-\u0486\u0488-\u1FFF' +  // split to exclude \u0487
+  '\u200C-\u200D' +
+  '\u2070-\u218F' +
+  '\u2C00-\u2FEF' +
+  '\u3001-\uD7FF' +
+  '\uF900-\uFDCF' +
+  '\uFDF0-\uFFFD';
+
+const nameChar10 =
+  nameStartChar10 +
+  '\\-\\.\\d' +
+  '\u00B7' +
+  '\u0300-\u036F' +
+  '\u203F-\u2040';
+
+// ---------------------------------------------------------------------------
+// Character class strings — XML 1.1
+//
+// Differences from XML 1.0:
+//
+// NameStartChar:
+//   1.0 has split ranges: \u00C0-\u00D6, \u00D8-\u00F6, \u00F8-\u02FF
+//   1.1 merges them into: \u00C0-\u02FF
+//   (\u00D7 x and \u00F7 / are division symbols, excluded in both versions)
+//
+//   1.0 tops out at \uFFFD (BMP only)
+//   1.1 adds \u{10000}-\u{EFFFF} (supplementary planes)
+//   These require the /u flag on the RegExp — see buildRegexes below.
+//
+// NameChar:
+//   1.1 adds \u0487 (Combining Cyrillic Millions Sign, added in Unicode 4.0)
+// ---------------------------------------------------------------------------
+
+const nameStartChar11 =
+  ':A-Za-z_' +
+  '\u00C0-\u02FF' +                    // merged — 1.0 had three split ranges here
+  '\u0370-\u037D' +
+  '\u037F-\u0486\u0488-\u1FFF' +       // split to exclude \u0487 (combining mark, never a NameStartChar)
+  '\u200C-\u200D' +
+  '\u2070-\u218F' +
+  '\u2C00-\u2FEF' +
+  '\u3001-\uD7FF' +
+  '\uF900-\uFDCF' +
+  '\uFDF0-\uFFFD' +
+  '\u{10000}-\u{EFFFF}';     // supplementary planes — REQUIRES /u flag on RegExp
+
+const nameChar11 =
+  nameStartChar11 +
+  '\\-\\.\\d' +
+  '\u00B7' +
+  '\u0300-\u036F' +
+  '\u0487' +                 // Combining Cyrillic Millions Sign — valid in 1.1, not 1.0
+  '\u203F-\u2040';
+
+// ---------------------------------------------------------------------------
+// Regex builders
+//
+// XML 1.0 regexes: no flags — BMP only, standard JS regex behaviour.
+// XML 1.1 regexes: /u flag — required for \u{10000}-\u{EFFFF} to match actual
+//   supplementary code points rather than lone surrogates (which are illegal XML).
+// ---------------------------------------------------------------------------
+
+const buildRegexes = (startChar, char, flags = '') => {
+  const ncStart = startChar.replace(':', '');
+  const ncChar = char.replace(':', '');
+  const ncNamePat = `[${ncStart}][${ncChar}]*`;
+
+  return {
+    name: new RegExp(`^[${startChar}][${char}]*$`, flags),
+    ncName: new RegExp(`^${ncNamePat}$`, flags),
+    qName: new RegExp(`^${ncNamePat}(?::${ncNamePat})?$`, flags),
+    nmToken: new RegExp(`^[${char}]+$`, flags),
+    nmTokens: new RegExp(`^[${char}]+(?:\\s+[${char}]+)*$`, flags),
+  };
+};
+
+const regexes10 = buildRegexes(nameStartChar10, nameChar10);       // no /u — BMP only
+const regexes11 = buildRegexes(nameStartChar11, nameChar11, 'u');  // /u — enables \u{10000}-\u{EFFFF}
+
+// ---------------------------------------------------------------------------
+// ASCII-only fast path (opt-in, off by default)
+//
+// The XML 1.0 vs 1.1 NameStartChar/NameChar productions differ *only* in
+// their non-ASCII ranges (merged vs split Latin-1 ranges, \u0487, and
+// supplementary planes). Restricted to ASCII, both versions collapse to the
+// same character classes, so a single regex pair covers both xmlVersion
+// values — no /u flag needed.
+//
+// Rationale: unicode-aware regexes (the /u flag, required for XML 1.1's
+// supplementary-plane range) are measurably slower in V8 than plain
+// non-unicode regexes on the same input, even when the input is pure ASCII.
+// For the common case — HTML/SVG ids, XML tags — names are ASCII, so callers
+// who know this can opt in to skip the unicode-aware matching path entirely.
+// This is a real but *conditional* win: mainly for XML 1.1 input (avoids /u),
+// or at scale where the larger unicode character classes add engine
+// overhead. It also changes behaviour (rejects legitimate non-ASCII XML
+// 1.0/1.1 names), so it must never be silently enabled — hence off by
+// default.
+// ---------------------------------------------------------------------------
+
+const nameStartCharAscii = ':A-Za-z_';
+const nameCharAscii = nameStartCharAscii + '\\-\\.\\d';
+
+const regexesAscii = buildRegexes(nameStartCharAscii, nameCharAscii); // no /u — ASCII only
+
+const getRegexes = (xmlVersion = '1.0', asciiOnly = false) => {
+  if (asciiOnly) return regexesAscii;
+  return xmlVersion === '1.1' ? regexes11 : regexes10;
+};
+
+/**
+ * Returns true if the string is a valid QName (Qualified Name).
+ * Allows exactly one colon as a prefix separator: prefix:localName.
+ * Used for: element and attribute names in namespace-aware XML/SVG.
+ *
+ * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean }} [opts]
+ *   asciiOnly: skip unicode-aware matching, ASCII names only (default false).
+ */
+const qName = (str, { xmlVersion = '1.0', asciiOnly = false } = {}) =>
+  getRegexes(xmlVersion, asciiOnly).qName.test(str);
+
 class DocTypeReader {
-    constructor(options) {
+    constructor(options, xmlVersion) {
         this.suppressValidationErr = !options;
         this.options = options;
+        this.xmlVersion = xmlVersion || 1.0;
     }
 
+    setXmlVersion(xmlVersion = 1.0) {
+        this.xmlVersion = xmlVersion;
+    }
     readDocType(xmlData, i) {
         const entities = Object.create(null);
         let entityCount = 0;
@@ -41945,8 +43180,23 @@ class DocTypeReader {
             i = i + 9;
             let angleBracketsCount = 1;
             let hasBody = false, comment = false;
+            let quoteChar = null; // tracks an open SYSTEM/PUBLIC literal before the '[' body
             let exp = "";
             for (; i < xmlData.length; i++) {
+                // Inside a quoted external-identifier literal — XML allows '<'
+                // and '>' as plain data here, so they must not be interpreted
+                // as DOCTYPE structure until the matching quote closes.
+                if (quoteChar !== null) {
+                    if (xmlData[i] === quoteChar) quoteChar = null;
+                    exp += xmlData[i];
+                    continue;
+                }
+                if (!hasBody && !comment && (xmlData[i] === '"' || xmlData[i] === "'")) {
+                    quoteChar = xmlData[i];
+                    exp += xmlData[i];
+                    continue;
+                }
+
                 if (xmlData[i] === '<' && !comment) { //Determine the tag type
                     if (hasBody && hasSeq(xmlData, "!ENTITY", i)) {
                         i += 7;
@@ -41961,11 +43211,8 @@ class DocTypeReader {
                                 );
                             }
                             //const escaped = entityName.replace(/[.\-+*:]/g, '\\.');
-                            const escaped = entityName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                            entities[entityName] = {
-                                regx: RegExp(`&${escaped};`, "g"),
-                                val: val
-                            };
+                            //const escaped = entityName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            entities[entityName] = val;
                             entityCount++;
                         }
                     }
@@ -42004,7 +43251,7 @@ class DocTypeReader {
                     exp += xmlData[i];
                 }
             }
-            if (angleBracketsCount !== 0) {
+            if (quoteChar !== null || angleBracketsCount !== 0) {
                 throw new Error(`Unclosed DOCTYPE`);
             }
         } else {
@@ -42032,7 +43279,7 @@ class DocTypeReader {
         }
         let entityName = xmlData.substring(startIndex, i);
 
-        validateEntityName$1(entityName);
+        validateEntityName(entityName, { xmlVersion: this.xmlVersion });
 
         // Skip whitespace after entity name
         i = skipWhitespace(xmlData, i);
@@ -42075,7 +43322,7 @@ class DocTypeReader {
         }
         let notationName = xmlData.substring(startIndex, i);
 
-        !this.suppressValidationErr && validateEntityName$1(notationName);
+        !this.suppressValidationErr && validateEntityName(notationName, { xmlVersion: this.xmlVersion });
 
         // Skip whitespace after notation name
         i = skipWhitespace(xmlData, i);
@@ -42155,7 +43402,7 @@ class DocTypeReader {
         let elementName = xmlData.substring(startIndex, i);
 
         // Validate element name
-        if (!this.suppressValidationErr && !isName(elementName)) {
+        if (!this.suppressValidationErr && !qName(elementName, { xmlVersion: this.xmlVersion })) {
             throw new Error(`Invalid element name: "${elementName}"`);
         }
 
@@ -42202,7 +43449,7 @@ class DocTypeReader {
         let elementName = xmlData.substring(startIndex, i);
 
         // Validate element name
-        validateEntityName$1(elementName);
+        validateEntityName(elementName, { xmlVersion: this.xmlVersion });
 
         // Skip whitespace after element name
         i = skipWhitespace(xmlData, i);
@@ -42215,7 +43462,7 @@ class DocTypeReader {
         let attributeName = xmlData.substring(startIndex, i);
 
         // Validate attribute name
-        if (!validateEntityName$1(attributeName)) {
+        if (!validateEntityName(attributeName, { xmlVersion: this.xmlVersion })) {
             throw new Error(`Invalid attribute name: "${attributeName}"`);
         }
 
@@ -42250,7 +43497,7 @@ class DocTypeReader {
 
                 // Validate notation name
                 notation = notation.trim();
-                if (!validateEntityName$1(notation)) {
+                if (!validateEntityName(notation, { xmlVersion: this.xmlVersion })) {
                     throw new Error(`Invalid notation name: "${notation}"`);
                 }
 
@@ -42328,27 +43575,272 @@ function hasSeq(data, seq, i) {
     return true;
 }
 
-function validateEntityName$1(name) {
-    if (isName(name))
+function validateEntityName(name, xmlVersion) {
+    if (qName(name, { xmlVersion: xmlVersion }))
         return name;
     else
         throw new Error(`Invalid entity name ${name}`);
 }
 
-const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
-const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
-// const octRegex = /^0x[a-z0-9]+/;
-// const binRegex = /0x[a-z0-9]+/;
+/**
+ * Flat lookup table: maps Unicode code point → ASCII digit (0-9).
+ * Only decimal digit characters (Unicode category Nd) are included.
+ *
+ * Strategy: Int32Array of size (maxCodePoint - minCodePoint + 1).
+ * Value 0xFF means "not a digit". Value 0-9 is the ASCII digit value.
+ * This gives O(1) lookup with no branching, no bisect, no loop.
+ *
+ * Memory: range is 0x0660 to 0x1FBF0 → ~129,936 entries × 1 byte = ~127 KB.
+ * Acceptable for a one-time init; lookup is a single array index.
+ */
 
+// All known Unicode Nd (decimal digit) script zero code points.
+// Each script has exactly 10 consecutive digits: zero+0 .. zero+9.
+const SCRIPT_ZEROS = [
+  // Basic Latin (ASCII) — included for completeness / pass-through
+  0x0030, // 0-9
+
+  // Arabic scripts
+  0x0660, // Arabic-Indic ٠١٢٣٤٥٦٧٨٩
+  0x06F0, // Extended Arabic-Indic (Urdu/Persian/Sindhi) ۰۱۲۳
+
+  // Indic scripts
+  0x0966, // Devanagari ०१२३४५६७८९
+  0x09E6, // Bengali ০১২৩৪৫৬৭৮৯
+  0x0A66, // Gurmukhi ੦੧੨੩੪੫੬੭੮੯
+  0x0AE6, // Gujarati ૦૧૨૩૪૫૬૭૮૯
+  0x0B66, // Odia ୦୧୨୩୪୫୬୭୮୯
+  0x0BE6, // Tamil ௦௧௨௩௪௫௬௭௮௯
+  0x0C66, // Telugu ౦౧౨౩౪౫౬౭౮౯
+  0x0CE6, // Kannada ೦೧೨೩೪೫೬೭೮೯
+  0x0D66, // Malayalam ൦൧൨൩൪൫൬൭൮൯
+  0x0DE6, // Sinhala Archaic ෦෧෨෩෪෫෬෭෮෯
+
+  // Southeast Asian scripts
+  0x0E50, // Thai ๐๑๒๓๔๕๖๗๘๙
+  0x0ED0, // Lao ໐໑໒໓໔໕໖໗໘໙
+  0x0F20, // Tibetan ༠༡༢༣༤༥༦༧༨༩
+  0x1040, // Myanmar ၀၁၂၃၄၅၆၇၈၉
+  0x1090, // Myanmar Shan ႐႑႒႓႔႕႖႗႘႙
+  0x17E0, // Khmer ០១២៣៤៥៦៧៨៩
+  0x1810, // Mongolian ᠐᠑᠒᠓᠔᠕᠖᠗᠘᠙
+  0x1946, // Limbu ᥆᥇᥈᥉᥊᥋᥌᥍᥎᥏
+  0x19D0, // New Tai Lue ᧐᧑᧒᧓᧔᧕᧖᧗᧘᧙
+  0x1A80, // Tai Tham Hora ᪀᪁᪂᪃᪄᪅᪆᪇᪈᪉
+  0x1A90, // Tai Tham Tham ᪐᪑᪒᪓᪔᪕᪖᪗᪘᪙
+  0x1B50, // Balinese ᭐᭑᭒᭓᭔᭕᭖᭗᭘᭙
+  0x1BB0, // Sundanese ᮰᮱᮲᮳᮴᮵᮶᮷᮸᮹
+  0x1C40, // Lepcha ᱀᱁᱂᱃᱄᱅᱆᱇᱈᱉
+  0x1C50, // Ol Chiki ᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙
+
+  // Fullwidth (CJK context)
+  0xFF10, // Fullwidth ０１２３４５６７８９
+
+  // Mathematical digit variants (Unicode math block)
+  0x1D7CE, // Mathematical Bold
+  0x1D7D8, // Mathematical Double-Struck
+  0x1D7E2, // Mathematical Sans-Serif
+  0x1D7EC, // Mathematical Sans-Serif Bold
+  0x1D7F6, // Mathematical Monospace
+
+  // Other scripts
+  0x104A0, // Osmanya 𐒠𐒡𐒢𐒣𐒤𐒥𐒦𐒧𐒨𐒩
+  0x10D30, // Hanifi Rohingya 𐴰𐴱𐴲𐴳𐴴𐴵𐴶𐴷𐴸𐴹
+  0x11066, // Brahmi 𑁦𑁧𑁨𑁩𑁪𑁫𑁬𑁭𑁮𑁯
+  0x110F0, // Sora Sompeng 𑃰𑃱𑃲𑃳𑃴𑃵𑃶𑃷𑃸𑃹
+  0x11136, // Chakma 𑄶𑄷𑄸𑄹𑄺𑄻𑄼𑄽𑄾𑄿
+  0x111D0, // Sharada 𑇐𑇑𑇒𑇓𑇔𑇕𑇖𑇗𑇘𑇙
+  0x112F0, // Khudawadi 𑋰𑋱𑋲𑋳𑋴𑋵𑋶𑋷𑋸𑋹
+  0x11450, // Newa 𑑐𑑑𑑒𑑓𑑔𑑕𑑖𑑗𑑘𑑙
+  0x114D0, // Tirhuta 𑓐𑓑𑓒𑓓𑓔𑓕𑓖𑓗𑓘𑓙
+  0x11650, // Modi 𑙐𑙑𑙒𑙓𑙔𑙕𑙖𑙗𑙘𑙙
+  0x116C0, // Takri 𑛀𑛁𑛂𑛃𑛄𑛅𑛆𑛇𑛈𑛉
+  0x11730, // Ahom 𑜰𑜱𑜲𑜳𑜴𑜵𑜶𑜷𑜸𑜹
+  0x118E0, // Warang Citi 𑣠𑣡𑣢𑣣𑣤𑣥𑣦𑣧𑣨𑣩
+  0x11950, // Dives Akuru 𑥐𑥑𑥒𑥓𑥔𑥕𑥖𑥗𑥘𑥙
+  0x11BF0, // Khitan Small Script 𑯰𑯱𑯲𑯳𑯴𑯵𑯶𑯷𑯸𑯹
+  0x11C50, // Bhaiksuki 𑱐𑱑𑱒𑱓𑱔𑱕𑱖𑱗𑱘𑱙
+  0x11D50, // Masaram Gondi 𑵐𑵑𑵒𑵓𑵔𑵕𑵖𑵗𑵘𑵙
+  0x11DA0, // Gunjala Gondi 𑶠𑶡𑶢𑶣𑶤𑶥𑶦𑶧𑶨𑶩
+  0x11F50, // Kawi 𑽐𑽑𑽒𑽓𑽔𑽕𑽖𑽗𑽘𑽙
+  0x16A60, // Mro 𖩠𖩡𖩢𖩣𖩤𖩥𖩦𖩧𖩨𖩩
+  0x16AC0, // Tangsa 𖫀𖫁𖫂𖫃𖫄𖫅𖫆𖫇𖫈𖫉
+  0x16B50, // Pahawh Hmong 𖭐𖭑𖭒𖭓𖭔𖭕𖭖𖭗𖭘𖭙
+  0x1E140, // Nyiakeng Puachue Hmong 𞅀𞅁𞅂𞅃𞅄𞅅𞅆𞅇𞅈𞅉
+  0x1E2F0, // Wancho 𞋰𞋱𞋲𞋳𞋴𞋵𞋶𞋷𞋸𞋹
+  0x1E4F0, // Nag Mundari 𞓰𞓱𞓲𞓳𞓴𞓵𞓶𞓷𞓸𞓹
+  0x1E950, // Adlam 𞥐𞥑𞥒𞥓𞥔𞥕𞥖𞥗𞥘𞥙
+  0x1FBF0, // Segmented digit symbols 🯰🯱🯲🯳🯴🯵🯶🯷🯸🯹
+];
+
+// Build a sparse Map for scripts above 0xFFFF (surrogate-pair range).
+// These can't go into a flat Uint8Array indexed by code point efficiently.
+const NOT_DIGIT = 0xFF;
+const HIGH_MAP = new Map(); // codePoint → digit value (0-9)
+
+const LOW_MAX = 0xFFFF;
+const LOW_MIN = 0x0660; // first non-ASCII digit script
+
+// Flat Uint8Array covering 0x0660 .. 0xFFFF
+const TABLE_OFFSET = LOW_MIN;
+const TABLE_SIZE = LOW_MAX - LOW_MIN + 1;
+const TABLE = new Uint8Array(TABLE_SIZE).fill(NOT_DIGIT);
+
+for (const zero of SCRIPT_ZEROS) {
+  for (let d = 0; d < 10; d++) {
+    const cp = zero + d;
+    if (cp <= LOW_MAX) {
+      TABLE[cp - TABLE_OFFSET] = d;
+    } else {
+      HIGH_MAP.set(cp, d);
+    }
+  }
+}
+
+const CHAR_0 = 48; // '0'.charCodeAt(0)
+const CHAR_9 = 57; // '9'.charCodeAt(0)
+const CHAR_MINUS = 45; // '-'.charCodeAt(0)
+
+// Unicode minus/hyphen variants worth normalizing to ASCII '-' in numeric context:
+//   U+2212  MINUS SIGN       − (mathematically correct minus)
+//   U+FF0D  FULLWIDTH HYPHEN-MINUS  － (Japanese fullwidth context)
+//   U+FE63  SMALL HYPHEN-MINUS     ﹣ (small form variant)
+//
+// NOT normalized (deliberate):
+//   U+2013  EN DASH  –  (punctuation, not a numeric sign)
+//   U+2014  EM DASH  —  (punctuation)
+//   U+2010  HYPHEN   ‐  (typographic hyphen)
+//
+// Rationale: only characters a human or locale formatter would plausibly use
+// as a numeric minus sign are normalized. Dashes used for punctuation are left
+// alone to avoid mangling non-numeric strings.
+const MINUS_SET = new Set([0x2212, 0xFF0D, 0xFE63]);
+
+/**
+ * Normalize all Unicode decimal digit characters in a string to ASCII (0-9),
+ * and normalize Unicode minus variants to ASCII '-' (U+002D).
+ *
+ * Non-digit, non-minus characters are passed through unchanged.
+ *
+ * Performance design:
+ * - Fast path: if the string has no convertible characters, return it unchanged
+ *   (zero allocation).
+ * - BMP digits (0x0660..0xFFFF excl. surrogates): flat Uint8Array lookup (O(1)).
+ * - Supplementary plane digits (> 0xFFFF, encoded as surrogate pairs): Map lookup.
+ * - Minus variants: checked inline with a small fixed Set.
+ *
+ * @param {string} str
+ * @returns {string}
+ */
+function anynum(str) {
+  if (typeof str !== 'string') return str;
+
+  const len = str.length;
+  if (len === 0) return str;
+
+  // Scan for first character needing conversion.
+  // If none found, return original string (zero allocation).
+  let firstHit = -1;
+
+  for (let i = 0; i < len; i++) {
+    const cc = str.charCodeAt(i);
+
+    // ASCII digit or ASCII minus — already normalized, skip fast
+    if ((cc >= CHAR_0 && cc <= CHAR_9) || cc === CHAR_MINUS) continue;
+
+    // Below first unicode digit script — check minus variants only
+    if (cc < TABLE_OFFSET) {
+      if (MINUS_SET.has(cc)) { firstHit = i; break; }
+      continue;
+    }
+
+    // Surrogate pairs live in BMP range 0xD800-0xDFFF — check before TABLE
+    if (cc >= 0xD800 && cc <= 0xDBFF) {
+      if (i + 1 < len) {
+        const low = str.charCodeAt(i + 1);
+        if (low >= 0xDC00 && low <= 0xDFFF) {
+          const cp = 0x10000 + ((cc - 0xD800) << 10) + (low - 0xDC00);
+          if (HIGH_MAP.has(cp)) { firstHit = i; break; }
+        }
+      }
+      continue;
+    }
+
+    // BMP non-surrogate: flat table lookup; also check minus variants in this range
+    if (TABLE[cc - TABLE_OFFSET] !== NOT_DIGIT || MINUS_SET.has(cc)) {
+      firstHit = i;
+      break;
+    }
+  }
+
+  // Nothing to replace — return original, zero allocation
+  if (firstHit === -1) return str;
+
+  // Build result: copy unchanged prefix, then convert from firstHit onward
+  const chars = [];
+
+  if (firstHit > 0) chars.push(str.slice(0, firstHit));
+
+  for (let i = firstHit; i < len; i++) {
+    const cc = str.charCodeAt(i);
+
+    // ASCII digit or ASCII minus — pass through
+    if ((cc >= CHAR_0 && cc <= CHAR_9) || cc === CHAR_MINUS) {
+      chars.push(str[i]);
+      continue;
+    }
+
+    // Below TABLE_OFFSET — check minus variants, else pass through
+    if (cc < TABLE_OFFSET) {
+      chars.push(MINUS_SET.has(cc) ? '-' : str[i]);
+      continue;
+    }
+
+    // Surrogate pairs
+    if (cc >= 0xD800 && cc <= 0xDBFF) {
+      if (i + 1 < len) {
+        const low = str.charCodeAt(i + 1);
+        if (low >= 0xDC00 && low <= 0xDFFF) {
+          const cp = 0x10000 + ((cc - 0xD800) << 10) + (low - 0xDC00);
+          const d = HIGH_MAP.get(cp);
+          if (d !== undefined) {
+            chars.push(String.fromCharCode(d + 48));
+            i++; // consume low surrogate
+            continue;
+          }
+        }
+      }
+      chars.push(str[i]);
+      continue;
+    }
+
+    // BMP non-surrogate: flat table lookup + minus variants
+    if (MINUS_SET.has(cc)) {
+      chars.push('-');
+      continue;
+    }
+    const d = TABLE[cc - TABLE_OFFSET];
+    chars.push(d !== NOT_DIGIT ? String.fromCharCode(d + 48) : str[i]);
+  }
+
+  return chars.join('');
+}
+
+const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
+const binRegex = /^0b[01]+$/;
+const octRegex = /^0o[0-7]+$/;
+const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
 
 const consider = {
     hex: true,
-    // oct: false,
+    binary: false,
+    octal: false,
     leadingZeros: true,
     decimalPoint: "\.",
     eNotation: true,
     //skipLike: /regex/,
     infinity: "original", // "null", "infinity" (Infinity type), "string" ("Infinity" (the string literal))
+    unicode: false,
 };
 
 function toNumber(str, options = {}) {
@@ -42360,16 +43852,21 @@ function toNumber(str, options = {}) {
     if (trimmedStr.length === 0) return str;
     else if (options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
     else if (trimmedStr === "0") return 0;
-    else if (options.hex && hexRegex.test(trimmedStr)) {
+
+    if (options.unicode) {
+        trimmedStr = anynum(trimmedStr);
+        if (trimmedStr === "0") return 0; // re-check after normalization
+    }
+    if (options.hex && hexRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 16);
-        // }else if (options.oct && octRegex.test(str)) {
-        //     return Number.parseInt(val, 8);
+    } else if (options.binary && binRegex.test(trimmedStr)) {
+        return parse_int(trimmedStr, 2);
+    } else if (options.octal && octRegex.test(trimmedStr)) {
+        return parse_int(trimmedStr, 8);
     } else if (!isFinite(trimmedStr)) { //Infinity
         return handleInfinity(str, Number(trimmedStr), options);
     } else if (trimmedStr.includes('e') || trimmedStr.includes('E')) { //eNotation
         return resolveEnotation(str, trimmedStr, options);
-        // }else if (options.parseBin && binRegex.test(str)) {
-        //     return Number.parseInt(val, 2);
     } else {
         //separate negative sign, leading zeros, and rest number
         const match = numRegex.exec(trimmedStr);
@@ -42457,7 +43954,11 @@ function resolveEnotation(str, trimmedStr, options) {
  */
 function trimZeros(numStr) {
     if (numStr && numStr.indexOf(".") !== -1) {//float
-        numStr = numStr.replace(/0+$/, ""); //remove ending zeros
+        //remove ending zeros without the O(n^2) backtracking that /0+$/ hits
+        //when the string doesn't end in 0 but has a long internal zero-run
+        let end = numStr.length;
+        while (end > 0 && numStr.charCodeAt(end - 1) === 48 /* '0' */) end--;
+        numStr = numStr.slice(0, end);
         if (numStr === ".") numStr = "0";
         else if (numStr[0] === ".") numStr = "0" + numStr;
         else if (numStr[numStr.length - 1] === ".") numStr = numStr.substring(0, numStr.length - 1);
@@ -42467,11 +43968,13 @@ function trimZeros(numStr) {
 }
 
 function parse_int(numStr, base) {
-    //polyfill
+    const str = numStr.trim();
+    if (base === 2 || base === 8) numStr = str.substring(2);
+
     if (parseInt) return parseInt(numStr, base);
     else if (Number.parseInt) return Number.parseInt(numStr, base);
     else if (window && window.parseInt) return window.parseInt(numStr, base);
-    else throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")
+    else throw new Error("parseInt, Number.parseInt, window.parseInt are not supported");
 }
 
 /**
@@ -42785,6 +44288,9 @@ class ExpressionSet {
     /** @type {import('./Expression.js').default[]} expressions containing deep wildcard (..) */
     this._deepWildcards = [];
 
+    /** @type {Map<string, import('./Expression.js').default[]>} terminalTag → deep wildcard expressions */
+    this._deepByTerminalTag = new Map();
+
     /** @type {Set<string>} pattern strings already added — used for deduplication */
     this._patterns = new Set();
 
@@ -42816,7 +44322,14 @@ class ExpressionSet {
     this._patterns.add(expression.pattern);
 
     if (expression.hasDeepWildcard()) {
-      this._deepWildcards.push(expression);
+      const lastSeg = expression.segments[expression.segments.length - 1];
+      if (lastSeg && lastSeg.type !== 'deep-wildcard' && lastSeg.tag !== '*') {
+        const tag = lastSeg.tag;
+        if (!this._deepByTerminalTag.has(tag)) this._deepByTerminalTag.set(tag, []);
+        this._deepByTerminalTag.get(tag).push(expression);
+      } else {
+        this._deepWildcards.push(expression);
+      }
       return this;
     }
 
@@ -42950,7 +44463,13 @@ class ExpressionSet {
       }
     }
 
-    // 3. Deep wildcards — cannot be pre-filtered by depth or tag
+    // 3. Deep wildcards — indexed by terminal tag, then unindexed fallback
+    const deepBucket = this._deepByTerminalTag.get(tag);
+    if (deepBucket) {
+      for (let i = 0; i < deepBucket.length; i++) {
+        if (matcher.matches(deepBucket[i])) return deepBucket[i];
+      }
+    }
     for (let i = 0; i < this._deepWildcards.length; i++) {
       if (matcher.matches(this._deepWildcards[i])) return this._deepWildcards[i];
     }
@@ -43033,6 +44552,26 @@ class MatcherView {
     if (path.length === 0) return false;
     const current = path[path.length - 1];
     return current.values !== undefined && attrName in current.values;
+  }
+
+  /**
+   * Get the value of a "kept" attribute from the nearest ancestor (or
+   * current node) that declared it via `push(tag, attrs, ns, { keep: [...] })`.
+   * @param {string} attrName
+   * @returns {*}
+   */
+  getAnyParentAttr(attrName) {
+    return this._matcher.getAnyParentAttr(attrName);
+  }
+
+  /**
+   * Check whether any ancestor (or the current node) kept the given
+   * attribute via `push(tag, attrs, ns, { keep: [...] })`.
+   * @param {string} attrName
+   * @returns {boolean}
+   */
+  hasAnyParentAttr(attrName) {
+    return this._matcher.hasAnyParentAttr(attrName);
   }
 
   /**
@@ -43143,6 +44682,9 @@ class Matcher {
     // Each siblingStacks entry: Map<tagName, count> tracking occurrences at each level
     this._pathStringCache = null;
     this._view = new MatcherView(this);
+
+    // Kept-attribute stack: only populated when push() is called with options.keep.
+    this._keptAttrs = [];
   }
 
   /**
@@ -43150,8 +44692,10 @@ class Matcher {
    * @param {string} tagName
    * @param {Object|null} [attrValues=null]
    * @param {string|null} [namespace=null]
+   * @param {Object|null} [options=null]
+   * @param {string[]} [options.keep] - Names of attributes (from attrValues)
    */
-  push(tagName, attrValues = null, namespace = null) {
+  push(tagName, attrValues = null, namespace = null, options = null) {
     this._pathStringCache = null;
 
     // Remove values from previous current node (now becoming ancestor)
@@ -43161,26 +44705,29 @@ class Matcher {
 
     // Get or create sibling tracking for current level
     const currentLevel = this.path.length;
-    if (!this.siblingStacks[currentLevel]) {
-      this.siblingStacks[currentLevel] = new Map();
+    let level = this.siblingStacks[currentLevel];
+    if (!level) {
+      // `counts` tells same-name siblings apart (the "counter" — nth <item>
+      // among other <item>s). `total` is every child seen at this level so
+      // far, kept as a running number instead of re-added from `counts` on
+      // every push — a parent with many differently-named children would
+      // otherwise cost more per child the more distinct names it has.
+      level = { counts: new Map(), total: 0 };
+      this.siblingStacks[currentLevel] = level;
     }
-
-    const siblings = this.siblingStacks[currentLevel];
 
     // Create a unique key for sibling tracking that includes namespace
     const siblingKey = namespace ? `${namespace}:${tagName}` : tagName;
 
     // Calculate counter (how many times this tag appeared at this level)
-    const counter = siblings.get(siblingKey) || 0;
+    const counter = level.counts.get(siblingKey) || 0;
 
-    // Calculate position (total children at this level so far)
-    let position = 0;
-    for (const count of siblings.values()) {
-      position += count;
-    }
+    // Position = total children at this level seen before this one.
+    const position = level.total;
 
-    // Update sibling count for this tag
-    siblings.set(siblingKey, counter + 1);
+    // Update sibling count for this tag, and the level's running total.
+    level.counts.set(siblingKey, counter + 1);
+    level.total++;
 
     // Create new node
     const node = {
@@ -43198,6 +44745,24 @@ class Matcher {
     }
 
     this.path.push(node);
+
+    // Depth of the node we just pushed (1-based, matches this.path.length)
+    const depth = this.path.length;
+
+    // Copy only the requested attributes into the kept-attrs stack. This is
+    // the one part of push() whose cost scales with input (O(keep.length))
+    // rather than being O(1) — by design, since the caller is explicitly
+    // opting in for specific attribute names. No options/keep => zero added
+    // cost beyond the two property reads below.
+    const keep = options !== null ? options.keep : null;
+    if (keep !== null && keep !== undefined && keep.length > 0 && attrValues) {
+      for (let i = 0; i < keep.length; i++) {
+        const name = keep[i];
+        if (attrValues[name] !== undefined) {
+          this._keptAttrs.push({ depth, name, value: attrValues[name] });
+        }
+      }
+    }
   }
 
   /**
@@ -43212,6 +44777,18 @@ class Matcher {
 
     if (this.siblingStacks.length > this.path.length + 1) {
       this.siblingStacks.length = this.path.length + 1;
+    }
+
+    // Drop any kept attributes that belonged to the popped node (or deeper).
+    // _keptAttrs is depth-ordered (push only ever appends increasing depths),
+    // so this is a backward scan that stops at the first surviving entry —
+    // typically O(1) since kept attrs are rare by design.
+    const poppedDepth = this.path.length + 1;
+    while (
+      this._keptAttrs.length > 0 &&
+      this._keptAttrs[this._keptAttrs.length - 1].depth >= poppedDepth
+    ) {
+      this._keptAttrs.pop();
     }
 
     return node;
@@ -43266,6 +44843,38 @@ class Matcher {
     if (this.path.length === 0) return false;
     const current = this.path[this.path.length - 1];
     return current.values !== undefined && attrName in current.values;
+  }
+
+  /**
+   * Get the value of a "kept" attribute from the nearest ancestor (or
+   * current node) that declared it via `push(tag, attrs, ns, { keep: [...] })`.
+   * Unlike getAttrValue(), this works regardless of how deep the path has
+   * gone since the attribute was pushed — but only for attribute names that
+   * were explicitly marked with `keep` at push time. Cost is proportional to
+   * the number of currently-kept attributes (typically 0-3), not path depth.
+   * @param {string} attrName
+   * @returns {*} the value, or undefined if no ancestor kept this attribute
+   */
+  getAnyParentAttr(attrName) {
+    const kept = this._keptAttrs;
+    for (let i = kept.length - 1; i >= 0; i--) {
+      if (kept[i].name === attrName) return kept[i].value;
+    }
+    return undefined;
+  }
+
+  /**
+   * Check whether any ancestor (or the current node) kept the given
+   * attribute via `push(tag, attrs, ns, { keep: [...] })`.
+   * @param {string} attrName
+   * @returns {boolean}
+   */
+  hasAnyParentAttr(attrName) {
+    const kept = this._keptAttrs;
+    for (let i = kept.length - 1; i >= 0; i--) {
+      if (kept[i].name === attrName) return true;
+    }
+    return false;
   }
 
   /**
@@ -43344,6 +44953,7 @@ class Matcher {
     this._pathStringCache = null;
     this.path = [];
     this.siblingStacks = [];
+    this._keptAttrs = [];
   }
 
   /**
@@ -43493,7 +45103,8 @@ class Matcher {
   snapshot() {
     return {
       path: this.path.map(node => ({ ...node })),
-      siblingStacks: this.siblingStacks.map(map => new Map(map))
+      siblingStacks: this.siblingStacks.map(level => level ? { counts: new Map(level.counts), total: level.total } : level),
+      keptAttrs: this._keptAttrs.map(entry => ({ ...entry }))
     };
   }
 
@@ -43504,7 +45115,8 @@ class Matcher {
   restore(snapshot) {
     this._pathStringCache = null;
     this.path = snapshot.path.map(node => ({ ...node }));
-    this.siblingStacks = snapshot.siblingStacks.map(map => new Map(map));
+    this.siblingStacks = snapshot.siblingStacks.map(level => level ? { counts: new Map(level.counts), total: level.total } : level);
+    this._keptAttrs = (snapshot.keptAttrs || []).map(entry => ({ ...entry }));
   }
 
   /**
@@ -43528,458 +45140,927 @@ class Matcher {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Built-in entity tables
-// ---------------------------------------------------------------------------
-
 /**
- * Standard XML entities — always processed after external/system so they
- * cannot be overridden by DOCTYPE, and &amp; is deferred to its own final pass.
+ * HTML context patterns.
  *
- * Each entry: { regex: RegExp, val: string }
+ * Detects XSS vectors that are dangerous when a string ends up rendered as HTML.
+ * All patterns use bounded quantifiers to ensure linear-time matching (ReDoS-safe).
+ *
+ * Each entry is { pattern: RegExp, id: string, description: string }
+ * so callers can inspect which rule fired if they need to.
  */
-const DEFAULT_XML_ENTITIES = {
-  apos: { regex: /&(apos|#0*39|#x0*27);/g, val: "'" },
-  gt: { regex: /&(gt|#0*62|#x0*3[Ee]);/g, val: '>' },
-  lt: { regex: /&(lt|#0*60|#x0*3[Cc]);/g, val: '<' },
-  quot: { regex: /&(quot|#0*34|#x0*22);/g, val: '"' },
-};
 
-/** &amp; — always expanded last to avoid double-expansion. */
-const AMP_ENTITY = { regex: /&(amp|#0*38|#x0*26);/g, val: '&' };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const SPECIAL_CHARS = new Set('!?\\\\/[]$%{}^&*()<>|+');
+const HTML_PATTERNS = [
+  {
+    id: 'html-script-open',
+    description: '<script opening tag',
+    pattern: /<script[\s>/]/i,
+  },
+  {
+    id: 'html-script-close',
+    description: '</script closing tag',
+    pattern: /<\/script[\s>]/i,
+  },
+  {
+    id: 'html-javascript-protocol',
+    description: 'javascript: URI scheme (with optional whitespace/encoding)',
+    // Handles j&#x61;vascript:, j\u0061vascript:, and whitespace variants
+    pattern: /j[\t\n\r ]*a[\t\n\r ]*v[\t\n\r ]*a[\t\n\r ]*s[\t\n\r ]*c[\t\n\r ]*r[\t\n\r ]*i[\t\n\r ]*p[\t\n\r ]*t[\t\n\r ]*:/i,
+  },
+  {
+    id: 'html-vbscript-protocol',
+    description: 'vbscript: URI scheme',
+    pattern: /vbscript[\t\n\r ]*:/i,
+  },
+  {
+    id: 'html-data-html',
+    description: 'data:text/html URI — can execute scripts in browsers',
+    pattern: /data[\t\n\r ]*:[\t\n\r ]*text\/html/i,
+  },
+  {
+    id: 'html-data-xhtml',
+    description: 'data:application/xhtml+xml URI',
+    pattern: /data[\t\n\r ]*:[\t\n\r ]*application\/xhtml/i,
+  },
+  {
+    id: 'html-data-svg',
+    description: 'data:image/svg+xml URI — can execute scripts',
+    pattern: /data[\t\n\r ]*:[\t\n\r ]*image\/svg\+xml/i,
+  },
+  {
+    id: 'html-inline-event-handler',
+    description: 'Inline event handler attributes: onclick=, onerror=, onload=, etc.',
+    // \bon ensures we match a word boundary so "phonetic=" is not caught
+    pattern: /\bon\w{1,30}\s*=/i,
+  },
+  {
+    id: 'html-entity-obfuscated-script',
+    description: 'HTML-entity-encoded <script (e.g. &#x3C;script or &lt;script)',
+    // Entities include optional trailing semicolon: &#x3C; or &#x3C (both valid in HTML5)
+    pattern: /(?:&#x0*3[Cc];?|&#0*60;?|&lt;)\s*script/i,
+  },
+  {
+    id: 'html-entity-obfuscated-javascript',
+    description: 'HTML-entity-encoded javascript: (partial — catches common &#106; or &#x6a; for "j")',
+    pattern: /(?:&#x0*6[Aa];?|&#0*106;?)\s*(?:&#x0*61;?|a)[\s\S]{0,80}script\s*:/i,
+  },
+  {
+    id: 'html-style-expression',
+    description: 'CSS expression() — IE-era code execution in style attributes',
+    pattern: /style[\s\S]{0,20}expression\s*\(/i,
+  },
+  {
+    id: 'html-object-embed',
+    description: '<object or <embed tags that can load active content',
+    pattern: /<(?:object|embed)[\s>/]/i,
+  },
+  {
+    id: 'html-base-tag',
+    description: '<base href= — can hijack all relative URLs on a page',
+    pattern: /<base[\s>]/i,
+  },
+  {
+    id: 'html-meta-refresh',
+    description: '<meta http-equiv="refresh" — can redirect users',
+    pattern: /<meta[\s\S]{0,40}http-equiv[\s\S]{0,20}refresh/i,
+  },
+  {
+    id: 'html-srcdoc',
+    description: 'srcdoc= attribute on iframes — embeds HTML that can run scripts',
+    pattern: /srcdoc\s*=/i,
+  },
+  {
+    id: 'html-iframe',
+    description: '<iframe tag',
+    pattern: /<iframe[\s>/]/i,
+  },
+  {
+    id: 'html-form',
+    description: '<form tag — can be used for phishing / credential harvesting injection',
+    pattern: /<form[\s>/]/i,
+  },
+];
 
 /**
- * Validate that an entity name contains no regex-special or otherwise
- * dangerous characters.
- * @param {string} name
- * @returns {string} the name, unchanged
- * @throws {Error} on invalid characters
+ * XML context patterns.
+ *
+ * Detects injection vectors that are specifically dangerous when a string
+ * is inserted into an XML document (not HTML rendering context).
+ *
+ * Key distinction from HTML: these patterns target parser-level attacks —
+ * things that can confuse or subvert an XML parser, trigger external entity
+ * resolution, or inject DTD content. HTML rendering concerns (XSS) belong
+ * in the HTML context.
  */
-function validateEntityName(name) {
-  for (const ch of name) {
-    if (SPECIAL_CHARS.has(ch)) {
-      throw new Error(`[EntityReplacer] Invalid character '${ch}' in entity name: "${name}"`);
+
+const XML_PATTERNS = [
+  {
+    id: 'xml-cdata-injection',
+    description: 'CDATA section injection: <![CDATA[ breaks out of text node context',
+    pattern: /<!\[CDATA\[/i,
+  },
+  {
+    id: 'xml-cdata-close',
+    description: 'CDATA close sequence: ]]> can terminate an enclosing CDATA section',
+    pattern: /\]\]>/,
+  },
+  {
+    id: 'xml-processing-instruction',
+    description: 'XML processing instruction: <?xml-stylesheet or <?php etc.',
+    pattern: /<\?(?:xml[\- ]|php|asp)/i,
+  },
+  {
+    id: 'xml-doctype-injection',
+    description: 'DOCTYPE declaration embedded in content — can define entities',
+    // Match <!DOCTYPE followed by end-of-string, whitespace, or [ (internal subset)
+    pattern: /<!DOCTYPE(?:[\s[]|$)/i,
+  },
+  {
+    id: 'xml-entity-system',
+    description: 'SYSTEM keyword — used in external entity declarations (XXE)',
+    pattern: /\bSYSTEM\s+["']/i,
+  },
+  {
+    id: 'xml-entity-public',
+    description: 'PUBLIC keyword — used in external entity declarations (XXE)',
+    pattern: /\bPUBLIC\s+["']/i,
+  },
+  {
+    id: 'xml-entity-declaration',
+    description: '<!ENTITY declaration — defines entities, potential XXE or entity expansion',
+    pattern: /<!ENTITY[\s%]/i,
+  },
+  {
+    id: 'xml-billion-laughs',
+    description: 'Entity reference chaining / billion laughs: repeated &eX; style references',
+    // Heuristic: 3+ consecutive entity refs suggests expansion attack
+    pattern: /(?:&\w{1,20};){3,}/,
+  },
+  {
+    id: 'xml-namespace-confusion',
+    description: 'xmlns: attribute injection — can redefine namespaces to confuse parsers',
+    // pattern: /\bxmlns\s*(?::\w{1,40})?\s*=/i,
+    pattern: /\bxmlns(?::\w{1,40})?\s*=/i,
+  },
+  {
+    id: 'xml-comment-injection',
+    description: '<!-- comment injection — can hide content from some parsers',
+    pattern: /<!--/,
+  },
+  {
+    id: 'xml-comment-close',
+    description: '--> closes an enclosing XML comment',
+    pattern: /-->/,
+  },
+  {
+    id: 'xml-pi-close',
+    description: '?> closes an enclosing processing instruction',
+    pattern: /\?>/,
+  },
+];
+
+/**
+ * SVG context patterns.
+ *
+ * SVG is XML-based but renders in browsers, giving it a unique attack surface
+ * that combines XML parser behaviour with browser rendering and JavaScript execution.
+ *
+ * Many of these vectors bypass HTML sanitizers that don't understand SVG semantics
+ * (DOMPurify has documented bypass vulnerabilities specifically in SVG/XML context).
+ */
+
+const SVG_PATTERNS = [
+  {
+    id: 'svg-script-element',
+    description: '<script element inside SVG executes JavaScript',
+    pattern: /<script[\s>/]/i,
+  },
+  {
+    id: 'svg-xlink-href-javascript',
+    description: 'xlink:href with javascript: — classic SVG XSS via <a> or <use>',
+    pattern: /xlink\s*:\s*href\s*=\s*["']?\s*javascript\s*:/i,
+  },
+  {
+    id: 'svg-href-javascript',
+    description: 'href= with javascript: in SVG context (<a>, <animate>, etc.)',
+    pattern: /href\s*=\s*["']?\s*javascript\s*:/i,
+  },
+  {
+    id: 'svg-foreignobject',
+    description: '<foreignObject embeds HTML inside SVG — can execute scripts',
+    pattern: /<foreignObject[\s>/]/i,
+  },
+  {
+    id: 'svg-use-external',
+    description: '<use xlink:href or href pointing to external resource (non-fragment URL)',
+    // Match <use with href= where the value starts with a non-# character (external URL)
+    // [\"'][^#] catches quoted values not starting with #; [^\"'#\s>] catches unquoted
+    pattern: /<use[\s\S]{0,60}(?:xlink\s*:\s*)?href\s*=\s*(?:["'][^#]|[^"'#\s>])/i,
+  },
+  {
+    id: 'svg-animate-href',
+    description: '<animate attributeName="href" — can dynamically change href to javascript:',
+    pattern: /<animate[\s\S]{0,80}attributeName\s*=\s*["'][\s]*href["']/i,
+  },
+  {
+    id: 'svg-animate-xlinkhref',
+    description: '<animate attributeName="xlink:href"',
+    pattern: /<animate[\s\S]{0,80}attributeName\s*=\s*["'][\s]*xlink\s*:\s*href["']/i,
+  },
+  {
+    id: 'svg-set-javascript',
+    description: '<set to="javascript:..." — sets an attribute to a javascript: URI',
+    pattern: /<set[\s\S]{0,80}to\s*=\s*["']?\s*javascript\s*:/i,
+  },
+  {
+    id: 'svg-event-handler',
+    description: 'SVG-specific event handler attributes: onload=, onerror=, onactivate=, etc.',
+    pattern: /\bon(?:load|error|activate|begin|end|repeat|focus|blur|click|mouse\w{1,20}|key\w{1,20})\s*=/i,
+  },
+  {
+    id: 'svg-handler-generic',
+    description: 'Generic on* handler catch-all for SVG attributes',
+    pattern: /\bon\w{1,30}\s*=/i,
+  },
+  {
+    id: 'svg-filter-feimage',
+    description: '<feImage href= — filter primitive that can load external resources',
+    pattern: /<feImage[\s\S]{0,80}(?:xlink\s*:\s*)?href\s*=/i,
+  },
+  {
+    id: 'svg-image-external',
+    description: '<image xlink:href with http/https or javascript protocol',
+    pattern: /<image[\s\S]{0,80}(?:xlink\s*:\s*)?href\s*=\s*["']?\s*(?:https?|javascript)\s*:/i,
+  },
+  {
+    id: 'svg-style-javascript',
+    description: 'style= attribute containing javascript: (e.g. background:url(javascript:...))',
+    pattern: /style\s*=[\s\S]{0,60}javascript\s*:/i,
+  },
+];
+
+/**
+ * SQL context patterns — high-precision rules only.
+ *
+ * These rules have very low false-positive risk and are safe to apply to
+ * general user text (names, descriptions, search queries, etc.).
+ * All patterns are ReDoS-safe — unlike the `sql-injection` npm package
+ * which has an active CVE on its own detection regexes.
+ *
+ * For exhaustive coverage including noisier heuristics (comment sequences,
+ * hex literals, stacked queries with semicolons), use 'SQL-STRICT' instead.
+ * Apply 'SQL-STRICT' only to strings that are specifically SQL fragments,
+ * not to general free-text fields.
+ */
+
+const SQL_PATTERNS = [
+  {
+    id: 'sql-block-comment-open',
+    description: 'SQL block comment open: /* ... */ — unusual in legitimate user text',
+    pattern: /\/\*/,
+  },
+  {
+    id: 'sql-union-select',
+    description: 'UNION SELECT — most common SQL injection aggregation attack',
+    pattern: /\bUNION\s{1,20}(?:ALL\s{1,20})?SELECT\b/i,
+  },
+  {
+    id: 'sql-drop-table',
+    description: 'DROP TABLE — destructive DDL injection',
+    pattern: /\bDROP\s{1,20}TABLE\b/i,
+  },
+  {
+    id: 'sql-drop-database',
+    description: 'DROP DATABASE — destructive DDL injection',
+    pattern: /\bDROP\s{1,20}DATABASE\b/i,
+  },
+  {
+    id: 'sql-insert-into',
+    description: 'INSERT INTO — data injection',
+    pattern: /\bINSERT\s{1,20}INTO\b/i,
+  },
+  {
+    id: 'sql-delete-from',
+    description: 'DELETE FROM — data deletion injection',
+    pattern: /\bDELETE\s{1,20}FROM\b/i,
+  },
+  {
+    id: 'sql-update-set',
+    description: 'UPDATE ... SET — data modification injection',
+    // Allows arbitrary content between UPDATE and SET (table name, alias, etc.)
+    pattern: /\bUPDATE\b[\s\S]{1,60}\bSET\b/i,
+  },
+  {
+    id: 'sql-exec-xp',
+    description: 'EXEC xp_ — MSSQL extended stored procedure execution',
+    pattern: /\bEXEC(?:UTE)?\s{1,20}xp_/i,
+  },
+  {
+    id: 'sql-tautology-string',
+    description: "Classic string tautology: ' OR '1'='1 or \" OR \"1\"=\"1\"",
+    // Last quote is optional — injection may truncate it: ' OR '1'='1--
+    pattern: /'\s{0,10}OR\s{0,10}'[^']{0,20}'\s*=\s*'[^']{0,20}/i,
+  },
+  {
+    id: 'sql-tautology-numeric',
+    description: 'Numeric tautology: OR 1=1',
+    pattern: /\bOR\s{1,10}1\s*=\s*1\b/i,
+  },
+  {
+    id: 'sql-always-true-zero',
+    description: 'Numeric tautology: OR 0=0',
+    pattern: /\bOR\s{1,10}0\s*=\s*0\b/i,
+  },
+  {
+    id: 'sql-sleep-benchmark',
+    description: 'Time-based blind injection: SLEEP() or BENCHMARK()',
+    pattern: /\b(?:SLEEP|BENCHMARK)\s*\(/i,
+  },
+  {
+    id: 'sql-waitfor-delay',
+    description: 'MSSQL time-based blind injection: WAITFOR DELAY',
+    pattern: /\bWAITFOR\s{1,20}DELAY\b/i,
+  },
+  {
+    id: 'sql-char-function',
+    description: 'CHAR() function — used to obfuscate injected strings',
+    pattern: /\bCHAR\s*\(\s*\d{1,3}/i,
+  },
+  {
+    id: 'sql-information-schema',
+    description: 'INFORMATION_SCHEMA — reconnaissance query for table/column enumeration',
+    pattern: /\bINFORMATION_SCHEMA\b/i,
+  },
+];
+
+/**
+ * SHELL context patterns.
+ *
+ * Detects shell injection vectors and path traversal patterns.
+ * Designed for use when a string will be passed to a shell command,
+ * used as a file path, or interpolated into OS-level operations.
+ */
+
+const SHELL_PATTERNS = [
+  {
+    id: 'shell-path-traversal-unix',
+    description: 'Unix path traversal: ../  — climbing the directory tree',
+    pattern: /\.\.\//,
+  },
+  {
+    id: 'shell-path-traversal-windows',
+    description: 'Windows path traversal: ..\\ — climbing the directory tree',
+    pattern: /\.\.\\/,
+  },
+  {
+    id: 'shell-path-traversal-encoded',
+    description: 'URL-encoded path traversal: %2e%2e or %2f variants',
+    pattern: /%2e%2e|%2f\.\.|\.\.%2f/i,
+  },
+  {
+    id: 'shell-null-byte',
+    description: 'Null byte injection: \\x00 or %00 — truncates strings in C-backed functions',
+    pattern: /\x00|%00/,
+  },
+  {
+    id: 'shell-semicolon',
+    description: 'Semicolon command separator: cmd1; cmd2',
+    pattern: /;/,
+  },
+  {
+    id: 'shell-pipe',
+    description: 'Pipe operator: cmd1 | cmd2',
+    pattern: /\|/,
+  },
+  {
+    id: 'shell-and-operator',
+    description: 'AND operator: cmd1 && cmd2',
+    pattern: /&&/,
+  },
+  {
+    id: 'shell-or-operator',
+    description: 'OR operator: cmd1 || cmd2',
+    pattern: /\|\|/,
+  },
+  {
+    id: 'shell-backtick',
+    description: 'Backtick command substitution: `cmd`',
+    pattern: /`/,
+  },
+  {
+    id: 'shell-dollar-paren',
+    description: 'Dollar-paren command substitution: $(cmd)',
+    pattern: /\$\(/,
+  },
+  {
+    id: 'shell-dollar-brace',
+    description: 'Dollar-brace variable expansion: ${var} — can be abused for injection',
+    pattern: /\$\{/,
+  },
+  {
+    id: 'shell-redirect-out',
+    description: 'Output redirection: cmd > file or cmd >> file',
+    pattern: />{1,2}/,
+  },
+  {
+    id: 'shell-redirect-in',
+    description: 'Input redirection: cmd < file',
+    pattern: /</,
+  },
+  {
+    id: 'shell-newline-injection',
+    description: 'Newline injection: \\n or \\r — can inject new shell commands',
+    pattern: /[\n\r]/,
+  },
+  {
+    id: 'shell-glob-star',
+    description: 'Glob expansion: * or ? — can expand to unintended files',
+    // Only flag when combined with path separators to reduce false positives
+    pattern: /[/\\][*?]/,
+  },
+  {
+    id: 'shell-absolute-root',
+    description: 'Absolute root path injection: string starting with / or \\ (Windows UNC)',
+    pattern: /^(?:\/|\\\\)/,
+  },
+  {
+    id: 'shell-windows-drive',
+    description: 'Windows drive letter path injection: C:\\ or D:/',
+    pattern: /^[a-zA-Z]:[/\\]/,
+  },
+  {
+    id: 'shell-curl-wget',
+    description: 'curl/wget with URL or flags — can exfiltrate data or download payloads',
+    // Require a URL scheme (http/https/ftp) or a flag (-) to reduce false positives
+    // "curl is a tool" won't match; "curl http://..." or "curl -s ..." will
+    pattern: /\b(?:curl|wget)\s+(?:https?:\/\/|ftp:\/\/|-)/i,
+  },
+];
+
+/**
+ * REDOS context patterns.
+ *
+ * Detects strings that, if used as regular expressions, could cause
+ * catastrophic backtracking (ReDoS — Regular Expression Denial of Service).
+ *
+ * These patterns detect the structural forms that lead to exponential or
+ * polynomial backtracking in NFA-based regex engines (V8, PCRE, Java, etc.).
+ *
+ * Use this context when user-supplied strings will be compiled into RegExp objects.
+ */
+
+const REDOS_PATTERNS = [
+  {
+    id: 'redos-nested-quantifier-plus',
+    description: 'Nested + quantifier inside a group with outer quantifier: (a+)+, (.+b)*, etc.',
+    // Matches any group containing a + quantifier, with an outer * or + — catches (a+)+, (.+b)*, etc.
+    pattern: /\([^)]*\+[^)]*\)[+*]/,
+  },
+  {
+    id: 'redos-nested-quantifier-star',
+    description: 'Nested * quantifier: (a*)* or (a*)+ — catastrophic backtracking',
+    pattern: /\([^)]*\*[^)]*\)[*+]/,
+  },
+  {
+    id: 'redos-nested-groups',
+    description: 'Doubly nested quantified groups: ((a+)+) — guaranteed catastrophic',
+    pattern: /\(\([^)]{0,40}\)[+*]\)[+*]/,
+  },
+  {
+    id: 'redos-alternation-overlap',
+    description: 'Overlapping alternation under quantifier: (a|a)+ — ambiguous NFA paths',
+    // Detect repeated identical alternatives under a quantifier
+    pattern: /\(([^|()]{1,20})\|(?:\1)(?:\|[^|()]{1,20}){0,5}\)[+*?]{1,2}/,
+  },
+  {
+    id: 'redos-star-plus-concat',
+    description: '(x*x)+ pattern — triggers super-linear backtracking',
+    pattern: /\([^)]{0,10}\*[^)]{0,10}\)[+*]/,
+  },
+  {
+    id: 'redos-dot-star-greedy',
+    description: '(.*){n,} or (.+){n,} — repeated greedy dot quantifiers',
+    pattern: /\(\.[*+]\)\{?\d/,
+  },
+  {
+    id: 'redos-large-repetition',
+    description: 'Very large fixed or range repetition count {1000,} or {1000,n} — denial of service via backtracking',
+    // Matches { followed by 4+ digits (≥1000), then optional ,digits }
+    pattern: /\{\d{4,}(?:,\d*)?\}/,
+  },
+  {
+    id: 'redos-catastrophic-alternation',
+    description: 'Long alternation with many similar branches — polynomial backtracking risk',
+    // Heuristic: 10+ pipe-separated alternatives in a single group
+    pattern: /\([^)]{0,200}(?:\|[^|)]{0,50}){9,}\)/,
+  },
+];
+
+/**
+ * NOSQL context patterns.
+ *
+ * Detects injection vectors specific to NoSQL databases (primarily MongoDB)
+ * and JavaScript-evaluated queries.
+ *
+ * Attack categories:
+ *   1. MongoDB query operator injection: $where, $ne, $gt, $regex, $or, $and, etc.
+ *      These operators, when injected into a JSON query object, can bypass
+ *      authentication or exfiltrate data without knowing passwords.
+ *
+ *   2. JavaScript execution: $where clauses execute arbitrary JS server-side.
+ *
+ *   3. Prototype pollution: __proto__, constructor.prototype — can corrupt
+ *      the prototype chain of all objects in the Node.js process.
+ *
+ * Pattern note: MongoDB operators appear as JSON keys. In JSON, keys are
+ * quoted: {"$where": ...} so the pattern must allow an optional closing
+ * quote between the operator name and the colon: /\$where["'\s]*:/
+ */
+
+const sep = '["\'\\s]*:';
+
+const NOSQL_PATTERNS = [
+  // ─── MongoDB $ operator injection ────────────────────────────────────────
+  {
+    id: 'nosql-where-operator',
+    description: '$where — executes arbitrary JavaScript server-side in MongoDB',
+    pattern: new RegExp(`\\$where${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-ne-operator',
+    description: '$ne — "not equal" operator used to bypass equality checks',
+    pattern: new RegExp(`\\$ne${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-gt-operator',
+    description: '$gt — "greater than" used to bypass password/value checks',
+    pattern: new RegExp(`\\$gte?${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-lt-operator',
+    description: '$lt / $lte — "less than" bypass variants',
+    pattern: new RegExp(`\\$lte?${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-regex-operator',
+    description: '$regex — can be used to extract data character by character (blind injection)',
+    pattern: new RegExp(`\\$regex${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-or-operator',
+    description: '$or — logical OR; used to create always-true conditions',
+    pattern: new RegExp(`\\$or${sep}\\s*\\[`, 'i'),
+  },
+  {
+    id: 'nosql-and-operator',
+    description: '$and — logical AND operator injection',
+    pattern: new RegExp(`\\$and${sep}\\s*\\[`, 'i'),
+  },
+  {
+    id: 'nosql-nor-operator',
+    description: '$nor — logical NOR operator injection',
+    pattern: new RegExp(`\\$nor${sep}\\s*\\[`, 'i'),
+  },
+  {
+    id: 'nosql-exists-operator',
+    description: '$exists — can enumerate fields to determine schema',
+    pattern: new RegExp(`\\$exists${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-in-operator',
+    description: '$in — matches any value in a list; can enumerate values',
+    pattern: new RegExp(`\\$in${sep}\\s*\\[`, 'i'),
+  },
+  {
+    id: 'nosql-expr-operator',
+    description: '$expr — allows aggregation expressions in queries (MongoDB 3.6+)',
+    pattern: new RegExp(`\\$expr${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-function-operator',
+    description: '$function — executes arbitrary JavaScript in MongoDB 4.4+',
+    pattern: new RegExp(`\\$function${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-accumulator-operator',
+    description: '$accumulator — custom aggregation with arbitrary JS execution',
+    pattern: new RegExp(`\\$accumulator${sep}`, 'i'),
+  },
+  // ─── Prototype pollution ─────────────────────────────────────────────────
+  {
+    id: 'nosql-proto-pollution',
+    description: '__proto__ — prototype pollution via object key injection',
+    pattern: /__proto__/,
+  },
+  {
+    id: 'nosql-constructor-prototype',
+    description: 'constructor.prototype — alternative prototype pollution vector (dot notation or JSON key)',
+    // Matches dot-notation (obj.constructor.prototype) and JSON key adjacency
+    // ("constructor": {"prototype": ...})
+    pattern: /constructor[\s"':.,{\[]*prototype/i,
+  },
+  {
+    id: 'nosql-proto-bracket',
+    description: '["__proto__"] — bracket-notation prototype pollution',
+    pattern: /\[["']__proto__["']\]/,
+  },
+];
+
+/**
+ * LOG context patterns.
+ *
+ * Detects injection vectors that are dangerous when a string is written
+ * to a log file, passed to a logging framework, or interpolated into
+ * a log message that will be parsed or displayed.
+ *
+ * Attack categories:
+ *   1. CRLF injection — injects fake log lines by embedding newlines
+ *   2. Log4Shell (CVE-2021-44228) — ${jndi:...} triggers JNDI lookup in Log4j
+ *   3. SSTI in log templates — {{...}}, #{...} trigger template evaluation
+ *      if the log message is passed through a template engine
+ *   4. Null byte injection — truncates log entries in some implementations
+ *   5. ANSI escape injection — manipulates terminal output when logs are
+ *      tailed in a terminal (colour codes, cursor movement, etc.)
+ *
+ * Note: Newline characters (\n, \r) will produce false positives for
+ * multi-line legitimate values. Use this context only for single-line
+ * log field values (usernames, IDs, request parameters, etc.).
+ */
+
+const LOG_PATTERNS = [
+  // ─── CRLF / newline injection ─────────────────────────────────────────────
+  {
+    id: 'log-crlf-injection',
+    description: 'CRLF injection: literal \\r or \\n embeds fake log lines',
+    pattern: /[\r\n]/,
+  },
+  {
+    id: 'log-url-encoded-crlf',
+    description: 'URL-encoded CRLF: %0d, %0a, %0D, %0A — decoded by some log parsers',
+    pattern: /%0[dDaA]/,
+  },
+  {
+    id: 'log-unicode-newline',
+    description: 'Unicode newline variants: U+2028 (line separator), U+2029 (paragraph separator)',
+    pattern: /[\u2028\u2029]/,
+  },
+
+  // ─── Log4Shell / JNDI injection (CVE-2021-44228) ─────────────────────────
+  {
+    id: 'log-log4shell-jndi',
+    description: 'Log4Shell: ${jndi:...} triggers remote code execution in Apache Log4j',
+    pattern: /\$\{jndi\s*:/i,
+  },
+  {
+    id: 'log-log4shell-obfuscated',
+    description: 'Obfuscated Log4Shell: ${::-j}... lookup-bypass prefix used to evade WAF detection',
+    // ${::- is the Log4j lookup-bypass escape sequence; presence alone is suspicious
+    pattern: /\$\{::-/,
+  },
+  {
+    id: 'log-log4j-lookup',
+    description: 'Log4j lookup syntax: ${env:...}, ${sys:...}, ${ctx:...} — data exfiltration',
+    pattern: /\$\{(?:env|sys|ctx|main|map|sd|web|docker|k8s|spring)\s*:/i,
+  },
+
+  // ─── Server-Side Template Injection (SSTI) in log messages ───────────────
+  {
+    id: 'log-ssti-double-brace',
+    description: 'SSTI double-brace: {{expression}} — Jinja2, Twig, Handlebars, etc.',
+    pattern: /\{\{[\s\S]{0,80}\}\}/,
+  },
+  {
+    id: 'log-ssti-hash-brace',
+    description: 'SSTI hash-brace: #{expression} — Thymeleaf, Velocity, Ruby ERB',
+    pattern: /#\{[\s\S]{0,80}\}/,
+  },
+  {
+    id: 'log-ssti-dollar-brace',
+    description: 'SSTI/EL injection: ${expression with operators or method calls} — JSP EL, Freemarker, SpEL',
+    // Require that the ${...} content looks like an expression, not a plain variable name.
+    // Flags if the content contains: . ( * + operators, or known SSTI keywords.
+    // This avoids flagging ${PATH}, ${HOME} etc. (plain shell variables).
+    pattern: /\$\{[^}]*(?:\.|\(|\*|\+|\bclass\b|\bruntime\b|\bprocess\b|\bexec\b)[^}]{0,80}\}/i,
+  },
+  {
+    id: 'log-ssti-percent-tag',
+    description: 'SSTI ERB/ASP tag: <%= expression %> — Ruby ERB, ASP',
+    pattern: /<%=[\s\S]{0,80}%>/,
+  },
+
+  // ─── Null byte ────────────────────────────────────────────────────────────
+  {
+    id: 'log-null-byte',
+    description: 'Null byte: \\x00 or %00 — can truncate log entries in C-backed loggers',
+    pattern: /\x00|%00/,
+  },
+
+  // ─── ANSI escape injection ────────────────────────────────────────────────
+  {
+    id: 'log-ansi-escape',
+    description: 'ANSI escape sequence: ESC[ — can manipulate terminal output when logs are tailed',
+    pattern: /\x1b\[/,
+  },
+];
+
+/**
+ * SQL-STRICT context patterns.
+ *
+ * Extends the base 'SQL' context with three additional rules that are
+ * effective at detecting real injections but carry a higher false-positive
+ * risk on general free-text input.
+ *
+ * Use 'SQL-STRICT' when:
+ *   - The string is specifically a SQL fragment or database identifier
+ *   - You control the input domain (e.g. a dedicated SQL search field)
+ *   - You can tolerate occasional false positives in exchange for broader coverage
+ *
+ * Use 'SQL' (not STRICT) when:
+ *   - The field is general user text (names, descriptions, comments)
+ *   - False positives would block legitimate content (e.g. "see note -- above")
+ *
+ * Rules moved here from 'SQL' due to false-positive risk:
+ *
+ *   sql-line-comment   — "--" fires on "see note -- above", "value--", CSS var(--primary)
+ *   sql-stacked-query  — "; SELECT" fires on legitimate prose with semicolons + SQL words
+ *   sql-hex-encoding   — "0xDEAD" fires on hex values in technical docs and log output
+ */
+
+
+const SQL_STRICT_EXTRA = [
+  {
+    id: 'sql-line-comment',
+    description: 'SQL line comment: -- followed by whitespace or end of string',
+    pattern: /--(?:\s|$)/,
+  },
+  {
+    id: 'sql-stacked-query',
+    description: 'Stacked queries: semicolon immediately followed by a SQL keyword',
+    pattern: /;\s{0,10}(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i,
+  },
+  {
+    id: 'sql-hex-encoding',
+    description: 'Hex-encoded string injection: 0x41414141 style (MySQL)',
+    pattern: /\b0x[0-9a-f]{4,}/i,
+  },
+];
+
+// SQL-STRICT = all base SQL rules + the three noisy extras
+const SQL_STRICT_PATTERNS = [...SQL_PATTERNS, ...SQL_STRICT_EXTRA];
+
+/**
+ * is-unsafe v2
+ *
+ * Zero-dependency, DOM-free, pure predicate for detecting unsafe strings
+ * across HTML, XML, SVG, SQL, SQL-STRICT, SHELL, REDOS, NOSQL, and LOG contexts.
+ *
+ * v2 change: contexts are imported as named pattern arrays rather than resolved
+ * via a string-keyed registry. This makes each context independently
+ * tree-shakeable — bundlers can drop any context you never import.
+ *
+ * @module is-unsafe
+ */
+
+
+// ─── Attach labels to named contexts ──────────────────────────────────────
+// Each built-in PatternList carries its canonical name so matchList can read
+// list.label directly — no registry lookup needed at match time.
+// Custom PatternLists default to 'CUSTOM' unless the caller sets list.label.
+
+HTML_PATTERNS.label       = 'HTML';
+XML_PATTERNS.label        = 'XML';
+SVG_PATTERNS.label        = 'SVG';
+SQL_PATTERNS.label        = 'SQL';
+SQL_STRICT_PATTERNS.label = 'SQL-STRICT';
+SHELL_PATTERNS.label      = 'SHELL';
+REDOS_PATTERNS.label      = 'REDOS';
+NOSQL_PATTERNS.label      = 'NOSQL';
+LOG_PATTERNS.label        = 'LOG';
+
+// ─── Types ────────────────────────────────────────────────────────────────
+
+/**
+ * @typedef {{ id: string, description: string, pattern: RegExp }} Rule
+ */
+
+/**
+ * @typedef {Rule[]} PatternList
+ */
+
+/**
+ * @typedef {Object} MatchResult
+ * @property {string} context     - Label identifying which context matched ('HTML', 'CUSTOM', etc.)
+ * @property {string} id          - Rule identifier
+ * @property {string} description - Human-readable description of what was matched
+ * @property {RegExp} pattern     - The pattern that matched
+ */
+
+// ─── Internal helpers ──────────────────────────────────────────────────────
+
+/**
+ * @param {unknown} value
+ */
+function assertString(value) {
+  if (typeof value !== 'string') {
+    throw new TypeError(
+      `is-unsafe: first argument must be a string, got ${typeof value}`
+    );
+  }
+}
+
+/**
+ * @param {unknown} context
+ */
+function assertContext(context) {
+  if (context instanceof RegExp) return;
+
+  if (Array.isArray(context)) {
+    if (context.length === 0) {
+      throw new TypeError('is-unsafe: context must not be an empty array');
+    }
+    // Detect array-of-arrays vs flat pattern list
+    if (Array.isArray(context[0])) {
+      // Array of PatternLists
+      for (const list of context) {
+        if (!Array.isArray(list) || list.length === 0) {
+          throw new TypeError(
+            'is-unsafe: each context in the array must be a non-empty pattern array (PatternList)'
+          );
+        }
+      }
+    }
+    // else: flat PatternList — trust it, no deep validation needed
+    return;
+  }
+
+  throw new TypeError(
+    `is-unsafe: second argument must be a PatternList (e.g. HTML), ` +
+    `an array of PatternLists (e.g. [HTML, XML]), or a RegExp. Got: ${typeof context}`
+  );
+}
+
+/**
+ * Normalise any valid context arg into an array of PatternLists.
+ *
+ * @param {Rule[]|Rule[][]|RegExp} context
+ * @returns {{ lists: Rule[][]|null, regex: RegExp|null }}
+ */
+function normalise(context) {
+  if (context instanceof RegExp) return { lists: null, regex: context };
+  // Distinguish PatternList (array of rule objects) from array of PatternLists
+  if (Array.isArray(context[0])) return { lists: context, regex: null };
+  return { lists: [context], regex: null };
+}
+
+/**
+ * Test value against a single PatternList. Returns the first MatchResult or null.
+ *
+ * @param {string} value
+ * @param {Rule[]} list
+ * @returns {MatchResult|null}
+ */
+function matchList(value, list) {
+  const label = list.label ?? 'CUSTOM';
+  for (const rule of list) {
+    if (rule.pattern.test(value)) {
+      return { context: label, id: rule.id, description: rule.description, pattern: rule.pattern };
     }
   }
-  return name;
-}
-
-/**
- * Escape a string for use inside a RegExp character class / alternation.
- */
-function escapeForRegex(str) {
-  return str.replace(/[.\-+*:]/g, '\\$&');
-}
-
-/**
- * Resolve a constructor option to an entity table (plain object) or null.
- */
-function resolveTable(option, builtIn, enabledByDefault = false) {
-  if (option === false || option === null) return null;
-  if (option === true) return builtIn;
-  if (option === undefined) return enabledByDefault ? builtIn : null;
-  if (typeof option === 'object') return option;
   return null;
 }
 
-/**
- * Convert a category name or array of names into a Set<string>.
- */
-function resolveApplyLimitsTo(spec) {
-  if (spec === 'all') return 'all';
-  if (typeof spec === 'string') return new Set([spec]);
-  if (Array.isArray(spec)) return new Set(spec);
-  return new Set(['external']);
-}
+// ─── Public API ───────────────────────────────────────────────────────────
 
 /**
- * Build an entries array from a raw map of name → string|{regex,val}.
- * Skips string values that contain '&' (recursive expansion risk).
- * Normalises DocTypeReader's `regx` spelling to `regex`.
+ * Returns `true` if `value` is unsafe in the given context(s), `false` otherwise.
  *
- * @param {object} map
- * @returns {Array<[string, {regex: RegExp, val: string}]>}
- */
-function buildEntries(map) {
-  const entries = [];
-  for (const key of Object.keys(map)) {
-    const raw = map[key];
-    if (typeof raw === 'object' && raw !== null && (raw.val !== undefined)) {
-      // Accept pre-built { regex, val } or DocTypeReader's { regx, val }
-      entries.push([key, { regex: raw.regex ?? raw.regx, val: raw.val }]);
-    } else if (typeof raw === 'string') {
-      if (raw.indexOf('&') !== -1) continue; // skip — would cause recursive expansion
-      validateEntityName(key);
-      entries.push([key, {
-        regex: new RegExp('&' + escapeForRegex(key) + ';', 'g'),
-        val: raw,
-      }]);
-    }
-  }
-  return entries;
-}
-
-// ---------------------------------------------------------------------------
-// EntityReplacer
-// ---------------------------------------------------------------------------
-
-/**
- * Standalone, zero-dependency entity replacer for XML/HTML content.
- *
- * Entity categories:
- *  - **persistent external** — configured once, survive across documents.
- *    Set via `setExternalEntities()` or built up via `addExternalEntity()`.
- *  - **input / runtime** — DOCTYPE entities for the *current* document only.
- *    Injected via `addInputEntities()`. Wiped on every `getInstance()` call
- *    so they never leak between documents.
- *
- * Replacement order (fixed):
- *   1. persistent external
- *   2. input / runtime  (DOCTYPE)
- *   3. system           (named entity groups)
- *   4. default          (lt / gt / apos / quot)
- *   5. amp              (&amp; final pass)
+ * @param {string} value - The string to test
+ * @param {PatternList | PatternList[] | RegExp} context
+ *   - A PatternList imported from is-unsafe (e.g. `HTML`, `XML`)
+ *   - An array of PatternLists — returns true if unsafe in **any** of them
+ *   - A custom RegExp — returns true if the pattern matches
+ * @returns {boolean}
  *
  * @example
- * const replacer = new EntityReplacer({ default: true, system: COMMON_HTML });
- * replacer.setExternalEntities({ brand: 'Acme' });
+ * import { isUnsafe, HTML, SQL } from 'is-unsafe';
  *
- * // Builder factory calls getInstance() before each document:
- * const instance = replacer.getInstance();
- * // Builder calls addInputEntities() if DOCTYPE entities are present:
- * instance.addInputEntities({ version: '1.0' });
- * instance.replace('&brand; v&version; &lt;'); // 'Acme v1.0 <'
+ * isUnsafe('<script>alert(1)</script>', HTML)       // true
+ * isUnsafe('hello world', HTML)                     // false
+ * isUnsafe('value', [HTML, SQL])                    // false
+ * isUnsafe('value', /my-pattern/i)                  // false
  */
-class EntityReplacer {
-  /**
-   * @param {object} [options]
-   * @param {boolean|object|null} [options.default=true]
-   * @param {boolean|object|null} [options.amp=true]
-   * @param {boolean|object|null} [options.system=false]
-   * @param {number}              [options.maxTotalExpansions=0]
-   * @param {number}              [options.maxExpandedLength=0]
-   * @param {'external'|'all'|string[]} [options.applyLimitsTo='external']
-   * @param {((resolved: string, original: string) => string)|null} [options.postCheck=null]
-   */
-  constructor(options = {}) {
-    // Immutable config resolved at construction
-    this._defaultTable = resolveTable(options.default, DEFAULT_XML_ENTITIES, true);
-    this._systemTable = resolveTable(options.system, null, false);
-    this._ampEnabled = options.amp !== false && options.amp !== null;
+function isUnsafe(value, context) {
+  assertString(value);
+  assertContext(context);
 
-    this._maxTotalExpansions = options.maxTotalExpansions || 0;
-    this._maxExpandedLength = options.maxExpandedLength || 0;
-    this._applyLimitsTo = resolveApplyLimitsTo(options.applyLimitsTo ?? 'external');
-    this._postCheck = typeof options.postCheck === 'function' ? options.postCheck : r => r;
+  const { lists, regex } = normalise(context);
 
-    // Pre-computed category limit flags
-    this._limitExternal = this._applyLimitsTo === 'all' || (this._applyLimitsTo instanceof Set && this._applyLimitsTo.has('external'));
-    this._limitSystem = this._applyLimitsTo === 'all' || (this._applyLimitsTo instanceof Set && this._applyLimitsTo.has('system'));
-    this._limitDefault = this._applyLimitsTo === 'all' || (this._applyLimitsTo instanceof Set && this._applyLimitsTo.has('default'));
+  if (regex) return regex.test(value);
 
-    // Frozen immutable entry arrays
-    this._defaultEntries = this._defaultTable ? Object.entries(this._defaultTable) : [];
-    this._systemEntries = this._systemTable ? Object.entries(this._systemTable) : [];
-
-    // Persistent external entities — survive across documents
-    /** @type {Array<[string, {regex: RegExp, val: string}]>} */
-    this._persistentEntries = [];
-
-    // Input / runtime entities — current document only, reset per getInstance()
-    /** @type {Array<[string, {regex: RegExp, val: string}]>} */
-    this._inputEntries = [];
-
-    // Per-document counters — reset in getInstance()
-    this._totalExpansions = 0;
-    this._expandedLength = 0;
+  for (const list of lists) {
+    if (matchList(value, list) !== null) return true;
   }
-
-  // -------------------------------------------------------------------------
-  // Persistent external entity registration (survives across documents)
-  // -------------------------------------------------------------------------
-
-  /**
-   * Replace the full set of persistent external entities.
-   * These are never wiped between documents.
-   *
-   * @param {Record<string, string | { regex: RegExp, val: string | Function }>} map
-   */
-  setExternalEntities(map) {
-    this._persistentEntries = buildEntries(map);
-  }
-
-  /**
-   * Add a single persistent external entity without disturbing existing ones.
-   *
-   * @param {string} key   — bare entity name, e.g. `'copy'`
-   * @param {string} value — replacement string, e.g. `'©'`
-   */
-  addExternalEntity(key, value) {
-    validateEntityName(key);
-    if (typeof value === 'string' && value.indexOf('&') === -1) {
-      this._persistentEntries.push([key, {
-        regex: new RegExp('&' + escapeForRegex(key) + ';', 'g'),
-        val: value,
-      }]);
-    }
-  }
-
-  // -------------------------------------------------------------------------
-  // Input / runtime entity registration (per document)
-  // -------------------------------------------------------------------------
-
-  /**
-   * Inject DOCTYPE (input/runtime) entities for the current document.
-   * These are stored separately from persistent entities and wiped on the
-   * next `getInstance()` call so they never leak into subsequent documents.
-   *
-   * Also resets per-document expansion counters.
-   *
-   * @param {Record<string, string | { regx?: RegExp, regex?: RegExp, val: string | Function }>} map
-   */
-  addInputEntities(map) {
-    this._totalExpansions = 0;
-    this._expandedLength = 0;
-    this._inputEntries = buildEntries(map);
-  }
-
-  // -------------------------------------------------------------------------
-  // getInstance — builder factory integration point
-  // -------------------------------------------------------------------------
-
-  /**
-   * Reset all per-document state (input entities + expansion counters) and
-   * return `this`.
-   *
-   * The builder factory calls this each time it creates a new builder instance
-   * so DOCTYPE entities from a previous document are never carried over.
-   *
-   */
-  reset() {
-    this._inputEntries = [];
-    this._totalExpansions = 0;
-    this._expandedLength = 0;
-  }
-
-  // -------------------------------------------------------------------------
-  // Primary API
-  // -------------------------------------------------------------------------
-
-  /**
-   * Replace all entity references in `str`.
-   *
-   * Processing order:
-   *   1. persistent external
-   *   2. input / runtime  (DOCTYPE)
-   *   3. system
-   *   4. default (lt/gt/apos/quot)
-   *   5. amp
-   *   6. postCheck hook
-   *
-   * @param {string} str
-   * @returns {string}
-   */
-  replace(str) {
-    if (typeof str !== 'string' || str.length === 0) return str;
-    if (str.indexOf('&') === -1) return str; // fast path
-
-    const original = str;
-
-
-    // 1. Persistent external entities
-    if (this._persistentEntries.length > 0) {
-      str = this._applyEntries(str, this._persistentEntries, this._limitExternal);
-    }
-
-    // 2. Input / runtime entities (DOCTYPE)
-    if (this._inputEntries.length > 0 && str.indexOf('&') !== -1) {
-      str = this._applyEntries(str, this._inputEntries, this._limitExternal);
-    }
-
-    // 3. Default XML entities (lt / gt / apos / quot)
-    if (this._defaultEntries.length > 0 && str.indexOf('&') !== -1) {
-      str = this._applyEntries(str, this._defaultEntries, this._limitDefault);
-    }
-
-    // 4. System (named groups)
-    if (this._systemEntries.length > 0 && str.indexOf('&') !== -1) {
-      str = this._applyEntries(str, this._systemEntries, this._limitSystem);
-    }
-
-    // 5. &amp; — always last
-    if (this._ampEnabled && str.indexOf('&') !== -1) {
-      str = str.replace(AMP_ENTITY.regex, AMP_ENTITY.val);
-    }
-
-    // 6. postCheck
-    str = this._postCheck(str, original);
-
-    return str;
-  }
-
-
-  /**
-   * 
-   * @param {string} val 
-   * @returns 
-   */
-  parse(val) {
-    return this.replace(val);
-  }
-  // -------------------------------------------------------------------------
-  // Private helpers
-  // -------------------------------------------------------------------------
-
-  _applyEntries(str, entries, track) {
-    const limitExpansions = track && this._maxTotalExpansions > 0;
-    const limitLength = track && this._maxExpandedLength > 0;
-    const trackAny = limitExpansions || limitLength;
-
-    for (let i = 0; i < entries.length; i++) {
-      if (str.indexOf('&') === -1) break;
-
-      const entity = entries[i][1];
-
-      if (!trackAny) {
-        str = str.replace(entity.regex, entity.val);
-        continue;
-      }
-
-      if (limitExpansions && !limitLength) {
-        let count = 0;
-        str = str.replace(entity.regex, (...args) => {
-          count++;
-          return typeof entity.val === 'function' ? entity.val(...args) : entity.val;
-        });
-        if (count > 0) {
-          this._totalExpansions += count;
-          if (this._totalExpansions > this._maxTotalExpansions) {
-            throw new Error(
-              `[EntityReplacer] Entity expansion count limit exceeded: ` +
-              `${this._totalExpansions} > ${this._maxTotalExpansions}`
-            );
-          }
-        }
-      } else if (limitLength && !limitExpansions) {
-        const before = str.length;
-        str = str.replace(entity.regex, entity.val);
-        const delta = str.length - before;
-        if (delta > 0) {
-          this._expandedLength += delta;
-          if (this._expandedLength > this._maxExpandedLength) {
-            throw new Error(
-              `[EntityReplacer] Expanded content length limit exceeded: ` +
-              `${this._expandedLength} > ${this._maxExpandedLength}`
-            );
-          }
-        }
-      } else {
-        const before = str.length;
-        let count = 0;
-        str = str.replace(entity.regex, (...args) => {
-          count++;
-          return typeof entity.val === 'function' ? entity.val(...args) : entity.val;
-        });
-        if (count > 0) {
-          this._totalExpansions += count;
-          if (this._totalExpansions > this._maxTotalExpansions) {
-            throw new Error(
-              `[EntityReplacer] Entity expansion count limit exceeded: ` +
-              `${this._totalExpansions} > ${this._maxTotalExpansions}`
-            );
-          }
-        }
-        const delta = str.length - before;
-        if (delta > 0) {
-          this._expandedLength += delta;
-          if (this._expandedLength > this._maxExpandedLength) {
-            throw new Error(
-              `[EntityReplacer] Expanded content length limit exceeded: ` +
-              `${this._expandedLength} > ${this._maxExpandedLength}`
-            );
-          }
-        }
-      }
-    }
-    return str;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Named entity groups — importable separately and freely composable.
-// All groups are plain objects; no magic, no classes.
-// ---------------------------------------------------------------------------
-
-/**
- * ~20 most commonly needed HTML named entities.
- * @type {Record<string, { regex: RegExp, val: string | ((m: string, s: string) => string) }>}
- */
-const COMMON_HTML = {
-  nbsp: { regex: /&(nbsp|#0*160|#x0*[Aa]0);/g, val: '\u00a0' },
-  copy: { regex: /&(copy|#0*169|#x0*[Aa]9);/g, val: '\u00a9' },
-  reg: { regex: /&(reg|#0*174|#x0*[Aa][Ee]);/g, val: '\u00ae' },
-  trade: { regex: /&(trade|#0*8482|#x0*2122);/g, val: '\u2122' },
-  mdash: { regex: /&(mdash|#0*8212|#x0*2014);/g, val: '\u2014' },
-  ndash: { regex: /&(ndash|#0*8211|#x0*2013);/g, val: '\u2013' },
-  hellip: { regex: /&(hellip|#0*8230|#x0*2026);/g, val: '\u2026' },
-  laquo: { regex: /&(laquo|#0*171|#x0*[Aa][Bb]);/g, val: '\u00ab' },
-  raquo: { regex: /&(raquo|#0*187|#x0*[Bb][Bb]);/g, val: '\u00bb' },
-  lsquo: { regex: /&(lsquo|#0*8216|#x0*2018);/g, val: '\u2018' },
-  rsquo: { regex: /&(rsquo|#0*8217|#x0*2019);/g, val: '\u2019' },
-  ldquo: { regex: /&(ldquo|#0*8220|#x0*201[Cc]);/g, val: '\u201c' },
-  rdquo: { regex: /&(rdquo|#0*8221|#x0*201[Dd]);/g, val: '\u201d' },
-  bull: { regex: /&(bull|#0*8226|#x0*2022);/g, val: '\u2022' },
-  para: { regex: /&(para|#0*182|#x0*[Bb]6);/g, val: '\u00b6' },
-  sect: { regex: /&(sect|#0*167|#x0*[Aa]7);/g, val: '\u00a7' },
-  deg: { regex: /&(deg|#0*176|#x0*[Bb]0);/g, val: '\u00b0' },
-  frac12: { regex: /&(frac12|#0*189|#x0*[Bb][Dd]);/g, val: '\u00bd' },
-  frac14: { regex: /&(frac14|#0*188|#x0*[Bb][Cc]);/g, val: '\u00bc' },
-  frac34: { regex: /&(frac34|#0*190|#x0*[Bb][Ee]);/g, val: '\u00be' },
-  inr: { regex: /&(inr|#0*8377);/g, val: "₹" },
-};
-
-/**
- * Currency symbol entities.
- */
-const CURRENCY_ENTITIES = {
-  cent: { regex: /&(cent|#0*162|#x0*[Aa]2);/g, val: '\u00a2' },
-  pound: { regex: /&(pound|#0*163|#x0*[Aa]3);/g, val: '\u00a3' },
-  yen: { regex: /&(yen|#0*165|#x0*[Aa]5);/g, val: '\u00a5' },
-  euro: { regex: /&(euro|#0*8364|#x0*20[Aa][Cc]);/g, val: '\u20ac' },
-  inr: { regex: /&(inr|#0*8377|#x0*20[Bb]9);/g, val: '\u20b9' },
-  curren: { regex: /&(curren|#0*164|#x0*[Aa]4);/g, val: '\u00a4' },
-  fnof: { regex: /&(fnof|#0*402|#x0*192);/g, val: '\u0192' },
-};
-
-/**
- * Numeric character references — decimal &#NNN; and hex &#xHH;
- * These are function-replacers; they expand any valid code point.
- */
-const NUMERIC_ENTITIES = {
-  num_dec: {
-    regex: /&#0*([0-9]{1,7});/g,
-    val: (_, s) => fromCodePoint(s, 10, "&#"),
-  },
-  num_hex: {
-    regex: /&#x0*([0-9a-fA-F]{1,6});/g,
-    val: (_, s) => fromCodePoint(s, 16, "&#x"),
-  },
-};
-
-function fromCodePoint(str, base, prefix) {
-  const codePoint = Number.parseInt(str, base);
-
-  if (codePoint >= 0 && codePoint <= 0x10FFFF) {
-    return String.fromCodePoint(codePoint);
-  } else {
-    return prefix + str + ";";
-  }
+  return false;
 }
 
 // const regx =
@@ -44041,7 +46122,7 @@ function extractNamespace(rawTagName) {
 }
 
 class OrderedObjParser {
-  constructor(options) {
+  constructor(options, externalEntities) {
     this.options = options;
     this.currentNode = null;
     this.tagsNodeStack = [];
@@ -44057,22 +46138,32 @@ class OrderedObjParser {
     this.ignoreAttributesFn = getIgnoreAttributesFn(this.options.ignoreAttributes);
     this.entityExpansionCount = 0;
     this.currentExpandedLength = 0;
+    this.doctypefound = false;
+    let namedEntities = { ...XML };
+    if (this.options.entityDecoder) {
+      this.entityDecoder = this.options.entityDecoder;
+    } else {
+      if (typeof this.options.htmlEntities === "object") namedEntities = this.options.htmlEntities;
+      else if (this.options.htmlEntities === true) namedEntities = { ...COMMON_HTML, ...CURRENCY };
+      this.entityDecoder = new EntityDecoder({
+        namedEntities: { ...namedEntities, ...externalEntities },
+        numericAllowed: this.options.htmlEntities,
+        limit: {
+          maxTotalExpansions: this.options.processEntities.maxTotalExpansions,
+          maxExpandedLength: this.options.processEntities.maxExpandedLength,
+          applyLimitsTo: this.options.processEntities.appliesTo,
+        },
+        // onExternalEntity: (name, value) => isUnsafe(value) ? 'block' : 'allow',
+        onInputEntity: (name, value) =>
+          //TODO: VALID_CONTEXTS.HTML should be set only if this.options.htmlEntities
+          isUnsafe(value, [HTML_PATTERNS, XML_PATTERNS]) ? ENTITY_ACTION.BLOCK : ENTITY_ACTION.ALLOW,
 
-    this.entityReplacer = new EntityReplacer({
-      default: true,
-      // amp:     true,
-      system: this.options.htmlEntities ? { ...COMMON_HTML, ...NUMERIC_ENTITIES, ...CURRENCY_ENTITIES } : {},
-      maxTotalExpansions: this.options.processEntities.maxTotalExpansions,
-      maxExpandedLength: this.options.processEntities.maxExpandedLength,
-      applyLimitsTo: "all",
-      //postCheck: resolved => resolved
-    });
+        //postCheck: resolved => resolved
+      });
+    }
 
     // Initialize path matcher for path-expression-matcher
     this.matcher = new Matcher();
-
-    // Live read-only proxy of matcher — PEM creates and caches this internally.
-    // All user callbacks receive this instead of the mutable matcher.
     this.readonlyMatcher = this.matcher.readOnly();
 
     // Flag to track if current node is a stop node (optimization)
@@ -44158,9 +46249,9 @@ function resolveNameSpace(tagname) {
 //const attrsRegx = new RegExp("([\\w\\-\\.\\:]+)\\s*=\\s*(['\"])((.|\n)*?)\\2","gm");
 const attrsRegx = new RegExp('([^\\s=]+)\\s*(=\\s*([\'"])([\\s\\S]*?)\\3)?', 'gm');
 
-function buildAttributesMap(attrStr, jPath, tagName) {
+function buildAttributesMap(attrStr, jPath, tagName, force = false) {
   const options = this.options;
-  if (options.ignoreAttributes !== true && typeof attrStr === 'string') {
+  if (force === true || (options.ignoreAttributes !== true && typeof attrStr === 'string')) {
     // attrStr = attrStr.replace(/\r?\n/g, ' ');
     //attrStr = attrStr || attrStr.trim();
 
@@ -44234,7 +46325,7 @@ function buildAttributesMap(attrStr, jPath, tagName) {
 
     if (!hasAttrs) return;
 
-    if (options.attributesGroupName) {
+    if (options.attributesGroupName && !options.preserveOrder) {
       const attrCollection = {};
       attrCollection[options.attributesGroupName] = attrs;
       return attrCollection;
@@ -44250,10 +46341,12 @@ const parseXml = function (xmlData) {
 
   // Reset matcher for new document
   this.matcher.reset();
+  this.entityDecoder.reset();
 
   // Reset entity expansion counters for this document
   this.entityExpansionCount = 0;
   this.currentExpandedLength = 0;
+  this.doctypefound = false;
   const options = this.options;
   const docTypeReader = new DocTypeReader(options.processEntities);
   const xmlLen = xmlData.length;
@@ -44294,7 +46387,12 @@ const parseXml = function (xmlData) {
         this.matcher.pop();
         this.isCurrentNodeStopNode = false; // Reset flag when closing tag
 
-        currentNode = this.tagsNodeStack.pop();//avoid recursion, set the parent tag scope
+        //a closing tag with no matching opening tag leaves the stack empty
+        currentNode = this.tagsNodeStack.pop() || xmlObj;//avoid recursion, set the parent tag scope
+
+        if (options.captureMetaData && currentNode) {
+          currentNode.addEndIndex(closeIndex + 1);
+        }
         textData = "";
         i = closeIndex;
       } else if (c1 === 63) { //'?'
@@ -44303,15 +46401,26 @@ const parseXml = function (xmlData) {
         if (!tagData) throw new Error("Pi Tag is not closed.");
 
         textData = this.saveTextToParentTag(textData, currentNode, this.readonlyMatcher);
+        const attsMap = this.buildAttributesMap(tagData.tagExp, this.matcher, tagData.tagName, true);
+        if (attsMap) {
+          const ver = attsMap[this.options.attributeNamePrefix + "version"];
+          this.entityDecoder.setXmlVersion(Number(ver) || 1.0);
+          docTypeReader.setXmlVersion(Number(ver) || 1.0);
+        }
         if ((options.ignoreDeclaration && tagData.tagName === "?xml") || options.ignorePiTags) ; else {
 
           const childNode = new XmlNode(tagData.tagName);
           childNode.add(options.textNodeName, "");
 
-          if (tagData.tagName !== tagData.tagExp && tagData.attrExpPresent) {
-            childNode[":@"] = this.buildAttributesMap(tagData.tagExp, this.matcher, tagData.tagName);
+          if (tagData.tagName !== tagData.tagExp && tagData.attrExpPresent && options.ignoreAttributes !== true) {
+            childNode[":@"] = attsMap;
           }
           this.addChild(currentNode, childNode, this.readonlyMatcher, i);
+
+          if (options.captureMetaData) {
+            // closeIndex points at '?' of the closing '?>'
+            currentNode.addEndIndex(tagData.closeIndex + 2);
+          }
         }
 
 
@@ -44330,8 +46439,10 @@ const parseXml = function (xmlData) {
         i = endIndex;
       } else if (c1 === 33
         && xmlData.charCodeAt(i + 2) === 68) { //'!D'
+        if (this.doctypefound) throw new Error("Multiple DOCTYPE declarations found.");
+        this.doctypefound = true;
         const result = docTypeReader.readDocType(xmlData, i);
-        this.entityReplacer.addInputEntities(result.entities);
+        this.entityDecoder.addInputEntities(result.entities);
         i = result.i;
       } else if (c1 === 33
         && xmlData.charCodeAt(i + 2) === 91) { // '!['
@@ -44429,6 +46540,7 @@ const parseXml = function (xmlData) {
 
           if (prefixedAttrs) {
             // Extract raw attributes (without prefix) for our use
+            //TODO: seems a performance overhead
             extractRawAttributes(prefixedAttrs, options);
           }
         }
@@ -44472,6 +46584,10 @@ const parseXml = function (xmlData) {
           this.isCurrentNodeStopNode = false; // Reset flag
 
           this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
+
+          if (options.captureMetaData) {
+            currentNode.addEndIndex(i + 1);
+          }
         } else {
           //selfClosing tag
           if (isSelfClosing) {
@@ -44482,6 +46598,10 @@ const parseXml = function (xmlData) {
               childNode[":@"] = prefixedAttrs;
             }
             this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
+
+            if (options.captureMetaData) {
+              currentNode.addEndIndex(closeIndex + 1);
+            }
             this.matcher.pop(); // Pop self-closing tag
             this.isCurrentNodeStopNode = false; // Reset flag
           }
@@ -44491,6 +46611,10 @@ const parseXml = function (xmlData) {
               childNode[":@"] = prefixedAttrs;
             }
             this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
+
+            if (options.captureMetaData) {
+              currentNode.addEndIndex(result.closeIndex + 1);
+            }
             this.matcher.pop(); // Pop unpaired tag
             this.isCurrentNodeStopNode = false; // Reset flag
             i = result.closeIndex;
@@ -44569,7 +46693,7 @@ function replaceEntitiesValue(val, tagName, jPath) {
     }
   }
 
-  return this.entityReplacer.replace(val);
+  return this.entityDecoder.decode(val);
 }
 
 
@@ -44608,11 +46732,15 @@ function isItStopNode() {
  * @returns 
  */
 function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
+  //TODO: ignore boolean attributes in tag expression
+  //TODO: if ignore attributes, dont read full attribute expression but the end. But read for xml declaration
   let attrBoundary = 0;
-  const chars = [];
   const len = xmlData.length;
   const closeCode0 = closingChar.charCodeAt(0);
   const closeCode1 = closingChar.length > 1 ? closingChar.charCodeAt(1) : -1;
+
+  let result = '';
+  let segmentStart = i;
 
   for (let index = i; index < len; index++) {
     const code = xmlData.charCodeAt(index);
@@ -44624,17 +46752,18 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
     } else if (code === closeCode0) {
       if (closeCode1 !== -1) {
         if (xmlData.charCodeAt(index + 1) === closeCode1) {
-          return { data: String.fromCharCode(...chars), index };
+          result += xmlData.substring(segmentStart, index);
+          return { data: result, index };
         }
       } else {
-        return { data: String.fromCharCode(...chars), index };
+        result += xmlData.substring(segmentStart, index);
+        return { data: result, index };
       }
-    } else if (code === 9) { // \t
-      chars.push(32); // space
-      continue;
+    } else if (code === 9 && !attrBoundary) { // \t - only replace with space outside attribute values
+      // Flush accumulated segment, add space, start new segment
+      result += xmlData.substring(segmentStart, index) + ' ';
+      segmentStart = index + 1;
     }
-
-    chars.push(code);
   }
 }
 
@@ -44724,7 +46853,7 @@ function readStopNodeData(xmlData, tagName, i) {
         const closeIndex = findClosingIndex(xmlData, "]]>", i, "StopNode is not closed.") - 2;
         i = closeIndex;
       } else {
-        const tagData = readTagExp(xmlData, i, '>');
+        const tagData = readTagExp(xmlData, i, false);
 
         if (tagData) {
           const openTagName = tagData && tagData.tagName;
@@ -44844,6 +46973,10 @@ function compress(arr, options, matcher, readonlyMatcher) {
 
       let val = compress(tagObj[property], options, matcher, readonlyMatcher);
       const isLeaf = isLeafTag(val, options);
+
+      if (Object.keys(val).length === 0 && options.alwaysCreateTextNode) {
+        val[options.textNodeName] = "";
+      }
 
       if (tagObj[":@"]) {
         assignAttributes(val, tagObj[":@"], readonlyMatcher, options);
@@ -44973,8 +47106,8 @@ class XMLParser {
                 throw Error(`${result.err.msg}:${result.err.line}:${result.err.col}`)
             }
         }
-        const orderedObjParser = new OrderedObjParser(this.options);
-        orderedObjParser.entityReplacer.setExternalEntities(this.externalEntities);
+        const orderedObjParser = new OrderedObjParser(this.options, this.externalEntities);
+        // orderedObjParser.entityDecoder.setExternalEntities(this.externalEntities);
         const orderedResult = orderedObjParser.parseXml(xmlData);
         if (this.options.preserveOrder || orderedResult === undefined) return orderedResult;
         else return prettify(orderedResult, this.options, orderedObjParser.matcher, orderedObjParser.readonlyMatcher);
@@ -49082,7 +51215,7 @@ function requireConstants () {
 	return constants;
 }
 
-var version$2 = "1.14.3";
+var version$2 = "1.14.4";
 var require$$12 = {
 	version: version$2};
 
@@ -55256,15 +57389,23 @@ function requireEventemitter () {
 	     * @type {Object.<string,*>}
 	     * @private
 	     */
-	    this._listeners = {};
+	    this._listeners = Object.create(null);
 	}
+
+	/**
+	 * Event listener as used by {@link util.EventEmitter}.
+	 * @typedef EventEmitterListener
+	 * @type {function}
+	 * @param {...*} args Arguments
+	 * @returns {undefined}
+	 */
 
 	/**
 	 * Registers an event listener.
 	 * @param {string} evt Event name
-	 * @param {function} fn Listener
+	 * @param {EventEmitterListener} fn Listener
 	 * @param {*} [ctx] Listener context
-	 * @returns {util.EventEmitter} `this`
+	 * @returns {this} `this`
 	 */
 	EventEmitter.prototype.on = function on(evt, fn, ctx) {
 	    (this._listeners[evt] || (this._listeners[evt] = [])).push({
@@ -55277,17 +57418,19 @@ function requireEventemitter () {
 	/**
 	 * Removes an event listener or any matching listeners if arguments are omitted.
 	 * @param {string} [evt] Event name. Removes all listeners if omitted.
-	 * @param {function} [fn] Listener to remove. Removes all listeners of `evt` if omitted.
-	 * @returns {util.EventEmitter} `this`
+	 * @param {EventEmitterListener} [fn] Listener to remove. Removes all listeners of `evt` if omitted.
+	 * @returns {this} `this`
 	 */
 	EventEmitter.prototype.off = function off(evt, fn) {
 	    if (evt === undefined)
-	        this._listeners = {};
+	        this._listeners = Object.create(null);
 	    else {
 	        if (fn === undefined)
 	            this._listeners[evt] = [];
 	        else {
 	            var listeners = this._listeners[evt];
+	            if (!listeners)
+	                return this;
 	            for (var i = 0; i < listeners.length;)
 	                if (listeners[i].fn === fn)
 	                    listeners.splice(i, 1);
@@ -55302,7 +57445,7 @@ function requireEventemitter () {
 	 * Emits an event by calling its listeners with the specified arguments.
 	 * @param {string} evt Event name
 	 * @param {...*} args Arguments
-	 * @returns {util.EventEmitter} `this`
+	 * @returns {this} `this`
 	 */
 	EventEmitter.prototype.emit = function emit(evt) {
 	    var listeners = this._listeners[evt];
@@ -55662,31 +57805,6 @@ function requireFloat () {
 	return float;
 }
 
-var inquire_1;
-var hasRequiredInquire;
-
-function requireInquire () {
-	if (hasRequiredInquire) return inquire_1;
-	hasRequiredInquire = 1;
-	inquire_1 = inquire;
-
-	/**
-	 * Requires a module only if available.
-	 * @memberof util
-	 * @param {string} moduleName Module to require
-	 * @returns {?Object} Required module if available and not empty, otherwise `null`
-	 */
-	function inquire(moduleName) {
-	    try {
-	        var mod = eval("quire".replace(/^/,"re"))(moduleName); // eslint-disable-line no-eval
-	        if (mod && (mod.length || Object.keys(mod).length))
-	            return mod;
-	    } catch (e) {} // eslint-disable-line no-empty
-	    return null;
-	}
-	return inquire_1;
-}
-
 var utf8 = {};
 
 var hasRequiredUtf8;
@@ -55701,7 +57819,8 @@ function requireUtf8 () {
 		 * @memberof util
 		 * @namespace
 		 */
-		var utf8 = exports$1;
+		var utf8 = exports$1,
+		    replacementCharCode = 0xFFFD; // U+FFFD REPLACEMENT CHARACTER
 
 		/**
 		 * Calculates the UTF8 byte length of a string.
@@ -55734,27 +57853,36 @@ function requireUtf8 () {
 		 * @returns {string} String read
 		 */
 		utf8.read = function utf8_read(buffer, start, end) {
-		    var len = end - start;
-		    if (len < 1)
+		    if (end - start < 1)
 		        return "";
+		    // Batch code units and flush via String.fromCharCode.apply in 8192-unit
+		    // chunks to avoid the per-character ConsString buildup of `str += ...`.
 		    var parts = null,
 		        chunk = [],
-		        i = 0, // char offset
-		        t;     // temporary
+		        i = 0, // chunk write index
+		        t, t2, c2, c3;
 		    while (start < end) {
 		        t = buffer[start++];
-		        if (t < 128)
+		        if (t <= 0x7F) {
 		            chunk[i++] = t;
-		        else if (t > 191 && t < 224)
-		            chunk[i++] = (t & 31) << 6 | buffer[start++] & 63;
-		        else if (t > 239 && t < 365) {
-		            t = ((t & 7) << 18 | (buffer[start++] & 63) << 12 | (buffer[start++] & 63) << 6 | buffer[start++] & 63) - 0x10000;
-		            chunk[i++] = 0xD800 + (t >> 10);
-		            chunk[i++] = 0xDC00 + (t & 1023);
-		        } else
-		            chunk[i++] = (t & 15) << 12 | (buffer[start++] & 63) << 6 | buffer[start++] & 63;
+		        } else if (t >= 0xC0 && t < 0xE0) {
+		            c2 = (t & 0x1F) << 6 | buffer[start++] & 0x3F;
+		            chunk[i++] = c2 >= 0x80 ? c2 : replacementCharCode;
+		        } else if (t >= 0xE0 && t < 0xF0) {
+		            c3 = (t & 0xF) << 12 | (buffer[start++] & 0x3F) << 6 | buffer[start++] & 0x3F;
+		            chunk[i++] = c3 >= 0x800 ? c3 : replacementCharCode;
+		        } else if (t >= 0xF0) {
+		            t2 = (t & 7) << 18 | (buffer[start++] & 0x3F) << 12 | (buffer[start++] & 0x3F) << 6 | buffer[start++] & 0x3F;
+		            if (t2 < 0x10000 || t2 > 0x10FFFF)
+		                chunk[i++] = replacementCharCode;
+		            else {
+		                t2 -= 0x10000;
+		                chunk[i++] = 0xD800 + (t2 >> 10);
+		                chunk[i++] = 0xDC00 + (t2 & 0x3FF);
+		            }
+		        }
 		        if (i > 8191) {
-		            (parts || (parts = [])).push(String.fromCharCode.apply(String, chunk));
+		            (parts || (parts = [])).push(String.fromCharCode.apply(String, chunk.slice(0, i)));
 		            i = 0;
 		        }
 		    }
@@ -56067,6 +58195,1629 @@ function requireLongbits () {
 	return longbits;
 }
 
+var umd$1 = {exports: {}};
+
+var umd = umd$1.exports;
+
+var hasRequiredUmd;
+
+function requireUmd () {
+	if (hasRequiredUmd) return umd$1.exports;
+	hasRequiredUmd = 1;
+	(function (module, exports$1) {
+		// GENERATED FILE. DO NOT EDIT.
+		(function (global, factory) {
+		  function preferDefault(exports$1) {
+		    return exports$1.default || exports$1;
+		  }
+		  {
+		    factory(exports$1);
+		    module.exports = preferDefault(exports$1);
+		  }
+		})(
+		  typeof globalThis !== "undefined"
+		    ? globalThis
+		    : typeof self !== "undefined"
+		      ? self
+		      : umd,
+		  function (_exports) {
+
+		    Object.defineProperty(_exports, "__esModule", {
+		      value: true,
+		    });
+		    _exports.default = void 0;
+		    /**
+		     * @license
+		     * Copyright 2009 The Closure Library Authors
+		     * Copyright 2020 Daniel Wirtz / The long.js Authors.
+		     *
+		     * Licensed under the Apache License, Version 2.0 (the "License");
+		     * you may not use this file except in compliance with the License.
+		     * You may obtain a copy of the License at
+		     *
+		     *     http://www.apache.org/licenses/LICENSE-2.0
+		     *
+		     * Unless required by applicable law or agreed to in writing, software
+		     * distributed under the License is distributed on an "AS IS" BASIS,
+		     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+		     * See the License for the specific language governing permissions and
+		     * limitations under the License.
+		     *
+		     * SPDX-License-Identifier: Apache-2.0
+		     */
+
+		    // WebAssembly optimizations to do native i64 multiplication and divide
+		    var wasm = null;
+		    try {
+		      wasm = new WebAssembly.Instance(
+		        new WebAssembly.Module(
+		          new Uint8Array([
+		            // \0asm
+		            0, 97, 115, 109,
+		            // version 1
+		            1, 0, 0, 0,
+		            // section "type"
+		            1, 13, 2,
+		            // 0, () => i32
+		            96, 0, 1, 127,
+		            // 1, (i32, i32, i32, i32) => i32
+		            96, 4, 127, 127, 127, 127, 1, 127,
+		            // section "function"
+		            3, 7, 6,
+		            // 0, type 0
+		            0,
+		            // 1, type 1
+		            1,
+		            // 2, type 1
+		            1,
+		            // 3, type 1
+		            1,
+		            // 4, type 1
+		            1,
+		            // 5, type 1
+		            1,
+		            // section "global"
+		            6, 6, 1,
+		            // 0, "high", mutable i32
+		            127, 1, 65, 0, 11,
+		            // section "export"
+		            7, 50, 6,
+		            // 0, "mul"
+		            3, 109, 117, 108, 0, 1,
+		            // 1, "div_s"
+		            5, 100, 105, 118, 95, 115, 0, 2,
+		            // 2, "div_u"
+		            5, 100, 105, 118, 95, 117, 0, 3,
+		            // 3, "rem_s"
+		            5, 114, 101, 109, 95, 115, 0, 4,
+		            // 4, "rem_u"
+		            5, 114, 101, 109, 95, 117, 0, 5,
+		            // 5, "get_high"
+		            8, 103, 101, 116, 95, 104, 105, 103, 104, 0, 0,
+		            // section "code"
+		            10, 191, 1, 6,
+		            // 0, "get_high"
+		            4, 0, 35, 0, 11,
+		            // 1, "mul"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 126, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		            // 2, "div_s"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 127, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		            // 3, "div_u"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 128, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		            // 4, "rem_s"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 129, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		            // 5, "rem_u"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 130, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		          ]),
+		        ),
+		        {},
+		      ).exports;
+		    } catch {
+		      // no wasm support :(
+		    }
+
+		    /**
+		     * Constructs a 64 bit two's-complement integer, given its low and high 32 bit values as *signed* integers.
+		     *  See the from* functions below for more convenient ways of constructing Longs.
+		     * @exports Long
+		     * @class A Long class for representing a 64 bit two's-complement integer value.
+		     * @param {number} low The low (signed) 32 bits of the long
+		     * @param {number} high The high (signed) 32 bits of the long
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @constructor
+		     */
+		    function Long(low, high, unsigned) {
+		      /**
+		       * The low 32 bits as a signed value.
+		       * @type {number}
+		       */
+		      this.low = low | 0;
+
+		      /**
+		       * The high 32 bits as a signed value.
+		       * @type {number}
+		       */
+		      this.high = high | 0;
+
+		      /**
+		       * Whether unsigned or not.
+		       * @type {boolean}
+		       */
+		      this.unsigned = !!unsigned;
+		    }
+
+		    // The internal representation of a long is the two given signed, 32-bit values.
+		    // We use 32-bit pieces because these are the size of integers on which
+		    // Javascript performs bit-operations.  For operations like addition and
+		    // multiplication, we split each number into 16 bit pieces, which can easily be
+		    // multiplied within Javascript's floating-point representation without overflow
+		    // or change in sign.
+		    //
+		    // In the algorithms below, we frequently reduce the negative case to the
+		    // positive case by negating the input(s) and then post-processing the result.
+		    // Note that we must ALWAYS check specially whether those values are MIN_VALUE
+		    // (-2^63) because -MIN_VALUE == MIN_VALUE (since 2^63 cannot be represented as
+		    // a positive number, it overflows back into a negative).  Not handling this
+		    // case would often result in infinite recursion.
+		    //
+		    // Common constant values ZERO, ONE, NEG_ONE, etc. are defined below the from*
+		    // methods on which they depend.
+
+		    /**
+		     * An indicator used to reliably determine if an object is a Long or not.
+		     * @type {boolean}
+		     * @const
+		     * @private
+		     */
+		    Long.prototype.__isLong__;
+		    Object.defineProperty(Long.prototype, "__isLong__", {
+		      value: true,
+		    });
+
+		    /**
+		     * @function
+		     * @param {*} obj Object
+		     * @returns {boolean}
+		     * @inner
+		     */
+		    function isLong(obj) {
+		      return (obj && obj["__isLong__"]) === true;
+		    }
+
+		    /**
+		     * @function
+		     * @param {*} value number
+		     * @returns {number}
+		     * @inner
+		     */
+		    function ctz32(value) {
+		      var c = Math.clz32(value & -value);
+		      return value ? 31 - c : c;
+		    }
+
+		    /**
+		     * Tests if the specified object is a Long.
+		     * @function
+		     * @param {*} obj Object
+		     * @returns {boolean}
+		     */
+		    Long.isLong = isLong;
+
+		    /**
+		     * A cache of the Long representations of small integer values.
+		     * @type {!Object}
+		     * @inner
+		     */
+		    var INT_CACHE = {};
+
+		    /**
+		     * A cache of the Long representations of small unsigned integer values.
+		     * @type {!Object}
+		     * @inner
+		     */
+		    var UINT_CACHE = {};
+
+		    /**
+		     * @param {number} value
+		     * @param {boolean=} unsigned
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromInt(value, unsigned) {
+		      var obj, cachedObj, cache;
+		      if (unsigned) {
+		        value >>>= 0;
+		        if ((cache = 0 <= value && value < 256)) {
+		          cachedObj = UINT_CACHE[value];
+		          if (cachedObj) return cachedObj;
+		        }
+		        obj = fromBits(value, 0, true);
+		        if (cache) UINT_CACHE[value] = obj;
+		        return obj;
+		      } else {
+		        value |= 0;
+		        if ((cache = -128 <= value && value < 128)) {
+		          cachedObj = INT_CACHE[value];
+		          if (cachedObj) return cachedObj;
+		        }
+		        obj = fromBits(value, value < 0 ? -1 : 0, false);
+		        if (cache) INT_CACHE[value] = obj;
+		        return obj;
+		      }
+		    }
+
+		    /**
+		     * Returns a Long representing the given 32 bit integer value.
+		     * @function
+		     * @param {number} value The 32 bit integer in question
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {!Long} The corresponding Long value
+		     */
+		    Long.fromInt = fromInt;
+
+		    /**
+		     * @param {number} value
+		     * @param {boolean=} unsigned
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromNumber(value, unsigned) {
+		      if (isNaN(value)) return unsigned ? UZERO : ZERO;
+		      if (unsigned) {
+		        if (value < 0) return UZERO;
+		        if (value >= TWO_PWR_64_DBL) return MAX_UNSIGNED_VALUE;
+		      } else {
+		        if (value <= -TWO_PWR_63_DBL) return MIN_VALUE;
+		        if (value + 1 >= TWO_PWR_63_DBL) return MAX_VALUE;
+		      }
+		      if (value < 0) return fromNumber(-value, unsigned).neg();
+		      return fromBits(
+		        value % TWO_PWR_32_DBL | 0,
+		        (value / TWO_PWR_32_DBL) | 0,
+		        unsigned,
+		      );
+		    }
+
+		    /**
+		     * Returns a Long representing the given value, provided that it is a finite number. Otherwise, zero is returned.
+		     * @function
+		     * @param {number} value The number in question
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {!Long} The corresponding Long value
+		     */
+		    Long.fromNumber = fromNumber;
+
+		    /**
+		     * @param {number} lowBits
+		     * @param {number} highBits
+		     * @param {boolean=} unsigned
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromBits(lowBits, highBits, unsigned) {
+		      return new Long(lowBits, highBits, unsigned);
+		    }
+
+		    /**
+		     * Returns a Long representing the 64 bit integer that comes by concatenating the given low and high bits. Each is
+		     *  assumed to use 32 bits.
+		     * @function
+		     * @param {number} lowBits The low 32 bits
+		     * @param {number} highBits The high 32 bits
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {!Long} The corresponding Long value
+		     */
+		    Long.fromBits = fromBits;
+
+		    /**
+		     * @function
+		     * @param {number} base
+		     * @param {number} exponent
+		     * @returns {number}
+		     * @inner
+		     */
+		    var pow_dbl = Math.pow; // Used 4 times (4*8 to 15+4)
+
+		    /**
+		     * @param {string} str
+		     * @param {(boolean|number)=} unsigned
+		     * @param {number=} radix
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromString(str, unsigned, radix) {
+		      if (str.length === 0) throw Error("empty string");
+		      if (typeof unsigned === "number") {
+		        // For goog.math.long compatibility
+		        radix = unsigned;
+		        unsigned = false;
+		      } else {
+		        unsigned = !!unsigned;
+		      }
+		      if (
+		        str === "NaN" ||
+		        str === "Infinity" ||
+		        str === "+Infinity" ||
+		        str === "-Infinity"
+		      )
+		        return unsigned ? UZERO : ZERO;
+		      radix = radix || 10;
+		      if (radix < 2 || 36 < radix) throw RangeError("radix");
+		      var p;
+		      if ((p = str.indexOf("-")) > 0) throw Error("interior hyphen");
+		      else if (p === 0) {
+		        return fromString(str.substring(1), unsigned, radix).neg();
+		      }
+
+		      // Do several (8) digits each time through the loop, so as to
+		      // minimize the calls to the very expensive emulated div.
+		      var radixToPower = fromNumber(pow_dbl(radix, 8));
+		      var result = ZERO;
+		      for (var i = 0; i < str.length; i += 8) {
+		        var size = Math.min(8, str.length - i),
+		          value = parseInt(str.substring(i, i + size), radix);
+		        if (size < 8) {
+		          var power = fromNumber(pow_dbl(radix, size));
+		          result = result.mul(power).add(fromNumber(value));
+		        } else {
+		          result = result.mul(radixToPower);
+		          result = result.add(fromNumber(value));
+		        }
+		      }
+		      result.unsigned = unsigned;
+		      return result;
+		    }
+
+		    /**
+		     * Returns a Long representation of the given string, written using the specified radix.
+		     * @function
+		     * @param {string} str The textual representation of the Long
+		     * @param {(boolean|number)=} unsigned Whether unsigned or not, defaults to signed
+		     * @param {number=} radix The radix in which the text is written (2-36), defaults to 10
+		     * @returns {!Long} The corresponding Long value
+		     */
+		    Long.fromString = fromString;
+
+		    /**
+		     * @function
+		     * @param {!Long|number|string|!{low: number, high: number, unsigned: boolean}} val
+		     * @param {boolean=} unsigned
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromValue(val, unsigned) {
+		      if (typeof val === "number") return fromNumber(val, unsigned);
+		      if (typeof val === "string") return fromString(val, unsigned);
+		      // Throws for non-objects, converts non-instanceof Long:
+		      return fromBits(
+		        val.low,
+		        val.high,
+		        typeof unsigned === "boolean" ? unsigned : val.unsigned,
+		      );
+		    }
+
+		    /**
+		     * Converts the specified value to a Long using the appropriate from* function for its type.
+		     * @function
+		     * @param {!Long|number|bigint|string|!{low: number, high: number, unsigned: boolean}} val Value
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {!Long}
+		     */
+		    Long.fromValue = fromValue;
+
+		    // NOTE: the compiler should inline these constant values below and then remove these variables, so there should be
+		    // no runtime penalty for these.
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_16_DBL = 1 << 16;
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_24_DBL = 1 << 24;
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_32_DBL = TWO_PWR_16_DBL * TWO_PWR_16_DBL;
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_64_DBL = TWO_PWR_32_DBL * TWO_PWR_32_DBL;
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_63_DBL = TWO_PWR_64_DBL / 2;
+
+		    /**
+		     * @type {!Long}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_24 = fromInt(TWO_PWR_24_DBL);
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var ZERO = fromInt(0);
+
+		    /**
+		     * Signed zero.
+		     * @type {!Long}
+		     */
+		    Long.ZERO = ZERO;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var UZERO = fromInt(0, true);
+
+		    /**
+		     * Unsigned zero.
+		     * @type {!Long}
+		     */
+		    Long.UZERO = UZERO;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var ONE = fromInt(1);
+
+		    /**
+		     * Signed one.
+		     * @type {!Long}
+		     */
+		    Long.ONE = ONE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var UONE = fromInt(1, true);
+
+		    /**
+		     * Unsigned one.
+		     * @type {!Long}
+		     */
+		    Long.UONE = UONE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var NEG_ONE = fromInt(-1);
+
+		    /**
+		     * Signed negative one.
+		     * @type {!Long}
+		     */
+		    Long.NEG_ONE = NEG_ONE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var MAX_VALUE = fromBits(0xffffffff | 0, 0x7fffffff | 0, false);
+
+		    /**
+		     * Maximum signed value.
+		     * @type {!Long}
+		     */
+		    Long.MAX_VALUE = MAX_VALUE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var MAX_UNSIGNED_VALUE = fromBits(0xffffffff | 0, 0xffffffff | 0, true);
+
+		    /**
+		     * Maximum unsigned value.
+		     * @type {!Long}
+		     */
+		    Long.MAX_UNSIGNED_VALUE = MAX_UNSIGNED_VALUE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var MIN_VALUE = fromBits(0, 0x80000000 | 0, false);
+
+		    /**
+		     * Minimum signed value.
+		     * @type {!Long}
+		     */
+		    Long.MIN_VALUE = MIN_VALUE;
+
+		    /**
+		     * @alias Long.prototype
+		     * @inner
+		     */
+		    var LongPrototype = Long.prototype;
+
+		    /**
+		     * Converts the Long to a 32 bit integer, assuming it is a 32 bit integer.
+		     * @this {!Long}
+		     * @returns {number}
+		     */
+		    LongPrototype.toInt = function toInt() {
+		      return this.unsigned ? this.low >>> 0 : this.low;
+		    };
+
+		    /**
+		     * Converts the Long to a the nearest floating-point representation of this value (double, 53 bit mantissa).
+		     * @this {!Long}
+		     * @returns {number}
+		     */
+		    LongPrototype.toNumber = function toNumber() {
+		      if (this.unsigned)
+		        return (this.high >>> 0) * TWO_PWR_32_DBL + (this.low >>> 0);
+		      return this.high * TWO_PWR_32_DBL + (this.low >>> 0);
+		    };
+
+		    /**
+		     * Converts the Long to a string written in the specified radix.
+		     * @this {!Long}
+		     * @param {number=} radix Radix (2-36), defaults to 10
+		     * @returns {string}
+		     * @override
+		     * @throws {RangeError} If `radix` is out of range
+		     */
+		    LongPrototype.toString = function toString(radix) {
+		      radix = radix || 10;
+		      if (radix < 2 || 36 < radix) throw RangeError("radix");
+		      if (this.isZero()) return "0";
+		      if (this.isNegative()) {
+		        // Unsigned Longs are never negative
+		        if (this.eq(MIN_VALUE)) {
+		          // We need to change the Long value before it can be negated, so we remove
+		          // the bottom-most digit in this base and then recurse to do the rest.
+		          var radixLong = fromNumber(radix),
+		            div = this.div(radixLong),
+		            rem1 = div.mul(radixLong).sub(this);
+		          return div.toString(radix) + rem1.toInt().toString(radix);
+		        } else return "-" + this.neg().toString(radix);
+		      }
+
+		      // Do several (6) digits each time through the loop, so as to
+		      // minimize the calls to the very expensive emulated div.
+		      var radixToPower = fromNumber(pow_dbl(radix, 6), this.unsigned),
+		        rem = this;
+		      var result = "";
+		      while (true) {
+		        var remDiv = rem.div(radixToPower),
+		          intval = rem.sub(remDiv.mul(radixToPower)).toInt() >>> 0,
+		          digits = intval.toString(radix);
+		        rem = remDiv;
+		        if (rem.isZero()) return digits + result;
+		        else {
+		          while (digits.length < 6) digits = "0" + digits;
+		          result = "" + digits + result;
+		        }
+		      }
+		    };
+
+		    /**
+		     * Gets the high 32 bits as a signed integer.
+		     * @this {!Long}
+		     * @returns {number} Signed high bits
+		     */
+		    LongPrototype.getHighBits = function getHighBits() {
+		      return this.high;
+		    };
+
+		    /**
+		     * Gets the high 32 bits as an unsigned integer.
+		     * @this {!Long}
+		     * @returns {number} Unsigned high bits
+		     */
+		    LongPrototype.getHighBitsUnsigned = function getHighBitsUnsigned() {
+		      return this.high >>> 0;
+		    };
+
+		    /**
+		     * Gets the low 32 bits as a signed integer.
+		     * @this {!Long}
+		     * @returns {number} Signed low bits
+		     */
+		    LongPrototype.getLowBits = function getLowBits() {
+		      return this.low;
+		    };
+
+		    /**
+		     * Gets the low 32 bits as an unsigned integer.
+		     * @this {!Long}
+		     * @returns {number} Unsigned low bits
+		     */
+		    LongPrototype.getLowBitsUnsigned = function getLowBitsUnsigned() {
+		      return this.low >>> 0;
+		    };
+
+		    /**
+		     * Gets the number of bits needed to represent the absolute value of this Long.
+		     * @this {!Long}
+		     * @returns {number}
+		     */
+		    LongPrototype.getNumBitsAbs = function getNumBitsAbs() {
+		      if (this.isNegative())
+		        // Unsigned Longs are never negative
+		        return this.eq(MIN_VALUE) ? 64 : this.neg().getNumBitsAbs();
+		      var val = this.high != 0 ? this.high : this.low;
+		      for (var bit = 31; bit > 0; bit--) if ((val & (1 << bit)) != 0) break;
+		      return this.high != 0 ? bit + 33 : bit + 1;
+		    };
+
+		    /**
+		     * Tests if this Long can be safely represented as a JavaScript number.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isSafeInteger = function isSafeInteger() {
+		      // 2^53-1 is the maximum safe value
+		      var top11Bits = this.high >> 21;
+		      // [0, 2^53-1]
+		      if (!top11Bits) return true;
+		      // > 2^53-1
+		      if (this.unsigned) return false;
+		      // [-2^53, -1] except -2^53
+		      return top11Bits === -1 && !(this.low === 0 && this.high === -2097152);
+		    };
+
+		    /**
+		     * Tests if this Long's value equals zero.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isZero = function isZero() {
+		      return this.high === 0 && this.low === 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value equals zero. This is an alias of {@link Long#isZero}.
+		     * @returns {boolean}
+		     */
+		    LongPrototype.eqz = LongPrototype.isZero;
+
+		    /**
+		     * Tests if this Long's value is negative.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isNegative = function isNegative() {
+		      return !this.unsigned && this.high < 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is positive or zero.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isPositive = function isPositive() {
+		      return this.unsigned || this.high >= 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is odd.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isOdd = function isOdd() {
+		      return (this.low & 1) === 1;
+		    };
+
+		    /**
+		     * Tests if this Long's value is even.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isEven = function isEven() {
+		      return (this.low & 1) === 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value equals the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.equals = function equals(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      if (
+		        this.unsigned !== other.unsigned &&
+		        this.high >>> 31 === 1 &&
+		        other.high >>> 31 === 1
+		      )
+		        return false;
+		      return this.high === other.high && this.low === other.low;
+		    };
+
+		    /**
+		     * Tests if this Long's value equals the specified's. This is an alias of {@link Long#equals}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.eq = LongPrototype.equals;
+
+		    /**
+		     * Tests if this Long's value differs from the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.notEquals = function notEquals(other) {
+		      return !this.eq(/* validates */ other);
+		    };
+
+		    /**
+		     * Tests if this Long's value differs from the specified's. This is an alias of {@link Long#notEquals}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.neq = LongPrototype.notEquals;
+
+		    /**
+		     * Tests if this Long's value differs from the specified's. This is an alias of {@link Long#notEquals}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.ne = LongPrototype.notEquals;
+
+		    /**
+		     * Tests if this Long's value is less than the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.lessThan = function lessThan(other) {
+		      return this.comp(/* validates */ other) < 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is less than the specified's. This is an alias of {@link Long#lessThan}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.lt = LongPrototype.lessThan;
+
+		    /**
+		     * Tests if this Long's value is less than or equal the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.lessThanOrEqual = function lessThanOrEqual(other) {
+		      return this.comp(/* validates */ other) <= 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is less than or equal the specified's. This is an alias of {@link Long#lessThanOrEqual}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.lte = LongPrototype.lessThanOrEqual;
+
+		    /**
+		     * Tests if this Long's value is less than or equal the specified's. This is an alias of {@link Long#lessThanOrEqual}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.le = LongPrototype.lessThanOrEqual;
+
+		    /**
+		     * Tests if this Long's value is greater than the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.greaterThan = function greaterThan(other) {
+		      return this.comp(/* validates */ other) > 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is greater than the specified's. This is an alias of {@link Long#greaterThan}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.gt = LongPrototype.greaterThan;
+
+		    /**
+		     * Tests if this Long's value is greater than or equal the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.greaterThanOrEqual = function greaterThanOrEqual(other) {
+		      return this.comp(/* validates */ other) >= 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is greater than or equal the specified's. This is an alias of {@link Long#greaterThanOrEqual}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.gte = LongPrototype.greaterThanOrEqual;
+
+		    /**
+		     * Tests if this Long's value is greater than or equal the specified's. This is an alias of {@link Long#greaterThanOrEqual}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.ge = LongPrototype.greaterThanOrEqual;
+
+		    /**
+		     * Compares this Long's value with the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
+		     *  if the given one is greater
+		     */
+		    LongPrototype.compare = function compare(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      if (this.eq(other)) return 0;
+		      var thisNeg = this.isNegative(),
+		        otherNeg = other.isNegative();
+		      if (thisNeg && !otherNeg) return -1;
+		      if (!thisNeg && otherNeg) return 1;
+		      // At this point the sign bits are the same
+		      if (!this.unsigned) return this.sub(other).isNegative() ? -1 : 1;
+		      // Both are positive if at least one is unsigned
+		      return other.high >>> 0 > this.high >>> 0 ||
+		        (other.high === this.high && other.low >>> 0 > this.low >>> 0)
+		        ? -1
+		        : 1;
+		    };
+
+		    /**
+		     * Compares this Long's value with the specified's. This is an alias of {@link Long#compare}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
+		     *  if the given one is greater
+		     */
+		    LongPrototype.comp = LongPrototype.compare;
+
+		    /**
+		     * Negates this Long's value.
+		     * @this {!Long}
+		     * @returns {!Long} Negated Long
+		     */
+		    LongPrototype.negate = function negate() {
+		      if (!this.unsigned && this.eq(MIN_VALUE)) return MIN_VALUE;
+		      return this.not().add(ONE);
+		    };
+
+		    /**
+		     * Negates this Long's value. This is an alias of {@link Long#negate}.
+		     * @function
+		     * @returns {!Long} Negated Long
+		     */
+		    LongPrototype.neg = LongPrototype.negate;
+
+		    /**
+		     * Returns the sum of this and the specified Long.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} addend Addend
+		     * @returns {!Long} Sum
+		     */
+		    LongPrototype.add = function add(addend) {
+		      if (!isLong(addend)) addend = fromValue(addend);
+
+		      // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
+
+		      var a48 = this.high >>> 16;
+		      var a32 = this.high & 0xffff;
+		      var a16 = this.low >>> 16;
+		      var a00 = this.low & 0xffff;
+		      var b48 = addend.high >>> 16;
+		      var b32 = addend.high & 0xffff;
+		      var b16 = addend.low >>> 16;
+		      var b00 = addend.low & 0xffff;
+		      var c48 = 0,
+		        c32 = 0,
+		        c16 = 0,
+		        c00 = 0;
+		      c00 += a00 + b00;
+		      c16 += c00 >>> 16;
+		      c00 &= 0xffff;
+		      c16 += a16 + b16;
+		      c32 += c16 >>> 16;
+		      c16 &= 0xffff;
+		      c32 += a32 + b32;
+		      c48 += c32 >>> 16;
+		      c32 &= 0xffff;
+		      c48 += a48 + b48;
+		      c48 &= 0xffff;
+		      return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
+		    };
+
+		    /**
+		     * Returns the difference of this and the specified Long.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} subtrahend Subtrahend
+		     * @returns {!Long} Difference
+		     */
+		    LongPrototype.subtract = function subtract(subtrahend) {
+		      if (!isLong(subtrahend)) subtrahend = fromValue(subtrahend);
+		      return this.add(subtrahend.neg());
+		    };
+
+		    /**
+		     * Returns the difference of this and the specified Long. This is an alias of {@link Long#subtract}.
+		     * @function
+		     * @param {!Long|number|bigint|string} subtrahend Subtrahend
+		     * @returns {!Long} Difference
+		     */
+		    LongPrototype.sub = LongPrototype.subtract;
+
+		    /**
+		     * Returns the product of this and the specified Long.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} multiplier Multiplier
+		     * @returns {!Long} Product
+		     */
+		    LongPrototype.multiply = function multiply(multiplier) {
+		      if (this.isZero()) return this;
+		      if (!isLong(multiplier)) multiplier = fromValue(multiplier);
+
+		      // use wasm support if present
+		      if (wasm) {
+		        var low = wasm["mul"](
+		          this.low,
+		          this.high,
+		          multiplier.low,
+		          multiplier.high,
+		        );
+		        return fromBits(low, wasm["get_high"](), this.unsigned);
+		      }
+		      if (multiplier.isZero()) return this.unsigned ? UZERO : ZERO;
+		      if (this.eq(MIN_VALUE)) return multiplier.isOdd() ? MIN_VALUE : ZERO;
+		      if (multiplier.eq(MIN_VALUE)) return this.isOdd() ? MIN_VALUE : ZERO;
+		      if (this.isNegative()) {
+		        if (multiplier.isNegative()) return this.neg().mul(multiplier.neg());
+		        else return this.neg().mul(multiplier).neg();
+		      } else if (multiplier.isNegative())
+		        return this.mul(multiplier.neg()).neg();
+
+		      // If both longs are small, use float multiplication
+		      if (this.lt(TWO_PWR_24) && multiplier.lt(TWO_PWR_24))
+		        return fromNumber(
+		          this.toNumber() * multiplier.toNumber(),
+		          this.unsigned,
+		        );
+
+		      // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
+		      // We can skip products that would overflow.
+
+		      var a48 = this.high >>> 16;
+		      var a32 = this.high & 0xffff;
+		      var a16 = this.low >>> 16;
+		      var a00 = this.low & 0xffff;
+		      var b48 = multiplier.high >>> 16;
+		      var b32 = multiplier.high & 0xffff;
+		      var b16 = multiplier.low >>> 16;
+		      var b00 = multiplier.low & 0xffff;
+		      var c48 = 0,
+		        c32 = 0,
+		        c16 = 0,
+		        c00 = 0;
+		      c00 += a00 * b00;
+		      c16 += c00 >>> 16;
+		      c00 &= 0xffff;
+		      c16 += a16 * b00;
+		      c32 += c16 >>> 16;
+		      c16 &= 0xffff;
+		      c16 += a00 * b16;
+		      c32 += c16 >>> 16;
+		      c16 &= 0xffff;
+		      c32 += a32 * b00;
+		      c48 += c32 >>> 16;
+		      c32 &= 0xffff;
+		      c32 += a16 * b16;
+		      c48 += c32 >>> 16;
+		      c32 &= 0xffff;
+		      c32 += a00 * b32;
+		      c48 += c32 >>> 16;
+		      c32 &= 0xffff;
+		      c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
+		      c48 &= 0xffff;
+		      return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
+		    };
+
+		    /**
+		     * Returns the product of this and the specified Long. This is an alias of {@link Long#multiply}.
+		     * @function
+		     * @param {!Long|number|bigint|string} multiplier Multiplier
+		     * @returns {!Long} Product
+		     */
+		    LongPrototype.mul = LongPrototype.multiply;
+
+		    /**
+		     * Returns this Long divided by the specified. The result is signed if this Long is signed or
+		     *  unsigned if this Long is unsigned.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Quotient
+		     */
+		    LongPrototype.divide = function divide(divisor) {
+		      if (!isLong(divisor)) divisor = fromValue(divisor);
+		      if (divisor.isZero()) throw Error("division by zero");
+
+		      // use wasm support if present
+		      if (wasm) {
+		        // guard against signed division overflow: the largest
+		        // negative number / -1 would be 1 larger than the largest
+		        // positive number, due to two's complement.
+		        if (
+		          !this.unsigned &&
+		          this.high === -2147483648 &&
+		          divisor.low === -1 &&
+		          divisor.high === -1
+		        ) {
+		          // be consistent with non-wasm code path
+		          return this;
+		        }
+		        var low = (this.unsigned ? wasm["div_u"] : wasm["div_s"])(
+		          this.low,
+		          this.high,
+		          divisor.low,
+		          divisor.high,
+		        );
+		        return fromBits(low, wasm["get_high"](), this.unsigned);
+		      }
+		      if (this.isZero()) return this.unsigned ? UZERO : ZERO;
+		      var approx, rem, res;
+		      if (!this.unsigned) {
+		        // This section is only relevant for signed longs and is derived from the
+		        // closure library as a whole.
+		        if (this.eq(MIN_VALUE)) {
+		          if (divisor.eq(ONE) || divisor.eq(NEG_ONE))
+		            return MIN_VALUE; // recall that -MIN_VALUE == MIN_VALUE
+		          else if (divisor.eq(MIN_VALUE)) return ONE;
+		          else {
+		            // At this point, we have |other| >= 2, so |this/other| < |MIN_VALUE|.
+		            var halfThis = this.shr(1);
+		            approx = halfThis.div(divisor).shl(1);
+		            if (approx.eq(ZERO)) {
+		              return divisor.isNegative() ? ONE : NEG_ONE;
+		            } else {
+		              rem = this.sub(divisor.mul(approx));
+		              res = approx.add(rem.div(divisor));
+		              return res;
+		            }
+		          }
+		        } else if (divisor.eq(MIN_VALUE)) return this.unsigned ? UZERO : ZERO;
+		        if (this.isNegative()) {
+		          if (divisor.isNegative()) return this.neg().div(divisor.neg());
+		          return this.neg().div(divisor).neg();
+		        } else if (divisor.isNegative()) return this.div(divisor.neg()).neg();
+		        res = ZERO;
+		      } else {
+		        // The algorithm below has not been made for unsigned longs. It's therefore
+		        // required to take special care of the MSB prior to running it.
+		        if (!divisor.unsigned) divisor = divisor.toUnsigned();
+		        if (divisor.gt(this)) return UZERO;
+		        if (divisor.gt(this.shru(1)))
+		          // 15 >>> 1 = 7 ; with divisor = 8 ; true
+		          return UONE;
+		        res = UZERO;
+		      }
+
+		      // Repeat the following until the remainder is less than other:  find a
+		      // floating-point that approximates remainder / other *from below*, add this
+		      // into the result, and subtract it from the remainder.  It is critical that
+		      // the approximate value is less than or equal to the real value so that the
+		      // remainder never becomes negative.
+		      rem = this;
+		      while (rem.gte(divisor)) {
+		        // Approximate the result of division. This may be a little greater or
+		        // smaller than the actual value.
+		        approx = Math.max(1, Math.floor(rem.toNumber() / divisor.toNumber()));
+
+		        // We will tweak the approximate result by changing it in the 48-th digit or
+		        // the smallest non-fractional digit, whichever is larger.
+		        var log2 = Math.ceil(Math.log(approx) / Math.LN2),
+		          delta = log2 <= 48 ? 1 : pow_dbl(2, log2 - 48),
+		          // Decrease the approximation until it is smaller than the remainder.  Note
+		          // that if it is too large, the product overflows and is negative.
+		          approxRes = fromNumber(approx),
+		          approxRem = approxRes.mul(divisor);
+		        while (approxRem.isNegative() || approxRem.gt(rem)) {
+		          approx -= delta;
+		          approxRes = fromNumber(approx, this.unsigned);
+		          approxRem = approxRes.mul(divisor);
+		        }
+
+		        // We know the answer can't be zero... and actually, zero would cause
+		        // infinite recursion since we would make no progress.
+		        if (approxRes.isZero()) approxRes = ONE;
+		        res = res.add(approxRes);
+		        rem = rem.sub(approxRem);
+		      }
+		      return res;
+		    };
+
+		    /**
+		     * Returns this Long divided by the specified. This is an alias of {@link Long#divide}.
+		     * @function
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Quotient
+		     */
+		    LongPrototype.div = LongPrototype.divide;
+
+		    /**
+		     * Returns this Long modulo the specified.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Remainder
+		     */
+		    LongPrototype.modulo = function modulo(divisor) {
+		      if (!isLong(divisor)) divisor = fromValue(divisor);
+
+		      // use wasm support if present
+		      if (wasm) {
+		        var low = (this.unsigned ? wasm["rem_u"] : wasm["rem_s"])(
+		          this.low,
+		          this.high,
+		          divisor.low,
+		          divisor.high,
+		        );
+		        return fromBits(low, wasm["get_high"](), this.unsigned);
+		      }
+		      return this.sub(this.div(divisor).mul(divisor));
+		    };
+
+		    /**
+		     * Returns this Long modulo the specified. This is an alias of {@link Long#modulo}.
+		     * @function
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Remainder
+		     */
+		    LongPrototype.mod = LongPrototype.modulo;
+
+		    /**
+		     * Returns this Long modulo the specified. This is an alias of {@link Long#modulo}.
+		     * @function
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Remainder
+		     */
+		    LongPrototype.rem = LongPrototype.modulo;
+
+		    /**
+		     * Returns the bitwise NOT of this Long.
+		     * @this {!Long}
+		     * @returns {!Long}
+		     */
+		    LongPrototype.not = function not() {
+		      return fromBits(~this.low, ~this.high, this.unsigned);
+		    };
+
+		    /**
+		     * Returns count leading zeros of this Long.
+		     * @this {!Long}
+		     * @returns {!number}
+		     */
+		    LongPrototype.countLeadingZeros = function countLeadingZeros() {
+		      return this.high ? Math.clz32(this.high) : Math.clz32(this.low) + 32;
+		    };
+
+		    /**
+		     * Returns count leading zeros. This is an alias of {@link Long#countLeadingZeros}.
+		     * @function
+		     * @param {!Long}
+		     * @returns {!number}
+		     */
+		    LongPrototype.clz = LongPrototype.countLeadingZeros;
+
+		    /**
+		     * Returns count trailing zeros of this Long.
+		     * @this {!Long}
+		     * @returns {!number}
+		     */
+		    LongPrototype.countTrailingZeros = function countTrailingZeros() {
+		      return this.low ? ctz32(this.low) : ctz32(this.high) + 32;
+		    };
+
+		    /**
+		     * Returns count trailing zeros. This is an alias of {@link Long#countTrailingZeros}.
+		     * @function
+		     * @param {!Long}
+		     * @returns {!number}
+		     */
+		    LongPrototype.ctz = LongPrototype.countTrailingZeros;
+
+		    /**
+		     * Returns the bitwise AND of this Long and the specified.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other Long
+		     * @returns {!Long}
+		     */
+		    LongPrototype.and = function and(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      return fromBits(
+		        this.low & other.low,
+		        this.high & other.high,
+		        this.unsigned,
+		      );
+		    };
+
+		    /**
+		     * Returns the bitwise OR of this Long and the specified.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other Long
+		     * @returns {!Long}
+		     */
+		    LongPrototype.or = function or(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      return fromBits(
+		        this.low | other.low,
+		        this.high | other.high,
+		        this.unsigned,
+		      );
+		    };
+
+		    /**
+		     * Returns the bitwise XOR of this Long and the given one.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other Long
+		     * @returns {!Long}
+		     */
+		    LongPrototype.xor = function xor(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      return fromBits(
+		        this.low ^ other.low,
+		        this.high ^ other.high,
+		        this.unsigned,
+		      );
+		    };
+
+		    /**
+		     * Returns this Long with bits shifted to the left by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shiftLeft = function shiftLeft(numBits) {
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      else if (numBits < 32)
+		        return fromBits(
+		          this.low << numBits,
+		          (this.high << numBits) | (this.low >>> (32 - numBits)),
+		          this.unsigned,
+		        );
+		      else return fromBits(0, this.low << (numBits - 32), this.unsigned);
+		    };
+
+		    /**
+		     * Returns this Long with bits shifted to the left by the given amount. This is an alias of {@link Long#shiftLeft}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shl = LongPrototype.shiftLeft;
+
+		    /**
+		     * Returns this Long with bits arithmetically shifted to the right by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shiftRight = function shiftRight(numBits) {
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      else if (numBits < 32)
+		        return fromBits(
+		          (this.low >>> numBits) | (this.high << (32 - numBits)),
+		          this.high >> numBits,
+		          this.unsigned,
+		        );
+		      else
+		        return fromBits(
+		          this.high >> (numBits - 32),
+		          this.high >= 0 ? 0 : -1,
+		          this.unsigned,
+		        );
+		    };
+
+		    /**
+		     * Returns this Long with bits arithmetically shifted to the right by the given amount. This is an alias of {@link Long#shiftRight}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shr = LongPrototype.shiftRight;
+
+		    /**
+		     * Returns this Long with bits logically shifted to the right by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shiftRightUnsigned = function shiftRightUnsigned(numBits) {
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      if (numBits < 32)
+		        return fromBits(
+		          (this.low >>> numBits) | (this.high << (32 - numBits)),
+		          this.high >>> numBits,
+		          this.unsigned,
+		        );
+		      if (numBits === 32) return fromBits(this.high, 0, this.unsigned);
+		      return fromBits(this.high >>> (numBits - 32), 0, this.unsigned);
+		    };
+
+		    /**
+		     * Returns this Long with bits logically shifted to the right by the given amount. This is an alias of {@link Long#shiftRightUnsigned}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shru = LongPrototype.shiftRightUnsigned;
+
+		    /**
+		     * Returns this Long with bits logically shifted to the right by the given amount. This is an alias of {@link Long#shiftRightUnsigned}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shr_u = LongPrototype.shiftRightUnsigned;
+
+		    /**
+		     * Returns this Long with bits rotated to the left by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Rotated Long
+		     */
+		    LongPrototype.rotateLeft = function rotateLeft(numBits) {
+		      var b;
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      if (numBits === 32) return fromBits(this.high, this.low, this.unsigned);
+		      if (numBits < 32) {
+		        b = 32 - numBits;
+		        return fromBits(
+		          (this.low << numBits) | (this.high >>> b),
+		          (this.high << numBits) | (this.low >>> b),
+		          this.unsigned,
+		        );
+		      }
+		      numBits -= 32;
+		      b = 32 - numBits;
+		      return fromBits(
+		        (this.high << numBits) | (this.low >>> b),
+		        (this.low << numBits) | (this.high >>> b),
+		        this.unsigned,
+		      );
+		    };
+		    /**
+		     * Returns this Long with bits rotated to the left by the given amount. This is an alias of {@link Long#rotateLeft}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Rotated Long
+		     */
+		    LongPrototype.rotl = LongPrototype.rotateLeft;
+
+		    /**
+		     * Returns this Long with bits rotated to the right by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Rotated Long
+		     */
+		    LongPrototype.rotateRight = function rotateRight(numBits) {
+		      var b;
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      if (numBits === 32) return fromBits(this.high, this.low, this.unsigned);
+		      if (numBits < 32) {
+		        b = 32 - numBits;
+		        return fromBits(
+		          (this.high << b) | (this.low >>> numBits),
+		          (this.low << b) | (this.high >>> numBits),
+		          this.unsigned,
+		        );
+		      }
+		      numBits -= 32;
+		      b = 32 - numBits;
+		      return fromBits(
+		        (this.low << b) | (this.high >>> numBits),
+		        (this.high << b) | (this.low >>> numBits),
+		        this.unsigned,
+		      );
+		    };
+		    /**
+		     * Returns this Long with bits rotated to the right by the given amount. This is an alias of {@link Long#rotateRight}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Rotated Long
+		     */
+		    LongPrototype.rotr = LongPrototype.rotateRight;
+
+		    /**
+		     * Converts this Long to signed.
+		     * @this {!Long}
+		     * @returns {!Long} Signed long
+		     */
+		    LongPrototype.toSigned = function toSigned() {
+		      if (!this.unsigned) return this;
+		      return fromBits(this.low, this.high, false);
+		    };
+
+		    /**
+		     * Converts this Long to unsigned.
+		     * @this {!Long}
+		     * @returns {!Long} Unsigned long
+		     */
+		    LongPrototype.toUnsigned = function toUnsigned() {
+		      if (this.unsigned) return this;
+		      return fromBits(this.low, this.high, true);
+		    };
+
+		    /**
+		     * Converts this Long to its byte representation.
+		     * @param {boolean=} le Whether little or big endian, defaults to big endian
+		     * @this {!Long}
+		     * @returns {!Array.<number>} Byte representation
+		     */
+		    LongPrototype.toBytes = function toBytes(le) {
+		      return le ? this.toBytesLE() : this.toBytesBE();
+		    };
+
+		    /**
+		     * Converts this Long to its little endian byte representation.
+		     * @this {!Long}
+		     * @returns {!Array.<number>} Little endian byte representation
+		     */
+		    LongPrototype.toBytesLE = function toBytesLE() {
+		      var hi = this.high,
+		        lo = this.low;
+		      return [
+		        lo & 0xff,
+		        (lo >>> 8) & 0xff,
+		        (lo >>> 16) & 0xff,
+		        lo >>> 24,
+		        hi & 0xff,
+		        (hi >>> 8) & 0xff,
+		        (hi >>> 16) & 0xff,
+		        hi >>> 24,
+		      ];
+		    };
+
+		    /**
+		     * Converts this Long to its big endian byte representation.
+		     * @this {!Long}
+		     * @returns {!Array.<number>} Big endian byte representation
+		     */
+		    LongPrototype.toBytesBE = function toBytesBE() {
+		      var hi = this.high,
+		        lo = this.low;
+		      return [
+		        hi >>> 24,
+		        (hi >>> 16) & 0xff,
+		        (hi >>> 8) & 0xff,
+		        hi & 0xff,
+		        lo >>> 24,
+		        (lo >>> 16) & 0xff,
+		        (lo >>> 8) & 0xff,
+		        lo & 0xff,
+		      ];
+		    };
+
+		    /**
+		     * Creates a Long from its byte representation.
+		     * @param {!Array.<number>} bytes Byte representation
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @param {boolean=} le Whether little or big endian, defaults to big endian
+		     * @returns {Long} The corresponding Long value
+		     */
+		    Long.fromBytes = function fromBytes(bytes, unsigned, le) {
+		      return le
+		        ? Long.fromBytesLE(bytes, unsigned)
+		        : Long.fromBytesBE(bytes, unsigned);
+		    };
+
+		    /**
+		     * Creates a Long from its little endian byte representation.
+		     * @param {!Array.<number>} bytes Little endian byte representation
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {Long} The corresponding Long value
+		     */
+		    Long.fromBytesLE = function fromBytesLE(bytes, unsigned) {
+		      return new Long(
+		        bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24),
+		        bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24),
+		        unsigned,
+		      );
+		    };
+
+		    /**
+		     * Creates a Long from its big endian byte representation.
+		     * @param {!Array.<number>} bytes Big endian byte representation
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {Long} The corresponding Long value
+		     */
+		    Long.fromBytesBE = function fromBytesBE(bytes, unsigned) {
+		      return new Long(
+		        (bytes[4] << 24) | (bytes[5] << 16) | (bytes[6] << 8) | bytes[7],
+		        (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3],
+		        unsigned,
+		      );
+		    };
+
+		    // Support conversion to/from BigInt where available
+		    if (typeof BigInt === "function") {
+		      /**
+		       * Returns a Long representing the given big integer.
+		       * @function
+		       * @param {number} value The big integer value
+		       * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		       * @returns {!Long} The corresponding Long value
+		       */
+		      Long.fromBigInt = function fromBigInt(value, unsigned) {
+		        var lowBits = Number(BigInt.asIntN(32, value));
+		        var highBits = Number(BigInt.asIntN(32, value >> BigInt(32)));
+		        return fromBits(lowBits, highBits, unsigned);
+		      };
+
+		      // Override
+		      Long.fromValue = function fromValueWithBigInt(value, unsigned) {
+		        if (typeof value === "bigint") return Long.fromBigInt(value, unsigned);
+		        return fromValue(value, unsigned);
+		      };
+
+		      /**
+		       * Converts the Long to its big integer representation.
+		       * @this {!Long}
+		       * @returns {bigint}
+		       */
+		      LongPrototype.toBigInt = function toBigInt() {
+		        var lowBigInt = BigInt(this.low >>> 0);
+		        var highBigInt = BigInt(this.unsigned ? this.high >>> 0 : this.high);
+		        return (highBigInt << BigInt(32)) | lowBigInt;
+		      };
+		    }
+		    (_exports.default = Long);
+		  },
+		); 
+	} (umd$1, umd$1.exports));
+	return umd$1.exports;
+}
+
 var hasRequiredMinimal$1;
 
 function requireMinimal$1 () {
@@ -56087,9 +59838,6 @@ function requireMinimal$1 () {
 		// float handling accross browsers
 		util.float = requireFloat();
 
-		// requires modules optionally and hides the call from bundlers
-		util.inquire = requireInquire();
-
 		// converts to / from utf8 encoded strings
 		util.utf8 = requireUtf8();
 
@@ -56098,6 +59846,18 @@ function requireMinimal$1 () {
 
 		// utility to work with the low and high bits of a 64 bit value
 		util.LongBits = requireLongbits();
+
+		/**
+		 * Tests if the specified key can affect object prototypes.
+		 * @memberof util
+		 * @param {string} key Key to test
+		 * @returns {boolean} `true` if the key is unsafe
+		 */
+		function isUnsafeProperty(key) {
+		    return key === "__proto__" || key === "prototype" || key === "constructor";
+		}
+
+		util.isUnsafeProperty = isUnsafeProperty;
 
 		/**
 		 * Whether running within node or not.
@@ -56181,7 +59941,7 @@ function requireMinimal$1 () {
 		 */
 		util.isSet = function isSet(obj, prop) {
 		    var value = obj[prop];
-		    if (value != null && obj.hasOwnProperty(prop)) // eslint-disable-line eqeqeq, no-prototype-builtins
+		    if (value != null && Object.hasOwnProperty.call(obj, prop)) // eslint-disable-line eqeqeq
 		        return typeof value !== "object" || (Array.isArray(value) ? value.length : Object.keys(value).length) > 0;
 		    return false;
 		};
@@ -56199,7 +59959,7 @@ function requireMinimal$1 () {
 		 */
 		util.Buffer = (function() {
 		    try {
-		        var Buffer = util.inquire("buffer").Buffer;
+		        var Buffer = util.global.Buffer;
 		        // refuse to use non-node buffers if not explicitly assigned (perf reasons):
 		        return Buffer.prototype.utf8Write ? Buffer : /* istanbul ignore next */ null;
 		    } catch (e) {
@@ -56253,7 +60013,15 @@ function requireMinimal$1 () {
 		 */
 		util.Long = /* istanbul ignore next */ util.global.dcodeIO && /* istanbul ignore next */ util.global.dcodeIO.Long
 		         || /* istanbul ignore next */ util.global.Long
-		         || util.inquire("long");
+		         || (function() {
+		                try {
+		                    var Long = requireUmd();
+		                    return Long && Long.isLong ? Long : null;
+		                } catch (e) {
+		                    /* istanbul ignore next */
+		                    return null;
+		                }
+		            })();
 
 		/**
 		 * Regular expression used to verify 2 bit (`bool`) map keys.
@@ -56304,18 +60072,54 @@ function requireMinimal$1 () {
 		 * Merges the properties of the source object into the destination object.
 		 * @memberof util
 		 * @param {Object.<string,*>} dst Destination object
-		 * @param {Object.<string,*>} src Source object
-		 * @param {boolean} [ifNotSet=false] Merges only if the key is not already set
+		 * @param {...(Object.<string,*>|boolean)} src Source objects, optionally followed by an `ifNotSet` flag
 		 * @returns {Object.<string,*>} Destination object
 		 */
-		function merge(dst, src, ifNotSet) { // used by converters
-		    for (var keys = Object.keys(src), i = 0; i < keys.length; ++i)
-		        if (dst[keys[i]] === undefined || !ifNotSet)
-		            dst[keys[i]] = src[keys[i]];
+		function merge(dst) { // used by converters
+		    var ifNotSet = typeof arguments[arguments.length - 1] === "boolean",
+		        limit = ifNotSet ? arguments.length - 1 : arguments.length;
+		    ifNotSet = ifNotSet && arguments[arguments.length - 1];
+		    for (var a = 1; a < limit; ++a) {
+		        var src = arguments[a];
+		        if (!src)
+		            continue;
+		        for (var keys = Object.keys(src), i = 0; i < keys.length; ++i)
+		            if (!isUnsafeProperty(keys[i]) && (dst[keys[i]] === undefined || !ifNotSet))
+		                dst[keys[i]] = src[keys[i]];
+		    }
 		    return dst;
 		}
 
 		util.merge = merge;
+
+		/**
+		 * Schema declaration nesting limit.
+		 * @memberof util
+		 * @type {number}
+		 */
+		util.nestingLimit = 32; // protoc: MaxMessageDeclarationNestingDepth
+
+		/**
+		 * Recursion limit.
+		 * @memberof util
+		 * @type {number}
+		 */
+		util.recursionLimit = 100; // protoc: CodedInputStream::default_recursion_limit_
+
+		/**
+		 * Makes a property safe for assignment as an own property.
+		 * @memberof util
+		 * @param {Object.<string,*>} obj Object
+		 * @param {string} key Property key
+		 * @returns {undefined}
+		 */
+		util.makeProp = function makeProp(obj, key) {
+		    Object.defineProperty(obj, key, {
+		        enumerable: true,
+		        configurable: true,
+		        writable: true
+		    });
+		};
 
 		/**
 		 * Converts the first character of a string to lower case.
@@ -56746,7 +60550,7 @@ function requireWriter () {
 	 * @returns {Writer} `this`
 	 */
 	Writer.prototype.int32 = function write_int32(value) {
-	    return value < 0
+	    return (value |= 0) < 0
 	        ? this._push(writeVarint64, 10, LongBits.fromNumber(value)) // 10 bytes per spec
 	        : this.uint32(value);
 	};
@@ -56761,16 +60565,18 @@ function requireWriter () {
 	};
 
 	function writeVarint64(val, buf, pos) {
-	    while (val.hi) {
-	        buf[pos++] = val.lo & 127 | 128;
-	        val.lo = (val.lo >>> 7 | val.hi << 25) >>> 0;
-	        val.hi >>>= 7;
+	    var lo = val.lo,
+	        hi = val.hi;
+	    while (hi) {
+	        buf[pos++] = lo & 127 | 128;
+	        lo = (lo >>> 7 | hi << 25) >>> 0;
+	        hi >>>= 7;
 	    }
-	    while (val.lo > 127) {
-	        buf[pos++] = val.lo & 127 | 128;
-	        val.lo = val.lo >>> 7;
+	    while (lo > 127) {
+	        buf[pos++] = lo & 127 | 128;
+	        lo = lo >>> 7;
 	    }
-	    buf[pos++] = val.lo;
+	    buf[pos++] = lo;
 	}
 
 	/**
@@ -57165,6 +60971,20 @@ function requireReader () {
 
 	Reader.prototype._slice = util.Array.prototype.subarray || /* istanbul ignore next */ util.Array.prototype.slice;
 
+	function readVarint32NearEnd(reader) {
+	    // Safely read up to four bytes of a varint32 near the reader limit
+	    var value = 0;
+	    for (var i = 0; i < 4; ++i) {
+	        if (reader.pos >= reader.len)
+	            throw indexOutOfRange(reader);
+	        var b = reader.buf[reader.pos++];
+	        value = (value | (b & 127) << i * 7) >>> 0;
+	        if (b < 128)
+	            return value;
+	    }
+	    throw indexOutOfRange(reader);
+	}
+
 	/**
 	 * Reads a varint as an unsigned 32 bit value.
 	 * @function
@@ -57173,6 +60993,12 @@ function requireReader () {
 	Reader.prototype.uint32 = (function read_uint32_setup() {
 	    var value = 4294967295; // optimizer type-hint, tends to deopt otherwise (?!)
 	    return function read_uint32() {
+	        if (this.len - this.pos < 5) {
+	            if (this.pos >= this.len)
+	                throw indexOutOfRange(this);
+	            if (this.buf[this.pos] >= 128)
+	                return readVarint32NearEnd(this);
+	        }
 	        value = (         this.buf[this.pos] & 127       ) >>> 0; if (this.buf[this.pos++] < 128) return value;
 	        value = (value | (this.buf[this.pos] & 127) <<  7) >>> 0; if (this.buf[this.pos++] < 128) return value;
 	        value = (value | (this.buf[this.pos] & 127) << 14) >>> 0; if (this.buf[this.pos++] < 128) return value;
@@ -57440,11 +61266,21 @@ function requireReader () {
 	};
 
 	/**
+	 * Recursion limit.
+	 * @type {number}
+	 */
+	Reader.recursionLimit = util.recursionLimit;
+
+	/**
 	 * Skips the next element of the specified wire type.
 	 * @param {number} wireType Wire type received
+	 * @param {number} [depth] Depth of recursion to control nested calls; 0 if omitted
 	 * @returns {Reader} `this`
 	 */
-	Reader.prototype.skipType = function(wireType) {
+	Reader.prototype.skipType = function(wireType, depth) {
+	    if (depth === undefined) depth = 0;
+	    if (depth > Reader.recursionLimit)
+	        throw Error("maximum nesting depth exceeded");
 	    switch (wireType) {
 	        case 0:
 	            this.skip();
@@ -57457,7 +61293,7 @@ function requireReader () {
 	            break;
 	        case 3:
 	            while ((wireType = this.uint32() & 7) !== 4) {
-	                this.skipType(wireType);
+	                this.skipType(wireType, depth + 1);
 	            }
 	            break;
 	        case 5:
@@ -57766,7 +61602,7 @@ var hasRequiredRoots;
 function requireRoots () {
 	if (hasRequiredRoots) return roots;
 	hasRequiredRoots = 1;
-	roots = {};
+	roots = Object.create(null);
 
 	/**
 	 * Named roots.
@@ -57843,6 +61679,8 @@ function requireCodegen () {
 	hasRequiredCodegen = 1;
 	codegen_1 = codegen;
 
+	var reservedRe = /^(?:do|if|in|for|let|new|try|var|case|else|enum|eval|false|null|this|true|void|with|break|catch|class|const|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$/;
+
 	/**
 	 * Begins generating a function.
 	 * @memberof util
@@ -57917,7 +61755,7 @@ function requireCodegen () {
 	    }
 
 	    function toString(functionNameOverride) {
-	        return "function " + (functionNameOverride || functionName || "") + "(" + (functionParams && functionParams.join(",") || "") + "){\n  " + body.join("\n  ") + "\n}";
+	        return "function " + safeFunctionName(functionNameOverride || functionName) + "(" + (functionParams && functionParams.join(",") || "") + "){\n  " + body.join("\n  ") + "\n}";
 	    }
 
 	    Codegen.toString = toString;
@@ -57939,7 +61777,37 @@ function requireCodegen () {
 	 * @type {boolean}
 	 */
 	codegen.verbose = false;
+
+	function safeFunctionName(name) {
+	    if (!name)
+	        return "";
+	    name = String(name).replace(/[^\w$]/g, "");
+	    if (!name)
+	        return "";
+	    if (/^\d/.test(name))
+	        name = "_" + name;
+	    return reservedRe.test(name) ? name + "_" : name;
+	}
 	return codegen_1;
+}
+
+var fs_1$1;
+var hasRequiredFs$1;
+
+function requireFs$1 () {
+	if (hasRequiredFs$1) return fs_1$1;
+	hasRequiredFs$1 = 1;
+
+	var fs = null;
+	try {
+	    fs = require(/* webpackIgnore: true */ "fs");
+	    if (!fs || !fs.readFile || !fs.readFileSync)
+	        fs = null;
+	} catch (e) {
+	    // `fs` is unavailable in browsers and browser-like bundles.
+	}
+	fs_1$1 = fs;
+	return fs_1$1;
 }
 
 var fetch_1;
@@ -57951,9 +61819,7 @@ function requireFetch () {
 	fetch_1 = fetch;
 
 	var asPromise = requireAspromise(),
-	    inquire   = requireInquire();
-
-	var fs = inquire("fs");
+	    fs        = requireFs$1();
 
 	/**
 	 * Node-style callback as used by {@link util.fetch}.
@@ -57966,8 +61832,7 @@ function requireFetch () {
 
 	/**
 	 * Options as used by {@link util.fetch}.
-	 * @typedef FetchOptions
-	 * @type {Object}
+	 * @interface IFetchOptions
 	 * @property {boolean} [binary=false] Whether expecting a binary response
 	 * @property {boolean} [xhr=false] If `true`, forces the use of XMLHttpRequest
 	 */
@@ -57976,7 +61841,7 @@ function requireFetch () {
 	 * Fetches the contents of a file.
 	 * @memberof util
 	 * @param {string} filename File path or url
-	 * @param {FetchOptions} options Fetch options
+	 * @param {IFetchOptions} options Fetch options
 	 * @param {FetchCallback} callback Callback function
 	 * @returns {undefined}
 	 */
@@ -58019,7 +61884,7 @@ function requireFetch () {
 	 * @name util.fetch
 	 * @function
 	 * @param {string} path File path or url
-	 * @param {FetchOptions} [options] Fetch options
+	 * @param {IFetchOptions} [options] Fetch options
 	 * @returns {Promise<string|Uint8Array>} Promise
 	 * @variation 3
 	 */
@@ -58141,6 +62006,43 @@ function requirePath () {
 	return path;
 }
 
+var patterns = {};
+
+var hasRequiredPatterns;
+
+function requirePatterns () {
+	if (hasRequiredPatterns) return patterns;
+	hasRequiredPatterns = 1;
+	(function (exports$1) {
+
+		var patterns = exports$1;
+
+		patterns.numberRe    = /^(?![eE])[0-9]*(?:\.[0-9]*)?(?:[eE][+-]?[0-9]+)?$/;
+		patterns.typeRefRe   = /^(?:\.?[a-zA-Z_][a-zA-Z_0-9]*)(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*$/;
+		patterns.reservedRe  = /^(?:do|if|in|for|let|new|try|var|case|else|enum|eval|false|null|this|true|void|with|break|catch|class|const|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$/; 
+	} (patterns));
+	return patterns;
+}
+
+var fs_1;
+var hasRequiredFs;
+
+function requireFs () {
+	if (hasRequiredFs) return fs_1;
+	hasRequiredFs = 1;
+
+	var fs = null;
+	try {
+	    fs = require(/* webpackIgnore: true */ "fs");
+	    if (!fs || !fs.readFile || !fs.readFileSync)
+	        fs = null;
+	} catch (e) {
+	    // `fs` is unavailable in browsers and browser-like bundles.
+	}
+	fs_1 = fs;
+	return fs_1;
+}
+
 var namespace;
 var hasRequiredNamespace;
 
@@ -58177,11 +62079,13 @@ function requireNamespace () {
 	 * @function
 	 * @param {string} name Namespace name
 	 * @param {Object.<string,*>} json JSON object
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Namespace} Created namespace
 	 * @throws {TypeError} If arguments are invalid
 	 */
-	Namespace.fromJSON = function fromJSON(name, json) {
-	    return new Namespace(name, json.options).addJSON(json.nested);
+	Namespace.fromJSON = function fromJSON(name, json, depth) {
+	    depth = util.checkDepth(depth);
+	    return new Namespace(name, json.options).addJSON(json.nested, depth);
 	};
 
 	/**
@@ -58264,7 +62168,7 @@ function requireNamespace () {
 	     * @type {Object.<string,ReflectionObject|null>}
 	     * @private
 	     */
-	    this._lookupCache = {};
+	    this._lookupCache = Object.create(null);
 
 	    /**
 	     * Whether or not objects contained in this namespace need feature resolution.
@@ -58283,12 +62187,12 @@ function requireNamespace () {
 
 	function clearCache(namespace) {
 	    namespace._nestedArray = null;
-	    namespace._lookupCache = {};
+	    namespace._lookupCache = Object.create(null);
 
 	    // Also clear parent caches, since they include nested lookups.
 	    var parent = namespace;
 	    while(parent = parent.parent) {
-	        parent._lookupCache = {};
+	        parent._lookupCache = Object.create(null);
 	    }
 	    return namespace;
 	}
@@ -58339,9 +62243,11 @@ function requireNamespace () {
 	/**
 	 * Adds nested objects to this namespace from nested object descriptors.
 	 * @param {Object.<string,AnyNestedObject>} nestedJson Any nested object descriptors
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Namespace} `this`
 	 */
-	Namespace.prototype.addJSON = function addJSON(nestedJson) {
+	Namespace.prototype.addJSON = function addJSON(nestedJson, depth) {
+	    depth = util.checkDepth(depth);
 	    var ns = this;
 	    /* istanbul ignore else */
 	    if (nestedJson) {
@@ -58356,7 +62262,7 @@ function requireNamespace () {
 	                ? Service.fromJSON
 	                : nested.id !== undefined
 	                ? Field.fromJSON
-	                : Namespace.fromJSON )(names[i], nested)
+	                : Namespace.fromJSON )(names[i], nested, depth + 1)
 	            );
 	        }
 	    }
@@ -58369,8 +62275,9 @@ function requireNamespace () {
 	 * @returns {ReflectionObject|null} The reflection object or `null` if it doesn't exist
 	 */
 	Namespace.prototype.get = function get(name) {
-	    return this.nested && this.nested[name]
-	        || null;
+	    return this.nested && Object.prototype.hasOwnProperty.call(this.nested, name)
+	        ? this.nested[name]
+	        : null;
 	};
 
 	/**
@@ -58381,7 +62288,7 @@ function requireNamespace () {
 	 * @throws {Error} If there is no such enum
 	 */
 	Namespace.prototype.getEnum = function getEnum(name) {
-	    if (this.nested && this.nested[name] instanceof Enum)
+	    if (this.nested && Object.prototype.hasOwnProperty.call(this.nested, name) && this.nested[name] instanceof Enum)
 	        return this.nested[name].values;
 	    throw Error("no such enum: " + name);
 	};
@@ -58397,6 +62304,9 @@ function requireNamespace () {
 
 	    if (!(object instanceof Field && object.extend !== undefined || object instanceof Type  || object instanceof OneOf || object instanceof Enum || object instanceof Service || object instanceof Namespace))
 	        throw TypeError("object must be a valid nested object");
+
+	    if (object.name === "__proto__")
+	        return this;
 
 	    if (!this.nested)
 	        this.nested = {};
@@ -58477,6 +62387,8 @@ function requireNamespace () {
 	        throw TypeError("illegal path");
 	    if (path && path.length && path[0] === "")
 	        throw Error("path must be relative");
+	    if (path.length > util.recursionLimit)
+	        throw Error("max depth exceeded");
 
 	    var ptr = this;
 	    while (path.length > 0) {
@@ -58610,8 +62522,10 @@ function requireNamespace () {
 	    // Otherwise try each nested namespace
 	    } else {
 	        for (var i = 0; i < this.nestedArray.length; ++i)
-	            if (this._nestedArray[i] instanceof Namespace && (found = this._nestedArray[i]._lookupImpl(path, flatPath)))
+	            if (this._nestedArray[i] instanceof Namespace && (found = this._nestedArray[i]._lookupImpl(path, flatPath))) {
 	                exact = found;
+	                break;
+	            }
 	    }
 
 	    // Set this even when null, so that when we walk up the tree we can quickly bail on repeated checks back down.
@@ -59050,17 +62964,19 @@ function requireService () {
 	 * Constructs a service from a service descriptor.
 	 * @param {string} name Service name
 	 * @param {IService} json Service descriptor
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Service} Created service
 	 * @throws {TypeError} If arguments are invalid
 	 */
-	Service.fromJSON = function fromJSON(name, json) {
+	Service.fromJSON = function fromJSON(name, json, depth) {
+	    depth = util.checkDepth(depth);
 	    var service = new Service(name, json.options);
 	    /* istanbul ignore else */
 	    if (json.methods)
 	        for (var names = Object.keys(json.methods), i = 0; i < names.length; ++i)
 	            service.add(Method.fromJSON(names[i], json.methods[names[i]]));
 	    if (json.nested)
-	        service.addJSON(json.nested);
+	        service.addJSON(json.nested, depth);
 	    if (json.edition)
 	        service._edition = json.edition;
 	    service.comment = json.comment;
@@ -59106,8 +63022,9 @@ function requireService () {
 	 * @override
 	 */
 	Service.prototype.get = function get(name) {
-	    return this.methods[name]
-	        || Namespace.prototype.get.call(this, name);
+	    return Object.prototype.hasOwnProperty.call(this.methods, name)
+	        ? this.methods[name]
+	        : Namespace.prototype.get.call(this, name);
 	};
 
 	/**
@@ -59142,12 +63059,13 @@ function requireService () {
 	 * @override
 	 */
 	Service.prototype.add = function add(object) {
-
 	    /* istanbul ignore if */
 	    if (this.get(object.name))
 	        throw Error("duplicate name '" + object.name + "' in " + this);
 
 	    if (object instanceof Method) {
+	        if (object.name === "__proto__")
+	            return this;
 	        this.methods[object.name] = object;
 	        object.parent = this;
 	        return clearCache(this);
@@ -59183,11 +63101,11 @@ function requireService () {
 	    var rpcService = new rpc.Service(rpcImpl, requestDelimited, responseDelimited);
 	    for (var i = 0, method; i < /* initializes */ this.methodsArray.length; ++i) {
 	        var methodName = util.lcFirst((method = this._methodsArray[i]).resolve().name).replace(/[^$\w_]/g, "");
-	        rpcService[methodName] = util.codegen(["r","c"], util.isReserved(methodName) ? methodName + "_" : methodName)("return this.rpcCall(m,q,s,r,c)")({
-	            m: method,
-	            q: method.resolvedRequestType.ctor,
-	            s: method.resolvedResponseType.ctor
-	        });
+	        rpcService[methodName] = (function(method, requestType, responseType) {
+	            return function rpcMethod(request, callback) {
+	                return rpc.Service.prototype.rpcCall.call(this, method, requestType, responseType, request, callback);
+	            };
+	        })(method, method.resolvedRequestType.ctor, method.resolvedResponseType.ctor);
 	    }
 	    return rpcService;
 	};
@@ -59214,8 +63132,12 @@ function requireMessage () {
 	function Message(properties) {
 	    // not used internally
 	    if (properties)
-	        for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-	            this[keys[i]] = properties[keys[i]];
+	        for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i) {
+	            var key = keys[i];
+	            if (key === "__proto__")
+	                continue;
+	            this[key] = properties[key];
+	        }
 	}
 
 	/**
@@ -59364,10 +63286,23 @@ function requireDecoder () {
 	 */
 	function decoder(mtype) {
 	    /* eslint-disable no-unexpected-multiline */
-	    var gen = util.codegen(["r", "l", "e"], mtype.name + "$decode")
+	    var gen = util.codegen(["r", "l", "e", "n"], mtype.name + "$decode")
 	    ("if(!(r instanceof Reader))")
 	        ("r=Reader.create(r)")
-	    ("var c=l===undefined?r.len:r.pos+l,m=new this.ctor" + (mtype.fieldsArray.filter(function(field) { return field.map; }).length ? ",k,value" : ""))
+	    ("if(n===undefined)n=0")
+	    ("if(n>Reader.recursionLimit)")
+	        ("throw Error(\"maximum nesting depth exceeded\")")
+	    ("var c,m" + (mtype.fieldsArray.filter(function(field) { return field.map; }).length ? ",k,value" : ""))
+	    ("if(l===undefined)")
+	        ("c=r.len")
+	    ("else{")
+	        ("c=r.pos+l")
+	        ("if(c>r.len)")
+	            ("throw RangeError(\"index out of range\")")
+	        ("l=r.len")
+	        ("r.len=c")
+	    ("}")
+	    ("m=new this.ctor")
 	    ("while(r.pos<c){")
 	        ("var t=r.uint32()")
 	        ("if(t===e)")
@@ -59385,7 +63320,10 @@ function requireDecoder () {
 	        if (field.map) { gen
 	                ("if(%s===util.emptyObject)", ref)
 	                    ("%s={}", ref)
-	                ("var c2 = r.uint32()+r.pos");
+	                ("var c2=r.uint32()+r.pos")
+	                ("if(c2>r.len)")
+	                    ("throw RangeError(\"index out of range\")")
+	                ("r.len=c2");
 
 	            if (types.defaults[field.keyType] !== undefined) gen
 	                ("k=%j", types.defaults[field.keyType]);
@@ -59405,22 +63343,30 @@ function requireDecoder () {
 	                        ("case 2:");
 
 	            if (types.basic[type] === undefined) gen
-	                            ("value=types[%i].decode(r,r.uint32())", i); // can't be groups
+	                            ("value=types[%i].decode(r,r.uint32(),undefined,n+1)", i); // can't be groups
 	            else gen
 	                            ("value=r.%s()", type);
 
 	            gen
 	                            ("break")
 	                        ("default:")
-	                            ("r.skipType(tag2&7)")
+	                            ("r.skipType(tag2&7,n)")
 	                            ("break")
 	                    ("}")
-	                ("}");
+	                ("}")
+	                ("if(r.pos!==c2)")
+	                    ("throw RangeError(\"index out of range\")")
+	                ("r.len=c");
 
 	            if (types.long[field.keyType] !== undefined) gen
 	                ("%s[typeof k===\"object\"?util.longToHash(k):k]=value", ref);
-	            else gen
+	            else {
+	                if (field.keyType === "string") gen
+	                ("if(k===\"__proto__\")")
+	                    ("util.makeProp(%s,k)", ref);
+	                gen
 	                ("%s[k]=value", ref);
+	            }
 
 	        // Repeated fields
 	        } else if (field.repeated) { gen
@@ -59432,21 +63378,27 @@ function requireDecoder () {
 	            if (types.packed[type] !== undefined) gen
 	                ("if((t&7)===2){")
 	                    ("var c2=r.uint32()+r.pos")
+	                    ("if(c2>r.len)")
+	                        ("throw RangeError(\"index out of range\")")
+	                    ("r.len=c2")
 	                    ("while(r.pos<c2)")
 	                        ("%s.push(r.%s())", ref, type)
+	                    ("if(r.pos!==c2)")
+	                        ("throw RangeError(\"index out of range\")")
+	                    ("r.len=c")
 	                ("}else");
 
 	            // Non-packed
 	            if (types.basic[type] === undefined) gen(field.delimited
-	                    ? "%s.push(types[%i].decode(r,undefined,((t&~7)|4)))"
-	                    : "%s.push(types[%i].decode(r,r.uint32()))", ref, i);
+	                    ? "%s.push(types[%i].decode(r,undefined,((t&~7)|4),n+1))"
+	                    : "%s.push(types[%i].decode(r,r.uint32(),undefined,n+1))", ref, i);
 	            else gen
 	                    ("%s.push(r.%s())", ref, type);
 
 	        // Non-repeated
 	        } else if (types.basic[type] === undefined) gen(field.delimited
-	                ? "%s=types[%i].decode(r,undefined,((t&~7)|4))"
-	                : "%s=types[%i].decode(r,r.uint32())", ref, i);
+	                ? "%s=types[%i].decode(r,undefined,((t&~7)|4),n+1)"
+	                : "%s=types[%i].decode(r,r.uint32(),undefined,n+1)", ref, i);
 	        else gen
 	                ("%s=r.%s()", ref, type);
 	        gen
@@ -59455,17 +63407,24 @@ function requireDecoder () {
 	        // Unknown fields
 	    } gen
 	            ("default:")
-	                ("r.skipType(t&7)")
+	                ("r.skipType(t&7,n)")
 	                ("break")
 
 	        ("}")
+	    ("}");
+
+	    gen
+	    ("if(l!==undefined){")
+	        ("if(r.pos!==c)")
+	            ("throw RangeError(\"index out of range\")")
+	        ("r.len=l")
 	    ("}");
 
 	    // Field presence
 	    for (i = 0; i < mtype._fieldsArray.length; ++i) {
 	        var rfield = mtype._fieldsArray[i];
 	        if (rfield.required) gen
-	    ("if(!m.hasOwnProperty(%j))", rfield.name)
+	            ("if(!Object.hasOwnProperty.call(m,%j))", rfield.name)
 	        ("throw util.ProtocolError(%j,{instance:m})", missing(rfield));
 	    }
 
@@ -59515,7 +63474,7 @@ function requireVerifier () {
 	        } else {
 	            gen
 	            ("{")
-	                ("var e=types[%i].verify(%s);", fieldIndex, ref)
+	                ("var e=types[%i].verify(%s,n+1);", fieldIndex, ref)
 	                ("if(e)")
 	                    ("return%j+e", field.name + ".")
 	            ("}");
@@ -59605,9 +63564,12 @@ function requireVerifier () {
 	function verifier(mtype) {
 	    /* eslint-disable no-unexpected-multiline */
 
-	    var gen = util.codegen(["m"], mtype.name + "$verify")
+	    var gen = util.codegen(["m", "n"], mtype.name + "$verify")
 	    ("if(typeof m!==\"object\"||m===null)")
-	        ("return%j", "object expected");
+	        ("return%j", "object expected")
+	    ("if(n===undefined)n=0")
+	    ("if(n>util.recursionLimit)")
+	        ("return%j", "maximum nesting depth exceeded");
 	    var oneofs = mtype.oneofsArray,
 	        seenFirstField = {};
 	    if (oneofs.length) gen
@@ -59618,7 +63580,7 @@ function requireVerifier () {
 	            ref   = "m" + util.safeProp(field.name);
 
 	        if (field.optional) gen
-	        ("if(%s!=null&&m.hasOwnProperty(%j)){", ref, field.name); // !== undefined && !== null
+	        ("if(%s!=null&&Object.hasOwnProperty.call(m,%j)){", ref, field.name); // !== undefined && !== null
 
 	        // map fields
 	        if (field.map) { gen
@@ -59711,9 +63673,9 @@ function requireConverter () {
 		            } gen
 		            ("}");
 		        } else gen
-		            ("if(typeof d%s!==\"object\")", prop)
+		            ("if(!util.isObject(d%s))", prop)
 		                ("throw TypeError(%j)", field.fullName + ": object expected")
-		            ("m%s=types[%i].fromObject(d%s)", prop, fieldIndex, prop);
+		            ("m%s=types[%i].fromObject(d%s,n+1)", prop, fieldIndex, prop);
 		    } else {
 		        var isUnsigned = false;
 		        switch (field.type) {
@@ -59731,14 +63693,14 @@ function requireConverter () {
 		                ("m%s=d%s|0", prop, prop);
 		                break;
 		            case "uint64":
+		            case "fixed64":
 		                isUnsigned = true;
 		                // eslint-disable-next-line no-fallthrough
 		            case "int64":
 		            case "sint64":
-		            case "fixed64":
 		            case "sfixed64": gen
 		                ("if(util.Long)")
-		                    ("(m%s=util.Long.fromValue(d%s)).unsigned=%j", prop, prop, isUnsigned)
+		                    ("m%s=util.Long.fromValue(d%s,%j)", prop, prop, isUnsigned)
 		                ("else if(typeof d%s===\"string\")", prop)
 		                    ("m%s=parseInt(d%s,10)", prop, prop)
 		                ("else if(typeof d%s===\"number\")", prop)
@@ -59775,11 +63737,17 @@ function requireConverter () {
 		converter.fromObject = function fromObject(mtype) {
 		    /* eslint-disable no-unexpected-multiline, block-scoped-var, no-redeclare */
 		    var fields = mtype.fieldsArray;
-		    var gen = util.codegen(["d"], mtype.name + "$fromObject")
+		    var gen = util.codegen(["d", "n"], mtype.name + "$fromObject")
 		    ("if(d instanceof this.ctor)")
 		        ("return d");
 		    if (!fields.length) return gen
 		    ("return new this.ctor");
+		    gen
+		    ("if(!util.isObject(d))")
+		        ("throw TypeError(%j)", mtype.fullName + ": object expected")
+		    ("if(n===undefined)n=0")
+		    ("if(n>util.recursionLimit)")
+		        ("throw Error(\"maximum nesting depth exceeded\")");
 		    gen
 		    ("var m=new this.ctor");
 		    for (var i = 0; i < fields.length; ++i) {
@@ -59789,10 +63757,13 @@ function requireConverter () {
 		        // Map fields
 		        if (field.map) { gen
 		    ("if(d%s){", prop)
-		        ("if(typeof d%s!==\"object\")", prop)
+		        ("if(!util.isObject(d%s))", prop)
 		            ("throw TypeError(%j)", field.fullName + ": object expected")
 		        ("m%s={}", prop)
 		        ("for(var ks=Object.keys(d%s),i=0;i<ks.length;++i){", prop);
+		            gen
+		        ("if(ks[i]===\"__proto__\")")
+		            ("util.makeProp(m%s,ks[i])", prop);
 		            genValuePartial_fromObject(gen, field, /* not sorted */ i, prop + "[ks[i]]")
 		        ("}")
 		    ("}");
@@ -59836,7 +63807,7 @@ function requireConverter () {
 		        if (field.resolvedType instanceof Enum) gen
 		            ("d%s=o.enums===String?(types[%i].values[m%s]===undefined?m%s:types[%i].values[m%s]):m%s", prop, fieldIndex, prop, prop, fieldIndex, prop, prop);
 		        else gen
-		            ("d%s=types[%i].toObject(m%s,o)", prop, fieldIndex, prop);
+		            ("d%s=types[%i].toObject(m%s,o,q+1)", prop, fieldIndex, prop);
 		    } else {
 		        var isUnsigned = false;
 		        switch (field.type) {
@@ -59845,13 +63816,15 @@ function requireConverter () {
 		            ("d%s=o.json&&!isFinite(m%s)?String(m%s):m%s", prop, prop, prop, prop);
 		                break;
 		            case "uint64":
+		            case "fixed64":
 		                isUnsigned = true;
 		                // eslint-disable-next-line no-fallthrough
 		            case "int64":
 		            case "sint64":
-		            case "fixed64":
 		            case "sfixed64": gen
-		            ("if(typeof m%s===\"number\")", prop)
+		            ("if(typeof BigInt!==\"undefined\"&&o.longs===BigInt)")
+		                ("d%s=typeof m%s===\"number\"?BigInt(m%s):util.Long.fromBits(m%s.low>>>0,m%s.high>>>0,%j).toBigInt()", prop, prop, prop, prop, prop, isUnsigned)
+		            ("else if(typeof m%s===\"number\")", prop)
 		                ("d%s=o.longs===String?String(m%s):m%s", prop, prop, prop)
 		            ("else") // Long-like
 		                ("d%s=o.longs===String?util.Long.prototype.toString.call(m%s):o.longs===Number?new util.LongBits(m%s.low>>>0,m%s.high>>>0).toNumber(%s):m%s", prop, prop, prop, prop, isUnsigned ? "true": "", prop);
@@ -59878,9 +63851,12 @@ function requireConverter () {
 		    var fields = mtype.fieldsArray.slice().sort(util.compareFieldsById);
 		    if (!fields.length)
 		        return util.codegen()("return {}");
-		    var gen = util.codegen(["m", "o"], mtype.name + "$toObject")
+		    var gen = util.codegen(["m", "o", "q"], mtype.name + "$toObject")
 		    ("if(!o)")
 		        ("o={}")
+		    ("if(q===undefined)q=0")
+		    ("if(q>util.recursionLimit)")
+		        ("throw Error(\"max depth exceeded\")")
 		    ("var d={}");
 
 		    var repeatedFields = [],
@@ -59919,15 +63895,15 @@ function requireConverter () {
 		            else if (field.long) gen
 		        ("if(util.Long){")
 		            ("var n=new util.Long(%i,%i,%j)", field.typeDefault.low, field.typeDefault.high, field.typeDefault.unsigned)
-		            ("d%s=o.longs===String?n.toString():o.longs===Number?n.toNumber():n", prop)
+		            ("d%s=o.longs===String?n.toString():o.longs===Number?n.toNumber():typeof BigInt!==\"undefined\"&&o.longs===BigInt?n.toBigInt():n", prop)
 		        ("}else")
-		            ("d%s=o.longs===String?%j:%i", prop, field.typeDefault.toString(), field.typeDefault.toNumber());
+		            ("d%s=o.longs===String?%j:typeof BigInt!==\"undefined\"&&o.longs===BigInt?BigInt(%j):%i", prop, field.typeDefault.toString(), field.typeDefault.toString(), field.typeDefault.toNumber());
 		            else if (field.bytes) {
-		                var arrayDefault = "[" + Array.prototype.slice.call(field.typeDefault).join(",") + "]";
+		                var arrayDefault = Array.prototype.slice.call(field.typeDefault);
 		                gen
 		        ("if(o.bytes===String)d%s=%j", prop, String.fromCharCode.apply(String, field.typeDefault))
 		        ("else{")
-		            ("d%s=%s", prop, arrayDefault)
+		            ("d%s=%j", prop, arrayDefault)
 		            ("if(o.bytes!==Array)d%s=util.newBuffer(d%s)", prop, prop)
 		        ("}");
 		            } else gen
@@ -59947,6 +63923,9 @@ function requireConverter () {
 		    ("if(m%s&&(ks2=Object.keys(m%s)).length){", prop, prop)
 		        ("d%s={}", prop)
 		        ("for(var j=0;j<ks2.length;++j){");
+		            gen
+		        ("if(ks2[j]===\"__proto__\")")
+		            ("util.makeProp(d%s,ks2[j])", prop);
 		            genValuePartial_toObject(gen, field, /* sorted */ index, prop + "[ks2[j]]")
 		        ("}");
 		        } else if (field.repeated) { gen
@@ -59956,7 +63935,7 @@ function requireConverter () {
 		            genValuePartial_toObject(gen, field, /* sorted */ index, prop + "[j]")
 		        ("}");
 		        } else { gen
-		    ("if(m%s!=null&&m.hasOwnProperty(%j)){", prop, field.name); // !== undefined && !== null
+		    ("if(m%s!=null&&Object.hasOwnProperty.call(m,%j)){", prop, field.name); // !== undefined && !== null
 		        genValuePartial_toObject(gen, field, /* sorted */ index, prop);
 		        if (field.partOf) gen
 		        ("if(o.oneofs)")
@@ -59989,7 +63968,8 @@ function requireWrappers () {
 		 */
 		var wrappers = exports$1;
 
-		var Message = requireMessage();
+		var Message = requireMessage(),
+		    util    = requireMinimal$1();
 
 		/**
 		 * From object converter part of an {@link IWrapper}.
@@ -60020,7 +64000,11 @@ function requireWrappers () {
 		// Custom wrapper for Any
 		wrappers[".google.protobuf.Any"] = {
 
-		    fromObject: function(object) {
+		    fromObject: function(object, depth) {
+		        if (depth === undefined)
+		            depth = 0;
+		        if (depth > util.recursionLimit)
+		            throw Error("max depth exceeded");
 
 		        // unwrap value type if mapped
 		        if (object && object["@type"]) {
@@ -60038,15 +64022,19 @@ function requireWrappers () {
 		                }
 		                return this.create({
 		                    type_url: type_url,
-		                    value: type.encode(type.fromObject(object)).finish()
+		                    value: type.encode(type.fromObject(object, depth + 1)).finish()
 		                });
 		            }
 		        }
 
-		        return this.fromObject(object);
+		        return this.fromObject(object, depth);
 		    },
 
-		    toObject: function(message, options) {
+		    toObject: function(message, options, depth) {
+		        if (depth === undefined)
+		            depth = 0;
+		        if (depth > util.recursionLimit)
+		            throw Error("max depth exceeded");
 
 		        // Default prefix
 		        var googleApi = "type.googleapis.com/";
@@ -60062,12 +64050,12 @@ function requireWrappers () {
 		            var type = this.lookup(name);
 		            /* istanbul ignore else */
 		            if (type)
-		                message = type.decode(message.value);
+		                message = type.decode(message.value, undefined, undefined, depth + 1);
 		        }
 
 		        // wrap value if unmapped
 		        if (!(message instanceof this.ctor) && message instanceof Message) {
-		            var object = message.$type.toObject(message, options);
+		            var object = message.$type.toObject(message, options, depth + 1);
 		            var messageName = message.$type.fullName[0] === "." ?
 		                message.$type.fullName.slice(1) : message.$type.fullName;
 		            // Default to type.googleapis.com prefix if no prefix is used
@@ -60079,7 +64067,7 @@ function requireWrappers () {
 		            return object;
 		        }
 
-		        return this.toObject(message, options);
+		        return this.toObject(message, options, depth);
 		    }
 		}; 
 	} (wrappers));
@@ -60122,6 +64110,7 @@ function requireType () {
 	 * @param {Object.<string,*>} [options] Declared options
 	 */
 	function Type(name, options) {
+	    name = name.replace(/\W/g, "");
 	    Namespace.call(this, name, options);
 
 	    /**
@@ -60297,7 +64286,7 @@ function requireType () {
 	        else if (field.repeated) gen
 	            ("this%s=[]", util.safeProp(field.name));
 	    return gen
-	    ("if(p)for(var ks=Object.keys(p),i=0;i<ks.length;++i)if(p[ks[i]]!=null)") // omit undefined or null
+	    ("if(p)for(var ks=Object.keys(p),i=0;i<ks.length;++i)if(p[ks[i]]!=null&&ks[i]!==\"__proto__\")") // omit undefined or null
 	        ("this[ks[i]]=p[ks[i]]");
 	    /* eslint-enable no-unexpected-multiline */
 	};
@@ -60325,9 +64314,14 @@ function requireType () {
 	 * Creates a message type from a message type descriptor.
 	 * @param {string} name Message name
 	 * @param {IType} json Message type descriptor
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Type} Created message type
 	 */
-	Type.fromJSON = function fromJSON(name, json) {
+	Type.fromJSON = function fromJSON(name, json, depth) {
+	    if (depth === undefined)
+	        depth = 0;
+	    if (depth > util.nestingLimit)
+	        throw Error("max depth exceeded");
 	    var type = new Type(name, json.options);
 	    type.extensions = json.extensions;
 	    type.reserved = json.reserved;
@@ -60354,7 +64348,7 @@ function requireType () {
 	                ? Enum.fromJSON
 	                : nested.methods !== undefined
 	                ? Service.fromJSON
-	                : Namespace.fromJSON )(names[i], nested)
+	                : Namespace.fromJSON )(names[i], nested, depth + 1)
 	            );
 	        }
 	    if (json.extensions && json.extensions.length)
@@ -60430,10 +64424,13 @@ function requireType () {
 	 * @override
 	 */
 	Type.prototype.get = function get(name) {
-	    return this.fields[name]
-	        || this.oneofs && this.oneofs[name]
-	        || this.nested && this.nested[name]
-	        || null;
+	    if (Object.prototype.hasOwnProperty.call(this.fields, name))
+	        return this.fields[name];
+	    if (this.oneofs && Object.prototype.hasOwnProperty.call(this.oneofs, name))
+	        return this.oneofs[name];
+	    if (this.nested && Object.prototype.hasOwnProperty.call(this.nested, name))
+	        return this.nested[name];
+	    return null;
 	};
 
 	/**
@@ -60444,7 +64441,6 @@ function requireType () {
 	 * @throws {Error} If there is already a nested object with this name or, if a field, when there is already a field with this id
 	 */
 	Type.prototype.add = function add(object) {
-
 	    if (this.get(object.name))
 	        throw Error("duplicate name '" + object.name + "' in " + this);
 
@@ -60458,8 +64454,10 @@ function requireType () {
 	            throw Error("duplicate id " + object.id + " in " + this);
 	        if (this.isReservedId(object.id))
 	            throw Error("id " + object.id + " is reserved in " + this);
-	        if (this.isReservedName(object.name))
+	        if (this.isReservedName(object.name) || object.name.charAt(0) === "$")
 	            throw Error("name '" + object.name + "' is reserved in " + this);
+	        if (object.name === "__proto__")
+	            return this;
 
 	        if (object.parent)
 	            object.parent.remove(object);
@@ -60469,6 +64467,10 @@ function requireType () {
 	        return clearCache(this);
 	    }
 	    if (object instanceof OneOf) {
+	        if (object.name.charAt(0) === "$")
+	            throw Error("name '" + object.name + "' is reserved in " + this);
+	        if (object.name === "__proto__")
+	            return this;
 	        if (!this.oneofs)
 	            this.oneofs = {};
 	        this.oneofs[object.name] = object;
@@ -60599,8 +64601,8 @@ function requireType () {
 	 * @param {Writer} [writer] Writer to encode to
 	 * @returns {Writer} writer
 	 */
-	Type.prototype.encode = function encode_setup(message, writer) {
-	    return this.setup().encode(message, writer); // overrides this method
+	Type.prototype.encode = function encode_setup(message, writer) { // eslint-disable-line no-unused-vars
+	    return this.setup().encode.apply(this, arguments); // overrides this method
 	};
 
 	/**
@@ -60617,12 +64619,14 @@ function requireType () {
 	 * Decodes a message of this type.
 	 * @param {Reader|Uint8Array} reader Reader or buffer to decode from
 	 * @param {number} [length] Length of the message, if known beforehand
+	 * @param {number} [end] Expected group end tag, if decoding a group
+	 * @param {number} [depth] Current nesting depth
 	 * @returns {Message<{}>} Decoded message
 	 * @throws {Error} If the payload is not a reader or valid buffer
 	 * @throws {util.ProtocolError<{}>} If required fields are missing
 	 */
-	Type.prototype.decode = function decode_setup(reader, length) {
-	    return this.setup().decode(reader, length); // overrides this method
+	Type.prototype.decode = function decode_setup(reader, length, end, depth) {
+	    return this.setup().decode(reader, length, end, depth); // overrides this method
 	};
 
 	/**
@@ -60641,26 +64645,28 @@ function requireType () {
 	/**
 	 * Verifies that field values are valid and that required fields are present.
 	 * @param {Object.<string,*>} message Plain object to verify
+	 * @param {number} [depth] Current nesting depth
 	 * @returns {null|string} `null` if valid, otherwise the reason why it is not
 	 */
-	Type.prototype.verify = function verify_setup(message) {
-	    return this.setup().verify(message); // overrides this method
+	Type.prototype.verify = function verify_setup(message, depth) {
+	    return this.setup().verify(message, depth); // overrides this method
 	};
 
 	/**
 	 * Creates a new message of this type from a plain object. Also converts values to their respective internal types.
 	 * @param {Object.<string,*>} object Plain object to convert
+	 * @param {number} [depth] Current nesting depth
 	 * @returns {Message<{}>} Message instance
 	 */
-	Type.prototype.fromObject = function fromObject(object) {
-	    return this.setup().fromObject(object);
+	Type.prototype.fromObject = function fromObject(object, depth) {
+	    return this.setup().fromObject(object, depth);
 	};
 
 	/**
 	 * Conversion options as used by {@link Type#toObject} and {@link Message.toObject}.
 	 * @interface IConversionOptions
 	 * @property {Function} [longs] Long conversion type.
-	 * Valid values are `String` and `Number` (the global types).
+	 * Valid values are `BigInt`, `String` and `Number` (the global types).
 	 * Defaults to copy the present value, which is a possibly unsafe number without and a {@link Long} with a long library.
 	 * @property {Function} [enums] Enum value conversion type.
 	 * Only valid value is `String` (the global type).
@@ -60681,8 +64687,8 @@ function requireType () {
 	 * @param {IConversionOptions} [options] Conversion options
 	 * @returns {Object.<string,*>} Plain object
 	 */
-	Type.prototype.toObject = function toObject(message, options) {
-	    return this.setup().toObject(message, options);
+	Type.prototype.toObject = function toObject(message, options) { // eslint-disable-line no-unused-vars
+	    return this.setup().toObject.apply(this, arguments);
 	};
 
 	/**
@@ -60770,14 +64776,16 @@ function requireRoot$1 () {
 	 * Loads a namespace descriptor into a root namespace.
 	 * @param {INamespace} json Namespace descriptor
 	 * @param {Root} [root] Root namespace, defaults to create a new one if omitted
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Root} Root namespace
 	 */
-	Root.fromJSON = function fromJSON(json, root) {
+	Root.fromJSON = function fromJSON(json, root, depth) {
+	    depth = util.checkDepth(depth);
 	    if (!root)
 	        root = new Root();
 	    if (json.options)
 	        root.setOptions(json.options);
-	    return root.addJSON(json.nested).resolveAll();
+	    return root.addJSON(json.nested, depth).resolveAll();
 	};
 
 	/**
@@ -60851,8 +64859,12 @@ function requireRoot$1 () {
 	    }
 
 	    // Processes a single file
-	    function process(filename, source) {
+	    function process(filename, source, depth) {
+	        if (depth === undefined)
+	            depth = 0;
 	        try {
+	            if (depth > util.recursionLimit)
+	                throw Error("max depth exceeded");
 	            if (util.isString(source) && source.charAt(0) === "{")
 	                source = JSON.parse(source);
 	            if (!util.isString(source))
@@ -60865,11 +64877,11 @@ function requireRoot$1 () {
 	                if (parsed.imports)
 	                    for (; i < parsed.imports.length; ++i)
 	                        if (resolved = getBundledFileName(parsed.imports[i]) || self.resolvePath(filename, parsed.imports[i]))
-	                            fetch(resolved);
+	                            fetch(resolved, false, depth + 1);
 	                if (parsed.weakImports)
 	                    for (i = 0; i < parsed.weakImports.length; ++i)
 	                        if (resolved = getBundledFileName(parsed.weakImports[i]) || self.resolvePath(filename, parsed.weakImports[i]))
-	                            fetch(resolved, true);
+	                            fetch(resolved, true, depth + 1);
 	            }
 	        } catch (err) {
 	            finish(err);
@@ -60880,7 +64892,9 @@ function requireRoot$1 () {
 	    }
 
 	    // Fetches a single file
-	    function fetch(filename, weak) {
+	    function fetch(filename, weak, depth) {
+	        if (depth === undefined)
+	            depth = 0;
 	        filename = getBundledFileName(filename) || filename;
 
 	        // Skip if already loaded / attempted
@@ -60892,12 +64906,12 @@ function requireRoot$1 () {
 	        // Shortcut bundled definitions
 	        if (filename in common) {
 	            if (sync) {
-	                process(filename, common[filename]);
+	                process(filename, common[filename], depth);
 	            } else {
 	                ++queued;
 	                setTimeout(function() {
 	                    --queued;
-	                    process(filename, common[filename]);
+	                    process(filename, common[filename], depth);
 	                });
 	            }
 	            return;
@@ -60913,7 +64927,7 @@ function requireRoot$1 () {
 	                    finish(err);
 	                return;
 	            }
-	            process(filename, source);
+	            process(filename, source, depth);
 	        } else {
 	            ++queued;
 	            self.fetch(filename, function(err, source) {
@@ -60930,7 +64944,7 @@ function requireRoot$1 () {
 	                        finish(null, self);
 	                    return;
 	                }
-	                process(filename, source);
+	                process(filename, source, depth);
 	            });
 	        }
 	    }
@@ -61140,12 +65154,29 @@ function requireUtil$1 () {
 	util.codegen = requireCodegen();
 	util.fetch   = requireFetch();
 	util.path    = requirePath();
+	util.patterns = requirePatterns();
+
+	var reservedRe = util.patterns.reservedRe;
 
 	/**
 	 * Node's fs module if available.
 	 * @type {Object.<string,*>}
 	 */
-	util.fs = util.inquire("fs");
+	util.fs = requireFs();
+
+	/**
+	 * Checks a recursion depth.
+	 * @param {number|undefined} depth Depth of recursion
+	 * @returns {number} Depth of recursion
+	 * @throws {Error} If depth exceeds util.recursionLimit
+	 */
+	util.checkDepth = function checkDepth(depth) {
+	    if (depth === undefined)
+	        depth = 0;
+	    if (depth > util.recursionLimit)
+	        throw Error("max depth exceeded");
+	    return depth;
+	};
 
 	/**
 	 * Converts an object's values to an array.
@@ -61181,16 +65212,13 @@ function requireUtil$1 () {
 	    return object;
 	};
 
-	var safePropBackslashRe = /\\/g,
-	    safePropQuoteRe     = /"/g;
-
 	/**
 	 * Tests whether the specified name is a reserved word in JS.
 	 * @param {string} name Name to test
 	 * @returns {boolean} `true` if reserved, otherwise `false`
 	 */
 	util.isReserved = function isReserved(name) {
-	    return /^(?:do|if|in|for|let|new|try|var|case|else|enum|eval|false|null|this|true|void|with|break|catch|class|const|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$/.test(name);
+	    return reservedRe.test(name);
 	};
 
 	/**
@@ -61199,8 +65227,8 @@ function requireUtil$1 () {
 	 * @returns {string} Safe accessor
 	 */
 	util.safeProp = function safeProp(prop) {
-	    if (!/^[$\w_]+$/.test(prop) || util.isReserved(prop))
-	        return "[\"" + prop.replace(safePropBackslashRe, "\\\\").replace(safePropQuoteRe, "\\\"") + "\"]";
+	    if (!/^[$\w_]+$/.test(prop) || reservedRe.test(prop))
+	        return "[" + JSON.stringify(prop) + "]";
 	    return "." + prop;
 	};
 
@@ -61303,9 +65331,8 @@ function requireUtil$1 () {
 	util.setProperty = function setProperty(dst, path, value, ifNotSet) {
 	    function setProp(dst, path, value) {
 	        var part = path.shift();
-	        if (part === "__proto__" || part === "prototype") {
-	          return dst;
-	        }
+	        if (util.isUnsafeProperty(part))
+	            return dst;
 	        if (path.length > 0) {
 	            dst[part] = setProp(dst[part] || {}, path, value);
 	        } else {
@@ -61325,6 +65352,8 @@ function requireUtil$1 () {
 	        throw TypeError("path must be specified");
 
 	    path = path.split(".");
+	    if (path.length > util.recursionLimit)
+	        throw Error("max depth exceeded");
 	    return setProp(dst, path, value);
 	};
 
@@ -61376,7 +65405,7 @@ function requireTypes () {
 		];
 
 		function bake(values, offset) {
-		    var i = 0, o = {};
+		    var i = 0, o = Object.create(null);
 		    offset |= 0;
 		    while (i < values.length) o[s[i + offset]] = values[i++];
 		    return o;
@@ -61882,7 +65911,7 @@ function requireField () {
 
 	    // convert to internal data type if necesssary
 	    if (this.long) {
-	        this.typeDefault = util.Long.fromNumber(this.typeDefault, this.type.charAt(0) === "u");
+	        this.typeDefault = util.Long.fromNumber(this.typeDefault, this.type === "uint64" || this.type === "fixed64");
 
 	        /* istanbul ignore else */
 	        if (Object.freeze)
@@ -62458,7 +66487,7 @@ function requireObject () {
 	        throw new Error("Unknown edition for " + this.fullName);
 	    }
 
-	    var protoFeatures = Object.assign(this.options ? Object.assign({},  this.options.features) : {},
+	    var protoFeatures = util.merge({}, this.options && this.options.features,
 	        this._inferLegacyProtoFeatures(edition));
 
 	    if (this._edition) {
@@ -62473,7 +66502,7 @@ function requireObject () {
 	        } else {
 	            throw new Error("Unknown edition: " + edition);
 	        }
-	        this._features = Object.assign(defaults, protoFeatures || {});
+	        this._features = util.merge(defaults, protoFeatures);
 	        this._featuresResolved = true;
 	        return;
 	    }
@@ -62482,11 +66511,11 @@ function requireObject () {
 	    // special-case it
 	    /* istanbul ignore else */
 	    if (this.partOf instanceof OneOf) {
-	        var lexicalParentFeaturesCopy = Object.assign({}, this.partOf._features);
-	        this._features = Object.assign(lexicalParentFeaturesCopy, protoFeatures || {});
+	        var lexicalParentFeaturesCopy = util.merge({}, this.partOf._features);
+	        this._features = util.merge(lexicalParentFeaturesCopy, protoFeatures);
 	    } else if (this.declaringField) ; else if (this.parent) {
-	        var parentFeaturesCopy = Object.assign({}, this.parent._features);
-	        this._features = Object.assign(parentFeaturesCopy, protoFeatures || {});
+	        var parentFeaturesCopy = util.merge({}, this.parent._features);
+	        this._features = util.merge(parentFeaturesCopy, protoFeatures);
 	    } else {
 	        throw new Error("Unable to find a parent for " + this.fullName);
 	    }
@@ -62526,6 +66555,8 @@ function requireObject () {
 	 * @returns {ReflectionObject} `this`
 	 */
 	ReflectionObject.prototype.setOption = function setOption(name, value, ifNotSet) {
+	    if (name === "__proto__")
+	        return this;
 	    if (!this.options)
 	        this.options = {};
 	    if (/^features\./.test(name)) {
@@ -62546,6 +66577,8 @@ function requireObject () {
 	 * @returns {ReflectionObject} `this`
 	 */
 	ReflectionObject.prototype.setParsedOption = function setParsedOption(name, value, propName) {
+	    if (name === "__proto__")
+	        return this;
 	    if (!this.parsedOptions) {
 	        this.parsedOptions = [];
 	    }
@@ -62703,7 +66736,7 @@ function require_enum () {
 
 	    if (values)
 	        for (var keys = Object.keys(values), i = 0; i < keys.length; ++i)
-	            if (typeof values[keys[i]] === "number") // use forward entries only
+	            if (keys[i] !== "__proto__" && typeof values[keys[i]] === "number") // use forward entries only
 	                this.valuesById[ this.values[keys[i]] = values[keys[i]] ] = keys[i];
 	}
 
@@ -62715,8 +66748,8 @@ function require_enum () {
 	    ReflectionObject.prototype._resolveFeatures.call(this, edition);
 
 	    Object.keys(this.values).forEach(key => {
-	        var parentFeaturesCopy = Object.assign({}, this._features);
-	        this._valuesFeatures[key] = Object.assign(parentFeaturesCopy, this.valuesOptions && this.valuesOptions[key] && this.valuesOptions[key].features);
+	        var parentFeaturesCopy = util.merge({}, this._features);
+	        this._valuesFeatures[key] = util.merge(parentFeaturesCopy, this.valuesOptions && this.valuesOptions[key] && this.valuesOptions[key].features || {});
 	    });
 
 	    return this;
@@ -62781,6 +66814,9 @@ function require_enum () {
 
 	    if (!util.isInteger(id))
 	        throw TypeError("id must be an integer");
+
+	    if (name === "__proto__")
+	        return this;
 
 	    if (this.values[name] !== undefined)
 	        throw Error("duplicate name '" + name + "' in " + this);
@@ -62876,8 +66912,8 @@ function requireEncoder () {
 	 */
 	function genTypePartial(gen, field, fieldIndex, ref) {
 	    return field.delimited
-	        ? gen("types[%i].encode(%s,w.uint32(%i)).uint32(%i)", fieldIndex, ref, (field.id << 3 | 3) >>> 0, (field.id << 3 | 4) >>> 0)
-	        : gen("types[%i].encode(%s,w.uint32(%i).fork()).ldelim()", fieldIndex, ref, (field.id << 3 | 2) >>> 0);
+	        ? gen("types[%i].encode(%s,w.uint32(%i),q+1).uint32(%i)", fieldIndex, ref, (field.id << 3 | 3) >>> 0, (field.id << 3 | 4) >>> 0)
+	        : gen("types[%i].encode(%s,w.uint32(%i).fork(),q+1).ldelim()", fieldIndex, ref, (field.id << 3 | 2) >>> 0);
 	}
 
 	/**
@@ -62887,9 +66923,12 @@ function requireEncoder () {
 	 */
 	function encoder(mtype) {
 	    /* eslint-disable no-unexpected-multiline, block-scoped-var, no-redeclare */
-	    var gen = util.codegen(["m", "w"], mtype.name + "$encode")
+	    var gen = util.codegen(["m", "w", "q"], mtype.name + "$encode")
 	    ("if(!w)")
-	        ("w=Writer.create()");
+	        ("w=Writer.create()")
+	    ("if(q===undefined)q=0")
+	    ("if(q>util.recursionLimit)")
+	        ("throw Error(\"max depth exceeded\")");
 
 	    var i, ref;
 
@@ -62910,7 +66949,7 @@ function requireEncoder () {
 	        ("for(var ks=Object.keys(%s),i=0;i<ks.length;++i){", ref)
 	            ("w.uint32(%i).fork().uint32(%i).%s(ks[i])", (field.id << 3 | 2) >>> 0, 8 | types.mapKey[field.keyType], field.keyType);
 	            if (wireType === undefined) gen
-	            ("types[%i].encode(%s[ks[i]],w.uint32(18).fork()).ldelim().ldelim()", index, ref); // can't be groups
+	            ("types[%i].encode(%s[ks[i]],w.uint32(18).fork(),q+1).ldelim().ldelim()", index, ref); // can't be groups
 	            else gen
 	            (".uint32(%i).%s(%s[ks[i]]).ldelim()", 16 | wireType, type, ref);
 	            gen
@@ -63526,9 +67565,9 @@ function requireParse () {
 	    base16NegRe = /^-?0[x][0-9a-fA-F]+$/,
 	    base8Re     = /^0[0-7]+$/,
 	    base8NegRe  = /^-?0[0-7]+$/,
-	    numberRe    = /^(?![eE])[0-9]*(?:\.[0-9]*)?(?:[eE][+-]?[0-9]+)?$/,
+	    numberRe    = util.patterns.numberRe,
 	    nameRe      = /^[a-zA-Z_][a-zA-Z_0-9]*$/,
-	    typeRefRe   = /^(?:\.?[a-zA-Z_][a-zA-Z_0-9]*)(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*$/;
+	    typeRefRe   = util.patterns.typeRefRe;
 
 	/**
 	 * Result object returned from {@link parse}.
@@ -63804,7 +67843,10 @@ function requireParse () {
 	    }
 
 
-	    function parseCommon(parent, token) {
+	    function parseCommon(parent, token, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        // depth is checked by dispatched functions
 	        switch (token) {
 
 	            case "option":
@@ -63813,7 +67855,7 @@ function requireParse () {
 	                return true;
 
 	            case "message":
-	                parseType(parent, token);
+	                parseType(parent, token, depth + 1);
 	                return true;
 
 	            case "enum":
@@ -63821,11 +67863,11 @@ function requireParse () {
 	                return true;
 
 	            case "service":
-	                parseService(parent, token);
+	                parseService(parent, token, depth + 1);
 	                return true;
 
 	            case "extend":
-	                parseExtension(parent, token);
+	                parseExtension(parent, token, depth);
 	                return true;
 	        }
 	        return false;
@@ -63853,7 +67895,11 @@ function requireParse () {
 	        }
 	    }
 
-	    function parseType(parent, token) {
+	    function parseType(parent, token, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        if (depth > util.nestingLimit)
+	            throw Error("max depth exceeded");
 
 	        /* istanbul ignore if */
 	        if (!nameRe.test(token = next()))
@@ -63861,7 +67907,7 @@ function requireParse () {
 
 	        var type = new Type(token);
 	        ifBlock(type, function parseType_block(token) {
-	            if (parseCommon(type, token))
+	            if (parseCommon(type, token, depth))
 	                return;
 
 	            switch (token) {
@@ -63875,22 +67921,22 @@ function requireParse () {
 	                        throw illegal(token);
 	                /* eslint-disable no-fallthrough */
 	                case "repeated":
-	                    parseField(type, token);
+	                    parseField(type, token, undefined, depth + 1);
 	                    break;
 
 	                case "optional":
 	                    /* istanbul ignore if */
 	                    if (edition === "proto3") {
-	                        parseField(type, "proto3_optional");
+	                        parseField(type, "proto3_optional", undefined, depth + 1);
 	                    } else if (edition !== "proto2") {
 	                        throw illegal(token);
 	                    } else {
-	                        parseField(type, "optional");
+	                        parseField(type, "optional", undefined, depth + 1);
 	                    }
 	                    break;
 
 	                case "oneof":
-	                    parseOneOf(type, token);
+	                    parseOneOf(type, token, depth + 1);
 	                    break;
 
 	                case "extensions":
@@ -63908,7 +67954,7 @@ function requireParse () {
 	                    }
 
 	                    push(token);
-	                    parseField(type, "optional");
+	                    parseField(type, "optional", undefined, depth + 1);
 	                    break;
 	            }
 	        });
@@ -63918,10 +67964,10 @@ function requireParse () {
 	        }
 	    }
 
-	    function parseField(parent, rule, extend) {
+	    function parseField(parent, rule, extend, depth) {
 	        var type = next();
 	        if (type === "group") {
-	            parseGroup(parent, rule);
+	            parseGroup(parent, rule, depth);
 	            return;
 	        }
 	        // Type names can consume multiple tokens, in multiple variants:
@@ -63978,7 +68024,11 @@ function requireParse () {
 	        }
 	    }
 
-	    function parseGroup(parent, rule) {
+	    function parseGroup(parent, rule, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        if (depth > util.nestingLimit)
+	            throw Error("max depth exceeded");
 	        if (edition >= 2023) {
 	            throw illegal("group");
 	        }
@@ -64006,20 +68056,20 @@ function requireParse () {
 	                    break;
 	                case "required":
 	                case "repeated":
-	                    parseField(type, token);
+	                    parseField(type, token, undefined, depth + 1);
 	                    break;
 
 	                case "optional":
 	                    /* istanbul ignore if */
 	                    if (edition === "proto3") {
-	                        parseField(type, "proto3_optional");
+	                        parseField(type, "proto3_optional", undefined, depth + 1);
 	                    } else {
-	                        parseField(type, "optional");
+	                        parseField(type, "optional", undefined, depth + 1);
 	                    }
 	                    break;
 
 	                case "message":
-	                    parseType(type, token);
+	                    parseType(type, token, depth + 1);
 	                    break;
 
 	                case "enum":
@@ -64078,7 +68128,7 @@ function requireParse () {
 	        parent.add(field);
 	    }
 
-	    function parseOneOf(parent, token) {
+	    function parseOneOf(parent, token, depth) {
 
 	        /* istanbul ignore if */
 	        if (!nameRe.test(token = next()))
@@ -64091,7 +68141,7 @@ function requireParse () {
 	                skip(";");
 	            } else {
 	                push(token);
-	                parseField(oneof, "optional");
+	                parseField(oneof, "optional", undefined, depth);
 	            }
 	        });
 	        parent.add(oneof);
@@ -64170,6 +68220,9 @@ function requireParse () {
 	            }
 
 	            while (token !== "=") {
+	                if (token === null) {
+	                    throw illegal(token, "end of input");
+	                }
 	                if (token === "(") {
 	                    var parensValue = next();
 	                    skip(")");
@@ -64196,7 +68249,11 @@ function requireParse () {
 	            setParsedOption(parent, option, optionValue, propName);
 	    }
 
-	    function parseOptionValue(parent, name) {
+	    function parseOptionValue(parent, name, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        if (depth > util.recursionLimit)
+	            throw Error("max depth exceeded");
 	        // { a: "foo" b { c: "bar" } }
 	        if (skip("{", true)) {
 	            var objectResult = {};
@@ -64219,7 +68276,7 @@ function requireParse () {
 	                    // option (my_option) = {
 	                    //     repeated_value: [ "foo", "bar" ]
 	                    // };
-	                    value = parseOptionValue(parent, name + "." + token);
+	                    value = parseOptionValue(parent, name + "." + token, depth + 1);
 	                } else if (peek() === "[") {
 	                    value = [];
 	                    var lastValue;
@@ -64243,7 +68300,8 @@ function requireParse () {
 	                if (prevValue)
 	                    value = [].concat(prevValue).concat(value);
 
-	                objectResult[propName] = value;
+	                if (propName !== "__proto__")
+	                    objectResult[propName] = value;
 
 	                // Semicolons and commas can be optional
 	                skip(",", true);
@@ -64283,7 +68341,11 @@ function requireParse () {
 	        return parent;
 	    }
 
-	    function parseService(parent, token) {
+	    function parseService(parent, token, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        if (depth > util.recursionLimit)
+	            throw Error("max depth exceeded");
 
 	        /* istanbul ignore if */
 	        if (!nameRe.test(token = next()))
@@ -64291,7 +68353,7 @@ function requireParse () {
 
 	        var service = new Service(token);
 	        ifBlock(service, function parseService_block(token) {
-	            if (parseCommon(service, token)) {
+	            if (parseCommon(service, token, depth)) {
 	                return;
 	            }
 
@@ -64357,7 +68419,7 @@ function requireParse () {
 	        parent.add(method);
 	    }
 
-	    function parseExtension(parent, token) {
+	    function parseExtension(parent, token, depth) {
 
 	        /* istanbul ignore if */
 	        if (!typeRefRe.test(token = next()))
@@ -64369,15 +68431,15 @@ function requireParse () {
 
 	                case "required":
 	                case "repeated":
-	                    parseField(parent, token, reference);
+	                    parseField(parent, token, reference, depth + 1);
 	                    break;
 
 	                case "optional":
 	                    /* istanbul ignore if */
 	                    if (edition === "proto3") {
-	                        parseField(parent, "proto3_optional", reference);
+	                        parseField(parent, "proto3_optional", reference, depth + 1);
 	                    } else {
-	                        parseField(parent, "optional", reference);
+	                        parseField(parent, "optional", reference, depth + 1);
 	                    }
 	                    break;
 
@@ -64386,7 +68448,7 @@ function requireParse () {
 	                    if (edition === "proto2" || !typeRefRe.test(token))
 	                        throw illegal(token);
 	                    push(token);
-	                    parseField(parent, "optional", reference);
+	                    parseField(parent, "optional", reference, depth + 1);
 	                    break;
 	            }
 	        });
@@ -64438,7 +68500,7 @@ function requireParse () {
 	            default:
 
 	                /* istanbul ignore else */
-	                if (parseCommon(ptr, token)) {
+	                if (parseCommon(ptr, token, 0)) {
 	                    head = false;
 	                    continue;
 	                }
@@ -66313,7 +70375,11 @@ function requireDescriptor () {
 		    MapField  = $protobuf.MapField,
 		    OneOf     = $protobuf.OneOf,
 		    Service   = $protobuf.Service,
-		    Method    = $protobuf.Method;
+		    Method    = $protobuf.Method,
+		    patterns  = $protobuf.util.patterns;
+
+		var numberRe  = patterns.numberRe,
+		    typeRefRe = patterns.typeRefRe;
 
 		// --- Root ---
 
@@ -66522,9 +70588,14 @@ function requireDescriptor () {
 		 * @param {IDescriptorProto|Reader|Uint8Array} descriptor Descriptor
 		 * @param {string} [edition="proto2"] The syntax or edition to use
 		 * @param {boolean} [nested=false] Whether or not this is a nested object
+		 * @param {number} [depth] Current nesting depth, defaults to `0`
 		 * @returns {Type} Type instance
 		 */
-		Type.fromDescriptor = function fromDescriptor(descriptor, edition, nested) {
+		Type.fromDescriptor = function fromDescriptor(descriptor, edition, nested, depth) {
+		    if (depth === undefined)
+		        depth = 0;
+		    if (depth > $protobuf.util.nestingLimit)
+		        throw Error("max depth exceeded");
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
 		        descriptor = exports$1.DescriptorProto.decode(descriptor);
@@ -66551,7 +70622,7 @@ function requireDescriptor () {
 		            type.add(Field.fromDescriptor(descriptor.extension[i], edition, true));
 		    /* Nested types */ if (descriptor.nestedType)
 		        for (i = 0; i < descriptor.nestedType.length; ++i) {
-		            type.add(Type.fromDescriptor(descriptor.nestedType[i], edition, true));
+		            type.add(Type.fromDescriptor(descriptor.nestedType[i], edition, true, depth + 1));
 		            if (descriptor.nestedType[i].options && descriptor.nestedType[i].options.mapEntry)
 		                type.setOption("map_entry", true);
 		        }
@@ -66696,9 +70767,6 @@ function requireDescriptor () {
 		 * @property {number} JS_NUMBER=2
 		 */
 
-		// copied here from parse.js
-		var numberRe = /^(?![eE])[0-9]*(?:\.[0-9]*)?(?:[eE][+-]?[0-9]+)?$/;
-
 		/**
 		 * Creates a field from a descriptor.
 		 *
@@ -66719,10 +70787,13 @@ function requireDescriptor () {
 		        throw Error("missing field id");
 
 		    // Rewire field type
-		    var fieldType;
-		    if (descriptor.typeName && descriptor.typeName.length)
-		        fieldType = descriptor.typeName;
-		    else
+		    var typeName = descriptor.typeName,
+		        fieldType;
+		    if (typeName != null && typeName !== "") {
+		        if (typeof typeName !== "string" || !typeRefRe.test(typeName))
+		            throw Error("illegal type name: " + typeName);
+		        fieldType = typeName;
+		    } else
 		        fieldType = fromDescriptorType(descriptor.type);
 
 		    // Rewire field rule
@@ -66735,10 +70806,12 @@ function requireDescriptor () {
 		        default: throw Error("illegal label: " + descriptor.label);
 		    }
 
-			var extendee = descriptor.extendee;
-			if (descriptor.extendee !== undefined) {
-				extendee = extendee.length ? extendee : undefined;
-			}
+		    var extendee = descriptor.extendee;
+		    if (extendee != null && extendee !== "") {
+		        if (typeof extendee !== "string" || !typeRefRe.test(extendee))
+		            throw Error("illegal type name: " + extendee);
+		    } else
+		        extendee = undefined;
 		    var field = new Field(
 		        descriptor.name.length ? descriptor.name : "field" + descriptor.number,
 		        descriptor.number,
@@ -66821,10 +70894,11 @@ function requireDescriptor () {
 		    // Handle extension field
 		    descriptor.extendee = this.extensionField ? this.extensionField.parent.fullName : this.extend;
 
-		    // Handle part of oneof
-		    if (this.partOf)
+		    // Handle part of oneof (only meaningful for message types)
+		    if (this.partOf && this.parent instanceof Type) {
 		        if ((descriptor.oneofIndex = this.parent.oneofsArray.indexOf(this.partOf)) < 0)
 		            throw Error("missing oneof");
+		    }
 
 		    if (this.options) {
 		        descriptor.options = toDescriptorOptions(this.options, exports$1.FieldOptions);
@@ -67065,12 +71139,24 @@ function requireDescriptor () {
 		    if (typeof descriptor.length === "number")
 		        descriptor = exports$1.MethodDescriptorProto.decode(descriptor);
 
+		    var inputType = descriptor.inputType,
+		        outputType = descriptor.outputType;
+
+		    if (inputType != null && inputType !== "") {
+		        if (typeof inputType !== "string" || !typeRefRe.test(inputType))
+		            throw Error("illegal type name: " + inputType);
+		    }
+		    if (outputType != null && outputType !== "") {
+		        if (typeof outputType !== "string" || !typeRefRe.test(outputType))
+		            throw Error("illegal type name: " + outputType);
+		    }
+
 		    return new Method(
 		        // unnamedMethodIndex is global, not per service, because we have no ref to a service here
 		        descriptor.name && descriptor.name.length ? descriptor.name : "Method" + unnamedMethodIndex++,
 		        "rpc",
-		        descriptor.inputType,
-		        descriptor.outputType,
+		        inputType,
+		        outputType,
 		        Boolean(descriptor.clientStreaming),
 		        Boolean(descriptor.serverStreaming),
 		        fromDescriptorOptions(descriptor.options, exports$1.MethodOptions)
@@ -67909,1629 +71995,6 @@ function requireUtil () {
 	util.addCommonProtos = addCommonProtos;
 	
 	return util;
-}
-
-var umd$1 = {exports: {}};
-
-var umd = umd$1.exports;
-
-var hasRequiredUmd;
-
-function requireUmd () {
-	if (hasRequiredUmd) return umd$1.exports;
-	hasRequiredUmd = 1;
-	(function (module, exports$1) {
-		// GENERATED FILE. DO NOT EDIT.
-		(function (global, factory) {
-		  function preferDefault(exports$1) {
-		    return exports$1.default || exports$1;
-		  }
-		  {
-		    factory(exports$1);
-		    module.exports = preferDefault(exports$1);
-		  }
-		})(
-		  typeof globalThis !== "undefined"
-		    ? globalThis
-		    : typeof self !== "undefined"
-		      ? self
-		      : umd,
-		  function (_exports) {
-
-		    Object.defineProperty(_exports, "__esModule", {
-		      value: true,
-		    });
-		    _exports.default = void 0;
-		    /**
-		     * @license
-		     * Copyright 2009 The Closure Library Authors
-		     * Copyright 2020 Daniel Wirtz / The long.js Authors.
-		     *
-		     * Licensed under the Apache License, Version 2.0 (the "License");
-		     * you may not use this file except in compliance with the License.
-		     * You may obtain a copy of the License at
-		     *
-		     *     http://www.apache.org/licenses/LICENSE-2.0
-		     *
-		     * Unless required by applicable law or agreed to in writing, software
-		     * distributed under the License is distributed on an "AS IS" BASIS,
-		     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-		     * See the License for the specific language governing permissions and
-		     * limitations under the License.
-		     *
-		     * SPDX-License-Identifier: Apache-2.0
-		     */
-
-		    // WebAssembly optimizations to do native i64 multiplication and divide
-		    var wasm = null;
-		    try {
-		      wasm = new WebAssembly.Instance(
-		        new WebAssembly.Module(
-		          new Uint8Array([
-		            // \0asm
-		            0, 97, 115, 109,
-		            // version 1
-		            1, 0, 0, 0,
-		            // section "type"
-		            1, 13, 2,
-		            // 0, () => i32
-		            96, 0, 1, 127,
-		            // 1, (i32, i32, i32, i32) => i32
-		            96, 4, 127, 127, 127, 127, 1, 127,
-		            // section "function"
-		            3, 7, 6,
-		            // 0, type 0
-		            0,
-		            // 1, type 1
-		            1,
-		            // 2, type 1
-		            1,
-		            // 3, type 1
-		            1,
-		            // 4, type 1
-		            1,
-		            // 5, type 1
-		            1,
-		            // section "global"
-		            6, 6, 1,
-		            // 0, "high", mutable i32
-		            127, 1, 65, 0, 11,
-		            // section "export"
-		            7, 50, 6,
-		            // 0, "mul"
-		            3, 109, 117, 108, 0, 1,
-		            // 1, "div_s"
-		            5, 100, 105, 118, 95, 115, 0, 2,
-		            // 2, "div_u"
-		            5, 100, 105, 118, 95, 117, 0, 3,
-		            // 3, "rem_s"
-		            5, 114, 101, 109, 95, 115, 0, 4,
-		            // 4, "rem_u"
-		            5, 114, 101, 109, 95, 117, 0, 5,
-		            // 5, "get_high"
-		            8, 103, 101, 116, 95, 104, 105, 103, 104, 0, 0,
-		            // section "code"
-		            10, 191, 1, 6,
-		            // 0, "get_high"
-		            4, 0, 35, 0, 11,
-		            // 1, "mul"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 126, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		            // 2, "div_s"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 127, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		            // 3, "div_u"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 128, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		            // 4, "rem_s"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 129, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		            // 5, "rem_u"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 130, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		          ]),
-		        ),
-		        {},
-		      ).exports;
-		    } catch {
-		      // no wasm support :(
-		    }
-
-		    /**
-		     * Constructs a 64 bit two's-complement integer, given its low and high 32 bit values as *signed* integers.
-		     *  See the from* functions below for more convenient ways of constructing Longs.
-		     * @exports Long
-		     * @class A Long class for representing a 64 bit two's-complement integer value.
-		     * @param {number} low The low (signed) 32 bits of the long
-		     * @param {number} high The high (signed) 32 bits of the long
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @constructor
-		     */
-		    function Long(low, high, unsigned) {
-		      /**
-		       * The low 32 bits as a signed value.
-		       * @type {number}
-		       */
-		      this.low = low | 0;
-
-		      /**
-		       * The high 32 bits as a signed value.
-		       * @type {number}
-		       */
-		      this.high = high | 0;
-
-		      /**
-		       * Whether unsigned or not.
-		       * @type {boolean}
-		       */
-		      this.unsigned = !!unsigned;
-		    }
-
-		    // The internal representation of a long is the two given signed, 32-bit values.
-		    // We use 32-bit pieces because these are the size of integers on which
-		    // Javascript performs bit-operations.  For operations like addition and
-		    // multiplication, we split each number into 16 bit pieces, which can easily be
-		    // multiplied within Javascript's floating-point representation without overflow
-		    // or change in sign.
-		    //
-		    // In the algorithms below, we frequently reduce the negative case to the
-		    // positive case by negating the input(s) and then post-processing the result.
-		    // Note that we must ALWAYS check specially whether those values are MIN_VALUE
-		    // (-2^63) because -MIN_VALUE == MIN_VALUE (since 2^63 cannot be represented as
-		    // a positive number, it overflows back into a negative).  Not handling this
-		    // case would often result in infinite recursion.
-		    //
-		    // Common constant values ZERO, ONE, NEG_ONE, etc. are defined below the from*
-		    // methods on which they depend.
-
-		    /**
-		     * An indicator used to reliably determine if an object is a Long or not.
-		     * @type {boolean}
-		     * @const
-		     * @private
-		     */
-		    Long.prototype.__isLong__;
-		    Object.defineProperty(Long.prototype, "__isLong__", {
-		      value: true,
-		    });
-
-		    /**
-		     * @function
-		     * @param {*} obj Object
-		     * @returns {boolean}
-		     * @inner
-		     */
-		    function isLong(obj) {
-		      return (obj && obj["__isLong__"]) === true;
-		    }
-
-		    /**
-		     * @function
-		     * @param {*} value number
-		     * @returns {number}
-		     * @inner
-		     */
-		    function ctz32(value) {
-		      var c = Math.clz32(value & -value);
-		      return value ? 31 - c : c;
-		    }
-
-		    /**
-		     * Tests if the specified object is a Long.
-		     * @function
-		     * @param {*} obj Object
-		     * @returns {boolean}
-		     */
-		    Long.isLong = isLong;
-
-		    /**
-		     * A cache of the Long representations of small integer values.
-		     * @type {!Object}
-		     * @inner
-		     */
-		    var INT_CACHE = {};
-
-		    /**
-		     * A cache of the Long representations of small unsigned integer values.
-		     * @type {!Object}
-		     * @inner
-		     */
-		    var UINT_CACHE = {};
-
-		    /**
-		     * @param {number} value
-		     * @param {boolean=} unsigned
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromInt(value, unsigned) {
-		      var obj, cachedObj, cache;
-		      if (unsigned) {
-		        value >>>= 0;
-		        if ((cache = 0 <= value && value < 256)) {
-		          cachedObj = UINT_CACHE[value];
-		          if (cachedObj) return cachedObj;
-		        }
-		        obj = fromBits(value, 0, true);
-		        if (cache) UINT_CACHE[value] = obj;
-		        return obj;
-		      } else {
-		        value |= 0;
-		        if ((cache = -128 <= value && value < 128)) {
-		          cachedObj = INT_CACHE[value];
-		          if (cachedObj) return cachedObj;
-		        }
-		        obj = fromBits(value, value < 0 ? -1 : 0, false);
-		        if (cache) INT_CACHE[value] = obj;
-		        return obj;
-		      }
-		    }
-
-		    /**
-		     * Returns a Long representing the given 32 bit integer value.
-		     * @function
-		     * @param {number} value The 32 bit integer in question
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {!Long} The corresponding Long value
-		     */
-		    Long.fromInt = fromInt;
-
-		    /**
-		     * @param {number} value
-		     * @param {boolean=} unsigned
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromNumber(value, unsigned) {
-		      if (isNaN(value)) return unsigned ? UZERO : ZERO;
-		      if (unsigned) {
-		        if (value < 0) return UZERO;
-		        if (value >= TWO_PWR_64_DBL) return MAX_UNSIGNED_VALUE;
-		      } else {
-		        if (value <= -TWO_PWR_63_DBL) return MIN_VALUE;
-		        if (value + 1 >= TWO_PWR_63_DBL) return MAX_VALUE;
-		      }
-		      if (value < 0) return fromNumber(-value, unsigned).neg();
-		      return fromBits(
-		        value % TWO_PWR_32_DBL | 0,
-		        (value / TWO_PWR_32_DBL) | 0,
-		        unsigned,
-		      );
-		    }
-
-		    /**
-		     * Returns a Long representing the given value, provided that it is a finite number. Otherwise, zero is returned.
-		     * @function
-		     * @param {number} value The number in question
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {!Long} The corresponding Long value
-		     */
-		    Long.fromNumber = fromNumber;
-
-		    /**
-		     * @param {number} lowBits
-		     * @param {number} highBits
-		     * @param {boolean=} unsigned
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromBits(lowBits, highBits, unsigned) {
-		      return new Long(lowBits, highBits, unsigned);
-		    }
-
-		    /**
-		     * Returns a Long representing the 64 bit integer that comes by concatenating the given low and high bits. Each is
-		     *  assumed to use 32 bits.
-		     * @function
-		     * @param {number} lowBits The low 32 bits
-		     * @param {number} highBits The high 32 bits
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {!Long} The corresponding Long value
-		     */
-		    Long.fromBits = fromBits;
-
-		    /**
-		     * @function
-		     * @param {number} base
-		     * @param {number} exponent
-		     * @returns {number}
-		     * @inner
-		     */
-		    var pow_dbl = Math.pow; // Used 4 times (4*8 to 15+4)
-
-		    /**
-		     * @param {string} str
-		     * @param {(boolean|number)=} unsigned
-		     * @param {number=} radix
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromString(str, unsigned, radix) {
-		      if (str.length === 0) throw Error("empty string");
-		      if (typeof unsigned === "number") {
-		        // For goog.math.long compatibility
-		        radix = unsigned;
-		        unsigned = false;
-		      } else {
-		        unsigned = !!unsigned;
-		      }
-		      if (
-		        str === "NaN" ||
-		        str === "Infinity" ||
-		        str === "+Infinity" ||
-		        str === "-Infinity"
-		      )
-		        return unsigned ? UZERO : ZERO;
-		      radix = radix || 10;
-		      if (radix < 2 || 36 < radix) throw RangeError("radix");
-		      var p;
-		      if ((p = str.indexOf("-")) > 0) throw Error("interior hyphen");
-		      else if (p === 0) {
-		        return fromString(str.substring(1), unsigned, radix).neg();
-		      }
-
-		      // Do several (8) digits each time through the loop, so as to
-		      // minimize the calls to the very expensive emulated div.
-		      var radixToPower = fromNumber(pow_dbl(radix, 8));
-		      var result = ZERO;
-		      for (var i = 0; i < str.length; i += 8) {
-		        var size = Math.min(8, str.length - i),
-		          value = parseInt(str.substring(i, i + size), radix);
-		        if (size < 8) {
-		          var power = fromNumber(pow_dbl(radix, size));
-		          result = result.mul(power).add(fromNumber(value));
-		        } else {
-		          result = result.mul(radixToPower);
-		          result = result.add(fromNumber(value));
-		        }
-		      }
-		      result.unsigned = unsigned;
-		      return result;
-		    }
-
-		    /**
-		     * Returns a Long representation of the given string, written using the specified radix.
-		     * @function
-		     * @param {string} str The textual representation of the Long
-		     * @param {(boolean|number)=} unsigned Whether unsigned or not, defaults to signed
-		     * @param {number=} radix The radix in which the text is written (2-36), defaults to 10
-		     * @returns {!Long} The corresponding Long value
-		     */
-		    Long.fromString = fromString;
-
-		    /**
-		     * @function
-		     * @param {!Long|number|string|!{low: number, high: number, unsigned: boolean}} val
-		     * @param {boolean=} unsigned
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromValue(val, unsigned) {
-		      if (typeof val === "number") return fromNumber(val, unsigned);
-		      if (typeof val === "string") return fromString(val, unsigned);
-		      // Throws for non-objects, converts non-instanceof Long:
-		      return fromBits(
-		        val.low,
-		        val.high,
-		        typeof unsigned === "boolean" ? unsigned : val.unsigned,
-		      );
-		    }
-
-		    /**
-		     * Converts the specified value to a Long using the appropriate from* function for its type.
-		     * @function
-		     * @param {!Long|number|bigint|string|!{low: number, high: number, unsigned: boolean}} val Value
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {!Long}
-		     */
-		    Long.fromValue = fromValue;
-
-		    // NOTE: the compiler should inline these constant values below and then remove these variables, so there should be
-		    // no runtime penalty for these.
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_16_DBL = 1 << 16;
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_24_DBL = 1 << 24;
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_32_DBL = TWO_PWR_16_DBL * TWO_PWR_16_DBL;
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_64_DBL = TWO_PWR_32_DBL * TWO_PWR_32_DBL;
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_63_DBL = TWO_PWR_64_DBL / 2;
-
-		    /**
-		     * @type {!Long}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_24 = fromInt(TWO_PWR_24_DBL);
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var ZERO = fromInt(0);
-
-		    /**
-		     * Signed zero.
-		     * @type {!Long}
-		     */
-		    Long.ZERO = ZERO;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var UZERO = fromInt(0, true);
-
-		    /**
-		     * Unsigned zero.
-		     * @type {!Long}
-		     */
-		    Long.UZERO = UZERO;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var ONE = fromInt(1);
-
-		    /**
-		     * Signed one.
-		     * @type {!Long}
-		     */
-		    Long.ONE = ONE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var UONE = fromInt(1, true);
-
-		    /**
-		     * Unsigned one.
-		     * @type {!Long}
-		     */
-		    Long.UONE = UONE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var NEG_ONE = fromInt(-1);
-
-		    /**
-		     * Signed negative one.
-		     * @type {!Long}
-		     */
-		    Long.NEG_ONE = NEG_ONE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var MAX_VALUE = fromBits(0xffffffff | 0, 0x7fffffff | 0, false);
-
-		    /**
-		     * Maximum signed value.
-		     * @type {!Long}
-		     */
-		    Long.MAX_VALUE = MAX_VALUE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var MAX_UNSIGNED_VALUE = fromBits(0xffffffff | 0, 0xffffffff | 0, true);
-
-		    /**
-		     * Maximum unsigned value.
-		     * @type {!Long}
-		     */
-		    Long.MAX_UNSIGNED_VALUE = MAX_UNSIGNED_VALUE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var MIN_VALUE = fromBits(0, 0x80000000 | 0, false);
-
-		    /**
-		     * Minimum signed value.
-		     * @type {!Long}
-		     */
-		    Long.MIN_VALUE = MIN_VALUE;
-
-		    /**
-		     * @alias Long.prototype
-		     * @inner
-		     */
-		    var LongPrototype = Long.prototype;
-
-		    /**
-		     * Converts the Long to a 32 bit integer, assuming it is a 32 bit integer.
-		     * @this {!Long}
-		     * @returns {number}
-		     */
-		    LongPrototype.toInt = function toInt() {
-		      return this.unsigned ? this.low >>> 0 : this.low;
-		    };
-
-		    /**
-		     * Converts the Long to a the nearest floating-point representation of this value (double, 53 bit mantissa).
-		     * @this {!Long}
-		     * @returns {number}
-		     */
-		    LongPrototype.toNumber = function toNumber() {
-		      if (this.unsigned)
-		        return (this.high >>> 0) * TWO_PWR_32_DBL + (this.low >>> 0);
-		      return this.high * TWO_PWR_32_DBL + (this.low >>> 0);
-		    };
-
-		    /**
-		     * Converts the Long to a string written in the specified radix.
-		     * @this {!Long}
-		     * @param {number=} radix Radix (2-36), defaults to 10
-		     * @returns {string}
-		     * @override
-		     * @throws {RangeError} If `radix` is out of range
-		     */
-		    LongPrototype.toString = function toString(radix) {
-		      radix = radix || 10;
-		      if (radix < 2 || 36 < radix) throw RangeError("radix");
-		      if (this.isZero()) return "0";
-		      if (this.isNegative()) {
-		        // Unsigned Longs are never negative
-		        if (this.eq(MIN_VALUE)) {
-		          // We need to change the Long value before it can be negated, so we remove
-		          // the bottom-most digit in this base and then recurse to do the rest.
-		          var radixLong = fromNumber(radix),
-		            div = this.div(radixLong),
-		            rem1 = div.mul(radixLong).sub(this);
-		          return div.toString(radix) + rem1.toInt().toString(radix);
-		        } else return "-" + this.neg().toString(radix);
-		      }
-
-		      // Do several (6) digits each time through the loop, so as to
-		      // minimize the calls to the very expensive emulated div.
-		      var radixToPower = fromNumber(pow_dbl(radix, 6), this.unsigned),
-		        rem = this;
-		      var result = "";
-		      while (true) {
-		        var remDiv = rem.div(radixToPower),
-		          intval = rem.sub(remDiv.mul(radixToPower)).toInt() >>> 0,
-		          digits = intval.toString(radix);
-		        rem = remDiv;
-		        if (rem.isZero()) return digits + result;
-		        else {
-		          while (digits.length < 6) digits = "0" + digits;
-		          result = "" + digits + result;
-		        }
-		      }
-		    };
-
-		    /**
-		     * Gets the high 32 bits as a signed integer.
-		     * @this {!Long}
-		     * @returns {number} Signed high bits
-		     */
-		    LongPrototype.getHighBits = function getHighBits() {
-		      return this.high;
-		    };
-
-		    /**
-		     * Gets the high 32 bits as an unsigned integer.
-		     * @this {!Long}
-		     * @returns {number} Unsigned high bits
-		     */
-		    LongPrototype.getHighBitsUnsigned = function getHighBitsUnsigned() {
-		      return this.high >>> 0;
-		    };
-
-		    /**
-		     * Gets the low 32 bits as a signed integer.
-		     * @this {!Long}
-		     * @returns {number} Signed low bits
-		     */
-		    LongPrototype.getLowBits = function getLowBits() {
-		      return this.low;
-		    };
-
-		    /**
-		     * Gets the low 32 bits as an unsigned integer.
-		     * @this {!Long}
-		     * @returns {number} Unsigned low bits
-		     */
-		    LongPrototype.getLowBitsUnsigned = function getLowBitsUnsigned() {
-		      return this.low >>> 0;
-		    };
-
-		    /**
-		     * Gets the number of bits needed to represent the absolute value of this Long.
-		     * @this {!Long}
-		     * @returns {number}
-		     */
-		    LongPrototype.getNumBitsAbs = function getNumBitsAbs() {
-		      if (this.isNegative())
-		        // Unsigned Longs are never negative
-		        return this.eq(MIN_VALUE) ? 64 : this.neg().getNumBitsAbs();
-		      var val = this.high != 0 ? this.high : this.low;
-		      for (var bit = 31; bit > 0; bit--) if ((val & (1 << bit)) != 0) break;
-		      return this.high != 0 ? bit + 33 : bit + 1;
-		    };
-
-		    /**
-		     * Tests if this Long can be safely represented as a JavaScript number.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isSafeInteger = function isSafeInteger() {
-		      // 2^53-1 is the maximum safe value
-		      var top11Bits = this.high >> 21;
-		      // [0, 2^53-1]
-		      if (!top11Bits) return true;
-		      // > 2^53-1
-		      if (this.unsigned) return false;
-		      // [-2^53, -1] except -2^53
-		      return top11Bits === -1 && !(this.low === 0 && this.high === -2097152);
-		    };
-
-		    /**
-		     * Tests if this Long's value equals zero.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isZero = function isZero() {
-		      return this.high === 0 && this.low === 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value equals zero. This is an alias of {@link Long#isZero}.
-		     * @returns {boolean}
-		     */
-		    LongPrototype.eqz = LongPrototype.isZero;
-
-		    /**
-		     * Tests if this Long's value is negative.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isNegative = function isNegative() {
-		      return !this.unsigned && this.high < 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is positive or zero.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isPositive = function isPositive() {
-		      return this.unsigned || this.high >= 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is odd.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isOdd = function isOdd() {
-		      return (this.low & 1) === 1;
-		    };
-
-		    /**
-		     * Tests if this Long's value is even.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isEven = function isEven() {
-		      return (this.low & 1) === 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value equals the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.equals = function equals(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      if (
-		        this.unsigned !== other.unsigned &&
-		        this.high >>> 31 === 1 &&
-		        other.high >>> 31 === 1
-		      )
-		        return false;
-		      return this.high === other.high && this.low === other.low;
-		    };
-
-		    /**
-		     * Tests if this Long's value equals the specified's. This is an alias of {@link Long#equals}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.eq = LongPrototype.equals;
-
-		    /**
-		     * Tests if this Long's value differs from the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.notEquals = function notEquals(other) {
-		      return !this.eq(/* validates */ other);
-		    };
-
-		    /**
-		     * Tests if this Long's value differs from the specified's. This is an alias of {@link Long#notEquals}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.neq = LongPrototype.notEquals;
-
-		    /**
-		     * Tests if this Long's value differs from the specified's. This is an alias of {@link Long#notEquals}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.ne = LongPrototype.notEquals;
-
-		    /**
-		     * Tests if this Long's value is less than the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.lessThan = function lessThan(other) {
-		      return this.comp(/* validates */ other) < 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is less than the specified's. This is an alias of {@link Long#lessThan}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.lt = LongPrototype.lessThan;
-
-		    /**
-		     * Tests if this Long's value is less than or equal the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.lessThanOrEqual = function lessThanOrEqual(other) {
-		      return this.comp(/* validates */ other) <= 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is less than or equal the specified's. This is an alias of {@link Long#lessThanOrEqual}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.lte = LongPrototype.lessThanOrEqual;
-
-		    /**
-		     * Tests if this Long's value is less than or equal the specified's. This is an alias of {@link Long#lessThanOrEqual}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.le = LongPrototype.lessThanOrEqual;
-
-		    /**
-		     * Tests if this Long's value is greater than the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.greaterThan = function greaterThan(other) {
-		      return this.comp(/* validates */ other) > 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is greater than the specified's. This is an alias of {@link Long#greaterThan}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.gt = LongPrototype.greaterThan;
-
-		    /**
-		     * Tests if this Long's value is greater than or equal the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.greaterThanOrEqual = function greaterThanOrEqual(other) {
-		      return this.comp(/* validates */ other) >= 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is greater than or equal the specified's. This is an alias of {@link Long#greaterThanOrEqual}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.gte = LongPrototype.greaterThanOrEqual;
-
-		    /**
-		     * Tests if this Long's value is greater than or equal the specified's. This is an alias of {@link Long#greaterThanOrEqual}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.ge = LongPrototype.greaterThanOrEqual;
-
-		    /**
-		     * Compares this Long's value with the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
-		     *  if the given one is greater
-		     */
-		    LongPrototype.compare = function compare(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      if (this.eq(other)) return 0;
-		      var thisNeg = this.isNegative(),
-		        otherNeg = other.isNegative();
-		      if (thisNeg && !otherNeg) return -1;
-		      if (!thisNeg && otherNeg) return 1;
-		      // At this point the sign bits are the same
-		      if (!this.unsigned) return this.sub(other).isNegative() ? -1 : 1;
-		      // Both are positive if at least one is unsigned
-		      return other.high >>> 0 > this.high >>> 0 ||
-		        (other.high === this.high && other.low >>> 0 > this.low >>> 0)
-		        ? -1
-		        : 1;
-		    };
-
-		    /**
-		     * Compares this Long's value with the specified's. This is an alias of {@link Long#compare}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
-		     *  if the given one is greater
-		     */
-		    LongPrototype.comp = LongPrototype.compare;
-
-		    /**
-		     * Negates this Long's value.
-		     * @this {!Long}
-		     * @returns {!Long} Negated Long
-		     */
-		    LongPrototype.negate = function negate() {
-		      if (!this.unsigned && this.eq(MIN_VALUE)) return MIN_VALUE;
-		      return this.not().add(ONE);
-		    };
-
-		    /**
-		     * Negates this Long's value. This is an alias of {@link Long#negate}.
-		     * @function
-		     * @returns {!Long} Negated Long
-		     */
-		    LongPrototype.neg = LongPrototype.negate;
-
-		    /**
-		     * Returns the sum of this and the specified Long.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} addend Addend
-		     * @returns {!Long} Sum
-		     */
-		    LongPrototype.add = function add(addend) {
-		      if (!isLong(addend)) addend = fromValue(addend);
-
-		      // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
-
-		      var a48 = this.high >>> 16;
-		      var a32 = this.high & 0xffff;
-		      var a16 = this.low >>> 16;
-		      var a00 = this.low & 0xffff;
-		      var b48 = addend.high >>> 16;
-		      var b32 = addend.high & 0xffff;
-		      var b16 = addend.low >>> 16;
-		      var b00 = addend.low & 0xffff;
-		      var c48 = 0,
-		        c32 = 0,
-		        c16 = 0,
-		        c00 = 0;
-		      c00 += a00 + b00;
-		      c16 += c00 >>> 16;
-		      c00 &= 0xffff;
-		      c16 += a16 + b16;
-		      c32 += c16 >>> 16;
-		      c16 &= 0xffff;
-		      c32 += a32 + b32;
-		      c48 += c32 >>> 16;
-		      c32 &= 0xffff;
-		      c48 += a48 + b48;
-		      c48 &= 0xffff;
-		      return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
-		    };
-
-		    /**
-		     * Returns the difference of this and the specified Long.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} subtrahend Subtrahend
-		     * @returns {!Long} Difference
-		     */
-		    LongPrototype.subtract = function subtract(subtrahend) {
-		      if (!isLong(subtrahend)) subtrahend = fromValue(subtrahend);
-		      return this.add(subtrahend.neg());
-		    };
-
-		    /**
-		     * Returns the difference of this and the specified Long. This is an alias of {@link Long#subtract}.
-		     * @function
-		     * @param {!Long|number|bigint|string} subtrahend Subtrahend
-		     * @returns {!Long} Difference
-		     */
-		    LongPrototype.sub = LongPrototype.subtract;
-
-		    /**
-		     * Returns the product of this and the specified Long.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} multiplier Multiplier
-		     * @returns {!Long} Product
-		     */
-		    LongPrototype.multiply = function multiply(multiplier) {
-		      if (this.isZero()) return this;
-		      if (!isLong(multiplier)) multiplier = fromValue(multiplier);
-
-		      // use wasm support if present
-		      if (wasm) {
-		        var low = wasm["mul"](
-		          this.low,
-		          this.high,
-		          multiplier.low,
-		          multiplier.high,
-		        );
-		        return fromBits(low, wasm["get_high"](), this.unsigned);
-		      }
-		      if (multiplier.isZero()) return this.unsigned ? UZERO : ZERO;
-		      if (this.eq(MIN_VALUE)) return multiplier.isOdd() ? MIN_VALUE : ZERO;
-		      if (multiplier.eq(MIN_VALUE)) return this.isOdd() ? MIN_VALUE : ZERO;
-		      if (this.isNegative()) {
-		        if (multiplier.isNegative()) return this.neg().mul(multiplier.neg());
-		        else return this.neg().mul(multiplier).neg();
-		      } else if (multiplier.isNegative())
-		        return this.mul(multiplier.neg()).neg();
-
-		      // If both longs are small, use float multiplication
-		      if (this.lt(TWO_PWR_24) && multiplier.lt(TWO_PWR_24))
-		        return fromNumber(
-		          this.toNumber() * multiplier.toNumber(),
-		          this.unsigned,
-		        );
-
-		      // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
-		      // We can skip products that would overflow.
-
-		      var a48 = this.high >>> 16;
-		      var a32 = this.high & 0xffff;
-		      var a16 = this.low >>> 16;
-		      var a00 = this.low & 0xffff;
-		      var b48 = multiplier.high >>> 16;
-		      var b32 = multiplier.high & 0xffff;
-		      var b16 = multiplier.low >>> 16;
-		      var b00 = multiplier.low & 0xffff;
-		      var c48 = 0,
-		        c32 = 0,
-		        c16 = 0,
-		        c00 = 0;
-		      c00 += a00 * b00;
-		      c16 += c00 >>> 16;
-		      c00 &= 0xffff;
-		      c16 += a16 * b00;
-		      c32 += c16 >>> 16;
-		      c16 &= 0xffff;
-		      c16 += a00 * b16;
-		      c32 += c16 >>> 16;
-		      c16 &= 0xffff;
-		      c32 += a32 * b00;
-		      c48 += c32 >>> 16;
-		      c32 &= 0xffff;
-		      c32 += a16 * b16;
-		      c48 += c32 >>> 16;
-		      c32 &= 0xffff;
-		      c32 += a00 * b32;
-		      c48 += c32 >>> 16;
-		      c32 &= 0xffff;
-		      c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
-		      c48 &= 0xffff;
-		      return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
-		    };
-
-		    /**
-		     * Returns the product of this and the specified Long. This is an alias of {@link Long#multiply}.
-		     * @function
-		     * @param {!Long|number|bigint|string} multiplier Multiplier
-		     * @returns {!Long} Product
-		     */
-		    LongPrototype.mul = LongPrototype.multiply;
-
-		    /**
-		     * Returns this Long divided by the specified. The result is signed if this Long is signed or
-		     *  unsigned if this Long is unsigned.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Quotient
-		     */
-		    LongPrototype.divide = function divide(divisor) {
-		      if (!isLong(divisor)) divisor = fromValue(divisor);
-		      if (divisor.isZero()) throw Error("division by zero");
-
-		      // use wasm support if present
-		      if (wasm) {
-		        // guard against signed division overflow: the largest
-		        // negative number / -1 would be 1 larger than the largest
-		        // positive number, due to two's complement.
-		        if (
-		          !this.unsigned &&
-		          this.high === -2147483648 &&
-		          divisor.low === -1 &&
-		          divisor.high === -1
-		        ) {
-		          // be consistent with non-wasm code path
-		          return this;
-		        }
-		        var low = (this.unsigned ? wasm["div_u"] : wasm["div_s"])(
-		          this.low,
-		          this.high,
-		          divisor.low,
-		          divisor.high,
-		        );
-		        return fromBits(low, wasm["get_high"](), this.unsigned);
-		      }
-		      if (this.isZero()) return this.unsigned ? UZERO : ZERO;
-		      var approx, rem, res;
-		      if (!this.unsigned) {
-		        // This section is only relevant for signed longs and is derived from the
-		        // closure library as a whole.
-		        if (this.eq(MIN_VALUE)) {
-		          if (divisor.eq(ONE) || divisor.eq(NEG_ONE))
-		            return MIN_VALUE; // recall that -MIN_VALUE == MIN_VALUE
-		          else if (divisor.eq(MIN_VALUE)) return ONE;
-		          else {
-		            // At this point, we have |other| >= 2, so |this/other| < |MIN_VALUE|.
-		            var halfThis = this.shr(1);
-		            approx = halfThis.div(divisor).shl(1);
-		            if (approx.eq(ZERO)) {
-		              return divisor.isNegative() ? ONE : NEG_ONE;
-		            } else {
-		              rem = this.sub(divisor.mul(approx));
-		              res = approx.add(rem.div(divisor));
-		              return res;
-		            }
-		          }
-		        } else if (divisor.eq(MIN_VALUE)) return this.unsigned ? UZERO : ZERO;
-		        if (this.isNegative()) {
-		          if (divisor.isNegative()) return this.neg().div(divisor.neg());
-		          return this.neg().div(divisor).neg();
-		        } else if (divisor.isNegative()) return this.div(divisor.neg()).neg();
-		        res = ZERO;
-		      } else {
-		        // The algorithm below has not been made for unsigned longs. It's therefore
-		        // required to take special care of the MSB prior to running it.
-		        if (!divisor.unsigned) divisor = divisor.toUnsigned();
-		        if (divisor.gt(this)) return UZERO;
-		        if (divisor.gt(this.shru(1)))
-		          // 15 >>> 1 = 7 ; with divisor = 8 ; true
-		          return UONE;
-		        res = UZERO;
-		      }
-
-		      // Repeat the following until the remainder is less than other:  find a
-		      // floating-point that approximates remainder / other *from below*, add this
-		      // into the result, and subtract it from the remainder.  It is critical that
-		      // the approximate value is less than or equal to the real value so that the
-		      // remainder never becomes negative.
-		      rem = this;
-		      while (rem.gte(divisor)) {
-		        // Approximate the result of division. This may be a little greater or
-		        // smaller than the actual value.
-		        approx = Math.max(1, Math.floor(rem.toNumber() / divisor.toNumber()));
-
-		        // We will tweak the approximate result by changing it in the 48-th digit or
-		        // the smallest non-fractional digit, whichever is larger.
-		        var log2 = Math.ceil(Math.log(approx) / Math.LN2),
-		          delta = log2 <= 48 ? 1 : pow_dbl(2, log2 - 48),
-		          // Decrease the approximation until it is smaller than the remainder.  Note
-		          // that if it is too large, the product overflows and is negative.
-		          approxRes = fromNumber(approx),
-		          approxRem = approxRes.mul(divisor);
-		        while (approxRem.isNegative() || approxRem.gt(rem)) {
-		          approx -= delta;
-		          approxRes = fromNumber(approx, this.unsigned);
-		          approxRem = approxRes.mul(divisor);
-		        }
-
-		        // We know the answer can't be zero... and actually, zero would cause
-		        // infinite recursion since we would make no progress.
-		        if (approxRes.isZero()) approxRes = ONE;
-		        res = res.add(approxRes);
-		        rem = rem.sub(approxRem);
-		      }
-		      return res;
-		    };
-
-		    /**
-		     * Returns this Long divided by the specified. This is an alias of {@link Long#divide}.
-		     * @function
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Quotient
-		     */
-		    LongPrototype.div = LongPrototype.divide;
-
-		    /**
-		     * Returns this Long modulo the specified.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Remainder
-		     */
-		    LongPrototype.modulo = function modulo(divisor) {
-		      if (!isLong(divisor)) divisor = fromValue(divisor);
-
-		      // use wasm support if present
-		      if (wasm) {
-		        var low = (this.unsigned ? wasm["rem_u"] : wasm["rem_s"])(
-		          this.low,
-		          this.high,
-		          divisor.low,
-		          divisor.high,
-		        );
-		        return fromBits(low, wasm["get_high"](), this.unsigned);
-		      }
-		      return this.sub(this.div(divisor).mul(divisor));
-		    };
-
-		    /**
-		     * Returns this Long modulo the specified. This is an alias of {@link Long#modulo}.
-		     * @function
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Remainder
-		     */
-		    LongPrototype.mod = LongPrototype.modulo;
-
-		    /**
-		     * Returns this Long modulo the specified. This is an alias of {@link Long#modulo}.
-		     * @function
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Remainder
-		     */
-		    LongPrototype.rem = LongPrototype.modulo;
-
-		    /**
-		     * Returns the bitwise NOT of this Long.
-		     * @this {!Long}
-		     * @returns {!Long}
-		     */
-		    LongPrototype.not = function not() {
-		      return fromBits(~this.low, ~this.high, this.unsigned);
-		    };
-
-		    /**
-		     * Returns count leading zeros of this Long.
-		     * @this {!Long}
-		     * @returns {!number}
-		     */
-		    LongPrototype.countLeadingZeros = function countLeadingZeros() {
-		      return this.high ? Math.clz32(this.high) : Math.clz32(this.low) + 32;
-		    };
-
-		    /**
-		     * Returns count leading zeros. This is an alias of {@link Long#countLeadingZeros}.
-		     * @function
-		     * @param {!Long}
-		     * @returns {!number}
-		     */
-		    LongPrototype.clz = LongPrototype.countLeadingZeros;
-
-		    /**
-		     * Returns count trailing zeros of this Long.
-		     * @this {!Long}
-		     * @returns {!number}
-		     */
-		    LongPrototype.countTrailingZeros = function countTrailingZeros() {
-		      return this.low ? ctz32(this.low) : ctz32(this.high) + 32;
-		    };
-
-		    /**
-		     * Returns count trailing zeros. This is an alias of {@link Long#countTrailingZeros}.
-		     * @function
-		     * @param {!Long}
-		     * @returns {!number}
-		     */
-		    LongPrototype.ctz = LongPrototype.countTrailingZeros;
-
-		    /**
-		     * Returns the bitwise AND of this Long and the specified.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other Long
-		     * @returns {!Long}
-		     */
-		    LongPrototype.and = function and(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      return fromBits(
-		        this.low & other.low,
-		        this.high & other.high,
-		        this.unsigned,
-		      );
-		    };
-
-		    /**
-		     * Returns the bitwise OR of this Long and the specified.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other Long
-		     * @returns {!Long}
-		     */
-		    LongPrototype.or = function or(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      return fromBits(
-		        this.low | other.low,
-		        this.high | other.high,
-		        this.unsigned,
-		      );
-		    };
-
-		    /**
-		     * Returns the bitwise XOR of this Long and the given one.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other Long
-		     * @returns {!Long}
-		     */
-		    LongPrototype.xor = function xor(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      return fromBits(
-		        this.low ^ other.low,
-		        this.high ^ other.high,
-		        this.unsigned,
-		      );
-		    };
-
-		    /**
-		     * Returns this Long with bits shifted to the left by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shiftLeft = function shiftLeft(numBits) {
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      else if (numBits < 32)
-		        return fromBits(
-		          this.low << numBits,
-		          (this.high << numBits) | (this.low >>> (32 - numBits)),
-		          this.unsigned,
-		        );
-		      else return fromBits(0, this.low << (numBits - 32), this.unsigned);
-		    };
-
-		    /**
-		     * Returns this Long with bits shifted to the left by the given amount. This is an alias of {@link Long#shiftLeft}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shl = LongPrototype.shiftLeft;
-
-		    /**
-		     * Returns this Long with bits arithmetically shifted to the right by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shiftRight = function shiftRight(numBits) {
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      else if (numBits < 32)
-		        return fromBits(
-		          (this.low >>> numBits) | (this.high << (32 - numBits)),
-		          this.high >> numBits,
-		          this.unsigned,
-		        );
-		      else
-		        return fromBits(
-		          this.high >> (numBits - 32),
-		          this.high >= 0 ? 0 : -1,
-		          this.unsigned,
-		        );
-		    };
-
-		    /**
-		     * Returns this Long with bits arithmetically shifted to the right by the given amount. This is an alias of {@link Long#shiftRight}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shr = LongPrototype.shiftRight;
-
-		    /**
-		     * Returns this Long with bits logically shifted to the right by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shiftRightUnsigned = function shiftRightUnsigned(numBits) {
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      if (numBits < 32)
-		        return fromBits(
-		          (this.low >>> numBits) | (this.high << (32 - numBits)),
-		          this.high >>> numBits,
-		          this.unsigned,
-		        );
-		      if (numBits === 32) return fromBits(this.high, 0, this.unsigned);
-		      return fromBits(this.high >>> (numBits - 32), 0, this.unsigned);
-		    };
-
-		    /**
-		     * Returns this Long with bits logically shifted to the right by the given amount. This is an alias of {@link Long#shiftRightUnsigned}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shru = LongPrototype.shiftRightUnsigned;
-
-		    /**
-		     * Returns this Long with bits logically shifted to the right by the given amount. This is an alias of {@link Long#shiftRightUnsigned}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shr_u = LongPrototype.shiftRightUnsigned;
-
-		    /**
-		     * Returns this Long with bits rotated to the left by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Rotated Long
-		     */
-		    LongPrototype.rotateLeft = function rotateLeft(numBits) {
-		      var b;
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      if (numBits === 32) return fromBits(this.high, this.low, this.unsigned);
-		      if (numBits < 32) {
-		        b = 32 - numBits;
-		        return fromBits(
-		          (this.low << numBits) | (this.high >>> b),
-		          (this.high << numBits) | (this.low >>> b),
-		          this.unsigned,
-		        );
-		      }
-		      numBits -= 32;
-		      b = 32 - numBits;
-		      return fromBits(
-		        (this.high << numBits) | (this.low >>> b),
-		        (this.low << numBits) | (this.high >>> b),
-		        this.unsigned,
-		      );
-		    };
-		    /**
-		     * Returns this Long with bits rotated to the left by the given amount. This is an alias of {@link Long#rotateLeft}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Rotated Long
-		     */
-		    LongPrototype.rotl = LongPrototype.rotateLeft;
-
-		    /**
-		     * Returns this Long with bits rotated to the right by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Rotated Long
-		     */
-		    LongPrototype.rotateRight = function rotateRight(numBits) {
-		      var b;
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      if (numBits === 32) return fromBits(this.high, this.low, this.unsigned);
-		      if (numBits < 32) {
-		        b = 32 - numBits;
-		        return fromBits(
-		          (this.high << b) | (this.low >>> numBits),
-		          (this.low << b) | (this.high >>> numBits),
-		          this.unsigned,
-		        );
-		      }
-		      numBits -= 32;
-		      b = 32 - numBits;
-		      return fromBits(
-		        (this.low << b) | (this.high >>> numBits),
-		        (this.high << b) | (this.low >>> numBits),
-		        this.unsigned,
-		      );
-		    };
-		    /**
-		     * Returns this Long with bits rotated to the right by the given amount. This is an alias of {@link Long#rotateRight}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Rotated Long
-		     */
-		    LongPrototype.rotr = LongPrototype.rotateRight;
-
-		    /**
-		     * Converts this Long to signed.
-		     * @this {!Long}
-		     * @returns {!Long} Signed long
-		     */
-		    LongPrototype.toSigned = function toSigned() {
-		      if (!this.unsigned) return this;
-		      return fromBits(this.low, this.high, false);
-		    };
-
-		    /**
-		     * Converts this Long to unsigned.
-		     * @this {!Long}
-		     * @returns {!Long} Unsigned long
-		     */
-		    LongPrototype.toUnsigned = function toUnsigned() {
-		      if (this.unsigned) return this;
-		      return fromBits(this.low, this.high, true);
-		    };
-
-		    /**
-		     * Converts this Long to its byte representation.
-		     * @param {boolean=} le Whether little or big endian, defaults to big endian
-		     * @this {!Long}
-		     * @returns {!Array.<number>} Byte representation
-		     */
-		    LongPrototype.toBytes = function toBytes(le) {
-		      return le ? this.toBytesLE() : this.toBytesBE();
-		    };
-
-		    /**
-		     * Converts this Long to its little endian byte representation.
-		     * @this {!Long}
-		     * @returns {!Array.<number>} Little endian byte representation
-		     */
-		    LongPrototype.toBytesLE = function toBytesLE() {
-		      var hi = this.high,
-		        lo = this.low;
-		      return [
-		        lo & 0xff,
-		        (lo >>> 8) & 0xff,
-		        (lo >>> 16) & 0xff,
-		        lo >>> 24,
-		        hi & 0xff,
-		        (hi >>> 8) & 0xff,
-		        (hi >>> 16) & 0xff,
-		        hi >>> 24,
-		      ];
-		    };
-
-		    /**
-		     * Converts this Long to its big endian byte representation.
-		     * @this {!Long}
-		     * @returns {!Array.<number>} Big endian byte representation
-		     */
-		    LongPrototype.toBytesBE = function toBytesBE() {
-		      var hi = this.high,
-		        lo = this.low;
-		      return [
-		        hi >>> 24,
-		        (hi >>> 16) & 0xff,
-		        (hi >>> 8) & 0xff,
-		        hi & 0xff,
-		        lo >>> 24,
-		        (lo >>> 16) & 0xff,
-		        (lo >>> 8) & 0xff,
-		        lo & 0xff,
-		      ];
-		    };
-
-		    /**
-		     * Creates a Long from its byte representation.
-		     * @param {!Array.<number>} bytes Byte representation
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @param {boolean=} le Whether little or big endian, defaults to big endian
-		     * @returns {Long} The corresponding Long value
-		     */
-		    Long.fromBytes = function fromBytes(bytes, unsigned, le) {
-		      return le
-		        ? Long.fromBytesLE(bytes, unsigned)
-		        : Long.fromBytesBE(bytes, unsigned);
-		    };
-
-		    /**
-		     * Creates a Long from its little endian byte representation.
-		     * @param {!Array.<number>} bytes Little endian byte representation
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {Long} The corresponding Long value
-		     */
-		    Long.fromBytesLE = function fromBytesLE(bytes, unsigned) {
-		      return new Long(
-		        bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24),
-		        bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24),
-		        unsigned,
-		      );
-		    };
-
-		    /**
-		     * Creates a Long from its big endian byte representation.
-		     * @param {!Array.<number>} bytes Big endian byte representation
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {Long} The corresponding Long value
-		     */
-		    Long.fromBytesBE = function fromBytesBE(bytes, unsigned) {
-		      return new Long(
-		        (bytes[4] << 24) | (bytes[5] << 16) | (bytes[6] << 8) | bytes[7],
-		        (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3],
-		        unsigned,
-		      );
-		    };
-
-		    // Support conversion to/from BigInt where available
-		    if (typeof BigInt === "function") {
-		      /**
-		       * Returns a Long representing the given big integer.
-		       * @function
-		       * @param {number} value The big integer value
-		       * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		       * @returns {!Long} The corresponding Long value
-		       */
-		      Long.fromBigInt = function fromBigInt(value, unsigned) {
-		        var lowBits = Number(BigInt.asIntN(32, value));
-		        var highBits = Number(BigInt.asIntN(32, value >> BigInt(32)));
-		        return fromBits(lowBits, highBits, unsigned);
-		      };
-
-		      // Override
-		      Long.fromValue = function fromValueWithBigInt(value, unsigned) {
-		        if (typeof value === "bigint") return Long.fromBigInt(value, unsigned);
-		        return fromValue(value, unsigned);
-		      };
-
-		      /**
-		       * Converts the Long to its big integer representation.
-		       * @this {!Long}
-		       * @returns {bigint}
-		       */
-		      LongPrototype.toBigInt = function toBigInt() {
-		        var lowBigInt = BigInt(this.low >>> 0);
-		        var highBigInt = BigInt(this.unsigned ? this.high >>> 0 : this.high);
-		        return (highBigInt << BigInt(32)) | lowBigInt;
-		      };
-		    }
-		    (_exports.default = Long);
-		  },
-		); 
-	} (umd$1, umd$1.exports));
-	return umd$1.exports;
 }
 
 var hasRequiredSrc$5;
@@ -70613,6 +73076,12 @@ function requireCompressionFilter () {
 	            let totalLength = 0;
 	            const messageParts = [];
 	            const decompresser = zlib.createInflate();
+	            decompresser.on('error', (error) => {
+	                reject({
+	                    code: constants_1.Status.INTERNAL,
+	                    details: 'Failed to decompress deflate-encoded message'
+	                });
+	            });
 	            decompresser.on('data', (chunk) => {
 	                messageParts.push(chunk);
 	                totalLength += chunk.byteLength;
@@ -70654,6 +73123,12 @@ function requireCompressionFilter () {
 	            let totalLength = 0;
 	            const messageParts = [];
 	            const decompresser = zlib.createGunzip();
+	            decompresser.on('error', (error) => {
+	                reject({
+	                    code: constants_1.Status.INTERNAL,
+	                    details: 'Failed to decompress gzip-encoded message'
+	                });
+	            });
 	            decompresser.on('data', (chunk) => {
 	                messageParts.push(chunk);
 	                totalLength += chunk.byteLength;
@@ -77398,13 +79873,6 @@ function requireServerInterceptors () {
 	        this.receivedHalfClose = false;
 	        this.streamEnded = false;
 	        this.metricsRecorder = new orca_1.PerRequestMetricRecorder();
-	        this.stream.once('error', (err) => {
-	            /* We need an error handler to avoid uncaught error event exceptions, but
-	             * there is nothing we can reasonably do here. Any error event should
-	             * have a corresponding close event, which handles emitting the cancelled
-	             * event. And the stream is now in a bad state, so we can't reasonably
-	             * expect to be able to send an error over it. */
-	        });
 	        this.stream.once('close', () => {
 	            var _a;
 	            trace('Request to method ' +
@@ -77562,6 +80030,12 @@ function requireServerInterceptors () {
 	            return new Promise((resolve, reject) => {
 	                let totalLength = 0;
 	                const messageParts = [];
+	                decompresser.on('error', (error) => {
+	                    reject({
+	                        code: constants_1.Status.INTERNAL,
+	                        details: 'Failed to decompress message'
+	                    });
+	                });
 	                decompresser.on('data', (chunk) => {
 	                    messageParts.push(chunk);
 	                    totalLength += chunk.byteLength;
@@ -78797,6 +81271,13 @@ function requireServer () {
 	                channelzSessionInfo === null || channelzSessionInfo === void 0 ? void 0 : channelzSessionInfo.streamTracker.addCallFailed();
 	            }
 	            _channelzHandler(extraInterceptors, stream, headers) {
+	                stream.once('error', (err) => {
+	                    /* We need an error handler to avoid uncaught error event exceptions, but
+	                     * there is nothing we can reasonably do here. Any error event should
+	                     * have a corresponding close event, which handles emitting the cancelled
+	                     * event. And the stream is now in a bad state, so we can't reasonably
+	                     * expect to be able to send an error over it. */
+	                });
 	                // for handling idle timeout
 	                this.onStreamOpened(stream);
 	                const channelzSessionInfo = this.sessions.get(stream.session);
@@ -78856,6 +81337,13 @@ function requireServer () {
 	                }
 	            }
 	            _streamHandler(extraInterceptors, stream, headers) {
+	                stream.once('error', (err) => {
+	                    /* We need an error handler to avoid uncaught error event exceptions, but
+	                     * there is nothing we can reasonably do here. Any error event should
+	                     * have a corresponding close event, which handles emitting the cancelled
+	                     * event. And the stream is now in a bad state, so we can't reasonably
+	                     * expect to be able to send an error over it. */
+	                });
 	                // for handling idle timeout
 	                this.onStreamOpened(stream);
 	                if (this._verifyContentType(stream, headers) !== true) {
