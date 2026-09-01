@@ -1,7 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from "@jest/globals";
 import { type Context, context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
-import { BasicTracerProvider, InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import {
+  BasicTracerProvider,
+  InMemorySpanExporter,
+  type ReadableSpan,
+  SimpleSpanProcessor,
+} from "@opentelemetry/sdk-trace-base";
 import { aJobContext, aJobName, aTestCase, aTestName } from "../__fixtures__/builders";
 
 const emit = jest.fn<(record: Record<string, unknown>) => void>();
@@ -40,16 +45,21 @@ describe("traceTestCases", () => {
     trace.disable();
   });
 
+  function spanFor(testCase: { name: string }): ReadableSpan | undefined {
+    return exporter.getFinishedSpans().find((span) => span.name === testCase.name);
+  }
+
   it("emits one span per test case, parented to the active (job) span", () => {
     const job = aJobContext();
     const jobSpanName = aJobName();
+    const testCases = [aTestCase(), aTestCase()];
 
     trace.getTracer("test").startActiveSpan(jobSpanName, (jobSpan) => {
-      traceTestCases([aTestCase(), aTestCase()], job);
+      traceTestCases(testCases, job);
       jobSpan.end();
 
       const testSpans = exporter.getFinishedSpans().filter((span) => span.name !== jobSpanName);
-      expect(testSpans).toHaveLength(2);
+      expect(testSpans).toHaveLength(testCases.length);
       for (const span of testSpans) {
         expect(span.parentSpanContext?.spanId).toBe(jobSpan.spanContext().spanId);
         expect(span.spanContext().traceId).toBe(jobSpan.spanContext().traceId);
@@ -102,13 +112,13 @@ describe("traceTestCases", () => {
 
     traceTestCases([failed, errored, passed], aJobContext());
 
-    const byName = new Map(exporter.getFinishedSpans().map((span) => [span.name, span]));
-    expect(byName.get(failed.name)?.status.code).toBe(SpanStatusCode.ERROR);
-    expect(byName.get(failed.name)?.attributes["test.failure.message"]).toBe(failed.message);
-    expect(byName.get(failed.name)?.attributes["error"]).toBe(true);
-    expect(byName.get(errored.name)?.status.code).toBe(SpanStatusCode.ERROR);
-    expect(byName.get(passed.name)?.status.code).not.toBe(SpanStatusCode.ERROR);
-    expect(byName.get(passed.name)?.attributes["error"]).toBe(false);
+    expect(spanFor(failed)).toMatchObject({
+      status: { code: SpanStatusCode.ERROR },
+      attributes: { "test.failure.message": failed.message, error: true },
+    });
+    expect(spanFor(errored)?.status.code).toBe(SpanStatusCode.ERROR);
+    expect(spanFor(passed)?.status.code).not.toBe(SpanStatusCode.ERROR);
+    expect(spanFor(passed)?.attributes["error"]).toBe(false);
   });
 
   it("emits skipped cases with a skipped status and no error", () => {
@@ -143,7 +153,7 @@ describe("traceTestCases", () => {
       "github.job.name": job.name,
     });
 
-    const failedSpan = exporter.getFinishedSpans().find((span) => span.name === failed.name);
+    const failedSpan = spanFor(failed);
     const recordSpan = trace.getSpan(record?.["context"] as Context);
     expect(recordSpan?.spanContext().spanId).toBe(failedSpan?.spanContext().spanId);
     expect(recordSpan?.spanContext().traceId).toBe(failedSpan?.spanContext().traceId);
