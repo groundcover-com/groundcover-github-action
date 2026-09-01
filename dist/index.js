@@ -45174,7 +45174,6 @@ function markLeaves(cases) {
         return { ...testCase, leaf };
     });
 }
-/** Roll parsed test cases up into the same summary shape testResultsGlob produces. */
 function summarizeTestCases(cases) {
     const suites = new Set(cases.map((testCase) => testCase.suite)).size;
     const failed = cases.filter((testCase) => testCase.status === "failed").length;
@@ -45865,10 +45864,6 @@ function extractXmlFilesFromZip(zip) {
     }
     return files;
 }
-/**
- * Download the run's test-report artifacts (named `<prefix><sanitized job name>` by
- * the uploading workflow) and parse their JUnit XML into test cases per job id.
- */
 async function collectTestCasesFromArtifacts(context, octokit, runId, prefix, jobs) {
     const artifacts = await listWorkflowRunArtifacts(context, octokit, runId);
     const testCasesByJobId = {};
@@ -48527,8 +48522,6 @@ function toStepResult(conclusion) {
 }
 
 /**
- * Emit one span per test case as children of the active (job) span.
- *
  * JUnit reports carry durations but no per-test timestamps, so every span is
  * anchored at the job start; durations are exact, overlaps are expected
  * (tests run in parallel anyway).
@@ -48551,9 +48544,9 @@ function traceTestCases(testCases, job) {
     }
 }
 /**
- * Ship a failed test's output as a log record correlated with its span, so
- * opening the red test span in the backend shows what the test printed.
- * Only failures: passing-test stdout has no consumer and real volume.
+ * Correlating the record with the test's span is what makes a red span show
+ * what the test printed. Only failures: passing-test stdout has no consumer
+ * and real volume.
  */
 function emitTestFailureLog(testCase, job, span, startTime) {
     const body = [testCase.message, testCase.output].filter(Boolean).join("\n");

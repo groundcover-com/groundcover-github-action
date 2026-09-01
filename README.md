@@ -347,22 +347,29 @@ The matching XML files must exist on disk in the job running this action. In a s
 
 ### Per-test spans from report artifacts
 
-To get **one span per test case**, parented under the job that ran it, have each test job upload its JUnit XML reports as a workflow artifact and set `testResultsArtifactPrefix`:
+To get one span per test case, parented under the job that ran it, upload each test job's JUnit XML as a workflow artifact and set `testResultsArtifactPrefix`. This works with the recommended `workflow_run` setup, where the export job cannot see the test jobs' files on disk.
+
+Upload the reports from every test job:
 
 ```yaml
-# In each test job, after the test step:
-- name: Compute report artifact name
-  id: report-name
-  if: always()
-  run: echo "name=test-reports-$(echo '${{ github.job }}' | tr -c 'A-Za-z0-9_.-' '-' | sed 's/-*$//')" >> "$GITHUB_OUTPUT"
-- uses: actions/upload-artifact@v4
-  if: always()
-  with:
-    name: ${{ steps.report-name.outputs.name }}
-    path: reports/*-junit.xml
-    overwrite: true # reruns replace the previous attempt's reports
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
 
-# In the workflow_run export workflow:
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports-${{ github.job }}
+          path: reports/*-junit.xml
+          overwrite: true
+```
+
+Then point the export at them:
+
+```yaml
 - uses: groundcover-com/groundcover-github-action@v3
   with:
     groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
@@ -371,20 +378,33 @@ To get **one span per test case**, parented under the job that ran it, have each
     testResultsArtifactPrefix: "test-reports-"
 ```
 
-Artifacts are matched to jobs by name: `<prefix><sanitized job name>`, where the sanitized job name is the job's display name (the part after the last `" / "` for reusable workflows) with every run of characters outside `[A-Za-z0-9_.-]` replaced by `-`. For matrix jobs, derive the name from the matrix value instead of `github.job`.
+Artifacts are matched to jobs by name, `<prefix><sanitized job name>`, where the sanitized job name is the job's display name — the part after the last `" / "` for reusable workflows — with every run of characters outside `[A-Za-z0-9_.-]` replaced by `-`. Use `overwrite: true` so a rerun replaces the previous attempt's reports. When a job name contains such characters, or the job is a matrix job, build the artifact name from the same sanitization:
+
+```yaml
+- id: report-name
+  if: always()
+  run: echo "name=test-reports-$(echo '${{ matrix.suite }}' | tr -c 'A-Za-z0-9_.-' '-' | sed 's/-*$//')" >> "$GITHUB_OUTPUT"
+
+- uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: ${{ steps.report-name.outputs.name }}
+    path: reports/*-junit.xml
+    overwrite: true
+```
 
 Each test case becomes a span under its job span with these attributes:
 
 - `test.name`, `test.classname`, `test.suite`
 - `test.status` (`passed` / `failed` / `error` / `skipped`), `test.duration_ms`
 - `test.leaf` — false for Go subtest ancestors (another case in the same classname extends this name)
-- `test.collateral` — true for zero-duration failures (the framework aborted before the test ran, e.g. Go `-failfast`)
+- `test.collateral` — true for zero-duration failures with no output, which the framework aborted before the test ran (e.g. Go `-failfast`)
 - `test.failure.message` — the failure message and body, capped at 4 KB
 - `github.job.name`, `github.job.id`, `github.run_id`, `github.run_attempt`, `github.head_sha`, `github.head_branch`
 
 Failed and errored cases are marked as error spans. JUnit reports carry durations but no per-test timestamps, so test spans are anchored at the job start time; durations are exact and overlaps are expected. When `testResultsGlob` is not set, the root-span summary attributes above are computed from the artifact-parsed cases instead.
 
-Each **failed** case additionally ships its failure message and captured `<system-out>` as an OTLP log record correlated with the test's span, so opening a red test span shows what the test printed (passing-test output is not exported). These log records are sent even when `exportLogs` is `false`.
+Each failed case also ships its failure message and captured `<system-out>` as a log record correlated with the test's span, so opening a red test span shows what the test printed. Passing-test output is not exported. These log records are sent even when `exportLogs` is `false`.
 
 ## Log Export
 

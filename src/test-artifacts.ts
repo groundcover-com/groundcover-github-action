@@ -52,10 +52,6 @@ function extractXmlFilesFromZip(zip: Buffer): XmlFile[] {
   return files;
 }
 
-/**
- * Download the run's test-report artifacts (named `<prefix><sanitized job name>` by
- * the uploading workflow) and parse their JUnit XML into test cases per job id.
- */
 async function collectTestCasesFromArtifacts(
   context: Context,
   octokit: Octokit,

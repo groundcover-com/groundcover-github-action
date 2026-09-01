@@ -16,21 +16,17 @@ interface TestResultsSummary {
 type TestCaseStatus = "passed" | "failed" | "error" | "skipped";
 
 interface TestCase {
-  /** Full test name as reported by the framework (for Go this includes the subtest path). */
+  /** For Go this includes the subtest path. */
   name: string;
-  /** JUnit classname attribute — the package/module/file the test belongs to. */
   classname: string;
-  /** Name of the enclosing testsuite. */
   suite: string;
   timeSeconds: number;
   status: TestCaseStatus;
-  /** Failure/error message and body, capped at MAX_MESSAGE_LENGTH. */
   message?: string;
-  /** The testcase's captured system-out, capped at MAX_OUTPUT_LENGTH. */
   output?: string;
   /** False when another case in the same classname extends this name (a Go subtest ancestor). */
   leaf: boolean;
-  /** A zero-duration failure: the framework aborted before the test ran (e.g. Go -failfast). */
+  /** Set when the framework aborted before the test ran (e.g. Go -failfast), so it never really failed. */
   collateral: boolean;
 }
 
@@ -249,7 +245,6 @@ function markLeaves(cases: Omit<TestCase, "leaf">[]): TestCase[] {
   });
 }
 
-/** Roll parsed test cases up into the same summary shape testResultsGlob produces. */
 function summarizeTestCases(cases: TestCase[]): TestResultsSummary {
   const suites = new Set(cases.map((testCase) => testCase.suite)).size;
   const failed = cases.filter((testCase) => testCase.status === "failed").length;

@@ -3,7 +3,6 @@ import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { TestCase } from "../test-results";
 
-/** The slice of a workflow job needed to contextualize its test-case spans. */
 interface TestCaseJobContext {
   id: number;
   name: string;
@@ -15,8 +14,6 @@ interface TestCaseJobContext {
 }
 
 /**
- * Emit one span per test case as children of the active (job) span.
- *
  * JUnit reports carry durations but no per-test timestamps, so every span is
  * anchored at the job start; durations are exact, overlaps are expected
  * (tests run in parallel anyway).
@@ -43,9 +40,9 @@ function traceTestCases(testCases: TestCase[], job: TestCaseJobContext): void {
 }
 
 /**
- * Ship a failed test's output as a log record correlated with its span, so
- * opening the red test span in the backend shows what the test printed.
- * Only failures: passing-test stdout has no consumer and real volume.
+ * Correlating the record with the test's span is what makes a red span show
+ * what the test printed. Only failures: passing-test stdout has no consumer
+ * and real volume.
  */
 function emitTestFailureLog(testCase: TestCase, job: TestCaseJobContext, span: Span, startTime: Date): void {
   const body = [testCase.message, testCase.output].filter(Boolean).join("\n");
