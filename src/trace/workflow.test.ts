@@ -93,7 +93,7 @@ function makeJob(overrides: Partial<Job> = {}): Job {
     workflow_name: "CI",
     head_branch: "main",
     ...overrides,
-  } as Job;
+  };
 }
 
 describe("traceWorkflowRun", () => {

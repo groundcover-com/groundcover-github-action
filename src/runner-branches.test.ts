@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { RequestError } from "@octokit/request-error";
+import { aTestName } from "./__fixtures__/builders";
 
 const core = {
   getInput: jest.fn<(name: string) => string>(),
@@ -19,6 +20,9 @@ const listJobsForWorkflowRun = jest.fn<() => Promise<unknown>>();
 const getJobsAnnotations = jest.fn<() => Promise<unknown>>();
 const getJobsLogs = jest.fn<() => Promise<unknown>>();
 const getPRsLabels = jest.fn<() => Promise<unknown>>();
+const listWorkflowRunArtifacts = jest.fn<() => Promise<unknown>>().mockResolvedValue([]);
+const downloadArtifactZip = jest.fn<() => Promise<unknown>>();
+const collectTestCasesFromArtifacts = jest.fn<() => Promise<Record<number, unknown[]>>>().mockResolvedValue({});
 const upsertPrTraceComment = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 const createTracerProvider = jest.fn(() => ({
   forceFlush: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
@@ -43,6 +47,8 @@ jest.unstable_mockModule("./github.js", () => ({
   getJobsAnnotations,
   getJobsLogs,
   getPRsLabels,
+  listWorkflowRunArtifacts,
+  downloadArtifactZip,
   upsertPrTraceComment,
 }));
 jest.unstable_mockModule("./tracer.js", () => ({
@@ -52,7 +58,17 @@ jest.unstable_mockModule("./tracer.js", () => ({
   stringToRecord,
 }));
 jest.unstable_mockModule("./trace/workflow.js", () => ({ traceWorkflowRun }));
-jest.unstable_mockModule("./test-results.js", () => ({ findTestResultsSummary }));
+const summarizeTestCases = jest.fn(() => ({
+  suites: 1,
+  total: 2,
+  passed: 1,
+  failed: 1,
+  skipped: 0,
+  errors: 0,
+  duration: 4,
+}));
+jest.unstable_mockModule("./test-results.js", () => ({ findTestResultsSummary, summarizeTestCases }));
+jest.unstable_mockModule("./test-artifacts.js", () => ({ collectTestCasesFromArtifacts }));
 jest.unstable_mockModule("../package.json", () => ({ version: "0.0.0-test" }));
 
 const { run, resolveOtlpHeaders, buildTracesUrl, buildPrTracesUrl } = await import("./runner.js");
@@ -80,6 +96,9 @@ describe("run branch coverage", () => {
     traceWorkflowRun.mockClear();
     findTestResultsSummary.mockReset();
     findTestResultsSummary.mockResolvedValue(undefined);
+    collectTestCasesFromArtifacts.mockReset();
+    collectTestCasesFromArtifacts.mockResolvedValue({});
+    summarizeTestCases.mockClear();
     getJobsLogs.mockResolvedValue({});
     delete process.env["OTEL_SERVICE_NAME"];
     delete process.env["GITHUB_TOKEN"];
@@ -110,9 +129,18 @@ describe("run branch coverage", () => {
     await run();
 
     expect(getJobsLogs).toHaveBeenCalledWith(github.context, { mocked: true }, [10]);
-    expect(traceWorkflowRun).toHaveBeenCalledWith(expect.any(Object), [{ id: 10 }], {}, {}, undefined, undefined, {
-      10: "job logs",
-    });
+    expect(traceWorkflowRun).toHaveBeenCalledWith(
+      expect.any(Object),
+      [{ id: 10 }],
+      {},
+      {},
+      undefined,
+      undefined,
+      {
+        10: "job logs",
+      },
+      {},
+    );
     expect(createLoggerProvider).toHaveBeenCalledWith(
       "https://localhost",
       "Authorization=Bearer gc-secret",
@@ -207,7 +235,16 @@ describe("run branch coverage", () => {
     await run();
 
     expect(core.info).toHaveBeenCalledWith("Failed to get job logs: log download failed");
-    expect(traceWorkflowRun).toHaveBeenCalledWith(expect.any(Object), [{ id: 10 }], {}, {}, undefined, undefined, {});
+    expect(traceWorkflowRun).toHaveBeenCalledWith(
+      expect.any(Object),
+      [{ id: 10 }],
+      {},
+      {},
+      undefined,
+      undefined,
+      {},
+      {},
+    );
     expect(core.setFailed).not.toHaveBeenCalled();
   });
 
@@ -890,5 +927,139 @@ describe("buildPrTracesUrl", () => {
     ).toBe(
       "https://app.groundcover.com/traces?duration=Last+6+hours&filters=%255B%2522github.pull_requests.0.number%253A20700%2522%255D&backendId=groundcover&tenantUUID=a038dbeb-8971-33fa-aede-b11ad2731d36",
     );
+  });
+});
+
+describe("run with testResultsArtifactPrefix", () => {
+  beforeEach(() => {
+    core.getInput.mockReset();
+    core.setFailed.mockReset();
+    getWorkflowRun.mockReset();
+    listJobsForWorkflowRun.mockReset();
+    getJobsAnnotations.mockReset();
+    getJobsLogs.mockReset();
+    getJobsLogs.mockResolvedValue({});
+    getPRsLabels.mockReset();
+    traceWorkflowRun.mockClear();
+    findTestResultsSummary.mockReset();
+    findTestResultsSummary.mockResolvedValue(undefined);
+    collectTestCasesFromArtifacts.mockReset();
+    summarizeTestCases.mockClear();
+  });
+
+  function mockRun(inputs: Record<string, string>): void {
+    core.getInput.mockImplementation((name: string) => inputs[name] ?? "");
+    getWorkflowRun.mockResolvedValue({
+      id: 1,
+      workflow_id: 2,
+      run_attempt: 1,
+      name: "CI",
+      head_sha: "abc",
+      repository: { full_name: "o/r" },
+      pull_requests: [],
+      updated_at: "2024-01-01T00:00:00Z",
+    });
+    listJobsForWorkflowRun.mockResolvedValue([{ id: 10 }]);
+    getJobsAnnotations.mockResolvedValue({});
+    getPRsLabels.mockResolvedValue({});
+  }
+
+  it("collects test cases from artifacts, summarizes them, and forwards them per job", async () => {
+    mockRun({
+      groundcoverEndpoint: "https://localhost",
+      apiKey: "gc-secret",
+      testResultsArtifactPrefix: "test-reports-",
+    });
+    const firstTest = aTestName();
+    const secondTest = aTestName();
+    const reports = { 10: [{ name: aTestName(), cases: [{ name: firstTest }, { name: secondTest }] }] };
+    collectTestCasesFromArtifacts.mockResolvedValue(reports);
+
+    await run();
+
+    expect(collectTestCasesFromArtifacts).toHaveBeenCalledWith(github.context, { mocked: true }, 123, "test-reports-", [
+      { id: 10 },
+    ]);
+    expect(summarizeTestCases).toHaveBeenCalledWith([{ name: firstTest }, { name: secondTest }]);
+    expect(traceWorkflowRun).toHaveBeenCalledWith(
+      expect.any(Object),
+      [{ id: 10 }],
+      {},
+      {},
+      undefined,
+      expect.objectContaining({ total: 2 }),
+      {},
+      reports,
+    );
+    expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it("prefers the glob summary over the artifact-derived one", async () => {
+    mockRun({
+      groundcoverEndpoint: "https://localhost",
+      apiKey: "gc-secret",
+      testResultsArtifactPrefix: "test-reports-",
+      testResultsGlob: "reports/*.xml",
+    });
+    const passingTest = aTestName();
+    const reports = { 10: [{ name: aTestName(), cases: [{ name: passingTest }] }] };
+    collectTestCasesFromArtifacts.mockResolvedValue(reports);
+    const globSummary = { suites: 9, total: 9, passed: 9, failed: 0, skipped: 0, errors: 0, duration: 1 };
+    findTestResultsSummary.mockResolvedValue(globSummary as never);
+
+    await run();
+
+    expect(summarizeTestCases).not.toHaveBeenCalled();
+    expect(traceWorkflowRun).toHaveBeenCalledWith(
+      expect.any(Object),
+      [{ id: 10 }],
+      {},
+      {},
+      undefined,
+      globSummary,
+      {},
+      reports,
+    );
+  });
+
+  it("skips artifact collection when the prefix input is empty", async () => {
+    mockRun({ groundcoverEndpoint: "https://localhost", apiKey: "gc-secret" });
+
+    await run();
+
+    expect(collectTestCasesFromArtifacts).not.toHaveBeenCalled();
+    expect(summarizeTestCases).not.toHaveBeenCalled();
+  });
+
+  it("creates a logger provider for failed test cases even when job-log export is off", async () => {
+    createLoggerProvider.mockClear();
+    mockRun({
+      groundcoverEndpoint: "https://localhost",
+      apiKey: "gc-secret",
+      testResultsArtifactPrefix: "test-reports-",
+    });
+    collectTestCasesFromArtifacts.mockResolvedValue({
+      10: [{ name: aTestName(), cases: [{ name: aTestName(), status: "failed" }] }],
+    });
+
+    await run();
+
+    expect(createLoggerProvider).toHaveBeenCalledTimes(1);
+  });
+
+  it("creates no logger provider when all test cases passed and job-log export is off", async () => {
+    createLoggerProvider.mockClear();
+    mockRun({
+      groundcoverEndpoint: "https://localhost",
+      apiKey: "gc-secret",
+      testResultsArtifactPrefix: "test-reports-",
+    });
+    collectTestCasesFromArtifacts.mockResolvedValue({
+      10: [{ name: aTestName(), cases: [{ name: aTestName(), status: "passed" }] }],
+    });
+
+    await run();
+
+    expect(createLoggerProvider).not.toHaveBeenCalled();
   });
 });

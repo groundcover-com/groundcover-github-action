@@ -21,6 +21,7 @@ import {
 } from "@opentelemetry/semantic-conventions/incubating";
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import { traceStep } from "./step";
+import { traceTestReports, type TestReport } from "./test-trace";
 
 type CompletedJob = components["schemas"]["job"] & { completed_at: string };
 
@@ -168,6 +169,7 @@ function traceJob(
   job: components["schemas"]["job"],
   annotations?: components["schemas"]["check-annotation"][],
   jobLog?: string,
+  testReports?: TestReport[],
 ): void {
   const tracer = trace.getTracer("otel-cicd-export-action");
 
@@ -204,6 +206,10 @@ function traceJob(
     // Emit unmatched log lines at job level as fallback
     if (correlated && correlated.unmatched.length > 0) {
       emitJobLogs(correlated.unmatched, job.id, job.name, job.conclusion, job.html_url);
+    }
+
+    if (testReports && testReports.length > 0) {
+      traceTestReports(testReports, completedJob);
     }
 
     // Some skipped and post jobs return completed_at dates that are older than started_at

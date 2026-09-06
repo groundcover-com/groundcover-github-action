@@ -90,6 +90,7 @@ describe("tracer", () => {
     expect(protoConstructor).toHaveBeenCalledWith({
       url: "https://otel.example/v1/traces",
       headers: { a: "1", b: "2" },
+      concurrencyLimit: 64,
     });
     expect(grpcConstructor).not.toHaveBeenCalled();
 

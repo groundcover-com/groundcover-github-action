@@ -84,6 +84,7 @@ Use these rules when generating workflows or modifying this repository:
 - Adds resource attributes for `source`, `workload`, and optional `env`
 - Exports GitHub Actions job logs as OpenTelemetry log records correlated with job and step spans (enabled by default)
 - Can parse JUnit XML test results and attach a summary to the workflow root span
+- Can download JUnit XML report artifacts and export every test case as a span under its job span
 - Supports additional custom resource attributes for team/region/metadata
 - Upserts a single PR comment with trace details and a link to groundcover traces
 
@@ -238,6 +239,7 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 | `env`                   | No       |                               | Environment name added to resource attributes (e.g., `production`, `staging`).                                                                                                                              |
 | `workload`              | No       | Workflow name                 | Workload name added to resource attributes. Use this to group traces by service/workload.                                                                                                                   |
 | `testResultsGlob`       | No       |                               | Comma-separated glob patterns for JUnit XML test result files. Matching files are parsed and summarized onto the workflow root span.                                                                        |
+| `testResultsArtifactPrefix` | No   |                               | Prefix of workflow-run artifacts holding JUnit XML reports (e.g. `test-reports-`). Matching artifacts are downloaded and every test case becomes a span under its job span. See [Per-test spans](#per-test-spans-from-report-artifacts). |
 | `exportLogs`            | No       | `true`                        | Export GitHub Actions job logs as OpenTelemetry log records correlated with job and step spans. Set to `false` to disable.                                                                                  |
 | `extraAttributes`       | No       |                               | Extra resource attributes as comma-separated `key=value` pairs. Example: `"team=platform,region=us-east-1"`. Prefer using dedicated `env` and `workload` inputs when applicable.                            |
 | `groundcoverBaseUrl`    | No       | `https://app.groundcover.com` | Base URL used for the PR comment link to the groundcover Traces page. Use your workspace URL for self-hosted or custom domains.                                                                             |
@@ -342,6 +344,81 @@ If your workflow produces JUnit XML reports, set `testResultsGlob` to one or mor
 - `test.duration`
 
 The matching XML files must exist on disk in the job running this action. In a separate `workflow_run` export workflow, download the test result artifacts first if you want them included.
+
+### Per-test spans from report artifacts
+
+To get one span per test case, parented under the job that ran it, upload each test job's JUnit XML as a workflow artifact and set `testResultsArtifactPrefix`. This works with the recommended `workflow_run` setup, where the export job cannot see the test jobs' files on disk.
+
+Upload the reports from every test job:
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports-${{ github.job }}
+          path: reports/*-junit.xml
+          overwrite: true
+```
+
+Then point the export at them:
+
+```yaml
+- uses: groundcover-com/groundcover-github-action@v3
+  with:
+    groundcoverEndpoint: ${{ secrets.GC_ENDPOINT }}
+    apiKey: ${{ secrets.GC_API_KEY }}
+    runId: ${{ github.event.workflow_run.id }}
+    testResultsArtifactPrefix: "test-reports-"
+```
+
+Artifacts are matched to jobs by name, `<prefix><sanitized job name>`, where the sanitized job name is the job's display name — the part after the last `" / "` for reusable workflows — with every run of characters outside `[A-Za-z0-9_.-]` replaced by `-`. Use `overwrite: true` so a rerun replaces the previous attempt's reports. When a job name contains such characters, or the job is a matrix job, build the artifact name from the same sanitization:
+
+```yaml
+- id: report-name
+  if: always()
+  run: echo "name=test-reports-$(echo '${{ matrix.suite }}' | tr -c 'A-Za-z0-9_.-' '-' | sed 's/-*$//')" >> "$GITHUB_OUTPUT"
+
+- uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: ${{ steps.report-name.outputs.name }}
+    path: reports/*-junit.xml
+    overwrite: true
+```
+
+Each JUnit file becomes a wrapper span under its job, and each test case in that file becomes a span under the wrapper, so a job that produces several reports keeps them apart:
+
+```
+workflow run
+  job
+    Tests / <suite or file name>     ← rollup for THIS report
+      test case
+      test case
+    Tests / <other suite or file>    ← rollup for THAT report
+      test case
+```
+
+The wrapper is named after the report's suite, or its file name when a file holds several suites, and carries that file's counts — `test.report`, `test.suites`, `test.total`, `test.passed`, `test.failed`, `test.skipped`, `test.errors`, `test.duration` — the same rollup the workflow root carries for the whole run. It spans the job's own window.
+
+Each test case span carries these attributes:
+
+- `test.name`, `test.classname`, `test.suite`
+- `test.status` (`passed` / `failed` / `error` / `skipped`), `test.duration_ms`
+- `test.leaf` — false for Go subtest ancestors (another case in the same classname extends this name)
+- `test.collateral` — true for zero-duration failures with no output, which the framework aborted before the test ran (e.g. Go `-failfast`)
+- `test.failure.message` — the failure message and body, capped at 4 KB
+- `github.job.name`, `github.job.id`, `github.run_id`, `github.run_attempt`, `github.head_sha`, `github.head_branch`
+
+Failed and errored cases are marked as error spans. JUnit reports carry durations but no per-test timestamps, so **test spans are anchored at the job start time**; durations are exact and overlaps are expected. When `testResultsGlob` is not set, the root-span summary attributes above are computed from the artifact-parsed cases instead.
+
+Each failed case also ships its failure message and captured `<system-out>` as a log record correlated with the test's span, so opening a red test span shows what the test printed. Passing-test output is not exported. These log records are sent even when `exportLogs` is `false`.
 
 ## Log Export
 

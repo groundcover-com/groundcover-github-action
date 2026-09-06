@@ -7,21 +7,21 @@ import * as path$2 from 'path';
 import path__default from 'path';
 import http from 'http';
 import https from 'https';
-import require$$0$7 from 'net';
+import require$$0$6 from 'net';
 import require$$1$2 from 'tls';
-import require$$0$5 from 'events';
+import require$$0$4 from 'events';
 import 'assert';
-import require$$0$4, { inspect } from 'util';
+import util$a, { inspect } from 'util';
 import { createRequire } from 'node:module';
 import require$$5$1 from 'string_decoder';
 import 'child_process';
 import 'timers';
-import require$$0$6, { Readable } from 'stream';
+import require$$0$5, { Readable } from 'stream';
 import { readFile } from 'node:fs/promises';
 import process$1 from 'process';
 import * as require$$0$3 from 'zlib';
 import require$$0__default$1 from 'zlib';
-import require$$0$8 from 'http2';
+import require$$0$7 from 'http2';
 import require$$6$1 from 'url';
 import require$$1$3 from 'dns';
 import require$$1$4 from 'async_hooks';
@@ -222,8 +222,8 @@ function requireTunnel$1 () {
 	var tls = require$$1$2;
 	var http$1 = http;
 	var https$1 = https;
-	var events = require$$0$5;
-	var util = require$$0$4;
+	var events = require$$0$4;
+	var util = util$a;
 
 
 	tunnel$1.httpOverHttp = httpOverHttp;
@@ -2612,7 +2612,13 @@ function requireRequest$1 () {
 	      } else if (typeof val[i] === 'object') {
 	        throw new InvalidArgumentError(`invalid ${key} header`)
 	      } else {
-	        arr.push(`${val[i]}`);
+	        // Coerce primitives (and reject unsafe coercions such as functions
+	        // with a crafted toString/Symbol.toPrimitive).
+	        const str = `${val[i]}`;
+	        if (!isValidHeaderValue(str)) {
+	          throw new InvalidArgumentError(`invalid ${key} header`)
+	        }
+	        arr.push(str);
 	      }
 	    }
 	    val = arr;
@@ -2623,7 +2629,12 @@ function requireRequest$1 () {
 	  } else if (val === null) {
 	    val = '';
 	  } else {
+	    // Coerce primitives (and reject unsafe coercions such as functions
+	    // with a crafted toString/Symbol.toPrimitive).
 	    val = `${val}`;
+	    if (!isValidHeaderValue(val)) {
+	      throw new InvalidArgumentError(`invalid ${key} header`)
+	    }
 	  }
 
 	  if (headerName === 'host') {
@@ -2774,6 +2785,7 @@ function requireDispatcherBase () {
 
 	  get webSocketOptions () {
 	    return {
+	      maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
 	      maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
 	    }
 	  }
@@ -3660,9 +3672,9 @@ var hasRequiredConstants$7;
 function requireConstants$7 () {
 	if (hasRequiredConstants$7) return constants$7;
 	hasRequiredConstants$7 = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.SPECIAL_HEADERS = exports$1.HEADER_STATE = exports$1.MINOR = exports$1.MAJOR = exports$1.CONNECTION_TOKEN_CHARS = exports$1.HEADER_CHARS = exports$1.TOKEN = exports$1.STRICT_TOKEN = exports$1.HEX = exports$1.URL_CHAR = exports$1.STRICT_URL_CHAR = exports$1.USERINFO_CHARS = exports$1.MARK = exports$1.ALPHANUM = exports$1.NUM = exports$1.HEX_MAP = exports$1.NUM_MAP = exports$1.ALPHA = exports$1.FINISH = exports$1.H_METHOD_MAP = exports$1.METHOD_MAP = exports$1.METHODS_RTSP = exports$1.METHODS_ICE = exports$1.METHODS_HTTP = exports$1.METHODS = exports$1.LENIENT_FLAGS = exports$1.FLAGS = exports$1.TYPE = exports$1.ERROR = void 0;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.SPECIAL_HEADERS = exports.HEADER_STATE = exports.MINOR = exports.MAJOR = exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS = exports.TOKEN = exports.STRICT_TOKEN = exports.HEX = exports.URL_CHAR = exports.STRICT_URL_CHAR = exports.USERINFO_CHARS = exports.MARK = exports.ALPHANUM = exports.NUM = exports.HEX_MAP = exports.NUM_MAP = exports.ALPHA = exports.FINISH = exports.H_METHOD_MAP = exports.METHOD_MAP = exports.METHODS_RTSP = exports.METHODS_ICE = exports.METHODS_HTTP = exports.METHODS = exports.LENIENT_FLAGS = exports.FLAGS = exports.TYPE = exports.ERROR = void 0;
 		const utils_1 = requireUtils$4();
 		(function (ERROR) {
 		    ERROR[ERROR["OK"] = 0] = "OK";
@@ -3690,12 +3702,12 @@ function requireConstants$7 () {
 		    ERROR[ERROR["PAUSED_UPGRADE"] = 22] = "PAUSED_UPGRADE";
 		    ERROR[ERROR["PAUSED_H2_UPGRADE"] = 23] = "PAUSED_H2_UPGRADE";
 		    ERROR[ERROR["USER"] = 24] = "USER";
-		})(exports$1.ERROR || (exports$1.ERROR = {}));
+		})(exports.ERROR || (exports.ERROR = {}));
 		(function (TYPE) {
 		    TYPE[TYPE["BOTH"] = 0] = "BOTH";
 		    TYPE[TYPE["REQUEST"] = 1] = "REQUEST";
 		    TYPE[TYPE["RESPONSE"] = 2] = "RESPONSE";
-		})(exports$1.TYPE || (exports$1.TYPE = {}));
+		})(exports.TYPE || (exports.TYPE = {}));
 		(function (FLAGS) {
 		    FLAGS[FLAGS["CONNECTION_KEEP_ALIVE"] = 1] = "CONNECTION_KEEP_ALIVE";
 		    FLAGS[FLAGS["CONNECTION_CLOSE"] = 2] = "CONNECTION_CLOSE";
@@ -3707,12 +3719,12 @@ function requireConstants$7 () {
 		    FLAGS[FLAGS["TRAILING"] = 128] = "TRAILING";
 		    // 1 << 8 is unused
 		    FLAGS[FLAGS["TRANSFER_ENCODING"] = 512] = "TRANSFER_ENCODING";
-		})(exports$1.FLAGS || (exports$1.FLAGS = {}));
+		})(exports.FLAGS || (exports.FLAGS = {}));
 		(function (LENIENT_FLAGS) {
 		    LENIENT_FLAGS[LENIENT_FLAGS["HEADERS"] = 1] = "HEADERS";
 		    LENIENT_FLAGS[LENIENT_FLAGS["CHUNKED_LENGTH"] = 2] = "CHUNKED_LENGTH";
 		    LENIENT_FLAGS[LENIENT_FLAGS["KEEP_ALIVE"] = 4] = "KEEP_ALIVE";
-		})(exports$1.LENIENT_FLAGS || (exports$1.LENIENT_FLAGS = {}));
+		})(exports.LENIENT_FLAGS || (exports.LENIENT_FLAGS = {}));
 		var METHODS;
 		(function (METHODS) {
 		    METHODS[METHODS["DELETE"] = 0] = "DELETE";
@@ -3772,8 +3784,8 @@ function requireConstants$7 () {
 		    METHODS[METHODS["RECORD"] = 44] = "RECORD";
 		    /* RAOP */
 		    METHODS[METHODS["FLUSH"] = 45] = "FLUSH";
-		})(METHODS = exports$1.METHODS || (exports$1.METHODS = {}));
-		exports$1.METHODS_HTTP = [
+		})(METHODS = exports.METHODS || (exports.METHODS = {}));
+		exports.METHODS_HTTP = [
 		    METHODS.DELETE,
 		    METHODS.GET,
 		    METHODS.HEAD,
@@ -3811,10 +3823,10 @@ function requireConstants$7 () {
 		    // TODO(indutny): should we allow it with HTTP?
 		    METHODS.SOURCE,
 		];
-		exports$1.METHODS_ICE = [
+		exports.METHODS_ICE = [
 		    METHODS.SOURCE,
 		];
-		exports$1.METHODS_RTSP = [
+		exports.METHODS_RTSP = [
 		    METHODS.OPTIONS,
 		    METHODS.DESCRIBE,
 		    METHODS.ANNOUNCE,
@@ -3831,59 +3843,59 @@ function requireConstants$7 () {
 		    METHODS.GET,
 		    METHODS.POST,
 		];
-		exports$1.METHOD_MAP = utils_1.enumToMap(METHODS);
-		exports$1.H_METHOD_MAP = {};
-		Object.keys(exports$1.METHOD_MAP).forEach((key) => {
+		exports.METHOD_MAP = utils_1.enumToMap(METHODS);
+		exports.H_METHOD_MAP = {};
+		Object.keys(exports.METHOD_MAP).forEach((key) => {
 		    if (/^H/.test(key)) {
-		        exports$1.H_METHOD_MAP[key] = exports$1.METHOD_MAP[key];
+		        exports.H_METHOD_MAP[key] = exports.METHOD_MAP[key];
 		    }
 		});
 		(function (FINISH) {
 		    FINISH[FINISH["SAFE"] = 0] = "SAFE";
 		    FINISH[FINISH["SAFE_WITH_CB"] = 1] = "SAFE_WITH_CB";
 		    FINISH[FINISH["UNSAFE"] = 2] = "UNSAFE";
-		})(exports$1.FINISH || (exports$1.FINISH = {}));
-		exports$1.ALPHA = [];
+		})(exports.FINISH || (exports.FINISH = {}));
+		exports.ALPHA = [];
 		for (let i = 'A'.charCodeAt(0); i <= 'Z'.charCodeAt(0); i++) {
 		    // Upper case
-		    exports$1.ALPHA.push(String.fromCharCode(i));
+		    exports.ALPHA.push(String.fromCharCode(i));
 		    // Lower case
-		    exports$1.ALPHA.push(String.fromCharCode(i + 0x20));
+		    exports.ALPHA.push(String.fromCharCode(i + 0x20));
 		}
-		exports$1.NUM_MAP = {
+		exports.NUM_MAP = {
 		    0: 0, 1: 1, 2: 2, 3: 3, 4: 4,
 		    5: 5, 6: 6, 7: 7, 8: 8, 9: 9,
 		};
-		exports$1.HEX_MAP = {
+		exports.HEX_MAP = {
 		    0: 0, 1: 1, 2: 2, 3: 3, 4: 4,
 		    5: 5, 6: 6, 7: 7, 8: 8, 9: 9,
 		    A: 0XA, B: 0XB, C: 0XC, D: 0XD, E: 0XE, F: 0XF,
 		    a: 0xa, b: 0xb, c: 0xc, d: 0xd, e: 0xe, f: 0xf,
 		};
-		exports$1.NUM = [
+		exports.NUM = [
 		    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		];
-		exports$1.ALPHANUM = exports$1.ALPHA.concat(exports$1.NUM);
-		exports$1.MARK = ['-', '_', '.', '!', '~', '*', '\'', '(', ')'];
-		exports$1.USERINFO_CHARS = exports$1.ALPHANUM
-		    .concat(exports$1.MARK)
+		exports.ALPHANUM = exports.ALPHA.concat(exports.NUM);
+		exports.MARK = ['-', '_', '.', '!', '~', '*', '\'', '(', ')'];
+		exports.USERINFO_CHARS = exports.ALPHANUM
+		    .concat(exports.MARK)
 		    .concat(['%', ';', ':', '&', '=', '+', '$', ',']);
 		// TODO(indutny): use RFC
-		exports$1.STRICT_URL_CHAR = [
+		exports.STRICT_URL_CHAR = [
 		    '!', '"', '$', '%', '&', '\'',
 		    '(', ')', '*', '+', ',', '-', '.', '/',
 		    ':', ';', '<', '=', '>',
 		    '@', '[', '\\', ']', '^', '_',
 		    '`',
 		    '{', '|', '}', '~',
-		].concat(exports$1.ALPHANUM);
-		exports$1.URL_CHAR = exports$1.STRICT_URL_CHAR
+		].concat(exports.ALPHANUM);
+		exports.URL_CHAR = exports.STRICT_URL_CHAR
 		    .concat(['\t', '\f']);
 		// All characters with 0x80 bit set to 1
 		for (let i = 0x80; i <= 0xff; i++) {
-		    exports$1.URL_CHAR.push(i);
+		    exports.URL_CHAR.push(i);
 		}
-		exports$1.HEX = exports$1.NUM.concat(['a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F']);
+		exports.HEX = exports.NUM.concat(['a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F']);
 		/* Tokens as defined by rfc 2616. Also lowercases them.
 		 *        token       = 1*<any CHAR except CTLs or separators>
 		 *     separators     = "(" | ")" | "<" | ">" | "@"
@@ -3891,27 +3903,27 @@ function requireConstants$7 () {
 		 *                    | "/" | "[" | "]" | "?" | "="
 		 *                    | "{" | "}" | SP | HT
 		 */
-		exports$1.STRICT_TOKEN = [
+		exports.STRICT_TOKEN = [
 		    '!', '#', '$', '%', '&', '\'',
 		    '*', '+', '-', '.',
 		    '^', '_', '`',
 		    '|', '~',
-		].concat(exports$1.ALPHANUM);
-		exports$1.TOKEN = exports$1.STRICT_TOKEN.concat([' ']);
+		].concat(exports.ALPHANUM);
+		exports.TOKEN = exports.STRICT_TOKEN.concat([' ']);
 		/*
 		 * Verify that a char is a valid visible (printable) US-ASCII
 		 * character or %x80-FF
 		 */
-		exports$1.HEADER_CHARS = ['\t'];
+		exports.HEADER_CHARS = ['\t'];
 		for (let i = 32; i <= 255; i++) {
 		    if (i !== 127) {
-		        exports$1.HEADER_CHARS.push(i);
+		        exports.HEADER_CHARS.push(i);
 		    }
 		}
 		// ',' = \x44
-		exports$1.CONNECTION_TOKEN_CHARS = exports$1.HEADER_CHARS.filter((c) => c !== 44);
-		exports$1.MAJOR = exports$1.NUM_MAP;
-		exports$1.MINOR = exports$1.MAJOR;
+		exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS.filter((c) => c !== 44);
+		exports.MAJOR = exports.NUM_MAP;
+		exports.MINOR = exports.MAJOR;
 		var HEADER_STATE;
 		(function (HEADER_STATE) {
 		    HEADER_STATE[HEADER_STATE["GENERAL"] = 0] = "GENERAL";
@@ -3923,8 +3935,8 @@ function requireConstants$7 () {
 		    HEADER_STATE[HEADER_STATE["CONNECTION_CLOSE"] = 6] = "CONNECTION_CLOSE";
 		    HEADER_STATE[HEADER_STATE["CONNECTION_UPGRADE"] = 7] = "CONNECTION_UPGRADE";
 		    HEADER_STATE[HEADER_STATE["TRANSFER_ENCODING_CHUNKED"] = 8] = "TRANSFER_ENCODING_CHUNKED";
-		})(HEADER_STATE = exports$1.HEADER_STATE || (exports$1.HEADER_STATE = {}));
-		exports$1.SPECIAL_HEADERS = {
+		})(HEADER_STATE = exports.HEADER_STATE || (exports.HEADER_STATE = {}));
+		exports.SPECIAL_HEADERS = {
 		    'connection': HEADER_STATE.CONNECTION,
 		    'content-length': HEADER_STATE.CONTENT_LENGTH,
 		    'proxy-connection': HEADER_STATE.CONNECTION,
@@ -8693,6 +8705,7 @@ function requireClientH1 () {
 	  RequestContentLengthMismatchError,
 	  ResponseContentLengthMismatchError,
 	  RequestAbortedError,
+	  InvalidArgumentError,
 	  HeadersTimeoutError,
 	  HeadersOverflowError,
 	  SocketError,
@@ -8740,6 +8753,9 @@ function requireClientH1 () {
 	const FastBuffer = Buffer[Symbol.species];
 	const addListener = util.addListener;
 	const removeAllListeners = util.removeAllListeners;
+	const kIdleSocketValidation = Symbol('kIdleSocketValidation');
+	const kIdleSocketValidationTimeout = Symbol('kIdleSocketValidationTimeout');
+	const kSocketUsed = Symbol('kSocketUsed');
 
 	let extractBody;
 
@@ -8827,10 +8843,10 @@ function requireClientH1 () {
 	const TIMEOUT_KEEP_ALIVE = 8 | USE_NATIVE_TIMER;
 
 	class Parser {
-	  constructor (client, socket, { exports: exports$1 }) {
+	  constructor (client, socket, { exports }) {
 	    assert(Number.isFinite(client[kMaxHeadersSize]) && client[kMaxHeadersSize] > 0);
 
-	    this.llhttp = exports$1;
+	    this.llhttp = exports;
 	    this.ptr = this.llhttp.llhttp_alloc(constants.TYPE.RESPONSE);
 	    this.client = client;
 	    this.socket = socket;
@@ -8962,27 +8978,69 @@ function requireClientH1 () {
 
 	      const offset = llhttp.llhttp_get_error_pos(this.ptr) - currentBufferPtr;
 
-	      if (ret === constants.ERROR.PAUSED_UPGRADE) {
-	        this.onUpgrade(data.slice(offset));
-	      } else if (ret === constants.ERROR.PAUSED) {
-	        this.paused = true;
-	        socket.unshift(data.slice(offset));
-	      } else if (ret !== constants.ERROR.OK) {
-	        const ptr = llhttp.llhttp_get_error_reason(this.ptr);
-	        let message = '';
-	        /* istanbul ignore else: difficult to make a test case for */
-	        if (ptr) {
-	          const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0);
-	          message =
-	            'Response does not match the HTTP/1.1 protocol (' +
-	            Buffer.from(llhttp.memory.buffer, ptr, len).toString() +
-	            ')';
+	      if (ret !== constants.ERROR.OK) {
+	        const body = data.subarray(offset);
+
+	        if (ret === constants.ERROR.PAUSED_UPGRADE) {
+	          this.onUpgrade(body);
+	        } else if (ret === constants.ERROR.PAUSED) {
+	          this.paused = true;
+	          socket.unshift(body);
+	        } else {
+	          throw this.createError(ret, body)
 	        }
-	        throw new HTTPParserError(message, constants.ERROR[ret], data.slice(offset))
 	      }
 	    } catch (err) {
 	      util.destroy(socket, err);
 	    }
+	  }
+
+	  finish () {
+	    assert(currentParser === null);
+	    assert(this.ptr != null);
+	    assert(!this.paused);
+
+	    const { llhttp } = this;
+
+	    let ret;
+
+	    try {
+	      currentParser = this;
+	      ret = llhttp.llhttp_finish(this.ptr);
+	    } finally {
+	      currentParser = null;
+	    }
+
+	    if (ret === constants.ERROR.OK) {
+	      return null
+	    }
+
+	    if (ret === constants.ERROR.PAUSED || ret === constants.ERROR.PAUSED_UPGRADE) {
+	      this.paused = true;
+	      return null
+	    }
+
+	    return this.createError(ret, EMPTY_BUF)
+	  }
+
+	  createError (ret, data) {
+	    const { llhttp, contentLength, bytesRead } = this;
+
+	    if (contentLength && bytesRead !== parseInt(contentLength, 10)) {
+	      return new ResponseContentLengthMismatchError()
+	    }
+
+	    const ptr = llhttp.llhttp_get_error_reason(this.ptr);
+	    let message = '';
+	    if (ptr) {
+	      const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0);
+	      message =
+	        'Response does not match the HTTP/1.1 protocol (' +
+	        Buffer.from(llhttp.memory.buffer, ptr, len).toString() +
+	        ')';
+	    }
+
+	    return new HTTPParserError(message, constants.ERROR[ret], data)
 	  }
 
 	  destroy () {
@@ -9009,6 +9067,11 @@ function requireClientH1 () {
 
 	    /* istanbul ignore next: difficult to make a test case for */
 	    if (socket.destroyed) {
+	      return -1
+	    }
+
+	    if (client[kRunning] === 0) {
+	      util.destroy(socket, new SocketError('bad response', util.getSocketInfo(socket)));
 	      return -1
 	    }
 
@@ -9112,6 +9175,11 @@ function requireClientH1 () {
 
 	    /* istanbul ignore next: difficult to make a test case for */
 	    if (socket.destroyed) {
+	      return -1
+	    }
+
+	    if (client[kRunning] === 0) {
+	      util.destroy(socket, new SocketError('bad response', util.getSocketInfo(socket)));
 	      return -1
 	    }
 
@@ -9288,6 +9356,7 @@ function requireClientH1 () {
 	    request.onComplete(headers);
 
 	    client[kQueue][client[kRunningIdx]++] = null;
+	    socket[kSocketUsed] = true;
 
 	    if (socket[kWriting]) {
 	      assert(client[kRunning] === 0);
@@ -9346,6 +9415,9 @@ function requireClientH1 () {
 	  socket[kWriting] = false;
 	  socket[kReset] = false;
 	  socket[kBlocking] = false;
+	  socket[kIdleSocketValidation] = 0;
+	  socket[kIdleSocketValidationTimeout] = null;
+	  socket[kSocketUsed] = false;
 	  socket[kParser] = new Parser(client, socket, llhttpInstance);
 
 	  addListener(socket, 'error', function (err) {
@@ -9356,8 +9428,11 @@ function requireClientH1 () {
 	    // On Mac OS, we get an ECONNRESET even if there is a full body to be forwarded
 	    // to the user.
 	    if (err.code === 'ECONNRESET' && parser.statusCode && !parser.shouldKeepAlive) {
-	      // We treat all incoming data so for as a valid response.
-	      parser.onMessageComplete();
+	      const parserErr = parser.finish();
+	      if (parserErr) {
+	        this[kError] = parserErr;
+	        this[kClient][kOnError](parserErr);
+	      }
 	      return
 	    }
 
@@ -9376,8 +9451,10 @@ function requireClientH1 () {
 	    const parser = this[kParser];
 
 	    if (parser.statusCode && !parser.shouldKeepAlive) {
-	      // We treat all incoming data so far as a valid response.
-	      parser.onMessageComplete();
+	      const parserErr = parser.finish();
+	      if (parserErr) {
+	        util.destroy(this, parserErr);
+	      }
 	      return
 	    }
 
@@ -9387,10 +9464,11 @@ function requireClientH1 () {
 	    const client = this[kClient];
 	    const parser = this[kParser];
 
+	    clearIdleSocketValidation(this);
+
 	    if (parser) {
 	      if (!this[kError] && parser.statusCode && !parser.shouldKeepAlive) {
-	        // We treat all incoming data so far as a valid response.
-	        parser.onMessageComplete();
+	        this[kError] = parser.finish() || this[kError];
 	      }
 
 	      this[kParser].destroy();
@@ -9453,7 +9531,7 @@ function requireClientH1 () {
 	      return socket.destroyed
 	    },
 	    busy (request) {
-	      if (socket[kWriting] || socket[kReset] || socket[kBlocking]) {
+	      if (socket[kWriting] || socket[kReset] || socket[kBlocking] || socket[kIdleSocketValidation] === 1) {
 	        return true
 	      }
 
@@ -9491,6 +9569,39 @@ function requireClientH1 () {
 	  }
 	}
 
+	function clearIdleSocketValidation (socket) {
+	  if (socket[kIdleSocketValidationTimeout]) {
+	    clearImmediate(socket[kIdleSocketValidationTimeout]);
+	    socket[kIdleSocketValidationTimeout] = null;
+	  }
+
+	  socket[kIdleSocketValidation] = 0;
+	}
+
+	function scheduleIdleSocketValidation (client, socket) {
+	  socket[kIdleSocketValidation] = 1;
+	  // Yield to the check phase (after poll) so unsolicited bytes / FIN / RST
+	  // already pending on this idle keep-alive socket are processed before the
+	  // next request is written (GHSA-35p6-xmwp-9g52).
+	  //
+	  // setTimeout(0) pays Node's ~1ms timer floor on every sequential reuse
+	  // (#5493). setImmediate avoids that, but an *unref'd* Immediate lets poll
+	  // block for ~500ms when the event loop is otherwise idle (#5600 / #5606).
+	  // A ref'd Immediate both keeps the pending request alive and makes poll
+	  // return immediately — the hybrid those issues asked for.
+	  socket[kIdleSocketValidationTimeout] = setImmediate(() => {
+	    socket[kIdleSocketValidationTimeout] = null;
+	    socket[kIdleSocketValidation] = 2;
+
+	    if (client[kSocket] === socket && !socket.destroyed) {
+	      client[kResume]();
+	    }
+	  });
+	}
+
+	/**
+	 * @param {import('./client.js')} client
+	 */
 	function resumeH1 (client) {
 	  const socket = client[kSocket];
 
@@ -9503,6 +9614,32 @@ function requireClientH1 () {
 	    } else if (socket[kNoRef] && socket.ref) {
 	      socket.ref();
 	      socket[kNoRef] = false;
+	    }
+
+	    if (client[kRunning] === 0 && client[kPending] > 0 && socket[kSocketUsed]) {
+	      if (socket[kIdleSocketValidation] === 0) {
+	        scheduleIdleSocketValidation(client, socket);
+	        socket[kParser].readMore();
+	        if (socket.destroyed) {
+	          return
+	        }
+	        return
+	      }
+
+	      if (socket[kIdleSocketValidation] === 1) {
+	        socket[kParser].readMore();
+	        if (socket.destroyed) {
+	          return
+	        }
+	        return
+	      }
+	    }
+
+	    if (client[kRunning] === 0) {
+	      socket[kParser].readMore();
+	      if (socket.destroyed) {
+	        return
+	      }
 	    }
 
 	    if (client[kSize] === 0) {
@@ -9560,8 +9697,16 @@ function requireClientH1 () {
 	    }
 	    body = bodyStream.stream;
 	    contentLength = bodyStream.length;
-	  } else if (util.isBlobLike(body) && request.contentType == null && body.type) {
-	    headers.push('content-type', body.type);
+	  } else if (util.isBlobLike(body) && request.contentType == null) {
+	    const contentType = body.type;
+	    if (contentType) {
+	      const contentTypeValue = `${contentType}`;
+	      if (!util.isValidHeaderValue(contentTypeValue)) {
+	        util.errorRequest(client, request, new InvalidArgumentError('invalid content-type header'));
+	        return false
+	      }
+	      headers.push('content-type', contentTypeValue);
+	    }
 	  }
 
 	  if (body && typeof body.read === 'function') {
@@ -9598,6 +9743,7 @@ function requireClientH1 () {
 	  }
 
 	  const socket = client[kSocket];
+	  clearIdleSocketValidation(socket);
 
 	  const abort = (err) => {
 	    if (request.aborted || request.completed) {
@@ -12417,7 +12563,6 @@ function requireAgent () {
 
 	class Agent extends DispatcherBase {
 	  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
-
 	    if (typeof factory !== 'function') {
 	      throw new InvalidArgumentError('factory must be a function.')
 	    }
@@ -12999,6 +13144,28 @@ function requireRetryHandler () {
 	  return new Date(retryAfter).getTime() - current
 	}
 
+	function validatePartialResponseContentLength (headers, range, statusCode, retryCount) {
+	  const contentLength = headers['content-length'];
+	  if (contentLength == null) {
+	    return null
+	  }
+
+	  if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
+	    return null
+	  }
+
+	  const length = Number(contentLength);
+	  const expectedLength = range.end - range.start + 1;
+	  if (!Number.isFinite(length) || length !== expectedLength) {
+	    return new RequestRetryError('Content-Length mismatch', statusCode, {
+	      headers,
+	      data: { count: retryCount }
+	    })
+	  }
+
+	  return null
+	}
+
 	class RetryHandler {
 	  constructor (opts, handlers) {
 	    const { retryOptions, ...dispatchOpts } = opts;
@@ -13052,6 +13219,7 @@ function requireRetryHandler () {
 	    this.end = null;
 	    this.etag = null;
 	    this.resume = null;
+	    this.headersSent = false;
 
 	    // Handle possible onConnect duplication
 	    this.handler.onConnect(reason => {
@@ -13062,6 +13230,20 @@ function requireRetryHandler () {
 	        this.reason = reason;
 	      }
 	    });
+	  }
+
+	  checkpointResponseEnd (headers, resume) {
+	    if (this.end == null && this.opts.method !== 'HEAD') {
+	      const contentLength = headers['content-length'];
+	      this.end = contentLength != null ? Number(contentLength) - 1 : null;
+
+	      assert(
+	        this.end == null || Number.isFinite(this.end),
+	        'invalid content-length'
+	      );
+	    }
+
+	    this.resume = this.end != null ? resume : null;
 	  }
 
 	  onRequestSent () {
@@ -13153,6 +13335,8 @@ function requireRetryHandler () {
 
 	    if (statusCode >= 300) {
 	      if (this.retryOpts.statusCodes.includes(statusCode) === false) {
+	        this.headersSent = true;
+	        this.checkpointResponseEnd(headers, resume);
 	        return this.handler.onHeaders(
 	          statusCode,
 	          rawHeaders,
@@ -13213,10 +13397,23 @@ function requireRetryHandler () {
 	        return false
 	      }
 
+	      const contentLengthError = validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount);
+	      if (contentLengthError != null) {
+	        this.abort(contentLengthError);
+	        return false
+	      }
+
 	      const { start, size, end = size - 1 } = contentRange;
 
-	      assert(this.start === start, 'content-range mismatch');
-	      assert(this.end == null || this.end === end, 'content-range mismatch');
+	      if (this.start !== start || (this.end != null && this.end !== end)) {
+	        this.abort(
+	          new RequestRetryError('Content-Range mismatch', statusCode, {
+	            headers,
+	            data: { count: this.retryCount }
+	          })
+	        );
+	        return false
+	      }
 
 	      this.resume = resume;
 	      return true
@@ -13228,12 +13425,19 @@ function requireRetryHandler () {
 	        const range = parseRangeHeader(headers['content-range']);
 
 	        if (range == null) {
+	          this.headersSent = true;
 	          return this.handler.onHeaders(
 	            statusCode,
 	            rawHeaders,
 	            resume,
 	            statusMessage
 	          )
+	        }
+
+	        const contentLengthError = validatePartialResponseContentLength(headers, range, statusCode, this.retryCount);
+	        if (contentLengthError != null) {
+	          this.abort(contentLengthError);
+	          return false
 	        }
 
 	        const { start, size, end = size - 1 } = range;
@@ -13260,6 +13464,7 @@ function requireRetryHandler () {
 	      );
 
 	      this.resume = resume;
+	      this.headersSent = true;
 	      this.etag = headers.etag != null ? headers.etag : null;
 
 	      // Weak etags are not useful for comparison nor cache
@@ -13299,7 +13504,7 @@ function requireRetryHandler () {
 	  }
 
 	  onError (err) {
-	    if (this.aborted || isDisturbed(this.opts.body)) {
+	    if (this.aborted || isDisturbed(this.opts.body) || (this.headersSent && this.resume == null)) {
 	      return this.handler.onError(err)
 	    }
 
@@ -23633,7 +23838,7 @@ function requireUtil$4 () {
 
 	    if (
 	      code < 0x20 || // exclude CTLs (0-31)
-	      code === 0x7F || // DEL
+	      code > 0x7E || // exclude DEL and non-ascii
 	      code === 0x3B // ;
 	    ) {
 	      throw new Error('Invalid cookie path')
@@ -23642,16 +23847,80 @@ function requireUtil$4 () {
 	}
 
 	/**
-	 * I have no idea why these values aren't allowed to be honest,
-	 * but Deno tests these. - Khafra
+	 * <let-dig> ::= <letter> | <digit>
+	 *
+	 * <letter> ::= any one of the 52 alphabetic characters A through Z in
+	 * upper case and a through z in lower case
+	 *
+	 * <digit> ::= any one of the ten digits 0 through 9r
+	 *
+	 * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+	 * @param {number} code
+	 */
+	function isLetterOrDigit (code) {
+	  return (
+	    (code >= 0x30 && code <= 0x39) || // 0-9
+	    (code >= 0x41 && code <= 0x5A) || // A-Z
+	    (code >= 0x61 && code <= 0x7A) // a-z
+	  )
+	}
+
+	/**
+	 * Validates a cookie domain against the "preferred name syntax".
+	 *
+	 * <domain>      ::= <subdomain> | " "
+	 * <subdomain>   ::= <label> | <subdomain> "." <label>
+	 * <label>       ::= <let-dig> [ [ <ldh-str> ] <let-dig> ]
+	 * <ldh-str>     ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
+	 * <let-dig-hyp> ::= <let-dig> | "-"
+	 *
+	 * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+	 * @see https://www.rfc-editor.org/rfc/rfc1123#section-2.1
+	 * @see https://www.rfc-editor.org/rfc/rfc1035#section-2.3.4
 	 * @param {string} domain
 	 */
 	function validateCookieDomain (domain) {
-	  if (
-	    domain.startsWith('-') ||
-	    domain.endsWith('.') ||
-	    domain.endsWith('-')
-	  ) {
+	  // <domain> ::= <subdomain> | " "
+	  if (domain === ' ') {
+	    return
+	  }
+
+	  if (domain.length > 255) {
+	    throw new Error('Invalid cookie domain')
+	  }
+
+	  let labelLength = 0;
+
+	  for (let i = 0; i < domain.length; ++i) {
+	    const code = domain.charCodeAt(i);
+
+	    if (code === 0x2E) {
+	      if (labelLength === 0) {
+	        throw new Error('Invalid cookie domain')
+	      }
+
+	      if (domain.charCodeAt(i - 1) === 0x2D) { // "-"
+	        throw new Error('Invalid cookie domain')
+	      }
+
+	      labelLength = 0;
+	      continue
+	    }
+
+	    if (labelLength === 0 && !isLetterOrDigit(code)) {
+	      throw new Error('Invalid cookie domain')
+	    }
+
+	    if (!isLetterOrDigit(code) && code !== 0x2D) { // "-"
+	      throw new Error('Invalid cookie domain')
+	    }
+
+	    if (++labelLength > 63) {
+	      throw new Error('Invalid cookie domain')
+	    }
+	  }
+
+	  if (labelLength === 0 || domain.charCodeAt(domain.length - 1) === 0x2D) { // "-"
 	    throw new Error('Invalid cookie domain')
 	  }
 	}
@@ -23794,7 +24063,13 @@ function requireUtil$4 () {
 
 	    const [key, ...value] = part.split('=');
 
-	    out.push(`${key.trim()}=${value.join('=')}`);
+	    const trimmedKey = key.trim();
+	    const joinedValue = value.join('=');
+
+	    validateCookieName(trimmedKey);
+	    validateCookieValue(joinedValue);
+
+	    out.push(`${trimmedKey}=${joinedValue}`);
 	  }
 
 	  return out.join('; ')
@@ -23811,11 +24086,11 @@ function requireUtil$4 () {
 	return util$4;
 }
 
-var parse$1;
+var parse$2;
 var hasRequiredParse$3;
 
 function requireParse$3 () {
-	if (hasRequiredParse$3) return parse$1;
+	if (hasRequiredParse$3) return parse$2;
 	hasRequiredParse$3 = 1;
 
 	const { maxNameValuePairSize, maxAttributeValueSize } = requireConstants$5();
@@ -24093,32 +24368,25 @@ function requireParse$3 () {
 	    // If the attribute-name case-insensitively matches the string
 	    // "SameSite", the user agent MUST process the cookie-av as follows:
 
-	    // 1. Let enforcement be "Default".
-	    let enforcement = 'Default';
-
 	    const attributeValueLowercase = attributeValue.toLowerCase();
-	    // 2. If cookie-av's attribute-value is a case-insensitive match for
-	    //    "None", set enforcement to "None".
-	    if (attributeValueLowercase.includes('none')) {
-	      enforcement = 'None';
-	    }
 
-	    // 3. If cookie-av's attribute-value is a case-insensitive match for
-	    //    "Strict", set enforcement to "Strict".
-	    if (attributeValueLowercase.includes('strict')) {
-	      enforcement = 'Strict';
+	    // 1. If cookie-av's attribute-value is a case-insensitive match for
+	    //    "None", append an attribute to the cookie-attribute-list with an
+	    //    attribute-name of "SameSite" and an attribute-value of "None".
+	    if (attributeValueLowercase === 'none') {
+	      cookieAttributeList.sameSite = 'None';
+	    } else if (attributeValueLowercase === 'strict') {
+	      // 2. If cookie-av's attribute-value is a case-insensitive match for
+	      //    "Strict", append an attribute to the cookie-attribute-list with
+	      //    an attribute-name of "SameSite" and an attribute-value of
+	      //    "Strict".
+	      cookieAttributeList.sameSite = 'Strict';
+	    } else if (attributeValueLowercase === 'lax') {
+	      // 3. If cookie-av's attribute-value is a case-insensitive match for
+	      //    "Lax", append an attribute to the cookie-attribute-list with an
+	      //    attribute-name of "SameSite" and an attribute-value of "Lax".
+	      cookieAttributeList.sameSite = 'Lax';
 	    }
-
-	    // 4. If cookie-av's attribute-value is a case-insensitive match for
-	    //    "Lax", set enforcement to "Lax".
-	    if (attributeValueLowercase.includes('lax')) {
-	      enforcement = 'Lax';
-	    }
-
-	    // 5. Append an attribute to the cookie-attribute-list with an
-	    //    attribute-name of "SameSite" and an attribute-value of
-	    //    enforcement.
-	    cookieAttributeList.sameSite = enforcement;
 	  } else {
 	    cookieAttributeList.unparsed ??= [];
 
@@ -24129,11 +24397,11 @@ function requireParse$3 () {
 	  return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList)
 	}
 
-	parse$1 = {
+	parse$2 = {
 	  parseSetCookie,
 	  parseUnparsedAttributes
 	};
-	return parse$1;
+	return parse$2;
 }
 
 var cookies;
@@ -25392,7 +25660,7 @@ function requireConnection () {
 	        // is specified, the server needs to include the same field and one of
 	        // the selected subprotocol values in its response for the connection to
 	        // be established.
-	        if (!requestProtocols.includes(secProtocol)) {
+	        if (requestProtocols === null || !requestProtocols.includes(secProtocol)) {
 	          failWebsocketConnection(ws, 'Protocol was not set in the opening handshake.');
 	          return
 	        }
@@ -25639,7 +25907,12 @@ function requirePermessageDeflate () {
 
 	        if (this.#maxPayloadSize > 0 && this.#inflate[kLength] > this.#maxPayloadSize) {
 	          callback(new MessageSizeExceededError());
+	          // The inflater may still hold buffered input that can emit a late
+	          // zlib error. Remove the data listener, then deterministically stop
+	          // the stream so a subsequent 'error' cannot fire without a listener
+	          // (which would terminate the process as an unhandled error event).
 	          this.#inflate.removeAllListeners();
+	          this.#inflate.destroy();
 	          this.#inflate = null;
 	          return
 	        }
@@ -25704,6 +25977,11 @@ function requireReceiver () {
 	const { PerMessageDeflate } = requirePermessageDeflate();
 	const { MessageSizeExceededError } = requireErrors();
 
+	function failWebsocketConnectionWithCode (ws, code, reason) {
+	  closeWebSocketConnection(ws, code, reason, Buffer.byteLength(reason));
+	  failWebsocketConnection(ws, reason);
+	}
+
 	// This code was influenced by ws released under the MIT license.
 	// Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
 	// Copyright (c) 2013 Arnout Kazemier and contributors
@@ -25724,18 +26002,22 @@ function requireReceiver () {
 	  #extensions
 
 	  /** @type {number} */
+	  #maxFragments
+
+	  /** @type {number} */
 	  #maxPayloadSize
 
 	  /**
 	   * @param {import('./websocket').WebSocket} ws
 	   * @param {Map<string, string>|null} extensions
-	   * @param {{ maxPayloadSize?: number }} [options]
+	   * @param {{ maxFragments?: number, maxPayloadSize?: number }} [options]
 	   */
 	  constructor (ws, extensions, options = {}) {
 	    super();
 
 	    this.ws = ws;
 	    this.#extensions = extensions == null ? new Map() : extensions;
+	    this.#maxFragments = options.maxFragments ?? 0;
 	    this.#maxPayloadSize = options.maxPayloadSize ?? 0;
 
 	    if (this.#extensions.has('permessage-deflate')) {
@@ -25759,9 +26041,9 @@ function requireReceiver () {
 	    if (
 	      this.#maxPayloadSize > 0 &&
 	      !isControlFrame(this.#info.opcode) &&
-	      this.#info.payloadLength > this.#maxPayloadSize
+	      this.#info.payloadLength + this.#fragmentsBytes > this.#maxPayloadSize
 	    ) {
-	      failWebsocketConnection(this.ws, 'Payload size exceeds maximum allowed size');
+	      failWebsocketConnectionWithCode(this.ws, 1009, 'Payload size exceeds maximum allowed size');
 	      return false
 	    }
 
@@ -25926,10 +26208,12 @@ function requireReceiver () {
 	          this.#state = parserStates.INFO;
 	        } else {
 	          if (!this.#info.compressed) {
-	            this.writeFragments(body);
+	            if (!this.writeFragments(body)) {
+	              return
+	            }
 
 	            if (this.#maxPayloadSize > 0 && this.#fragmentsBytes > this.#maxPayloadSize) {
-	              failWebsocketConnection(this.ws, new MessageSizeExceededError().message);
+	              failWebsocketConnectionWithCode(this.ws, 1009, new MessageSizeExceededError().message);
 	              return
 	            }
 
@@ -25948,14 +26232,17 @@ function requireReceiver () {
 	              this.#info.fin,
 	              (error, data) => {
 	                if (error) {
-	                  failWebsocketConnection(this.ws, error.message);
+	                  const code = error instanceof MessageSizeExceededError ? 1009 : 1007;
+	                  failWebsocketConnectionWithCode(this.ws, code, error.message);
 	                  return
 	                }
 
-	                this.writeFragments(data);
+	                if (!this.writeFragments(data)) {
+	                  return
+	                }
 
 	                if (this.#maxPayloadSize > 0 && this.#fragmentsBytes > this.#maxPayloadSize) {
-	                  failWebsocketConnection(this.ws, new MessageSizeExceededError().message);
+	                  failWebsocketConnectionWithCode(this.ws, 1009, new MessageSizeExceededError().message);
 	                  return
 	                }
 
@@ -26025,8 +26312,17 @@ function requireReceiver () {
 	  }
 
 	  writeFragments (fragment) {
+	    if (
+	      this.#maxFragments > 0 &&
+	      this.#fragments.length === this.#maxFragments
+	    ) {
+	      failWebsocketConnectionWithCode(this.ws, 1008, 'Too many message fragments');
+	      return false
+	    }
+
 	    this.#fragmentsBytes += fragment.length;
 	    this.#fragments.push(fragment);
+	    return true
 	  }
 
 	  consumeFragments () {
@@ -26729,9 +27025,12 @@ function requireWebsocket () {
 	    // once this happens, the connection is open
 	    this[kResponse] = response;
 
-	    const maxPayloadSize = this[kController]?.dispatcher?.webSocketOptions?.maxPayloadSize;
+	    const webSocketOptions = this[kController]?.dispatcher?.webSocketOptions;
+	    const maxFragments = webSocketOptions?.maxFragments;
+	    const maxPayloadSize = webSocketOptions?.maxPayloadSize;
 
 	    const parser = new ByteParser(this, parsedExtensions, {
+	      maxFragments,
 	      maxPayloadSize
 	    });
 	    parser.on('drain', onParserDrain);
@@ -26962,6 +27261,49 @@ function requireEventsourceStream () {
 	 */
 	const SPACE = 0x20;
 
+	const DATA = Buffer.from('data');
+	const EVENT = Buffer.from('event');
+	const ID = Buffer.from('id');
+	const RETRY = Buffer.from('retry');
+
+	function isASCIINumberBytes (buffer, start) {
+	  if (start >= buffer.length) {
+	    return false
+	  }
+
+	  for (let i = start; i < buffer.length; i++) {
+	    if (buffer[i] < 0x30 || buffer[i] > 0x39) {
+	      return false
+	    }
+	  }
+
+	  return true
+	}
+
+	function isValidLastEventIdBytes (buffer, start) {
+	  for (let i = start; i < buffer.length; i++) {
+	    if (buffer[i] === 0x00) {
+	      return false
+	    }
+	  }
+
+	  return true
+	}
+
+	function isFieldName (line, length, field) {
+	  if (length !== field.length) {
+	    return false
+	  }
+
+	  for (let i = 0; i < length; i++) {
+	    if (line[i] !== field[i]) {
+	      return false
+	    }
+	  }
+
+	  return true
+	}
+
 	/**
 	 * @typedef {object} EventSourceStreamEvent
 	 * @type {object}
@@ -27002,11 +27344,14 @@ function requireEventsourceStream () {
 	  eventEndCheck = false
 
 	  /**
-	   * @type {Buffer}
+	   * @type {Buffer[]}
 	   */
-	  buffer = null
+	  chunks = []
 
+	  chunkIndex = 0
 	  pos = 0
+	  lineChunkIndex = 0
+	  linePos = 0
 
 	  event = {
 	    data: undefined,
@@ -27045,92 +27390,20 @@ function requireEventsourceStream () {
 	      return
 	    }
 
-	    // Cache the chunk in the buffer, as the data might not be complete while
-	    // processing it
-	    // TODO: Investigate if there is a more performant way to handle
-	    // incoming chunks
-	    // see: https://github.com/nodejs/undici/issues/2630
-	    if (this.buffer) {
-	      this.buffer = Buffer.concat([this.buffer, chunk]);
-	    } else {
-	      this.buffer = chunk;
-	    }
+	    this.chunks.push(chunk);
 
 	    // Strip leading byte-order-mark if we opened the stream and started
 	    // the processing of the incoming data
 	    if (this.checkBOM) {
-	      switch (this.buffer.length) {
-	        case 1:
-	          // Check if the first byte is the same as the first byte of the BOM
-	          if (this.buffer[0] === BOM[0]) {
-	            // If it is, we need to wait for more data
-	            callback();
-	            return
-	          }
-	          // Set the checkBOM flag to false as we don't need to check for the
-	          // BOM anymore
-	          this.checkBOM = false;
-
-	          // The buffer only contains one byte so we need to wait for more data
-	          callback();
-	          return
-	        case 2:
-	          // Check if the first two bytes are the same as the first two bytes
-	          // of the BOM
-	          if (
-	            this.buffer[0] === BOM[0] &&
-	            this.buffer[1] === BOM[1]
-	          ) {
-	            // If it is, we need to wait for more data, because the third byte
-	            // is needed to determine if it is the BOM or not
-	            callback();
-	            return
-	          }
-
-	          // Set the checkBOM flag to false as we don't need to check for the
-	          // BOM anymore
-	          this.checkBOM = false;
-	          break
-	        case 3:
-	          // Check if the first three bytes are the same as the first three
-	          // bytes of the BOM
-	          if (
-	            this.buffer[0] === BOM[0] &&
-	            this.buffer[1] === BOM[1] &&
-	            this.buffer[2] === BOM[2]
-	          ) {
-	            // If it is, we can drop the buffered data, as it is only the BOM
-	            this.buffer = Buffer.alloc(0);
-	            // Set the checkBOM flag to false as we don't need to check for the
-	            // BOM anymore
-	            this.checkBOM = false;
-
-	            // Await more data
-	            callback();
-	            return
-	          }
-	          // If it is not the BOM, we can start processing the data
-	          this.checkBOM = false;
-	          break
-	        default:
-	          // The buffer is longer than 3 bytes, so we can drop the BOM if it is
-	          // present
-	          if (
-	            this.buffer[0] === BOM[0] &&
-	            this.buffer[1] === BOM[1] &&
-	            this.buffer[2] === BOM[2]
-	          ) {
-	            // Remove the BOM from the buffer
-	            this.buffer = this.buffer.subarray(3);
-	          }
-
-	          // Set the checkBOM flag to false as we don't need to check for the
-	          this.checkBOM = false;
-	          break
+	      if (this.handleBOM()) {
+	        callback();
+	        return
 	      }
 	    }
 
-	    while (this.pos < this.buffer.length) {
+	    while (this.hasCurrentByte()) {
+	      const byte = this.currentByte();
+
 	      // If the previous line ended with an end-of-line, we need to check
 	      // if the next character is also an end-of-line.
 	      if (this.eventEndCheck) {
@@ -27143,10 +27416,9 @@ function requireEventsourceStream () {
 	        if (this.crlfCheck) {
 	          // If the current character is a line feed, we can remove it
 	          // from the buffer and reset the crlfCheck flag
-	          if (this.buffer[this.pos] === LF) {
-	            this.buffer = this.buffer.subarray(this.pos + 1);
-	            this.pos = 0;
+	          if (byte === LF) {
 	            this.crlfCheck = false;
+	            this.consumeCurrentByte();
 
 	            // It is possible that the line feed is not the end of the
 	            // event. We need to check if the next character is an
@@ -27162,19 +27434,17 @@ function requireEventsourceStream () {
 	          this.crlfCheck = false;
 	        }
 
-	        if (this.buffer[this.pos] === LF || this.buffer[this.pos] === CR) {
+	        if (byte === LF || byte === CR) {
 	          // If the current character is a carriage return, we need to
 	          // set the crlfCheck flag to true, as we need to check if the
 	          // next character is a line feed so we can remove it from the
 	          // buffer
-	          if (this.buffer[this.pos] === CR) {
+	          if (byte === CR) {
 	            this.crlfCheck = true;
 	          }
 
-	          this.buffer = this.buffer.subarray(this.pos + 1);
-	          this.pos = 0;
-	          if (
-	            this.event.data !== undefined || this.event.event || this.event.id || this.event.retry) {
+	          this.consumeCurrentByte();
+	          if (this.hasPendingEvent()) {
 	            this.processEvent(this.event);
 	          }
 	          this.clearEvent();
@@ -27188,22 +27458,18 @@ function requireEventsourceStream () {
 
 	      // If the current character is an end-of-line, we can process the
 	      // line
-	      if (this.buffer[this.pos] === LF || this.buffer[this.pos] === CR) {
+	      if (byte === LF || byte === CR) {
 	        // If the current character is a carriage return, we need to
 	        // set the crlfCheck flag to true, as we need to check if the
 	        // next character is a line feed
-	        if (this.buffer[this.pos] === CR) {
+	        if (byte === CR) {
 	          this.crlfCheck = true;
 	        }
 
 	        // In any case, we can process the line as we reached an
 	        // end-of-line character
-	        this.parseLine(this.buffer.subarray(0, this.pos), this.event);
-
-	        // Remove the processed line from the buffer
-	        this.buffer = this.buffer.subarray(this.pos + 1);
-	        // Reset the position as we removed the processed line from the buffer
-	        this.pos = 0;
+	        this.parseLine(this.readLine(), this.event);
+	        this.consumeCurrentByte();
 	        // A line was processed and this could be the end of the event. We need
 	        // to check if the next line is empty to determine if the event is
 	        // finished.
@@ -27211,7 +27477,7 @@ function requireEventsourceStream () {
 	        continue
 	      }
 
-	      this.pos++;
+	      this.advanceCursor();
 	    }
 
 	    callback();
@@ -27236,64 +27502,53 @@ function requireEventsourceStream () {
 	      return
 	    }
 
-	    let field = '';
-	    let value = '';
+	    let fieldLength = line.length;
+	    let valueStart = line.length;
 
 	    // If the line contains a U+003A COLON character (:)
 	    if (colonPosition !== -1) {
-	      // Collect the characters on the line before the first U+003A COLON
-	      // character (:), and let field be that string.
-	      // TODO: Investigate if there is a more performant way to extract the
-	      // field
-	      // see: https://github.com/nodejs/undici/issues/2630
-	      field = line.subarray(0, colonPosition).toString('utf8');
+	      fieldLength = colonPosition;
 
 	      // Collect the characters on the line after the first U+003A COLON
 	      // character (:), and let value be that string.
 	      // If value starts with a U+0020 SPACE character, remove it from value.
-	      let valueStart = colonPosition + 1;
+	      valueStart = colonPosition + 1;
 	      if (line[valueStart] === SPACE) {
 	        ++valueStart;
 	      }
-	      // TODO: Investigate if there is a more performant way to extract the
-	      // value
-	      // see: https://github.com/nodejs/undici/issues/2630
-	      value = line.subarray(valueStart).toString('utf8');
-
-	      // Otherwise, the string is not empty but does not contain a U+003A COLON
-	      // character (:)
-	    } else {
-	      // Process the field using the steps described below, using the whole
-	      // line as the field name, and the empty string as the field value.
-	      field = line.toString('utf8');
-	      value = '';
 	    }
 
-	    // Modify the event with the field name and value. The value is also
-	    // decoded as UTF-8
-	    switch (field) {
-	      case 'data':
-	        if (event[field] === undefined) {
-	          event[field] = value;
-	        } else {
-	          event[field] += `\n${value}`;
-	        }
-	        break
-	      case 'retry':
-	        if (isASCIINumber(value)) {
-	          event[field] = value;
-	        }
-	        break
-	      case 'id':
-	        if (isValidLastEventId(value)) {
-	          event[field] = value;
-	        }
-	        break
-	      case 'event':
-	        if (value.length > 0) {
-	          event[field] = value;
-	        }
-	        break
+	    if (isFieldName(line, fieldLength, DATA)) {
+	      const value = line.toString('utf8', valueStart);
+
+	      if (event.data === undefined) {
+	        event.data = value;
+	      } else {
+	        event.data += `\n${value}`;
+	      }
+	      return
+	    }
+
+	    if (isFieldName(line, fieldLength, RETRY)) {
+	      if (isASCIINumberBytes(line, valueStart)) {
+	        event.retry = line.toString('utf8', valueStart);
+	      }
+	      return
+	    }
+
+	    if (isFieldName(line, fieldLength, ID)) {
+	      if (isValidLastEventIdBytes(line, valueStart)) {
+	        event.id = line.toString('utf8', valueStart);
+	      }
+	      return
+	    }
+
+	    if (isFieldName(line, fieldLength, EVENT)) {
+	      const value = line.toString('utf8', valueStart);
+
+	      if (value.length > 0) {
+	        event.event = value;
+	      }
 	    }
 	  }
 
@@ -27323,12 +27578,151 @@ function requireEventsourceStream () {
 	  }
 
 	  clearEvent () {
-	    this.event = {
-	      data: undefined,
-	      event: undefined,
-	      id: undefined,
-	      retry: undefined
-	    };
+	    this.event.data = undefined;
+	    this.event.event = undefined;
+	    this.event.id = undefined;
+	    this.event.retry = undefined;
+	  }
+
+	  hasPendingEvent () {
+	    return this.event.data !== undefined ||
+	      this.event.event !== undefined ||
+	      this.event.id !== undefined ||
+	      this.event.retry !== undefined
+	  }
+
+	  hasCurrentByte () {
+	    return this.chunkIndex < this.chunks.length &&
+	      this.pos < this.chunks[this.chunkIndex].length
+	  }
+
+	  currentByte () {
+	    return this.chunks[this.chunkIndex][this.pos]
+	  }
+
+	  consumeCurrentByte () {
+	    this.advanceCursor();
+	    this.syncLineStartToCursor();
+	  }
+
+	  advanceCursor () {
+	    this.pos++;
+
+	    while (this.chunkIndex < this.chunks.length && this.pos >= this.chunks[this.chunkIndex].length) {
+	      this.chunkIndex++;
+	      this.pos = 0;
+	    }
+	  }
+
+	  syncLineStartToCursor () {
+	    this.lineChunkIndex = this.chunkIndex;
+	    this.linePos = this.pos;
+	    this.dropConsumedChunks();
+	  }
+
+	  dropConsumedChunks () {
+	    while (this.lineChunkIndex > 0) {
+	      this.chunks.shift();
+	      this.lineChunkIndex--;
+	      this.chunkIndex--;
+	    }
+
+	    if (this.chunkIndex === this.chunks.length) {
+	      this.chunks.length = 0;
+	      this.chunkIndex = 0;
+	      this.pos = 0;
+	      this.lineChunkIndex = 0;
+	      this.linePos = 0;
+	    }
+	  }
+
+	  readLine () {
+	    if (this.lineChunkIndex === this.chunkIndex) {
+	      return this.chunks[this.chunkIndex].subarray(this.linePos, this.pos)
+	    }
+
+	    const chunks = [];
+	    let length = 0;
+
+	    for (let i = this.lineChunkIndex; i <= this.chunkIndex; i++) {
+	      const chunk = this.chunks[i];
+	      const start = i === this.lineChunkIndex ? this.linePos : 0;
+	      const end = i === this.chunkIndex ? this.pos : chunk.length;
+	      const slice = chunk.subarray(start, end);
+	      length += slice.length;
+	      chunks.push(slice);
+	    }
+
+	    return Buffer.concat(chunks, length)
+	  }
+
+	  peekBufferedByte (offset) {
+	    let chunkIndex = this.lineChunkIndex;
+	    let pos = this.linePos;
+
+	    while (chunkIndex < this.chunks.length) {
+	      const chunk = this.chunks[chunkIndex];
+	      const remaining = chunk.length - pos;
+
+	      if (offset < remaining) {
+	        return chunk[pos + offset]
+	      }
+
+	      offset -= remaining;
+	      chunkIndex++;
+	      pos = 0;
+	    }
+	  }
+
+	  discardLeadingBytes (count) {
+	    while (count > 0 && this.lineChunkIndex < this.chunks.length) {
+	      const chunk = this.chunks[this.lineChunkIndex];
+	      const remaining = chunk.length - this.linePos;
+
+	      if (count < remaining) {
+	        this.linePos += count;
+	        count = 0;
+	      } else {
+	        count -= remaining;
+	        this.lineChunkIndex++;
+	        this.linePos = 0;
+	      }
+	    }
+
+	    this.chunkIndex = this.lineChunkIndex;
+	    this.pos = this.linePos;
+	    this.dropConsumedChunks();
+	  }
+
+	  handleBOM () {
+	    const first = this.peekBufferedByte(0);
+	    const second = this.peekBufferedByte(1);
+	    const third = this.peekBufferedByte(2);
+
+	    if (second === undefined) {
+	      if (first === BOM[0]) {
+	        return true
+	      }
+
+	      this.checkBOM = false;
+	      return true
+	    }
+
+	    if (third === undefined) {
+	      if (first === BOM[0] && second === BOM[1]) {
+	        return true
+	      }
+
+	      this.checkBOM = false;
+	      return false
+	    }
+
+	    if (first === BOM[0] && second === BOM[1] && third === BOM[2]) {
+	      this.discardLeadingBytes(3);
+	    }
+
+	    this.checkBOM = false;
+	    return !this.hasCurrentByte()
 	  }
 	}
 
@@ -29211,6 +29605,19 @@ function getProxyFetch(destinationUrl) {
 function getApiBaseUrl() {
     return process.env['GITHUB_API_URL'] || 'https://api.github.com';
 }
+function getUserAgentWithOrchestrationId(baseUserAgent) {
+    var _a;
+    const orchId = (_a = process.env['ACTIONS_ORCHESTRATION_ID']) === null || _a === void 0 ? void 0 : _a.trim();
+    if (orchId) {
+        const sanitizedId = orchId.replace(/[^a-z0-9_.-]/gi, '_');
+        const tag = `actions_orchestration_id/${sanitizedId}`;
+        if (baseUserAgent === null || baseUserAgent === void 0 ? void 0 : baseUserAgent.includes(tag))
+            return baseUserAgent;
+        const ua = baseUserAgent ? `${baseUserAgent} ` : '';
+        return `${ua}${tag}`;
+    }
+    return baseUserAgent;
+}
 
 function getUserAgent() {
   if (typeof navigator === "object" && "userAgent" in navigator) {
@@ -29357,10 +29764,10 @@ var Hook = { Collection };
 // pkg/dist-src/defaults.js
 
 // pkg/dist-src/version.js
-var VERSION$a = "0.0.0-development";
+var VERSION$d = "0.0.0-development";
 
 // pkg/dist-src/defaults.js
-var userAgent = `octokit-endpoint.js/${VERSION$a} ${getUserAgent()}`;
+var userAgent = `octokit-endpoint.js/${VERSION$d} ${getUserAgent()}`;
 var DEFAULTS = {
   method: "GET",
   baseUrl: "https://api.github.com",
@@ -29385,7 +29792,7 @@ function lowercaseKeys(object) {
 }
 
 // pkg/dist-src/util/is-plain-object.js
-function isPlainObject$2(value) {
+function isPlainObject$3(value) {
   if (typeof value !== "object" || value === null) return false;
   if (Object.prototype.toString.call(value) !== "[object Object]") return false;
   const proto = Object.getPrototypeOf(value);
@@ -29398,7 +29805,7 @@ function isPlainObject$2(value) {
 function mergeDeep(defaults, options) {
   const result = Object.assign({}, defaults);
   Object.keys(options).forEach((key) => {
-    if (isPlainObject$2(options[key])) {
+    if (isPlainObject$3(options[key])) {
       if (!(key in defaults)) Object.assign(result, { [key]: options[key] });
       else result[key] = mergeDeep(defaults[key], options[key]);
     } else {
@@ -29419,7 +29826,7 @@ function removeUndefinedProperties(obj) {
 }
 
 // pkg/dist-src/merge.js
-function merge$1(defaults, route, options) {
+function merge$2(defaults, route, options) {
   if (typeof route === "string") {
     let [method, url] = route.split(" ");
     options = Object.assign(url ? { method, url } : { url: method }, options);
@@ -29613,7 +30020,7 @@ function expand(template, context) {
 }
 
 // pkg/dist-src/parse.js
-function parse(options) {
+function parse$1(options) {
   let method = options.method.toUpperCase();
   let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
   let headers = Object.assign({}, options.headers);
@@ -29679,203 +30086,148 @@ function parse(options) {
 
 // pkg/dist-src/endpoint-with-defaults.js
 function endpointWithDefaults(defaults, route, options) {
-  return parse(merge$1(defaults, route, options));
+  return parse$1(merge$2(defaults, route, options));
 }
 
 // pkg/dist-src/with-defaults.js
 function withDefaults$2(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$1(oldDefaults, newDefaults);
+  const DEFAULTS2 = merge$2(oldDefaults, newDefaults);
   const endpoint2 = endpointWithDefaults.bind(null, DEFAULTS2);
   return Object.assign(endpoint2, {
     DEFAULTS: DEFAULTS2,
     defaults: withDefaults$2.bind(null, DEFAULTS2),
-    merge: merge$1.bind(null, DEFAULTS2),
-    parse
+    merge: merge$2.bind(null, DEFAULTS2),
+    parse: parse$1
   });
 }
 
 // pkg/dist-src/index.js
 var endpoint = withDefaults$2(null, DEFAULTS);
 
-var fastContentTypeParse = {};
-
-var hasRequiredFastContentTypeParse;
-
-function requireFastContentTypeParse () {
-	if (hasRequiredFastContentTypeParse) return fastContentTypeParse;
-	hasRequiredFastContentTypeParse = 1;
-
-	const NullObject = function NullObject () { };
-	NullObject.prototype = Object.create(null);
-
-	/**
-	 * RegExp to match *( ";" parameter ) in RFC 7231 sec 3.1.1.1
-	 *
-	 * parameter     = token "=" ( token / quoted-string )
-	 * token         = 1*tchar
-	 * tchar         = "!" / "#" / "$" / "%" / "&" / "'" / "*"
-	 *               / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
-	 *               / DIGIT / ALPHA
-	 *               ; any VCHAR, except delimiters
-	 * quoted-string = DQUOTE *( qdtext / quoted-pair ) DQUOTE
-	 * qdtext        = HTAB / SP / %x21 / %x23-5B / %x5D-7E / obs-text
-	 * obs-text      = %x80-FF
-	 * quoted-pair   = "\" ( HTAB / SP / VCHAR / obs-text )
-	 */
-	const paramRE = /; *([!#$%&'*+.^\w`|~-]+)=("(?:[\v\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\v\u0020-\u00ff])*"|[!#$%&'*+.^\w`|~-]+) */gu;
-
-	/**
-	 * RegExp to match quoted-pair in RFC 7230 sec 3.2.6
-	 *
-	 * quoted-pair = "\" ( HTAB / SP / VCHAR / obs-text )
-	 * obs-text    = %x80-FF
-	 */
-	const quotedPairRE = /\\([\v\u0020-\u00ff])/gu;
-
-	/**
-	 * RegExp to match type in RFC 7231 sec 3.1.1.1
-	 *
-	 * media-type = type "/" subtype
-	 * type       = token
-	 * subtype    = token
-	 */
-	const mediaTypeRE = /^[!#$%&'*+.^\w|~-]+\/[!#$%&'*+.^\w|~-]+$/u;
-
-	// default ContentType to prevent repeated object creation
-	const defaultContentType = { type: '', parameters: new NullObject() };
-	Object.freeze(defaultContentType.parameters);
-	Object.freeze(defaultContentType);
-
-	/**
-	 * Parse media type to object.
-	 *
-	 * @param {string|object} header
-	 * @return {Object}
-	 * @public
-	 */
-
-	function parse (header) {
-	  if (typeof header !== 'string') {
-	    throw new TypeError('argument header is required and must be a string')
-	  }
-
-	  let index = header.indexOf(';');
-	  const type = index !== -1
-	    ? header.slice(0, index).trim()
-	    : header.trim();
-
-	  if (mediaTypeRE.test(type) === false) {
-	    throw new TypeError('invalid media type')
-	  }
-
-	  const result = {
-	    type: type.toLowerCase(),
-	    parameters: new NullObject()
-	  };
-
-	  // parse parameters
-	  if (index === -1) {
-	    return result
-	  }
-
-	  let key;
-	  let match;
-	  let value;
-
-	  paramRE.lastIndex = index;
-
-	  while ((match = paramRE.exec(header))) {
-	    if (match.index !== index) {
-	      throw new TypeError('invalid parameter format')
-	    }
-
-	    index += match[0].length;
-	    key = match[1].toLowerCase();
-	    value = match[2];
-
-	    if (value[0] === '"') {
-	      // remove quotes and escapes
-	      value = value
-	        .slice(1, value.length - 1);
-
-	      quotedPairRE.test(value) && (value = value.replace(quotedPairRE, '$1'));
-	    }
-
-	    result.parameters[key] = value;
-	  }
-
-	  if (index !== header.length) {
-	    throw new TypeError('invalid parameter format')
-	  }
-
-	  return result
-	}
-
-	function safeParse (header) {
-	  if (typeof header !== 'string') {
-	    return defaultContentType
-	  }
-
-	  let index = header.indexOf(';');
-	  const type = index !== -1
-	    ? header.slice(0, index).trim()
-	    : header.trim();
-
-	  if (mediaTypeRE.test(type) === false) {
-	    return defaultContentType
-	  }
-
-	  const result = {
-	    type: type.toLowerCase(),
-	    parameters: new NullObject()
-	  };
-
-	  // parse parameters
-	  if (index === -1) {
-	    return result
-	  }
-
-	  let key;
-	  let match;
-	  let value;
-
-	  paramRE.lastIndex = index;
-
-	  while ((match = paramRE.exec(header))) {
-	    if (match.index !== index) {
-	      return defaultContentType
-	    }
-
-	    index += match[0].length;
-	    key = match[1].toLowerCase();
-	    value = match[2];
-
-	    if (value[0] === '"') {
-	      // remove quotes and escapes
-	      value = value
-	        .slice(1, value.length - 1);
-
-	      quotedPairRE.test(value) && (value = value.replace(quotedPairRE, '$1'));
-	    }
-
-	    result.parameters[key] = value;
-	  }
-
-	  if (index !== header.length) {
-	    return defaultContentType
-	  }
-
-	  return result
-	}
-
-	fastContentTypeParse.default = { parse, safeParse };
-	fastContentTypeParse.parse = parse;
-	fastContentTypeParse.safeParse = safeParse;
-	fastContentTypeParse.defaultContentType = defaultContentType;
-	return fastContentTypeParse;
+/*!
+ * content-type
+ * Copyright(c) 2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+/**
+ * Null object perf optimization. Faster than `Object.create(null)` and `{ __proto__: null }`.
+ */
+const NullObject = /* @__PURE__ */ (() => {
+    const C = function () { };
+    C.prototype = Object.create(null);
+    return C;
+})();
+/**
+ * Parse a `Content-Type` header.
+ */
+function parse(header, options) {
+    const stopChar = 65_536; // Sentinel for "no stop char".
+    const len = header.length;
+    let index = skipOWS(header, 0, len);
+    const valueStart = index;
+    index = skipValue(header, index, len, stopChar);
+    const valueEnd = trailingOWS(header, valueStart, index);
+    const type = header.slice(valueStart, valueEnd).toLowerCase();
+    return parseParameters(header, type, index, len, stopChar);
 }
-
-var fastContentTypeParseExports = requireFastContentTypeParse();
+const SP = 32; // " "
+const HTAB = 9; // "\t"
+const SEMI = 59; // ";"
+const EQ = 61; // "="
+const DQUOTE = 34; // '"'
+const BSLASH = 92; // "\\"
+/**
+ * Parses the parameters of a `Content-Type` header starting at the given index.
+ */
+function parseParameters(header, type, index, len, stopChar) {
+    const parameters = new NullObject();
+    parameter: while (index < len) {
+        if (header.charCodeAt(index) === stopChar)
+            break;
+        index = skipOWS(header, index + 1 /* Skip over ; */, len);
+        const keyStart = index;
+        while (index < len) {
+            const code = header.charCodeAt(index);
+            if (code === stopChar)
+                break parameter;
+            if (code === SEMI)
+                continue parameter;
+            if (code === EQ) {
+                const keyEnd = trailingOWS(header, keyStart, index);
+                const key = header.slice(keyStart, keyEnd).toLowerCase();
+                index = skipOWS(header, index + 1, len);
+                if (index < len && header.charCodeAt(index) === DQUOTE) {
+                    index++;
+                    let value = "";
+                    while (index < len) {
+                        const code = header.charCodeAt(index++);
+                        if (code === DQUOTE) {
+                            index = skipValue(header, index, len, stopChar);
+                            if (parameters[key] === undefined)
+                                parameters[key] = value;
+                            break;
+                        }
+                        if (code === BSLASH && index < len) {
+                            value += header[index++];
+                            continue;
+                        }
+                        value += String.fromCharCode(code);
+                    }
+                    continue parameter;
+                }
+                const valueStart = index;
+                index = skipValue(header, index, len, stopChar);
+                if (parameters[key] === undefined) {
+                    const valueEnd = trailingOWS(header, valueStart, index);
+                    parameters[key] = header.slice(valueStart, valueEnd);
+                }
+                continue parameter;
+            }
+            index++;
+        }
+    }
+    return { type, index, parameters };
+}
+/**
+ * Skip over characters until a semicolon or other exit character.
+ */
+function skipValue(str, index, len, stopChar) {
+    while (index < len) {
+        const code = str.charCodeAt(index);
+        if (code === SEMI || code === stopChar)
+            break;
+        index++;
+    }
+    return index;
+}
+/**
+ * Skip optional whitespace (OWS) in an HTTP header value.
+ *
+ * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
+ */
+function skipOWS(header, index, len) {
+    while (index < len) {
+        const char = header.charCodeAt(index);
+        if (char !== SP && char !== HTAB)
+            break;
+        index++;
+    }
+    return index;
+}
+/**
+ * Trim optional whitespace (OWS) from the end of a substring.
+ *
+ * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
+ */
+function trailingOWS(header, start, end) {
+    while (end > start) {
+        const char = header.charCodeAt(end - 1);
+        if (char !== SP && char !== HTAB)
+            break;
+        end--;
+    }
+    return end;
+}
 
 const intRegex = /^-?\d+$/;
 const noiseValue = /^-?\d+n+$/; // Noise - strings that match the custom format before being converted to it
@@ -29883,94 +30235,416 @@ const originalStringify = JSON.stringify;
 const originalParse = JSON.parse;
 const customFormat = /^-?\d+n$/;
 
-const bigIntsStringify = /([\[:])?"(-?\d+)n"($|([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
-const noiseStringify =
-  /([\[:])?("-?\d+n+)n("$|"([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
-
-/** @typedef {(key: string, value: any, context?: { source: string }) => any} Reviver */
+const bigIntsStringify = /([\[:])?"(-?\d+)n"($|\s*[,\}\]])/g;
+const noiseStringify = /([\[:])?("-?\d+n+)n("$|"\s*[,\}\]])/g;
 
 /**
- * Function to serialize value to a JSON string.
- * Converts BigInt values to a custom format (strings with digits and "n" at the end) and then converts them to proper big integers in a JSON string.
- * @param {*} value - The value to convert to a JSON string.
- * @param {(Function|Array<string>|null)} [replacer] - A function that alters the behavior of the stringification process, or an array of strings to indicate properties to exclude.
- * @param {(string|number)} [space] - A string or number to specify indentation or pretty-printing.
- * @returns {string} The JSON string representation.
+ * @typedef {(this: any, key: string | number | undefined, value: any) => any} Replacer
+ * @typedef {(key: string | number | undefined, value: any, context?: { source: string }) => any} Reviver
  */
-const JSONStringify = (value, replacer, space) => {
-  if ("rawJSON" in JSON) {
-    return originalStringify(
-      value,
-      (key, value) => {
-        if (typeof value === "bigint") return JSON.rawJSON(value.toString());
 
-        if (Array.isArray(replacer) && replacer.includes(key)) return value;
+/**
+ * Checks if a value is unstringifiable according to native JSON.stringify rules.
+ *
+ * @param {any} val The value to check.
+ * @returns {boolean} True if the value is undefined, a function, or a symbol.
+ */
+const isUnstringifiable = (val) =>
+  val === undefined || typeof val === "function" || typeof val === "symbol";
 
-        return value;
-      },
-      space,
-    );
+/**
+ * Checks if a value is a native JSON.rawJSON object (Node.js 22+).
+ *
+ * @param {any} val The value to check.
+ * @returns {boolean} True if the value is a RawJSON instance.
+ */
+const isRawJSON = (val) =>
+  val !== null &&
+  typeof val === "object" &&
+  val.constructor &&
+  val.constructor.name === "RawJSON";
+
+/**
+ * Iteratively converts a JS value to a JSON string.
+ * Used as a fallback when the native JSON.stringify hits the Maximum Call Stack size.
+ * Fully compliant with JSON formatting (space), replacers, and toJSON behaviors.
+ *
+ * @param {any} rootValue The value to stringify.
+ * @param {Replacer | Array<string | number> | null} [replacer] User's custom replacer function.
+ * @param {string | number} [spaceParam] Indentation for pretty-printing.
+ * @returns {string | undefined} The generated JSON string.
+ */
+const stringifyIteratively = (rootValue, replacer, spaceParam) => {
+  let space = "";
+  const propertyList = Array.isArray(replacer)
+    ? new Set(replacer.map(String))
+    : null;
+
+  /**
+   * Prepares a value for stringification by resolving toJSON, handling BigInts,
+   * applying custom replacers, and unwrapping primitive objects.
+   *
+   * @param {object|Array} parent The parent object or array holding the value.
+   * @param {string} key The key associated with the value.
+   * @param {any} val The raw value to process.
+   * @returns {any} The processed value ready for stringification.
+   */
+  const prepareVal = (parent, key, val) => {
+    const isObject = val !== null && typeof val === "object";
+    const hasToJSON = isObject && typeof val.toJSON === "function";
+
+    if (hasToJSON) {
+      val = val.toJSON(key);
+    }
+
+    const isNoise = typeof val === "string" && noiseValue.test(val);
+
+    if (isNoise) return val + "n";
+
+    const isBigInt = typeof val === "bigint";
+
+    if (isBigInt) {
+      const supportsRawJSON = "rawJSON" in JSON;
+
+      if (supportsRawJSON) return JSON.rawJSON(val.toString());
+
+      return val.toString() + "n";
+    }
+
+    const isPostReplacerObject = val !== null && typeof val === "object";
+
+    if (isPostReplacerObject) {
+      const isPrimitiveWrapper =
+        val instanceof Number ||
+        val instanceof String ||
+        val instanceof Boolean;
+
+      if (isPrimitiveWrapper) {
+        val = val.valueOf();
+      }
+    }
+
+    return val;
+  };
+
+  const rootProcessed = prepareVal({ }, "", rootValue);
+
+  if (isUnstringifiable(rootProcessed)) {
+    return undefined;
   }
 
-  if (!value) return originalStringify(value, replacer, space);
+  const isRootPrimitive =
+    rootProcessed === null || typeof rootProcessed !== "object";
+  const isRootNativeRawJSON = isRawJSON(rootProcessed);
 
-  const convertedToCustomJSON = originalStringify(
-    value,
-    (key, value) => {
-      const isNoise =
-        typeof value === "string" && Boolean(value.match(noiseValue));
+  if (isRootPrimitive || isRootNativeRawJSON) {
+    return originalStringify(rootProcessed);
+  }
 
-      if (isNoise) return value.toString() + "n"; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+  const chunks = [];
 
-      if (typeof value === "bigint") return value.toString() + "n";
-
-      if (Array.isArray(replacer) && replacer.includes(key)) return value;
-
-      return value;
+  const stack = [
+    {
+      parent: { "": rootProcessed },
+      key: "",
+      val: rootProcessed,
+      isArray: Array.isArray(rootProcessed),
+      keys: Array.isArray(rootProcessed) ? null : Object.keys(rootProcessed),
+      index: 0,
+      first: true,
     },
-    space,
-  );
-  const processedJSON = convertedToCustomJSON.replace(
-    bigIntsStringify,
-    "$1$2$3",
-  ); // Delete one "n" off the end of every BigInt value
-  const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3"); // Remove one "n" off the end of every noisy string
+  ];
 
-  return denoisedJSON;
+  const visited = new WeakSet([rootProcessed]);
+
+  while (stack.length > 0) {
+    const node = stack[stack.length - 1];
+
+    if (node.index === 0) {
+      chunks.push(node.isArray ? "[" : "{");
+    }
+
+    let isDone = false;
+
+    if (node.isArray) {
+      if (node.index < node.val.length) {
+        if (!node.first) chunks.push(",");
+
+        const childRaw = node.val[node.index];
+        const childVal = prepareVal(node.val, String(node.index), childRaw);
+
+        if (isUnstringifiable(childVal)) {
+          chunks.push("null");
+          node.first = false;
+          node.index++;
+        } else {
+          const isComplexObject =
+            childVal !== null && typeof childVal === "object";
+          const isNativeRaw = isRawJSON(childVal);
+
+          if (isComplexObject && !isNativeRaw) {
+            if (visited.has(childVal)) {
+              throw new TypeError("Converting circular structure to JSON");
+            }
+
+            visited.add(childVal);
+
+            stack.push({
+              parent: node.val,
+              key: String(node.index),
+              val: childVal,
+              isArray: Array.isArray(childVal),
+              keys: Array.isArray(childVal) ? null : Object.keys(childVal),
+              index: 0,
+              first: true,
+            });
+
+            node.first = false;
+            node.index++;
+          } else {
+            chunks.push(originalStringify(childVal));
+            node.first = false;
+            node.index++;
+          }
+        }
+      } else {
+        isDone = true;
+      }
+    } else {
+      while (node.index < node.keys.length) {
+        const k = node.keys[node.index++];
+
+        const isFilteredOutByArray = propertyList && !propertyList.has(k);
+
+        if (isFilteredOutByArray) continue;
+
+        const childRaw = node.val[k];
+        const childVal = prepareVal(node.val, k, childRaw);
+
+        if (isUnstringifiable(childVal)) continue;
+
+        if (!node.first) chunks.push(",");
+
+        {
+          chunks.push(originalStringify(k) + ":");
+        }
+
+        const isComplexObject =
+          childVal !== null && typeof childVal === "object";
+        const isNativeRaw = isRawJSON(childVal);
+
+        if (isComplexObject && !isNativeRaw) {
+          if (visited.has(childVal)) {
+            throw new TypeError("Converting circular structure to JSON");
+          }
+
+          visited.add(childVal);
+
+          stack.push({
+            parent: node.val,
+            key: k,
+            val: childVal,
+            isArray: Array.isArray(childVal),
+            keys: Array.isArray(childVal) ? null : Object.keys(childVal),
+            index: 0,
+            first: true,
+          });
+
+          node.first = false;
+
+          break; // Stop current loop level to process the newly pushed stack node
+        } else {
+          chunks.push(originalStringify(childVal));
+          node.first = false;
+        }
+      }
+
+      const isNodeFullyProcessed =
+        node.index >= node.keys.length && stack[stack.length - 1] === node;
+
+      if (isNodeFullyProcessed) {
+        isDone = true;
+      }
+    }
+
+    if (isDone) {
+
+      if (!node.first && space) ;
+
+      chunks.push(node.isArray ? "]" : "}");
+      visited.delete(node.val);
+      stack.pop();
+    }
+  }
+
+  return chunks.join("");
 };
 
 /**
- * Support for JSON.parse's context.source feature detection.
- * @type {boolean}
+ * Converts a JavaScript value to a JSON string.
+ *
+ * Supports serialization of BigInt values using two strategies:
+ * 1. Custom format "123n" → "123" (universal fallback)
+ * 2. Native JSON.rawJSON() (Node.js 22+, fastest) when available
+ *
+ * All other values are serialized exactly like native JSON.stringify().
+ *
+ * @param {*} value The value to convert to a JSON string.
+ * @param {Replacer | Array<string | number> | null} [replacer]
+ * A function that alters the behavior of the stringification process,
+ * or an array of strings/numbers to indicate properties to exclude.
+ * @param {string | number} [space]
+ * A string or number to specify indentation or pretty-printing.
+ * @returns {string} The JSON string representation.
  */
-const isContextSourceSupported = () =>
-  JSON.parse("1", (_, __, context) => !!context && context.source === "1");
+const JSONStringify = (value, replacer, space) => {
+  try {
+    const supportsRawJSON = "rawJSON" in JSON;
+
+    if (supportsRawJSON) {
+      return originalStringify(
+        value,
+        (key, val) => {
+          if (typeof val === "bigint") return JSON.rawJSON(val.toString());
+
+          const hasFunctionReplacer = typeof replacer === "function";
+
+          if (hasFunctionReplacer) ;
+
+          const isKeyInArrayReplacer =
+            Array.isArray(replacer) && replacer.includes(key);
+
+          if (isKeyInArrayReplacer) return val;
+
+          return val;
+        },
+        space,
+      );
+    }
+
+    if (!value) return originalStringify(value, replacer, space);
+
+    const convertedToCustomJSON = originalStringify(
+      value,
+      (key, val) => {
+        const isNoise = typeof val === "string" && noiseValue.test(val);
+
+        if (isNoise) return val.toString() + "n"; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+
+        if (typeof val === "bigint") return val.toString() + "n";
+
+        const hasFunctionReplacer = typeof replacer === "function";
+
+        if (hasFunctionReplacer) ;
+
+        const isKeyInArrayReplacer =
+          Array.isArray(replacer) && replacer.includes(key);
+
+        if (isKeyInArrayReplacer) return val;
+
+        return val;
+      },
+      space,
+    );
+
+    const processedJSON = convertedToCustomJSON.replace(
+      bigIntsStringify,
+      "$1$2$3",
+    ); // Delete one "n" off the end of every BigInt value
+
+    const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3"); // Remove one "n" off the end of every noisy string
+
+    return denoisedJSON;
+  } catch (error) {
+    if (error instanceof RangeError) {
+      const convertedJSON = stringifyIteratively(value, replacer);
+
+      if (convertedJSON === undefined) return undefined;
+
+      const supportsRawJSON = "rawJSON" in JSON;
+
+      if (supportsRawJSON) return convertedJSON;
+
+      const processedJSON = convertedJSON.replace(bigIntsStringify, "$1$2$3");
+
+      return processedJSON.replace(noiseStringify, "$1$2$3");
+    }
+
+    throw error;
+  }
+};
+
+const featureCache = new Map();
 
 /**
- * Convert marked big numbers to BigInt
- * @type {Reviver}
+ * Detects if the current JSON.parse implementation supports the context.source feature.
+ *
+ * Uses toString() fingerprinting to cache results and automatically detect runtime
+ * replacements of JSON.parse (polyfills, mocks, etc.).
+ *
+ * @returns {boolean} true if context.source is supported, false otherwise.
+ */
+const isContextSourceSupported = () => {
+  const parseFingerprint = JSON.parse.toString();
+
+  if (featureCache.has(parseFingerprint)) {
+    return featureCache.get(parseFingerprint);
+  }
+
+  try {
+    const result = JSON.parse(
+      "1",
+      (_, __, context) => !!context?.source && context.source === "1",
+    );
+    featureCache.set(parseFingerprint, result);
+
+    return result;
+  } catch {
+    featureCache.set(parseFingerprint, false);
+
+    return false;
+  }
+};
+
+/**
+ * Reviver function that converts custom-format BigInt strings back to BigInt values.
+ * Also handles "noise" strings that accidentally match the BigInt format.
+ *
+ * @param {string | number | undefined} key The object key.
+ * @param {*} value The value being parsed.
+ * @param {object} [context] Parse context (if supported by JSON.parse).
+ * @param {Reviver} [userReviver] User's custom reviver function.
+ * @returns {any} The transformed value.
  */
 const convertMarkedBigIntsReviver = (key, value, context, userReviver) => {
   const isCustomFormatBigInt =
-    typeof value === "string" && value.match(customFormat);
+    typeof value === "string" && customFormat.test(value);
+
   if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
 
-  const isNoiseValue = typeof value === "string" && value.match(noiseValue);
+  const isNoiseValue = typeof value === "string" && noiseValue.test(value);
   if (isNoiseValue) return value.slice(0, -1);
 
   return value;
 };
 
 /**
- * Faster (2x) and simpler function to parse JSON.
- * Based on JSON.parse's context.source feature, which is not universally available now.
- * Does not support the legacy custom format, used in the first version of this library.
+ * Fast JSON.parse implementation (~2x faster than classic fallback).
+ * Uses JSON.parse's context.source feature to detect integers and convert
+ * large numbers directly to BigInt without string manipulation.
+ *
+ * Does not support legacy custom format from v1 of this library.
+ *
+ * @param {string} text JSON string to parse.
+ * @param {Reviver} [reviver] Transform function to apply to each value.
+ * @returns {any} Parsed JavaScript value.
  */
 const JSONParseV2 = (text, reviver) => {
   return JSON.parse(text, (key, value, context) => {
-    const isBigNumber =
-      typeof value === "number" &&
-      (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER);
+    const isNumber = typeof value === "number";
+    const isOutOfBounds =
+      value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER;
+    const isBigNumber = isNumber && isOutOfBounds;
     const isInt = context && intRegex.test(context.source);
     const isBigInt = isBigNumber && isInt;
 
@@ -29983,44 +30657,141 @@ const JSONParseV2 = (text, reviver) => {
 const MAX_INT = Number.MAX_SAFE_INTEGER.toString();
 const MAX_DIGITS = MAX_INT.length;
 const stringsOrLargeNumbers =
-  /"(?:\\.|[^"])*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
+  /"(?:[^"\\]|\\.)*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
 const noiseValueWithQuotes = /^"-?\d+n+"$/; // Noise - strings that match the custom format before being converted to it
 
 /**
- * Function to parse JSON.
- * If JSON has number values greater than Number.MAX_SAFE_INTEGER, we convert those values to a custom format, then parse them to BigInt values.
- * Other types of values are not affected and parsed as native JSON.parse() would parse them.
+ * Iteratively traverses the parsed object bottom-up (post-order),
+ * emulating the native JSON.parse reviver behavior.
+ * This avoids Call Stack overflows (RangeError) on deeply nested structures.
+ *
+ * @param {any} parsed The natively parsed JSON object.
+ * @param {Reviver} [userReviver] User's custom reviver function.
+ * @returns {any} The fully processed object.
+ */
+const applyReviverIteratively = (parsed, userReviver) => {
+  const rootHolder = { "": parsed };
+  const stack = [{ parent: rootHolder, key: "", visited: false }];
+
+  while (stack.length > 0) {
+    const node = stack[stack.length - 1];
+
+    if (!node.visited) {
+      node.visited = true;
+
+      const value = node.parent[node.key];
+      const isComplexObject = value !== null && typeof value === "object";
+
+      if (isComplexObject) {
+        const keys = Object.keys(value);
+
+        for (let i = keys.length - 1; i >= 0; i--) {
+          stack.push({ parent: value, key: keys[i], visited: false });
+        }
+      }
+    } else {
+      const { parent, key } = node;
+      let value = parent[key];
+
+      if (typeof value === "string") {
+        const isCustomFormatBigInt = customFormat.test(value);
+
+        if (isCustomFormatBigInt) {
+          value = BigInt(value.slice(0, -1));
+        } else {
+          const isNoise = noiseValue.test(value);
+
+          if (isNoise) value = value.slice(0, -1);
+        }
+      }
+
+      const isDeleted = value === undefined;
+
+      if (isDeleted) {
+        delete parent[key];
+      } else {
+        parent[key] = value;
+      }
+
+      stack.pop();
+    }
+  }
+
+  return rootHolder[""];
+};
+
+/**
+ * Pre-processes the JSON string to mark large numbers with an 'n' suffix.
+ *
+ * @param {string} text The raw JSON string.
+ * @returns {string} The serialized string with marked BigInts.
+ */
+const serializeBigInts = (text) => {
+  return text.replace(
+    stringsOrLargeNumbers,
+    (match, digits, fractional, exponential) => {
+      const isString = match[0] === '"';
+      const isNoise = isString && noiseValueWithQuotes.test(match);
+
+      if (isNoise) return match.substring(0, match.length - 1) + 'n"'; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+
+      const hasFractionalOrExponential = fractional || exponential;
+
+      // With a fixed number of digits, we can correctly use lexicographical comparison to do a numeric comparison
+      const isLessThanMaxSafeInt =
+        digits &&
+        (digits.length < MAX_DIGITS ||
+          (digits.length === MAX_DIGITS && digits <= MAX_INT));
+
+      const isStandardValue =
+        isString || hasFractionalOrExponential || isLessThanMaxSafeInt;
+
+      if (isStandardValue) return match;
+
+      return '"' + match + 'n"';
+    },
+  );
+};
+
+/**
+ * Converts a JSON string into a JavaScript value.
+ *
+ * Supports parsing of large integers using two strategies:
+ * 1. Classic fallback: Marks large numbers with "123n" format, then converts to BigInt
+ * 2. Fast path (JSONParseV2): Uses context.source feature (~2x faster) when available
+ *
+ * All other JSON values are parsed exactly like native JSON.parse().
+ *
+ * @param {string} text A valid JSON string.
+ * @param {Reviver} [reviver]
+ * A function that transforms the results. This function is called for each member
+ * of the object. If a member contains nested objects, the nested objects are
+ * transformed before the parent object is.
+ * @returns {any} The parsed JavaScript value.
+ * @throws {SyntaxError} If text is not valid JSON.
  */
 const JSONParse = (text, reviver) => {
   if (!text) return originalParse(text, reviver);
 
-  if (isContextSourceSupported()) return JSONParseV2(text); // Shortcut to a faster (2x) and simpler version
+  try {
+    if (isContextSourceSupported()) return JSONParseV2(text, reviver); // Shortcut to a faster (2x) and simpler version
 
-  // Find and mark big numbers with "n"
-  const serializedData = text.replace(
-    stringsOrLargeNumbers,
-    (text, digits, fractional, exponential) => {
-      const isString = text[0] === '"';
-      const isNoise = isString && Boolean(text.match(noiseValueWithQuotes));
+    // Find and mark big numbers with "n"
+    const serializedData = serializeBigInts(text);
 
-      if (isNoise) return text.substring(0, text.length - 1) + 'n"'; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+    return originalParse(serializedData, (key, value, context) =>
+      convertMarkedBigIntsReviver(key, value, context, reviver),
+    );
+  } catch (error) {
+    if (error instanceof RangeError) {
+      const serializedData = serializeBigInts(text);
+      const parsed = originalParse(serializedData);
 
-      const isFractionalOrExponential = fractional || exponential;
-      const isLessThanMaxSafeInt =
-        digits &&
-        (digits.length < MAX_DIGITS ||
-          (digits.length === MAX_DIGITS && digits <= MAX_INT)); // With a fixed number of digits, we can correctly use lexicographical comparison to do a numeric comparison
+      return applyReviverIteratively(parsed);
+    }
 
-      if (isString || isFractionalOrExponential || isLessThanMaxSafeInt)
-        return text;
-
-      return '"' + text + 'n"';
-    },
-  );
-
-  return originalParse(serializedData, (key, value, context) =>
-    convertMarkedBigIntsReviver(key, value),
-  );
+    throw error;
+  }
 };
 
 class RequestError extends Error {
@@ -30065,17 +30836,17 @@ class RequestError extends Error {
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$9 = "10.0.8";
+var VERSION$c = "10.0.16";
 
 // pkg/dist-src/defaults.js
 var defaults_default = {
   headers: {
-    "user-agent": `octokit-request.js/${VERSION$9} ${getUserAgent()}`
+    "user-agent": `octokit-request.js/${VERSION$c} ${getUserAgent()}`
   }
 };
 
 // pkg/dist-src/is-plain-object.js
-function isPlainObject$1(value) {
+function isPlainObject$2(value) {
   if (typeof value !== "object" || value === null) return false;
   if (Object.prototype.toString.call(value) !== "[object Object]") return false;
   const proto = Object.getPrototypeOf(value);
@@ -30093,7 +30864,7 @@ async function fetchWrapper(requestOptions) {
   }
   const log = requestOptions.request?.log || console;
   const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  const body = isPlainObject$1(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
+  const body = isPlainObject$2(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
   const requestHeaders = Object.fromEntries(
     Object.entries(requestOptions.headers).map(([name, value]) => [
       name,
@@ -30187,7 +30958,7 @@ async function getResponseData(response) {
   if (!contentType) {
     return response.text().catch(noop$1);
   }
-  const mimetype = fastContentTypeParseExports.safeParse(contentType);
+  const mimetype = parse(contentType);
   if (isJSONResponse(mimetype)) {
     let text = "";
     try {
@@ -30196,7 +30967,10 @@ async function getResponseData(response) {
     } catch (err) {
       return text;
     }
-  } else if (mimetype.type.startsWith("text/") || mimetype.parameters.charset?.toLowerCase() === "utf-8") {
+  } else if (mimetype.type.startsWith("text/") || // `application/octet-stream` is the canonical "arbitrary binary" type
+  // (RFC 2046) and must never be decoded as text, even when the response
+  // carries a (misleading) `charset=utf-8` parameter — see #751.
+  mimetype.parameters.charset?.toLowerCase() === "utf-8" && mimetype.type !== "application/octet-stream") {
     return response.text().catch(noop$1);
   } else {
     return response.arrayBuffer().catch(
@@ -30215,9 +30989,10 @@ function toErrorMessage(data) {
   if (data instanceof ArrayBuffer) {
     return "Unknown error";
   }
-  if ("message" in data) {
-    const suffix = "documentation_url" in data ? ` - ${data.documentation_url}` : "";
-    return Array.isArray(data.errors) ? `${data.message}: ${data.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${data.message}${suffix}`;
+  if (typeof data === "object" && data !== null && "message" in data) {
+    const objectData = data;
+    const suffix = "documentation_url" in objectData ? ` - ${objectData.documentation_url}` : "";
+    return Array.isArray(objectData.errors) ? `${objectData.message}: ${objectData.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${objectData.message}${suffix}`;
   }
   return `Unknown error: ${JSON.stringify(data)}`;
 }
@@ -30255,7 +31030,7 @@ var request = withDefaults$1(endpoint, defaults_default);
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$8 = "0.0.0-development";
+var VERSION$b = "0.0.0-development";
 
 // pkg/dist-src/error.js
 function _buildMessageForResponseErrors(data) {
@@ -30274,6 +31049,9 @@ var GraphqlResponseError = class extends Error {
       Error.captureStackTrace(this, this.constructor);
     }
   }
+  request;
+  headers;
+  response;
   name = "GraphqlResponseError";
   errors;
   data;
@@ -30357,7 +31135,7 @@ function withDefaults(request2, newDefaults) {
 // pkg/dist-src/index.js
 withDefaults(request, {
   headers: {
-    "user-agent": `octokit-graphql.js/${VERSION$8} ${getUserAgent()}`
+    "user-agent": `octokit-graphql.js/${VERSION$b} ${getUserAgent()}`
   },
   method: "POST",
   url: "/graphql"
@@ -30368,11 +31146,12 @@ function withCustomRequest(customRequest) {
     url: "/graphql"
   });
 }
+/* v8 ignore if -- @preserve */
 
 // pkg/dist-src/is-jwt.js
 var b64url = "(?:[a-zA-Z0-9_-]+)";
-var sep = "\\.";
-var jwtRE = new RegExp(`^${b64url}${sep}${b64url}${sep}${b64url}$`);
+var sep$1 = "\\.";
+var jwtRE = new RegExp(`^${b64url}${sep$1}${b64url}${sep$1}${b64url}$`);
 var isJWT = jwtRE.test.bind(jwtRE);
 
 // pkg/dist-src/auth.js
@@ -30422,7 +31201,7 @@ var createTokenAuth = function createTokenAuth2(token) {
   });
 };
 
-const VERSION$7 = "7.0.6";
+const VERSION$a = "7.0.8";
 
 const noop = () => {
 };
@@ -30443,9 +31222,9 @@ function createLogger(logger = {}) {
   }
   return logger;
 }
-const userAgentTrail = `octokit-core.js/${VERSION$7} ${getUserAgent()}`;
+const userAgentTrail = `octokit-core.js/${VERSION$a} ${getUserAgent()}`;
 class Octokit {
-  static VERSION = VERSION$7;
+  static VERSION = VERSION$a;
   static defaults(defaults) {
     const OctokitWithDefaults = class extends this {
       constructor(...args) {
@@ -30557,7 +31336,7 @@ class Octokit {
   auth;
 }
 
-const VERSION$6 = "17.0.0";
+const VERSION$9 = "17.0.0";
 
 const Endpoints = {
   actions: {
@@ -32978,10 +33757,10 @@ function restEndpointMethods(octokit) {
     rest: api
   };
 }
-restEndpointMethods.VERSION = VERSION$6;
+restEndpointMethods.VERSION = VERSION$9;
 
 // pkg/dist-src/version.js
-var VERSION$5 = "0.0.0-development";
+var VERSION$8 = "0.0.0-development";
 
 // pkg/dist-src/normalize-paginated-list-response.js
 function normalizePaginatedListResponse(response) {
@@ -33104,7 +33883,7 @@ function paginateRest(octokit) {
     })
   };
 }
-paginateRest.VERSION = VERSION$5;
+paginateRest.VERSION = VERSION$8;
 
 new Context();
 const baseUrl = getApiBaseUrl();
@@ -33129,6 +33908,11 @@ function getOctokitOptions(token, options) {
     if (auth) {
         opts.auth = auth;
     }
+    // Orchestration ID
+    const userAgent = getUserAgentWithOrchestrationId(opts.userAgent);
+    if (userAgent) {
+        opts.userAgent = userAgent;
+    }
     return opts;
 }
 
@@ -33146,18 +33930,7 @@ function getOctokit(token, options, ...additionalPlugins) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 //----------------------------------------------------------------------------------------------------------
 // DO NOT EDIT, this is an Auto-generated file from scripts/semconv/templates/registry/stable/attributes.ts.j2
@@ -33180,6 +33953,12 @@ function getOctokit(token, options, ...additionalPlugins) {
  *
  * When `error.type` is set to a type (e.g., an exception type), its
  * canonical class name identifying the type within the artifact **SHOULD** be used.
+ *
+ * If the recorded error type is a wrapper that is not meaningful for
+ * failure classification, instrumentation **MAY** use the type of the inner
+ * error instead. For example, in Go, errors created with `fmt.Errorf`
+ * using `%w` **MAY** be unwrapped when the wrapper type does not help
+ * classify the failure.
  *
  * Instrumentations **SHOULD** document the list of errors they report.
  *
@@ -33219,6 +33998,12 @@ const ATTR_EXCEPTION_STACKTRACE = 'exception.stacktrace';
  *
  * @example java.net.ConnectException
  * @example OSError
+ *
+ * @note If the recorded exception type is a wrapper that is not meaningful for
+ * failure classification, instrumentation **MAY** use the type of the inner
+ * exception instead. For example, in Go, errors created with `fmt.Errorf`
+ * using `%w` **MAY** be unwrapped when the wrapper type does not help
+ * classify the failure.
  */
 const ATTR_EXCEPTION_TYPE = 'exception.type';
 /**
@@ -33259,7 +34044,8 @@ const ATTR_SERVICE_INSTANCE_ID = 'service.instance.id';
  *
  * @example shoppingcart
  *
- * @note **MUST** be the same for all instances of horizontally scaled services. If the value was not specified, SDKs **MUST** fallback to `unknown_service:` concatenated with [`process.executable.name`](process.md), e.g. `unknown_service:bash`. If `process.executable.name` is not available, the value **MUST** be set to `unknown_service`.
+ * @note **MUST** be the same for all instances of horizontally scaled services. If the value was not specified, SDKs **MUST** fallback to `unknown_service:` concatenated with the process executable name, e.g. `unknown_service:bash`. If the process executable name is not available, the value **MUST** be set to `unknown_service`.
+ * The process executable name is the name of the process executable, the same value as described by the [`process.executable.name`](process.md) resource attribute.
  */
 const ATTR_SERVICE_NAME = 'service.name';
 /**
@@ -33299,18 +34085,7 @@ const ATTR_TELEMETRY_SDK_VERSION = 'telemetry.sdk.version';
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 //----------------------------------------------------------------------------------------------------------
 // DO NOT EDIT, this is an Auto-generated file from scripts/semconv/templates/registry/stable/attributes.ts.j2
@@ -33320,7 +34095,7 @@ const ATTR_TELEMETRY_SDK_VERSION = 'telemetry.sdk.version';
  *
  * @example created
  *
- * @note The Android lifecycle states are defined in [Activity lifecycle callbacks](https://developer.android.com/guide/components/activities/activity-lifecycle#lc), and from which the `OS identifiers` are derived.
+ * @note The Android lifecycle states are defined in [Activity lifecycle callbacks](https://developer.android.com/guide/components/activities/activity-lifecycle#lifecycle-callbacks), and from which the `OS identifiers` are derived.
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
@@ -33359,7 +34134,7 @@ const ATTR_CICD_PIPELINE_NAME = 'cicd.pipeline.name';
  * @example success
  * @example failure
  * @example timeout
- * @example skipped
+ * @example skip
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
@@ -33375,7 +34150,7 @@ const CICD_PIPELINE_RESULT_VALUE_CANCELLATION = "cancellation";
 /**
  * Enum value "error" for attribute {@link ATTR_CICD_PIPELINE_RESULT}.
  *
- * The pipeline run failed due to an error in the CICD system, eg. due to the worker being killed.
+ * The pipeline run failed due to an error in the CI/CD system, eg. due to the worker being killed.
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
@@ -33478,6 +34253,8 @@ const ATTR_CICD_PIPELINE_TASK_NAME = 'cicd.pipeline.task.name';
  *
  * @example 12097
  *
+ * @note For a given pipeline run and task, the `cicd.pipeline.task.run.id` **MUST** be unique within that run. For the same task across different runs of the same pipeline, the `cicd.pipeline.task.run.id` **MAY** remain the same, enabling correlation of `cicd.pipeline.task.run.result` values across multiple pipeline runs.
+ *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 const ATTR_CICD_PIPELINE_TASK_RUN_ID = 'cicd.pipeline.task.run.id';
@@ -33487,7 +34264,7 @@ const ATTR_CICD_PIPELINE_TASK_RUN_ID = 'cicd.pipeline.task.run.id';
  * @example success
  * @example failure
  * @example timeout
- * @example skipped
+ * @example skip
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
@@ -33575,7 +34352,7 @@ const CICD_PIPELINE_TASK_TYPE_VALUE_DEPLOY = "deploy";
  */
 const CICD_PIPELINE_TASK_TYPE_VALUE_TEST = "test";
 /**
- * The unique identifier of a worker within a CICD system.
+ * The unique identifier of a worker within a CI/CD system.
  *
  * @example abc123
  * @example 10.0.1.2
@@ -33585,7 +34362,7 @@ const CICD_PIPELINE_TASK_TYPE_VALUE_TEST = "test";
  */
 const ATTR_CICD_WORKER_ID = 'cicd.worker.id';
 /**
- * The name of a worker within a CICD system.
+ * The name of a worker within a CI/CD system.
  *
  * @example agent-abc
  * @example controller
@@ -33648,11 +34425,11 @@ function requireErrno () {
 
 var fs$3 = {};
 
-var hasRequiredFs$3;
+var hasRequiredFs$5;
 
-function requireFs$3 () {
-	if (hasRequiredFs$3) return fs$3;
-	hasRequiredFs$3 = 1;
+function requireFs$5 () {
+	if (hasRequiredFs$5) return fs$3;
+	hasRequiredFs$5 = 1;
 	Object.defineProperty(fs$3, "__esModule", { value: true });
 	fs$3.createDirentFromStats = void 0;
 	class DirentFromStats {
@@ -33998,9 +34775,9 @@ var hasRequiredUtils$3;
 function requireUtils$3 () {
 	if (hasRequiredUtils$3) return utils$2;
 	hasRequiredUtils$3 = 1;
-	(function (exports$1) {
+	(function (exports) {
 
-		exports$1.isInteger = num => {
+		exports.isInteger = num => {
 		  if (typeof num === 'number') {
 		    return Number.isInteger(num);
 		  }
@@ -34014,15 +34791,15 @@ function requireUtils$3 () {
 		 * Find a node of the given type
 		 */
 
-		exports$1.find = (node, type) => node.nodes.find(node => node.type === type);
+		exports.find = (node, type) => node.nodes.find(node => node.type === type);
 
 		/**
 		 * Find a node of the given type
 		 */
 
-		exports$1.exceedsLimit = (min, max, step = 1, limit) => {
+		exports.exceedsLimit = (min, max, step = 1, limit) => {
 		  if (limit === false) return false;
-		  if (!exports$1.isInteger(min) || !exports$1.isInteger(max)) return false;
+		  if (!exports.isInteger(min) || !exports.isInteger(max)) return false;
 		  return ((Number(max) - Number(min)) / Number(step)) >= limit;
 		};
 
@@ -34030,7 +34807,7 @@ function requireUtils$3 () {
 		 * Escape the given node with '\\' before node.value
 		 */
 
-		exports$1.escapeNode = (block, n = 0, type) => {
+		exports.escapeNode = (block, n = 0, type) => {
 		  const node = block.nodes[n];
 		  if (!node) return;
 
@@ -34046,7 +34823,7 @@ function requireUtils$3 () {
 		 * Returns true if the given brace node should be enclosed in literal braces
 		 */
 
-		exports$1.encloseBrace = node => {
+		exports.encloseBrace = node => {
 		  if (node.type !== 'brace') return false;
 		  if ((node.commas >> 0 + node.ranges >> 0) === 0) {
 		    node.invalid = true;
@@ -34059,7 +34836,7 @@ function requireUtils$3 () {
 		 * Returns true if a brace node is invalid.
 		 */
 
-		exports$1.isInvalidBrace = block => {
+		exports.isInvalidBrace = block => {
 		  if (block.type !== 'brace') return false;
 		  if (block.invalid === true || block.dollar) return true;
 		  if ((block.commas >> 0 + block.ranges >> 0) === 0) {
@@ -34077,7 +34854,7 @@ function requireUtils$3 () {
 		 * Returns true if a node is an open or close node
 		 */
 
-		exports$1.isOpenOrClose = node => {
+		exports.isOpenOrClose = node => {
 		  if (node.type === 'open' || node.type === 'close') {
 		    return true;
 		  }
@@ -34088,7 +34865,7 @@ function requireUtils$3 () {
 		 * Reduce an array of text nodes.
 		 */
 
-		exports$1.reduce = nodes => nodes.reduce((acc, node) => {
+		exports.reduce = nodes => nodes.reduce((acc, node) => {
 		  if (node.type === 'text') acc.push(node.value);
 		  if (node.type === 'range') node.type = 'text';
 		  return acc;
@@ -34098,7 +34875,7 @@ function requireUtils$3 () {
 		 * Flatten an array
 		 */
 
-		exports$1.flatten = (...args) => {
+		exports.flatten = (...args) => {
 		  const result = [];
 
 		  const flat = arr => {
@@ -34499,7 +35276,7 @@ function requireFillRange () {
 	if (hasRequiredFillRange) return fillRange;
 	hasRequiredFillRange = 1;
 
-	const util = require$$0$4;
+	const util = util$a;
 	const toRegexRange = requireToRegexRange();
 
 	const isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
@@ -35711,7 +36488,7 @@ var hasRequiredUtils$2;
 function requireUtils$2 () {
 	if (hasRequiredUtils$2) return utils$1;
 	hasRequiredUtils$2 = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		const path = path__default;
 		const win32 = process.platform === 'win32';
@@ -35722,19 +36499,19 @@ function requireUtils$2 () {
 		  REGEX_SPECIAL_CHARS_GLOBAL
 		} = requireConstants$2();
 
-		exports$1.isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
-		exports$1.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str);
-		exports$1.isRegexChar = str => str.length === 1 && exports$1.hasRegexChars(str);
-		exports$1.escapeRegex = str => str.replace(REGEX_SPECIAL_CHARS_GLOBAL, '\\$1');
-		exports$1.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/');
+		exports.isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
+		exports.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str);
+		exports.isRegexChar = str => str.length === 1 && exports.hasRegexChars(str);
+		exports.escapeRegex = str => str.replace(REGEX_SPECIAL_CHARS_GLOBAL, '\\$1');
+		exports.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/');
 
-		exports$1.removeBackslashes = str => {
+		exports.removeBackslashes = str => {
 		  return str.replace(REGEX_REMOVE_BACKSLASH, match => {
 		    return match === '\\' ? '' : match;
 		  });
 		};
 
-		exports$1.supportsLookbehinds = () => {
+		exports.supportsLookbehinds = () => {
 		  const segs = process.version.slice(1).split('.').map(Number);
 		  if (segs.length === 3 && segs[0] >= 9 || (segs[0] === 8 && segs[1] >= 10)) {
 		    return true;
@@ -35742,21 +36519,21 @@ function requireUtils$2 () {
 		  return false;
 		};
 
-		exports$1.isWindows = options => {
+		exports.isWindows = options => {
 		  if (options && typeof options.windows === 'boolean') {
 		    return options.windows;
 		  }
 		  return win32 === true || path.sep === '\\';
 		};
 
-		exports$1.escapeLast = (input, char, lastIdx) => {
+		exports.escapeLast = (input, char, lastIdx) => {
 		  const idx = input.lastIndexOf(char, lastIdx);
 		  if (idx === -1) return input;
-		  if (input[idx - 1] === '\\') return exports$1.escapeLast(input, char, idx - 1);
+		  if (input[idx - 1] === '\\') return exports.escapeLast(input, char, idx - 1);
 		  return `${input.slice(0, idx)}\\${input.slice(idx)}`;
 		};
 
-		exports$1.removePrefix = (input, state = {}) => {
+		exports.removePrefix = (input, state = {}) => {
 		  let output = input;
 		  if (output.startsWith('./')) {
 		    output = output.slice(2);
@@ -35765,7 +36542,7 @@ function requireUtils$2 () {
 		  return output;
 		};
 
-		exports$1.wrapOutput = (input, state = {}, options = {}) => {
+		exports.wrapOutput = (input, state = {}, options = {}) => {
 		  const prepend = options.contains ? '' : '^';
 		  const append = options.contains ? '' : '$';
 
@@ -37946,7 +38723,7 @@ function requireMicromatch () {
 	if (hasRequiredMicromatch) return micromatch_1;
 	hasRequiredMicromatch = 1;
 
-	const util = require$$0$4;
+	const util = util$a;
 	const braces = requireBraces();
 	const picomatch = requirePicomatch();
 	const utils = requireUtils$2();
@@ -38649,7 +39426,7 @@ function requireMerge2 () {
 	 * Copyright (c) 2014-2020 Teambition
 	 * Licensed under the MIT license.
 	 */
-	const Stream = require$$0$6;
+	const Stream = require$$0$5;
 	const PassThrough = Stream.PassThrough;
 	const slice = Array.prototype.slice;
 
@@ -38843,7 +39620,7 @@ function requireUtils$1 () {
 	utils$3.array = array;
 	const errno = requireErrno();
 	utils$3.errno = errno;
-	const fs = requireFs$3();
+	const fs = requireFs$5();
 	utils$3.fs = fs;
 	const path = requirePath$1();
 	utils$3.path = path;
@@ -39070,16 +39847,16 @@ var settings$3 = {};
 
 var fs$2 = {};
 
-var hasRequiredFs$2;
+var hasRequiredFs$4;
 
-function requireFs$2 () {
-	if (hasRequiredFs$2) return fs$2;
-	hasRequiredFs$2 = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.createFileSystemAdapter = exports$1.FILE_SYSTEM_ADAPTER = void 0;
+function requireFs$4 () {
+	if (hasRequiredFs$4) return fs$2;
+	hasRequiredFs$4 = 1;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.createFileSystemAdapter = exports.FILE_SYSTEM_ADAPTER = void 0;
 		const fs = require$$0__default;
-		exports$1.FILE_SYSTEM_ADAPTER = {
+		exports.FILE_SYSTEM_ADAPTER = {
 		    lstat: fs.lstat,
 		    stat: fs.stat,
 		    lstatSync: fs.lstatSync,
@@ -39087,11 +39864,11 @@ function requireFs$2 () {
 		};
 		function createFileSystemAdapter(fsMethods) {
 		    if (fsMethods === undefined) {
-		        return exports$1.FILE_SYSTEM_ADAPTER;
+		        return exports.FILE_SYSTEM_ADAPTER;
 		    }
-		    return Object.assign(Object.assign({}, exports$1.FILE_SYSTEM_ADAPTER), fsMethods);
+		    return Object.assign(Object.assign({}, exports.FILE_SYSTEM_ADAPTER), fsMethods);
 		}
-		exports$1.createFileSystemAdapter = createFileSystemAdapter; 
+		exports.createFileSystemAdapter = createFileSystemAdapter; 
 	} (fs$2));
 	return fs$2;
 }
@@ -39102,7 +39879,7 @@ function requireSettings$3 () {
 	if (hasRequiredSettings$3) return settings$3;
 	hasRequiredSettings$3 = 1;
 	Object.defineProperty(settings$3, "__esModule", { value: true });
-	const fs = requireFs$2();
+	const fs = requireFs$4();
 	class Settings {
 	    constructor(_options = {}) {
 	        this._options = _options;
@@ -39262,11 +40039,11 @@ var utils = {};
 
 var fs$1 = {};
 
-var hasRequiredFs$1;
+var hasRequiredFs$3;
 
-function requireFs$1 () {
-	if (hasRequiredFs$1) return fs$1;
-	hasRequiredFs$1 = 1;
+function requireFs$3 () {
+	if (hasRequiredFs$3) return fs$1;
+	hasRequiredFs$3 = 1;
 	Object.defineProperty(fs$1, "__esModule", { value: true });
 	fs$1.createDirentFromStats = void 0;
 	class DirentFromStats {
@@ -39295,7 +40072,7 @@ function requireUtils () {
 	hasRequiredUtils = 1;
 	Object.defineProperty(utils, "__esModule", { value: true });
 	utils.fs = void 0;
-	const fs = requireFs$1();
+	const fs = requireFs$3();
 	utils.fs = fs;
 	return utils;
 }
@@ -39500,16 +40277,16 @@ var settings$2 = {};
 
 var fs = {};
 
-var hasRequiredFs;
+var hasRequiredFs$2;
 
-function requireFs () {
-	if (hasRequiredFs) return fs;
-	hasRequiredFs = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.createFileSystemAdapter = exports$1.FILE_SYSTEM_ADAPTER = void 0;
+function requireFs$2 () {
+	if (hasRequiredFs$2) return fs;
+	hasRequiredFs$2 = 1;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.createFileSystemAdapter = exports.FILE_SYSTEM_ADAPTER = void 0;
 		const fs = require$$0__default;
-		exports$1.FILE_SYSTEM_ADAPTER = {
+		exports.FILE_SYSTEM_ADAPTER = {
 		    lstat: fs.lstat,
 		    stat: fs.stat,
 		    lstatSync: fs.lstatSync,
@@ -39519,11 +40296,11 @@ function requireFs () {
 		};
 		function createFileSystemAdapter(fsMethods) {
 		    if (fsMethods === undefined) {
-		        return exports$1.FILE_SYSTEM_ADAPTER;
+		        return exports.FILE_SYSTEM_ADAPTER;
 		    }
-		    return Object.assign(Object.assign({}, exports$1.FILE_SYSTEM_ADAPTER), fsMethods);
+		    return Object.assign(Object.assign({}, exports.FILE_SYSTEM_ADAPTER), fsMethods);
 		}
-		exports$1.createFileSystemAdapter = createFileSystemAdapter; 
+		exports.createFileSystemAdapter = createFileSystemAdapter; 
 	} (fs));
 	return fs;
 }
@@ -39536,7 +40313,7 @@ function requireSettings$2 () {
 	Object.defineProperty(settings$2, "__esModule", { value: true });
 	const path = path__default;
 	const fsStat = requireOut$3();
-	const fs = requireFs();
+	const fs = requireFs$2();
 	class Settings {
 	    constructor(_options = {}) {
 	        this._options = _options;
@@ -39851,6 +40628,7 @@ function requireQueue () {
 	      current.value = null;
 	      current.callback = noop;
 	      current.errorHandler = null;
+	      current.next = null;
 
 	      // Call error handler if present
 	      if (errorHandler) {
@@ -39860,8 +40638,9 @@ function requireQueue () {
 	      // Call callback with error
 	      callback.call(context, new Error('abort'));
 
-	      // Release the task back to the pool
-	      current.release(current);
+	      // This task was queued, so return it to the pool without updating
+	      // the running worker count.
+	      cache.release(current);
 
 	      current = next;
 	    }
@@ -40054,7 +40833,7 @@ function requireAsync$3 () {
 	if (hasRequiredAsync$3) return async$2;
 	hasRequiredAsync$3 = 1;
 	Object.defineProperty(async$2, "__esModule", { value: true });
-	const events_1 = require$$0$5;
+	const events_1 = require$$0$4;
 	const fsScandir = requireOut$2();
 	const fastq = requireQueue();
 	const common = requireCommon$1();
@@ -40197,7 +40976,7 @@ function requireStream$2 () {
 	if (hasRequiredStream$2) return stream$2;
 	hasRequiredStream$2 = 1;
 	Object.defineProperty(stream$2, "__esModule", { value: true });
-	const stream_1 = require$$0$6;
+	const stream_1 = require$$0$5;
 	const async_1 = requireAsync$3();
 	class StreamProvider {
 	    constructor(_root, _settings) {
@@ -40449,7 +41228,7 @@ function requireStream$1 () {
 	if (hasRequiredStream$1) return stream$1;
 	hasRequiredStream$1 = 1;
 	Object.defineProperty(stream$1, "__esModule", { value: true });
-	const stream_1 = require$$0$6;
+	const stream_1 = require$$0$5;
 	const fsStat = requireOut$3();
 	const fsWalk = requireOut$1();
 	const reader_1 = requireReader$1();
@@ -40967,7 +41746,7 @@ function requireStream () {
 	if (hasRequiredStream) return stream;
 	hasRequiredStream = 1;
 	Object.defineProperty(stream, "__esModule", { value: true });
-	const stream_1 = require$$0$6;
+	const stream_1 = require$$0$5;
 	const stream_2 = requireStream$1();
 	const provider_1 = requireProvider();
 	class ProviderStream extends provider_1.default {
@@ -41090,9 +41869,9 @@ var hasRequiredSettings;
 function requireSettings () {
 	if (hasRequiredSettings) return settings;
 	hasRequiredSettings = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.DEFAULT_FILE_SYSTEM_ADAPTER = void 0;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.DEFAULT_FILE_SYSTEM_ADAPTER = void 0;
 		const fs = require$$0__default;
 		const os = os__default;
 		/**
@@ -41100,7 +41879,7 @@ function requireSettings () {
 		 * https://github.com/nodejs/node/blob/7faeddf23a98c53896f8b574a6e66589e8fb1eb8/lib/os.js#L106-L107
 		 */
 		const CPU_COUNT = Math.max(os.cpus().length, 1);
-		exports$1.DEFAULT_FILE_SYSTEM_ADAPTER = {
+		exports.DEFAULT_FILE_SYSTEM_ADAPTER = {
 		    lstat: fs.lstat,
 		    lstatSync: fs.lstatSync,
 		    stat: fs.stat,
@@ -41145,10 +41924,10 @@ function requireSettings () {
 		        return option === undefined ? value : option;
 		    }
 		    _getFileSystemMethods(methods = {}) {
-		        return Object.assign(Object.assign({}, exports$1.DEFAULT_FILE_SYSTEM_ADAPTER), methods);
+		        return Object.assign(Object.assign({}, exports.DEFAULT_FILE_SYSTEM_ADAPTER), methods);
 		    }
 		}
-		exports$1.default = Settings; 
+		exports.default = Settings; 
 	} (settings));
 	return settings;
 }
@@ -41615,9 +42394,102 @@ function readAttributeStr(xmlData, i) {
 }
 
 /**
- * Select all the attributes whether valid or invalid.
+ * Walk `attrStr` once, left to right, splitting it into attribute tokens.
+ *
+ * This replaces a regex that used to do the same job
+ * (`(\s*)([^\s=]+)(\s*=)?(\s*(['"])(([\s\S])*?)\5)?`). That regex led with an
+ * optional whitespace group followed by a required "non-whitespace" group.
+ * On a long run of whitespace that never resolves into an attribute name
+ * (e.g. a tag with thousands of trailing spaces before `>`), the engine
+ * backtracks the whitespace group one character at a time before giving up
+ * and moving to the next starting position — one full backtrack per
+ * position, which is quadratic in the length of the run.
+ *
+ * A single forward-only scan can never backtrack, so it can't be made slow
+ * this way no matter how much whitespace the input contains — it's always
+ * proportional to the length of the string, once.
+ *
+ * Each returned token mirrors the shape the old regex match array had, so
+ * the validation logic below (which reads token[1]..token[6]) didn't need
+ * to change:
+ *   token.startIndex - where this token begins in attrStr
+ *   token[1]          - leading whitespace before the name
+ *   token[2]          - the attribute name
+ *   token[3]          - whitespace + '=' if present, else undefined
+ *   token[4]          - marker (any defined value) if a quoted value was found
+ *   token[5]          - the quote character used ('"' or "'")
+ *   token[6]          - the value's text, without the surrounding quotes
+ *
+ * A malformed leading character (e.g. a stray '=' with no name before it)
+ * is simply skipped over, one character at a time — the same outcome the
+ * old regex produced by failing to match at that position and retrying at
+ * the next one.
  */
-const validAttrStrRegxp = new RegExp('(\\s*)([^\\s=]+)(\\s*=)?(\\s*([\'"])(([\\s\\S])*?)\\5)?', 'g');
+function scanAttributeTokens(attrStr) {
+  const tokens = [];
+  const len = attrStr.length;
+  let i = 0;
+
+  while (i < len) {
+    const tokenStart = i;
+
+    // Leading whitespace before the name.
+    while (i < len && isWhiteSpace(attrStr[i])) i++;
+    if (i >= len) break; // trailing whitespace only — nothing left to read
+
+    if (attrStr[i] === '=') {
+      // No name before this '=' — not a valid attribute start. Move past
+      // just this one character and try again from the next position.
+      i = tokenStart + 1;
+      continue;
+    }
+
+    const leadingWs = attrStr.slice(tokenStart, i);
+
+    // Attribute name — everything up to the next whitespace or '='.
+    const nameStart = i;
+    while (i < len && !isWhiteSpace(attrStr[i]) && attrStr[i] !== '=') i++;
+    const name = attrStr.slice(nameStart, i);
+
+    // Optional whitespace + '='.
+    let equalsGroup; // whitespace + '=' text, or undefined if absent
+    let j = i;
+    while (j < len && isWhiteSpace(attrStr[j])) j++;
+    if (j < len && attrStr[j] === '=') {
+      equalsGroup = attrStr.slice(i, j + 1);
+      i = j + 1;
+    }
+
+    // Optional whitespace + quoted value.
+    let quoteChar;
+    let value;
+    let k = i;
+    while (k < len && isWhiteSpace(attrStr[k])) k++;
+    if (k < len && (attrStr[k] === '"' || attrStr[k] === "'")) {
+      const valueStart = k + 1;
+      const closeIdx = attrStr.indexOf(attrStr[k], valueStart);
+      if (closeIdx !== -1) {
+        quoteChar = attrStr[k];
+        value = attrStr.slice(valueStart, closeIdx);
+        i = closeIdx + 1;
+      }
+      // No closing quote found anywhere in the rest of the string — leave
+      // quoteChar/value undefined, same as the old regex's group failing
+      // to match a backreference-less run.
+    }
+
+    const token = { startIndex: tokenStart };
+    token[1] = leadingWs;
+    token[2] = name;
+    token[3] = equalsGroup;
+    token[4] = quoteChar !== undefined ? true : undefined;
+    token[5] = quoteChar;
+    token[6] = value;
+    tokens.push(token);
+  }
+
+  return tokens;
+}
 
 //attr, ="sd", a="amit's", a="sd"b="saf", ab  cd=""
 
@@ -41626,7 +42498,7 @@ function validateAttributeString(attrStr, options) {
 
   //if(attrStr.trim().length === 0) return true; //empty string
 
-  const matches = getAllMatches(attrStr, validAttrStrRegxp);
+  const matches = scanAttributeTokens(attrStr);
   const attrNames = {};
 
   for (let i = 0; i < matches.length; i++) {
@@ -41729,6 +42601,712 @@ function getPositionFromMatch(match) {
   return match.startIndex + match[1].length;
 }
 
+// ---------------------------------------------------------------------------
+// Complete HTML5 named entity reference
+// Organized by logical categories for easy maintenance and selective importing
+// ---------------------------------------------------------------------------
+
+
+/**
+ * Currency Symbols
+ * @type {Record<string, string>}
+ */
+const CURRENCY = {
+  cent: '¢',
+  pound: '£',
+  curren: '¤',
+  yen: '¥',
+  euro: '€',
+  dollar: '$',
+  fnof: 'ƒ',
+  inr: '₹',
+  af: '؋',
+  birr: 'ብር',
+  peso: '₱',
+  rub: '₽',
+  won: '₩',
+  yuan: '¥',
+  cedil: '¸',
+};
+
+const XML = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  quot: "\""
+};
+const COMMON_HTML = {
+  nbsp: '\u00a0',
+  copy: '\u00a9',
+  reg: '\u00ae',
+  trade: '\u2122',
+  mdash: '\u2014',
+  ndash: '\u2013',
+  hellip: '\u2026',
+  laquo: '\u00ab',
+  raquo: '\u00bb',
+  lsquo: '\u2018',
+  rsquo: '\u2019',
+  ldquo: '\u201c',
+  rdquo: '\u201d',
+  bull: '\u2022',
+  para: '\u00b6',
+  sect: '\u00a7',
+  deg: '\u00b0',
+  frac12: '\u00bd',
+  frac14: '\u00bc',
+  frac34: '\u00be',
+};
+// ---------------------------------------------------------------------------
+// Note: NUMERIC_ENTITIES (&#NNN; / &#xHH;) are handled by the scanner directly
+// via String.fromCodePoint() without any map lookup.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Built-in named entity map  (name → replacement string)
+// No regex, no {regex,val} objects — just flat key/value pairs.
+// ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// Entity hook action constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Action constants for `onExternalEntity` and `onInputEntity` hooks.
+ *
+ * Use these instead of raw strings to avoid typos:
+ *
+ * @example
+ * import EntityDecoder, { ENTITY_ACTION } from './EntityDecoder.js';
+ * const dec = new EntityDecoder({
+ *   onInputEntity: (name, value) => ENTITY_ACTION.BLOCK,
+ * });
+ */
+const ENTITY_ACTION = Object.freeze({
+  /** Resolve and expand the entity normally. */
+  ALLOW: 'allow',
+  /** Silently skip this entity — it will not be registered. */
+  BLOCK: 'block',
+  /** Throw an error, aborting entity registration entirely. */
+  THROW: 'throw',
+});
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const SPECIAL_CHARS = new Set('!?\\\\/[]$%{}^&*()<>|+');
+
+/**
+ * Validate that an entity name contains no dangerous characters.
+ * @param {string} name
+ * @returns {string} the name, unchanged
+ * @throws {Error} on invalid characters
+ */
+function validateEntityName$1(name) {
+  if (name[0] === '#') {
+    throw new Error(`[EntityReplacer] Invalid character '#' in entity name: "${name}"`);
+  }
+  for (const ch of name) {
+    if (SPECIAL_CHARS.has(ch)) {
+      throw new Error(`[EntityReplacer] Invalid character '${ch}' in entity name: "${name}"`);
+    }
+  }
+  return name;
+}
+
+/**
+ * Merge one or more entity maps into a flat name→string map.
+ * Accepts either:
+ *   - plain string values:             { amp: '&' }
+ *   - legacy {regex,val} / {regx,val}: { lt: { regex: /.../, val: '<' } }
+ *
+ * Values containing '&' are skipped (recursive expansion risk).
+ *
+ * @param {...object} maps
+ * @returns {Record<string, string>}
+ */
+function mergeEntityMaps(...maps) {
+  const out = Object.create(null);
+  for (const map of maps) {
+    if (!map) continue;
+    for (const key of Object.keys(map)) {
+      const raw = map[key];
+      if (typeof raw === 'string') {
+        out[key] = raw;
+      } else if (raw && typeof raw === 'object' && raw.val !== undefined) {
+        // Legacy {regex,val} or {regx,val} — extract the string val only
+        const val = raw.val;
+        if (typeof val === 'string') {
+          out[key] = val;
+        }
+        // function vals are not supported in the scanner — skip
+      }
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// applyLimitsTo helpers
+// ---------------------------------------------------------------------------
+
+const LIMIT_TIER_EXTERNAL = 'external'; // input/runtime + persistent external maps
+const LIMIT_TIER_BASE = 'base';     // DEFAULT_XML_ENTITIES + namedEntities (system) maps
+const LIMIT_TIER_ALL = 'all';      // every entity regardless of tier
+
+/**
+ * Resolve `applyLimitsTo` option into a normalised Set of tier strings.
+ * Accepted values: 'external' | 'base' | 'all' | string[]
+ * Default: 'external' (only untrusted injected entities are counted).
+ * @param {string|string[]|undefined} raw
+ * @returns {Set<string>}
+ */
+function parseLimitTiers(raw) {
+  if (!raw || raw === LIMIT_TIER_EXTERNAL) return new Set([LIMIT_TIER_EXTERNAL]);
+  if (raw === LIMIT_TIER_ALL) return new Set([LIMIT_TIER_ALL]);
+  if (raw === LIMIT_TIER_BASE) return new Set([LIMIT_TIER_BASE]);
+  if (Array.isArray(raw)) return new Set(raw);
+  return new Set([LIMIT_TIER_EXTERNAL]); // safe default for unrecognised values
+}
+
+// ---------------------------------------------------------------------------
+// NCR (Numeric Character Reference) classification
+// ---------------------------------------------------------------------------
+
+// Severity order — higher number = stricter action.
+// Used to enforce minimum action levels for specific codepoint ranges.
+const NCR_LEVEL = Object.freeze({ allow: 0, leave: 1, remove: 2, throw: 3 });
+
+// XML 1.0 §2.2: allowed chars are #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+// Restricted C0: U+0001–U+001F excluding U+0009, U+000A, U+000D
+const XML10_ALLOWED_C0 = new Set([0x09, 0x0A, 0x0D]);
+
+/**
+ * Parse the `ncr` constructor option into flat, hot-path-friendly fields.
+ * @param {object|undefined} ncr
+ * @returns {{ xmlVersion: number, onLevel: number, nullLevel: number }}
+ */
+function parseNCRConfig(ncr) {
+  if (!ncr) {
+    return { xmlVersion: 1.0, onLevel: NCR_LEVEL.allow, nullLevel: NCR_LEVEL.remove };
+  }
+  const xmlVersion = ncr.xmlVersion === 1.1 ? 1.1 : 1.0;
+  const onLevel = NCR_LEVEL[ncr.onNCR] ?? NCR_LEVEL.allow;
+  const nullLevel = NCR_LEVEL[ncr.nullNCR] ?? NCR_LEVEL.remove;
+  // 'allow' is not meaningful for null — clamp to at least 'remove'
+  const clampedNull = Math.max(nullLevel, NCR_LEVEL.remove);
+  return { xmlVersion, onLevel, nullLevel: clampedNull };
+}
+
+// ---------------------------------------------------------------------------
+// EntityReplacer
+// ---------------------------------------------------------------------------
+
+/**
+ * Single-pass, zero-regex entity replacer for XML/HTML content.
+ *
+ * Algorithm: scan the string once for '&', read to ';', resolve via map
+ * or direct codepoint conversion, build output chunks, join once at the end.
+ *
+ * Entity lookup priority (highest → lowest):
+ *   1. input / runtime  (DOCTYPE entities for current document)
+ *   2. persistent external (survive across documents)
+ *   3. base named map   (DEFAULT_XML_ENTITIES + user-supplied namedEntities)
+ *
+ * Both input and external resolve as the 'external' tier for limit purposes.
+ * Base map entities resolve as the 'base' tier.
+ *
+ * Numeric / hex references (&#NNN; / &#xHH;) are resolved directly via
+ * String.fromCodePoint() — no map needed. They count as 'base' tier.
+ *
+ * @example
+ * const replacer = new EntityReplacer({ namedEntities: COMMON_HTML });
+ * replacer.setExternalEntities({ brand: 'Acme' });
+ *
+ * const instance = replacer.reset();
+ * instance.addInputEntities({ version: '1.0' });
+ * instance.encode('&brand; v&version; &lt;'); // 'Acme v1.0 <'
+ */
+class EntityDecoder {
+  /**
+   * @param {object} [options]
+   * @param {object|null}  [options.namedEntities]        — extra named entities merged into base map
+   * @param {object}  [options.limit]                 — security limits
+   * @param {number}       [options.limit.maxTotalExpansions=0]  — 0 = unlimited
+   * @param {number}       [options.limit.maxExpandedLength=0]   — 0 = unlimited
+   * @param {'external'|'base'|'all'|string[]} [options.limit.applyLimitsTo='external']
+   *   Which entity tiers count against the security limits:
+   *   - 'external' (default) — only input/runtime + persistent external entities
+   *   - 'base'               — only DEFAULT_XML_ENTITIES + namedEntities
+   *   - 'all'                — every entity regardless of tier
+   *   - string[]             — explicit combination, e.g. ['external', 'base']
+   * @param {((resolved: string, original: string) => string)|null} [options.postCheck=null]
+   * @param {string[]} [options.remove=[]] — entity names (e.g. ['nbsp', '#13']) to delete (replace with empty string)
+   * @param {string[]} [options.leave=[]]  — entity names to keep as literal (unchanged in output)
+   * @param {object}   [options.ncr]       — Numeric Character Reference controls
+   * @param {1.0|1.1}  [options.ncr.xmlVersion=1.0]
+   *   XML version governing which codepoint ranges are restricted:
+   *   - 1.0 — C0 controls U+0001–U+001F (except U+0009/000A/000D) are prohibited
+   *   - 1.1 — C0 controls are allowed when written as NCRs; C1 (U+007F–U+009F) decoded as-is
+   * @param {'allow'|'leave'|'remove'|'throw'} [options.ncr.onNCR='allow']
+   *   Base action for numeric references. Severity order: allow < leave < remove < throw.
+   *   For codepoint ranges that carry a minimum level (surrogates → remove, XML 1.0 C0 → remove),
+   *   the effective action is max(onNCR, rangeMinimum).
+   * @param {'remove'|'throw'} [options.ncr.nullNCR='remove']
+   *   Action for U+0000 (null). 'allow' and 'leave' are clamped to 'remove' since null is never safe.
+   * @param {((name: string, value: string) => 'allow'|'block'|'throw')|null} [options.onExternalEntity=null]
+   *   Hook called when an external entity is registered via `setExternalEntities()` or
+   *   `addExternalEntity()`. Return `ENTITY_ACTION.ALLOW` to accept the entity,
+   *   `ENTITY_ACTION.BLOCK` to silently skip it, or `ENTITY_ACTION.THROW` to abort with an error.
+   * @param {((name: string, value: string) => 'allow'|'block'|'throw')|null} [options.onInputEntity=null]
+   *   Hook called when an input entity is registered via `addInputEntities()`. Return
+   *   `ENTITY_ACTION.ALLOW` to accept, `ENTITY_ACTION.BLOCK` to silently skip, or
+   *   `ENTITY_ACTION.THROW` to abort with an error.
+   */
+  constructor(options = {}) {
+    this._limit = options.limit || {};
+    this._maxTotalExpansions = this._limit.maxTotalExpansions || 0;
+    this._maxExpandedLength = this._limit.maxExpandedLength || 0;
+    this._postCheck = typeof options.postCheck === 'function' ? options.postCheck : r => r;
+    this._limitTiers = parseLimitTiers(this._limit.applyLimitsTo ?? LIMIT_TIER_EXTERNAL);
+    this._numericAllowed = options.numericAllowed ?? true;
+    // Base map: DEFAULT_XML_ENTITIES + user-supplied extras. Immutable after construction.
+    this._baseMap = mergeEntityMaps(XML, options.namedEntities || null);
+
+    // Persistent external entities — survive across documents.
+    // Stored as a separate map so reset() never touches them.
+    /** @type {Record<string, string>} */
+    this._externalMap = Object.create(null);
+
+    // Input / runtime entities — current document only, wiped on reset().
+    /** @type {Record<string, string>} */
+    this._inputMap = Object.create(null);
+
+    // Per-document counters
+    this._totalExpansions = 0;
+    this._expandedLength = 0;
+
+    // --- New: remove / leave sets ---
+    /** @type {Set<string>} */
+    this._removeSet = new Set(options.remove && Array.isArray(options.remove) ? options.remove : []);
+    /** @type {Set<string>} */
+    this._leaveSet = new Set(options.leave && Array.isArray(options.leave) ? options.leave : []);
+
+    // --- NCR config (parsed into flat fields for hot-path speed) ---
+    const ncrCfg = parseNCRConfig(options.ncr);
+    this._ncrXmlVersion = ncrCfg.xmlVersion;
+    this._ncrOnLevel = ncrCfg.onLevel;
+    this._ncrNullLevel = ncrCfg.nullLevel;
+
+    // --- Registration hooks ---
+    /** @type {((name: string, value: string) => 'allow'|'block'|'throw')|null} */
+    this._onExternalEntity = typeof options.onExternalEntity === 'function'
+      ? options.onExternalEntity
+      : null;
+    /** @type {((name: string, value: string) => 'allow'|'block'|'throw')|null} */
+    this._onInputEntity = typeof options.onInputEntity === 'function'
+      ? options.onInputEntity
+      : null;
+  }
+
+  // -------------------------------------------------------------------------
+  // Private: registration hook dispatch
+  // -------------------------------------------------------------------------
+
+  /**
+   * Invoke a registration hook for a single entity name/value pair.
+   * Returns true when the entity should be accepted, false when it should be
+   * silently skipped (BLOCK), and throws when the hook returns THROW.
+   *
+   * @param {((name: string, value: string) => 'allow'|'block'|'throw')|null} hook
+   * @param {string} name
+   * @param {string} value
+   * @param {string} context  — used in error messages ('external' | 'input')
+   * @returns {boolean}  true = accept, false = skip
+   */
+  _applyRegistrationHook(hook, name, value, context) {
+    if (!hook) return true; // no hook → always accept
+    const action = hook(name, value);
+    if (action === ENTITY_ACTION.BLOCK) return false;
+    if (action === ENTITY_ACTION.THROW) {
+      throw new Error(
+        `[EntityDecoder] Registration of ${context} entity "&${name};" was rejected by hook`
+      );
+    }
+    return true; // ALLOW or any unknown return value → accept
+  }
+
+  // -------------------------------------------------------------------------
+  // Persistent external entity registration
+  // -------------------------------------------------------------------------
+
+  /**
+   * Replace the full set of persistent external entities.
+   * All keys are validated — throws on invalid characters.
+   * If `onExternalEntity` is set, it is called once per entry; entries that
+   * return `ENTITY_ACTION.BLOCK` are silently omitted, `ENTITY_ACTION.THROW`
+   * aborts the whole call.
+   * @param {Record<string, string | { regex?: RegExp, val: string }>} map
+   */
+  setExternalEntities(map) {
+    if (map) {
+      for (const key of Object.keys(map)) {
+        validateEntityName$1(key);
+      }
+    }
+    if (!this._onExternalEntity) {
+      this._externalMap = mergeEntityMaps(map);
+      return;
+    }
+    // Hook present — resolve values first, then filter
+    const flat = mergeEntityMaps(map);
+    const filtered = Object.create(null);
+    for (const [name, value] of Object.entries(flat)) {
+      if (this._applyRegistrationHook(this._onExternalEntity, name, value, 'external')) {
+        filtered[name] = value;
+      }
+    }
+    this._externalMap = filtered;
+  }
+
+  /**
+   * Add a single persistent external entity.
+   * If `onExternalEntity` is set it is called before the entity is stored;
+   * `ENTITY_ACTION.BLOCK` silently skips storage, `ENTITY_ACTION.THROW` raises.
+   * @param {string} key
+   * @param {string} value
+   */
+  addExternalEntity(key, value) {
+    validateEntityName$1(key);
+    if (typeof value === 'string' && value.indexOf('&') === -1) {
+      if (this._applyRegistrationHook(this._onExternalEntity, key, value, 'external')) {
+        this._externalMap[key] = value;
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Input / runtime entity registration (per document)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Inject DOCTYPE entities for the current document.
+   * Also resets per-document expansion counters.
+   * If `onInputEntity` is set it is called once per entry; entries returning
+   * `ENTITY_ACTION.BLOCK` are silently omitted, `ENTITY_ACTION.THROW` aborts.
+   * @param {Record<string, string | { regx?: RegExp, regex?: RegExp, val: string }>} map
+   */
+  addInputEntities(map) {
+    this._totalExpansions = 0;
+    this._expandedLength = 0;
+    if (!this._onInputEntity) {
+      this._inputMap = mergeEntityMaps(map);
+      return;
+    }
+    const flat = mergeEntityMaps(map);
+    const filtered = Object.create(null);
+    for (const [name, value] of Object.entries(flat)) {
+      if (this._applyRegistrationHook(this._onInputEntity, name, value, 'input')) {
+        filtered[name] = value;
+      }
+    }
+    this._inputMap = filtered;
+  }
+
+  // -------------------------------------------------------------------------
+  // Per-document reset
+  // -------------------------------------------------------------------------
+
+  /**
+   * Wipe input/runtime entities and reset counters.
+   * Call this before processing each new document.
+   * @returns {this}
+   */
+  reset() {
+    this._inputMap = Object.create(null);
+    this._totalExpansions = 0;
+    this._expandedLength = 0;
+    return this;
+  }
+
+  // -------------------------------------------------------------------------
+  // XML version (can be set after construction, e.g. once parser reads <?xml?>)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Update the XML version used for NCR classification.
+   * Call this as soon as the document's `<?xml version="...">` declaration is parsed.
+   * @param {1.0|1.1|number} version
+   */
+  setXmlVersion(version) {
+    this._ncrXmlVersion = version === 1.1 ? 1.1 : 1.0;
+  }
+
+  // -------------------------------------------------------------------------
+  // Primary API
+  // -------------------------------------------------------------------------
+
+  /**
+   * Replace all entity references in `str` in a single pass.
+   *
+   * @param {string} str
+   * @returns {string}
+   */
+  decode(str) {
+    if (typeof str !== 'string' || str.length === 0) return str;
+    //TODO: check if needed
+    if (str.indexOf('&') === -1) return str; // fast path — no entities at all
+
+    const original = str;
+    const chunks = [];
+    const len = str.length;
+    let last = 0; // start of next unprocessed literal chunk
+    let i = 0;
+
+    const limitExpansions = this._maxTotalExpansions > 0;
+    const limitLength = this._maxExpandedLength > 0;
+    const checkLimits = limitExpansions || limitLength;
+
+    while (i < len) {
+      // Scan forward to next '&'
+      if (str.charCodeAt(i) !== 38 /* '&' */) { i++; continue; }
+
+      // --- Found '&' at position i ---
+
+      // Scan forward to ';'
+      let j = i + 1;
+      while (j < len && str.charCodeAt(j) !== 59 /* ';' */ && (j - i) <= 32) j++;
+
+      if (j >= len || str.charCodeAt(j) !== 59) {
+        // No closing ';' within window — treat '&' as literal
+        i++;
+        continue;
+      }
+
+      // Raw token between '&' and ';' (exclusive)
+      const token = str.slice(i + 1, j);
+      if (token.length === 0) { i++; continue; }
+
+      let replacement;
+      let tier; // which limit tier this entity belongs to
+
+      if (this._removeSet.has(token)) {
+        // Remove entity: replace with empty string
+        replacement = '';
+        // If entity was unknown (replacement undefined), we still need a tier for limits.
+        // Treat as external tier because it's user-directed removal of an unknown reference.
+        if (tier === undefined) {
+          tier = LIMIT_TIER_EXTERNAL;
+        }
+      } else if (this._leaveSet.has(token)) {
+        // Do not replace — keep original &token; as literal
+        i++;
+        continue;
+      } else if (token.charCodeAt(0) === 35 /* '#' */) {
+        // ---- Numeric / NCR reference ----
+        // NCR classification always runs first — prohibited codepoints must be
+        // caught regardless of numericAllowed.
+        const ncrResult = this._resolveNCR(token);
+        if (ncrResult === undefined) {
+          // 'leave' action — keep original &token; as-is
+          i++;
+          continue;
+        }
+        replacement = ncrResult; // '' for remove, char string for allow
+        tier = LIMIT_TIER_BASE;
+      } else {
+        // ---- Named reference ----
+        const resolved = this._resolveName(token);
+        replacement = resolved?.value;
+        tier = resolved?.tier;
+      }
+
+      if (replacement === undefined) {
+        // Unknown entity — leave as-is, advance past '&' only
+        i++;
+        continue;
+      }
+
+      // Flush literal chunk before this entity
+      if (i > last) chunks.push(str.slice(last, i));
+      chunks.push(replacement);
+      last = j + 1; // skip past ';'
+      i = last;
+
+      // Apply expansion limits only if this tier is being tracked
+      if (checkLimits && this._tierCounts(tier)) {
+        if (limitExpansions) {
+          this._totalExpansions++;
+          if (this._totalExpansions > this._maxTotalExpansions) {
+            throw new Error(
+              `[EntityReplacer] Entity expansion count limit exceeded: ` +
+              `${this._totalExpansions} > ${this._maxTotalExpansions}`
+            );
+          }
+        }
+        if (limitLength) {
+          // delta: replacement.length minus the raw &token; length (token.length + 2 for '&' and ';')
+          const delta = replacement.length - (token.length + 2);
+          if (delta > 0) {
+            this._expandedLength += delta;
+            if (this._expandedLength > this._maxExpandedLength) {
+              throw new Error(
+                `[EntityReplacer] Expanded content length limit exceeded: ` +
+                `${this._expandedLength} > ${this._maxExpandedLength}`
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // Flush trailing literal
+    if (last < len) chunks.push(str.slice(last));
+
+    // If nothing was replaced, chunks is empty — return original
+    const result = chunks.length === 0 ? str : chunks.join('');
+
+    return this._postCheck(result, original);
+  }
+
+  // -------------------------------------------------------------------------
+  // Private: limit tier check
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns true if a resolved entity of the given tier should count
+   * against the expansion/length limits.
+   * @param {string} tier  — LIMIT_TIER_EXTERNAL | LIMIT_TIER_BASE
+   * @returns {boolean}
+   */
+  _tierCounts(tier) {
+    if (this._limitTiers.has(LIMIT_TIER_ALL)) return true;
+    return this._limitTiers.has(tier);
+  }
+
+  // -------------------------------------------------------------------------
+  // Private: entity resolution
+  // -------------------------------------------------------------------------
+
+  /**
+   * Resolve a named entity token (without & and ;).
+   * Priority: inputMap > externalMap > baseMap
+   * Returns the resolved value tagged with its limit tier.
+   *
+   * @param {string} name
+   * @returns {{ value: string, tier: string }|undefined}
+   */
+  _resolveName(name) {
+    // input and external both count as 'external' tier for limit purposes —
+    // they are injected at runtime and are the untrusted surface.
+    if (name in this._inputMap) return { value: this._inputMap[name], tier: LIMIT_TIER_EXTERNAL };
+    if (name in this._externalMap) return { value: this._externalMap[name], tier: LIMIT_TIER_EXTERNAL };
+    if (name in this._baseMap) return { value: this._baseMap[name], tier: LIMIT_TIER_BASE };
+    return undefined;
+  }
+
+  /**
+   * Classify a codepoint and return the minimum action level that must be applied.
+   * Returns -1 when no minimum is imposed (normal allow path).
+   *
+   * Ranges checked (in priority order):
+   *   1. U+0000            — null, governed by nullNCR (always ≥ remove)
+   *   2. U+D800–U+DFFF     — surrogates, always prohibited (min: remove)
+   *   3. U+0001–U+001F \ {0x09,0x0A,0x0D}  — XML 1.0 restricted C0 (min: remove)
+   *      (skipped in XML 1.1 — C0 controls are allowed when written as NCRs)
+   *
+   * @param {number} cp  — codepoint
+   * @returns {number}   — minimum NCR_LEVEL value, or -1 for no restriction
+   */
+  _classifyNCR(cp) {
+    // 1. Null
+    if (cp === 0) return this._ncrNullLevel;
+
+    // 2. Surrogates — always prohibited, minimum 'remove'
+    if (cp >= 0xD800 && cp <= 0xDFFF) return NCR_LEVEL.remove;
+
+    // 3. XML 1.0 restricted C0 controls
+    if (this._ncrXmlVersion === 1.0) {
+      if (cp >= 0x01 && cp <= 0x1F && !XML10_ALLOWED_C0.has(cp)) return NCR_LEVEL.remove;
+    }
+
+    return -1; // no restriction
+  }
+
+  /**
+   * Execute a resolved NCR action.
+   *
+   * @param {number} action   — NCR_LEVEL value
+   * @param {string} token    — raw token (e.g. '#38') for error messages
+   * @param {number} cp       — codepoint, used only for error messages
+   * @returns {string|undefined}
+   *   - decoded character string  → 'allow'
+   *   - ''                        → 'remove'
+   *   - undefined                 → 'leave' (caller must skip past '&' only)
+   *   - throws Error              → 'throw'
+   */
+  _applyNCRAction(action, token, cp) {
+    switch (action) {
+      case NCR_LEVEL.allow: return String.fromCodePoint(cp);
+      case NCR_LEVEL.remove: return '';
+      case NCR_LEVEL.leave: return undefined; // signal: keep literal
+      case NCR_LEVEL.throw:
+        throw new Error(
+          `[EntityDecoder] Prohibited numeric character reference ` +
+          `&${token}; (U+${cp.toString(16).toUpperCase().padStart(4, '0')})`
+        );
+      default: return String.fromCodePoint(cp);
+    }
+  }
+
+  /**
+   * Full NCR resolution pipeline for a numeric token.
+   *
+   * Steps:
+   *   1. Parse the codepoint (decimal or hex).
+   *   2. Validate the raw codepoint range (NaN, <0, >0x10FFFF).
+   *   3. If numericAllowed is false and no minimum restriction applies → leave as-is.
+   *   4. Classify the codepoint to find the minimum required action level.
+   *   5. Resolve effective action = max(onNCR, minimum).
+   *   6. Apply and return.
+   *
+   * @param {string} token  — e.g. '#38', '#x26', '#X26'
+   * @returns {string|undefined}
+   *   - string (incl. '')  — replacement ('' = remove)
+   *   - undefined          — leave original &token; as-is
+   */
+  _resolveNCR(token) {
+    // Step 1: parse codepoint
+    const second = token.charCodeAt(1);
+    let cp;
+    if (second === 120 /* x */ || second === 88 /* X */) {
+      cp = parseInt(token.slice(2), 16);
+    } else {
+      cp = parseInt(token.slice(1), 10);
+    }
+
+    // Step 2: out-of-range → leave as-is unconditionally
+    if (Number.isNaN(cp) || cp < 0 || cp > 0x10FFFF) return undefined;
+
+    // Step 3: classify to get minimum action level
+    const minimum = this._classifyNCR(cp);
+
+    // Step 4: if numericAllowed is false and no hard minimum → leave
+    if (!this._numericAllowed && minimum < NCR_LEVEL.remove) return undefined;
+
+    // Step 5: effective action = max(configured onNCR, range minimum)
+    const effective = minimum === -1
+      ? this._ncrOnLevel
+      : Math.max(this._ncrOnLevel, minimum);
+
+    // Step 6: apply
+    return this._applyNCRAction(effective, token, cp);
+  }
+}
+
 const defaultOnDangerousProperty = (name) => {
   if (DANGEROUS_PROPERTY_NAMES.includes(name)) {
     return "__" + name;
@@ -41753,7 +43331,8 @@ const defaultOptions = {
   numberParseOptions: {
     hex: true,
     leadingZeros: true,
-    eNotation: true
+    eNotation: true,
+    unicode: false
   },
   tagValueProcessor: function (tagName, val) {
     return val;
@@ -41768,6 +43347,7 @@ const defaultOptions = {
   unpairedTags: [],
   processEntities: true,
   htmlEntities: false,
+  entityDecoder: null,
   ignoreDeclaration: false,
   ignorePiTags: false,
   transformTagName: false,
@@ -41814,18 +43394,19 @@ function validatePropertyName(propertyName, optionName) {
  * @param {boolean|object} value 
  * @returns {object} Always returns normalized object
  */
-function normalizeProcessEntities(value) {
+function normalizeProcessEntities(value, htmlEntities) {
   // Boolean backward compatibility
   if (typeof value === 'boolean') {
     return {
       enabled: value, // true or false
       maxEntitySize: 10000,
-      maxExpansionDepth: 10,
-      maxTotalExpansions: 1000,
+      maxExpansionDepth: 10000,
+      maxTotalExpansions: Infinity,
       maxExpandedLength: 100000,
-      maxEntityCount: 100,
+      maxEntityCount: 1000,
       allowedTags: null,
-      tagFilter: null
+      tagFilter: null,
+      appliesTo: "all",
     };
   }
 
@@ -41839,7 +43420,8 @@ function normalizeProcessEntities(value) {
       maxExpandedLength: Math.max(1, value.maxExpandedLength ?? 100000),
       maxEntityCount: Math.max(1, value.maxEntityCount ?? 1000),
       allowedTags: value.allowedTags ?? null,
-      tagFilter: value.tagFilter ?? null
+      tagFilter: value.tagFilter ?? null,
+      appliesTo: value.appliesTo ?? "all",
     };
   }
 
@@ -41870,7 +43452,7 @@ const buildOptions = function (options) {
   }
 
   // Always normalize processEntities for backward compatibility and validation
-  built.processEntities = normalizeProcessEntities(built.processEntities);
+  built.processEntities = normalizeProcessEntities(built.processEntities, built.htmlEntities);
   built.unpairedTagsSet = new Set(built.unpairedTags);
   // Convert old-style stopNodes for backward compatibility
   if (built.stopNodes && Array.isArray(built.stopNodes)) {
@@ -41914,10 +43496,24 @@ class XmlNode {
       this.child.push({ [node.tagname]: node.child });
     }
     // if requested, add the startIndex
+    this.addStartIndex(startIndex);
+  }
+
+  addStartIndex(startIndex) {
     if (startIndex !== undefined) {
       // Note: for now we just overwrite the metadata. If we had more complex metadata,
       // we might need to do an object append here:  metadata = { ...metadata, startIndex }
       this.child[this.child.length - 1][METADATA_SYMBOL$1] = { startIndex };
+    }
+  }
+
+  addEndIndex(endIndex) {
+    const lastChild = this.child[this.child.length - 1];
+    // endIndex is write-once: when updateTag drops a node, the last child is a
+    // previously completed sibling whose endIndex must not be overwritten
+    if (lastChild !== undefined && lastChild[METADATA_SYMBOL$1] !== undefined
+      && lastChild[METADATA_SYMBOL$1].endIndex === undefined) {
+      lastChild[METADATA_SYMBOL$1].endIndex = endIndex;
     }
   }
   /** symbol used for metadata */
@@ -41926,12 +43522,170 @@ class XmlNode {
   }
 }
 
+/**
+ * xml-naming
+ * Validates XML Name productions as defined in the XML 1.0 and 1.1 specifications.
+ * Covers: Name, NCName, QName, NMToken, NMTokens
+ *
+ * XML 1.0 spec: https://www.w3.org/TR/xml/#NT-Name
+ * XML 1.1 spec: https://www.w3.org/TR/xml11/#NT-NameStartChar
+ * XML NS spec:  https://www.w3.org/TR/xml-names/#NT-NCName
+ */
+
+// ---------------------------------------------------------------------------
+// Character class strings — XML 1.0
+//
+// NameStartChar ::= ":" | [A-Z] | "_" | [a-z]
+//   | [#xC0-#xD6]   | [#xD8-#xF6]   | [#xF8-#x2FF]
+//   | [#x370-#x37D] | [#x37F-#x1FFF]    <- split to exclude #x0487
+//   | [#x200C-#x200D]
+//   | [#x2070-#x218F] | [#x2C00-#x2FEF]
+//   | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD]
+//
+// NameChar ::= NameStartChar | "-" | "." | [0-9]
+//   | #xB7 | [#x0300-#x036F] | [#x203F-#x2040]
+//
+// Note: \u0487 (Combining Cyrillic Millions Sign) was added in Unicode 4.0,
+// after XML 1.0 was defined against Unicode 2.0. It falls inside the range
+// \u037F-\u1FFF but must be excluded. We split that range into
+// \u037F-\u0486 and \u0488-\u1FFF to exclude it explicitly.
+// ---------------------------------------------------------------------------
+
+const nameStartChar10 =
+  ':A-Za-z_' +
+  '\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF' +
+  '\u0370-\u037D' +
+  '\u037F-\u0486\u0488-\u1FFF' +  // split to exclude \u0487
+  '\u200C-\u200D' +
+  '\u2070-\u218F' +
+  '\u2C00-\u2FEF' +
+  '\u3001-\uD7FF' +
+  '\uF900-\uFDCF' +
+  '\uFDF0-\uFFFD';
+
+const nameChar10 =
+  nameStartChar10 +
+  '\\-\\.\\d' +
+  '\u00B7' +
+  '\u0300-\u036F' +
+  '\u203F-\u2040';
+
+// ---------------------------------------------------------------------------
+// Character class strings — XML 1.1
+//
+// Differences from XML 1.0:
+//
+// NameStartChar:
+//   1.0 has split ranges: \u00C0-\u00D6, \u00D8-\u00F6, \u00F8-\u02FF
+//   1.1 merges them into: \u00C0-\u02FF
+//   (\u00D7 x and \u00F7 / are division symbols, excluded in both versions)
+//
+//   1.0 tops out at \uFFFD (BMP only)
+//   1.1 adds \u{10000}-\u{EFFFF} (supplementary planes)
+//   These require the /u flag on the RegExp — see buildRegexes below.
+//
+// NameChar:
+//   1.1 adds \u0487 (Combining Cyrillic Millions Sign, added in Unicode 4.0)
+// ---------------------------------------------------------------------------
+
+const nameStartChar11 =
+  ':A-Za-z_' +
+  '\u00C0-\u02FF' +                    // merged — 1.0 had three split ranges here
+  '\u0370-\u037D' +
+  '\u037F-\u0486\u0488-\u1FFF' +       // split to exclude \u0487 (combining mark, never a NameStartChar)
+  '\u200C-\u200D' +
+  '\u2070-\u218F' +
+  '\u2C00-\u2FEF' +
+  '\u3001-\uD7FF' +
+  '\uF900-\uFDCF' +
+  '\uFDF0-\uFFFD' +
+  '\u{10000}-\u{EFFFF}';     // supplementary planes — REQUIRES /u flag on RegExp
+
+const nameChar11 =
+  nameStartChar11 +
+  '\\-\\.\\d' +
+  '\u00B7' +
+  '\u0300-\u036F' +
+  '\u0487' +                 // Combining Cyrillic Millions Sign — valid in 1.1, not 1.0
+  '\u203F-\u2040';
+
+// ---------------------------------------------------------------------------
+// Regex builders
+//
+// XML 1.0 regexes: no flags — BMP only, standard JS regex behaviour.
+// XML 1.1 regexes: /u flag — required for \u{10000}-\u{EFFFF} to match actual
+//   supplementary code points rather than lone surrogates (which are illegal XML).
+// ---------------------------------------------------------------------------
+
+const buildRegexes = (startChar, char, flags = '') => {
+  const ncStart = startChar.replace(':', '');
+  const ncChar = char.replace(':', '');
+  const ncNamePat = `[${ncStart}][${ncChar}]*`;
+
+  return {
+    name: new RegExp(`^[${startChar}][${char}]*$`, flags),
+    ncName: new RegExp(`^${ncNamePat}$`, flags),
+    qName: new RegExp(`^${ncNamePat}(?::${ncNamePat})?$`, flags),
+    nmToken: new RegExp(`^[${char}]+$`, flags),
+    nmTokens: new RegExp(`^[${char}]+(?:\\s+[${char}]+)*$`, flags),
+  };
+};
+
+const regexes10 = buildRegexes(nameStartChar10, nameChar10);       // no /u — BMP only
+const regexes11 = buildRegexes(nameStartChar11, nameChar11, 'u');  // /u — enables \u{10000}-\u{EFFFF}
+
+// ---------------------------------------------------------------------------
+// ASCII-only fast path (opt-in, off by default)
+//
+// The XML 1.0 vs 1.1 NameStartChar/NameChar productions differ *only* in
+// their non-ASCII ranges (merged vs split Latin-1 ranges, \u0487, and
+// supplementary planes). Restricted to ASCII, both versions collapse to the
+// same character classes, so a single regex pair covers both xmlVersion
+// values — no /u flag needed.
+//
+// Rationale: unicode-aware regexes (the /u flag, required for XML 1.1's
+// supplementary-plane range) are measurably slower in V8 than plain
+// non-unicode regexes on the same input, even when the input is pure ASCII.
+// For the common case — HTML/SVG ids, XML tags — names are ASCII, so callers
+// who know this can opt in to skip the unicode-aware matching path entirely.
+// This is a real but *conditional* win: mainly for XML 1.1 input (avoids /u),
+// or at scale where the larger unicode character classes add engine
+// overhead. It also changes behaviour (rejects legitimate non-ASCII XML
+// 1.0/1.1 names), so it must never be silently enabled — hence off by
+// default.
+// ---------------------------------------------------------------------------
+
+const nameStartCharAscii = ':A-Za-z_';
+const nameCharAscii = nameStartCharAscii + '\\-\\.\\d';
+
+const regexesAscii = buildRegexes(nameStartCharAscii, nameCharAscii); // no /u — ASCII only
+
+const getRegexes = (xmlVersion = '1.0', asciiOnly = false) => {
+  if (asciiOnly) return regexesAscii;
+  return xmlVersion === '1.1' ? regexes11 : regexes10;
+};
+
+/**
+ * Returns true if the string is a valid QName (Qualified Name).
+ * Allows exactly one colon as a prefix separator: prefix:localName.
+ * Used for: element and attribute names in namespace-aware XML/SVG.
+ *
+ * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean }} [opts]
+ *   asciiOnly: skip unicode-aware matching, ASCII names only (default false).
+ */
+const qName = (str, { xmlVersion = '1.0', asciiOnly = false } = {}) =>
+  getRegexes(xmlVersion, asciiOnly).qName.test(str);
+
 class DocTypeReader {
-    constructor(options) {
+    constructor(options, xmlVersion) {
         this.suppressValidationErr = !options;
         this.options = options;
+        this.xmlVersion = xmlVersion || 1.0;
     }
 
+    setXmlVersion(xmlVersion = 1.0) {
+        this.xmlVersion = xmlVersion;
+    }
     readDocType(xmlData, i) {
         const entities = Object.create(null);
         let entityCount = 0;
@@ -41945,8 +43699,23 @@ class DocTypeReader {
             i = i + 9;
             let angleBracketsCount = 1;
             let hasBody = false, comment = false;
+            let quoteChar = null; // tracks an open SYSTEM/PUBLIC literal before the '[' body
             let exp = "";
             for (; i < xmlData.length; i++) {
+                // Inside a quoted external-identifier literal — XML allows '<'
+                // and '>' as plain data here, so they must not be interpreted
+                // as DOCTYPE structure until the matching quote closes.
+                if (quoteChar !== null) {
+                    if (xmlData[i] === quoteChar) quoteChar = null;
+                    exp += xmlData[i];
+                    continue;
+                }
+                if (!hasBody && !comment && (xmlData[i] === '"' || xmlData[i] === "'")) {
+                    quoteChar = xmlData[i];
+                    exp += xmlData[i];
+                    continue;
+                }
+
                 if (xmlData[i] === '<' && !comment) { //Determine the tag type
                     if (hasBody && hasSeq(xmlData, "!ENTITY", i)) {
                         i += 7;
@@ -41961,11 +43730,8 @@ class DocTypeReader {
                                 );
                             }
                             //const escaped = entityName.replace(/[.\-+*:]/g, '\\.');
-                            const escaped = entityName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                            entities[entityName] = {
-                                regx: RegExp(`&${escaped};`, "g"),
-                                val: val
-                            };
+                            //const escaped = entityName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            entities[entityName] = val;
                             entityCount++;
                         }
                     }
@@ -42004,7 +43770,7 @@ class DocTypeReader {
                     exp += xmlData[i];
                 }
             }
-            if (angleBracketsCount !== 0) {
+            if (quoteChar !== null || angleBracketsCount !== 0) {
                 throw new Error(`Unclosed DOCTYPE`);
             }
         } else {
@@ -42032,7 +43798,7 @@ class DocTypeReader {
         }
         let entityName = xmlData.substring(startIndex, i);
 
-        validateEntityName$1(entityName);
+        validateEntityName(entityName, { xmlVersion: this.xmlVersion });
 
         // Skip whitespace after entity name
         i = skipWhitespace(xmlData, i);
@@ -42075,7 +43841,7 @@ class DocTypeReader {
         }
         let notationName = xmlData.substring(startIndex, i);
 
-        !this.suppressValidationErr && validateEntityName$1(notationName);
+        !this.suppressValidationErr && validateEntityName(notationName, { xmlVersion: this.xmlVersion });
 
         // Skip whitespace after notation name
         i = skipWhitespace(xmlData, i);
@@ -42155,7 +43921,7 @@ class DocTypeReader {
         let elementName = xmlData.substring(startIndex, i);
 
         // Validate element name
-        if (!this.suppressValidationErr && !isName(elementName)) {
+        if (!this.suppressValidationErr && !qName(elementName, { xmlVersion: this.xmlVersion })) {
             throw new Error(`Invalid element name: "${elementName}"`);
         }
 
@@ -42202,7 +43968,7 @@ class DocTypeReader {
         let elementName = xmlData.substring(startIndex, i);
 
         // Validate element name
-        validateEntityName$1(elementName);
+        validateEntityName(elementName, { xmlVersion: this.xmlVersion });
 
         // Skip whitespace after element name
         i = skipWhitespace(xmlData, i);
@@ -42215,7 +43981,7 @@ class DocTypeReader {
         let attributeName = xmlData.substring(startIndex, i);
 
         // Validate attribute name
-        if (!validateEntityName$1(attributeName)) {
+        if (!validateEntityName(attributeName, { xmlVersion: this.xmlVersion })) {
             throw new Error(`Invalid attribute name: "${attributeName}"`);
         }
 
@@ -42250,7 +44016,7 @@ class DocTypeReader {
 
                 // Validate notation name
                 notation = notation.trim();
-                if (!validateEntityName$1(notation)) {
+                if (!validateEntityName(notation, { xmlVersion: this.xmlVersion })) {
                     throw new Error(`Invalid notation name: "${notation}"`);
                 }
 
@@ -42328,27 +44094,272 @@ function hasSeq(data, seq, i) {
     return true;
 }
 
-function validateEntityName$1(name) {
-    if (isName(name))
+function validateEntityName(name, xmlVersion) {
+    if (qName(name, { xmlVersion: xmlVersion }))
         return name;
     else
         throw new Error(`Invalid entity name ${name}`);
 }
 
-const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
-const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
-// const octRegex = /^0x[a-z0-9]+/;
-// const binRegex = /0x[a-z0-9]+/;
+/**
+ * Flat lookup table: maps Unicode code point → ASCII digit (0-9).
+ * Only decimal digit characters (Unicode category Nd) are included.
+ *
+ * Strategy: Int32Array of size (maxCodePoint - minCodePoint + 1).
+ * Value 0xFF means "not a digit". Value 0-9 is the ASCII digit value.
+ * This gives O(1) lookup with no branching, no bisect, no loop.
+ *
+ * Memory: range is 0x0660 to 0x1FBF0 → ~129,936 entries × 1 byte = ~127 KB.
+ * Acceptable for a one-time init; lookup is a single array index.
+ */
 
+// All known Unicode Nd (decimal digit) script zero code points.
+// Each script has exactly 10 consecutive digits: zero+0 .. zero+9.
+const SCRIPT_ZEROS = [
+  // Basic Latin (ASCII) — included for completeness / pass-through
+  0x0030, // 0-9
+
+  // Arabic scripts
+  0x0660, // Arabic-Indic ٠١٢٣٤٥٦٧٨٩
+  0x06F0, // Extended Arabic-Indic (Urdu/Persian/Sindhi) ۰۱۲۳
+
+  // Indic scripts
+  0x0966, // Devanagari ०१२३४५६७८९
+  0x09E6, // Bengali ০১২৩৪৫৬৭৮৯
+  0x0A66, // Gurmukhi ੦੧੨੩੪੫੬੭੮੯
+  0x0AE6, // Gujarati ૦૧૨૩૪૫૬૭૮૯
+  0x0B66, // Odia ୦୧୨୩୪୫୬୭୮୯
+  0x0BE6, // Tamil ௦௧௨௩௪௫௬௭௮௯
+  0x0C66, // Telugu ౦౧౨౩౪౫౬౭౮౯
+  0x0CE6, // Kannada ೦೧೨೩೪೫೬೭೮೯
+  0x0D66, // Malayalam ൦൧൨൩൪൫൬൭൮൯
+  0x0DE6, // Sinhala Archaic ෦෧෨෩෪෫෬෭෮෯
+
+  // Southeast Asian scripts
+  0x0E50, // Thai ๐๑๒๓๔๕๖๗๘๙
+  0x0ED0, // Lao ໐໑໒໓໔໕໖໗໘໙
+  0x0F20, // Tibetan ༠༡༢༣༤༥༦༧༨༩
+  0x1040, // Myanmar ၀၁၂၃၄၅၆၇၈၉
+  0x1090, // Myanmar Shan ႐႑႒႓႔႕႖႗႘႙
+  0x17E0, // Khmer ០១២៣៤៥៦៧៨៩
+  0x1810, // Mongolian ᠐᠑᠒᠓᠔᠕᠖᠗᠘᠙
+  0x1946, // Limbu ᥆᥇᥈᥉᥊᥋᥌᥍᥎᥏
+  0x19D0, // New Tai Lue ᧐᧑᧒᧓᧔᧕᧖᧗᧘᧙
+  0x1A80, // Tai Tham Hora ᪀᪁᪂᪃᪄᪅᪆᪇᪈᪉
+  0x1A90, // Tai Tham Tham ᪐᪑᪒᪓᪔᪕᪖᪗᪘᪙
+  0x1B50, // Balinese ᭐᭑᭒᭓᭔᭕᭖᭗᭘᭙
+  0x1BB0, // Sundanese ᮰᮱᮲᮳᮴᮵᮶᮷᮸᮹
+  0x1C40, // Lepcha ᱀᱁᱂᱃᱄᱅᱆᱇᱈᱉
+  0x1C50, // Ol Chiki ᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙
+
+  // Fullwidth (CJK context)
+  0xFF10, // Fullwidth ０１２３４５６７８９
+
+  // Mathematical digit variants (Unicode math block)
+  0x1D7CE, // Mathematical Bold
+  0x1D7D8, // Mathematical Double-Struck
+  0x1D7E2, // Mathematical Sans-Serif
+  0x1D7EC, // Mathematical Sans-Serif Bold
+  0x1D7F6, // Mathematical Monospace
+
+  // Other scripts
+  0x104A0, // Osmanya 𐒠𐒡𐒢𐒣𐒤𐒥𐒦𐒧𐒨𐒩
+  0x10D30, // Hanifi Rohingya 𐴰𐴱𐴲𐴳𐴴𐴵𐴶𐴷𐴸𐴹
+  0x11066, // Brahmi 𑁦𑁧𑁨𑁩𑁪𑁫𑁬𑁭𑁮𑁯
+  0x110F0, // Sora Sompeng 𑃰𑃱𑃲𑃳𑃴𑃵𑃶𑃷𑃸𑃹
+  0x11136, // Chakma 𑄶𑄷𑄸𑄹𑄺𑄻𑄼𑄽𑄾𑄿
+  0x111D0, // Sharada 𑇐𑇑𑇒𑇓𑇔𑇕𑇖𑇗𑇘𑇙
+  0x112F0, // Khudawadi 𑋰𑋱𑋲𑋳𑋴𑋵𑋶𑋷𑋸𑋹
+  0x11450, // Newa 𑑐𑑑𑑒𑑓𑑔𑑕𑑖𑑗𑑘𑑙
+  0x114D0, // Tirhuta 𑓐𑓑𑓒𑓓𑓔𑓕𑓖𑓗𑓘𑓙
+  0x11650, // Modi 𑙐𑙑𑙒𑙓𑙔𑙕𑙖𑙗𑙘𑙙
+  0x116C0, // Takri 𑛀𑛁𑛂𑛃𑛄𑛅𑛆𑛇𑛈𑛉
+  0x11730, // Ahom 𑜰𑜱𑜲𑜳𑜴𑜵𑜶𑜷𑜸𑜹
+  0x118E0, // Warang Citi 𑣠𑣡𑣢𑣣𑣤𑣥𑣦𑣧𑣨𑣩
+  0x11950, // Dives Akuru 𑥐𑥑𑥒𑥓𑥔𑥕𑥖𑥗𑥘𑥙
+  0x11BF0, // Khitan Small Script 𑯰𑯱𑯲𑯳𑯴𑯵𑯶𑯷𑯸𑯹
+  0x11C50, // Bhaiksuki 𑱐𑱑𑱒𑱓𑱔𑱕𑱖𑱗𑱘𑱙
+  0x11D50, // Masaram Gondi 𑵐𑵑𑵒𑵓𑵔𑵕𑵖𑵗𑵘𑵙
+  0x11DA0, // Gunjala Gondi 𑶠𑶡𑶢𑶣𑶤𑶥𑶦𑶧𑶨𑶩
+  0x11F50, // Kawi 𑽐𑽑𑽒𑽓𑽔𑽕𑽖𑽗𑽘𑽙
+  0x16A60, // Mro 𖩠𖩡𖩢𖩣𖩤𖩥𖩦𖩧𖩨𖩩
+  0x16AC0, // Tangsa 𖫀𖫁𖫂𖫃𖫄𖫅𖫆𖫇𖫈𖫉
+  0x16B50, // Pahawh Hmong 𖭐𖭑𖭒𖭓𖭔𖭕𖭖𖭗𖭘𖭙
+  0x1E140, // Nyiakeng Puachue Hmong 𞅀𞅁𞅂𞅃𞅄𞅅𞅆𞅇𞅈𞅉
+  0x1E2F0, // Wancho 𞋰𞋱𞋲𞋳𞋴𞋵𞋶𞋷𞋸𞋹
+  0x1E4F0, // Nag Mundari 𞓰𞓱𞓲𞓳𞓴𞓵𞓶𞓷𞓸𞓹
+  0x1E950, // Adlam 𞥐𞥑𞥒𞥓𞥔𞥕𞥖𞥗𞥘𞥙
+  0x1FBF0, // Segmented digit symbols 🯰🯱🯲🯳🯴🯵🯶🯷🯸🯹
+];
+
+// Build a sparse Map for scripts above 0xFFFF (surrogate-pair range).
+// These can't go into a flat Uint8Array indexed by code point efficiently.
+const NOT_DIGIT = 0xFF;
+const HIGH_MAP = new Map(); // codePoint → digit value (0-9)
+
+const LOW_MAX = 0xFFFF;
+const LOW_MIN = 0x0660; // first non-ASCII digit script
+
+// Flat Uint8Array covering 0x0660 .. 0xFFFF
+const TABLE_OFFSET = LOW_MIN;
+const TABLE_SIZE = LOW_MAX - LOW_MIN + 1;
+const TABLE = new Uint8Array(TABLE_SIZE).fill(NOT_DIGIT);
+
+for (const zero of SCRIPT_ZEROS) {
+  for (let d = 0; d < 10; d++) {
+    const cp = zero + d;
+    if (cp <= LOW_MAX) {
+      TABLE[cp - TABLE_OFFSET] = d;
+    } else {
+      HIGH_MAP.set(cp, d);
+    }
+  }
+}
+
+const CHAR_0 = 48; // '0'.charCodeAt(0)
+const CHAR_9 = 57; // '9'.charCodeAt(0)
+const CHAR_MINUS = 45; // '-'.charCodeAt(0)
+
+// Unicode minus/hyphen variants worth normalizing to ASCII '-' in numeric context:
+//   U+2212  MINUS SIGN       − (mathematically correct minus)
+//   U+FF0D  FULLWIDTH HYPHEN-MINUS  － (Japanese fullwidth context)
+//   U+FE63  SMALL HYPHEN-MINUS     ﹣ (small form variant)
+//
+// NOT normalized (deliberate):
+//   U+2013  EN DASH  –  (punctuation, not a numeric sign)
+//   U+2014  EM DASH  —  (punctuation)
+//   U+2010  HYPHEN   ‐  (typographic hyphen)
+//
+// Rationale: only characters a human or locale formatter would plausibly use
+// as a numeric minus sign are normalized. Dashes used for punctuation are left
+// alone to avoid mangling non-numeric strings.
+const MINUS_SET = new Set([0x2212, 0xFF0D, 0xFE63]);
+
+/**
+ * Normalize all Unicode decimal digit characters in a string to ASCII (0-9),
+ * and normalize Unicode minus variants to ASCII '-' (U+002D).
+ *
+ * Non-digit, non-minus characters are passed through unchanged.
+ *
+ * Performance design:
+ * - Fast path: if the string has no convertible characters, return it unchanged
+ *   (zero allocation).
+ * - BMP digits (0x0660..0xFFFF excl. surrogates): flat Uint8Array lookup (O(1)).
+ * - Supplementary plane digits (> 0xFFFF, encoded as surrogate pairs): Map lookup.
+ * - Minus variants: checked inline with a small fixed Set.
+ *
+ * @param {string} str
+ * @returns {string}
+ */
+function anynum(str) {
+  if (typeof str !== 'string') return str;
+
+  const len = str.length;
+  if (len === 0) return str;
+
+  // Scan for first character needing conversion.
+  // If none found, return original string (zero allocation).
+  let firstHit = -1;
+
+  for (let i = 0; i < len; i++) {
+    const cc = str.charCodeAt(i);
+
+    // ASCII digit or ASCII minus — already normalized, skip fast
+    if ((cc >= CHAR_0 && cc <= CHAR_9) || cc === CHAR_MINUS) continue;
+
+    // Below first unicode digit script — check minus variants only
+    if (cc < TABLE_OFFSET) {
+      if (MINUS_SET.has(cc)) { firstHit = i; break; }
+      continue;
+    }
+
+    // Surrogate pairs live in BMP range 0xD800-0xDFFF — check before TABLE
+    if (cc >= 0xD800 && cc <= 0xDBFF) {
+      if (i + 1 < len) {
+        const low = str.charCodeAt(i + 1);
+        if (low >= 0xDC00 && low <= 0xDFFF) {
+          const cp = 0x10000 + ((cc - 0xD800) << 10) + (low - 0xDC00);
+          if (HIGH_MAP.has(cp)) { firstHit = i; break; }
+        }
+      }
+      continue;
+    }
+
+    // BMP non-surrogate: flat table lookup; also check minus variants in this range
+    if (TABLE[cc - TABLE_OFFSET] !== NOT_DIGIT || MINUS_SET.has(cc)) {
+      firstHit = i;
+      break;
+    }
+  }
+
+  // Nothing to replace — return original, zero allocation
+  if (firstHit === -1) return str;
+
+  // Build result: copy unchanged prefix, then convert from firstHit onward
+  const chars = [];
+
+  if (firstHit > 0) chars.push(str.slice(0, firstHit));
+
+  for (let i = firstHit; i < len; i++) {
+    const cc = str.charCodeAt(i);
+
+    // ASCII digit or ASCII minus — pass through
+    if ((cc >= CHAR_0 && cc <= CHAR_9) || cc === CHAR_MINUS) {
+      chars.push(str[i]);
+      continue;
+    }
+
+    // Below TABLE_OFFSET — check minus variants, else pass through
+    if (cc < TABLE_OFFSET) {
+      chars.push(MINUS_SET.has(cc) ? '-' : str[i]);
+      continue;
+    }
+
+    // Surrogate pairs
+    if (cc >= 0xD800 && cc <= 0xDBFF) {
+      if (i + 1 < len) {
+        const low = str.charCodeAt(i + 1);
+        if (low >= 0xDC00 && low <= 0xDFFF) {
+          const cp = 0x10000 + ((cc - 0xD800) << 10) + (low - 0xDC00);
+          const d = HIGH_MAP.get(cp);
+          if (d !== undefined) {
+            chars.push(String.fromCharCode(d + 48));
+            i++; // consume low surrogate
+            continue;
+          }
+        }
+      }
+      chars.push(str[i]);
+      continue;
+    }
+
+    // BMP non-surrogate: flat table lookup + minus variants
+    if (MINUS_SET.has(cc)) {
+      chars.push('-');
+      continue;
+    }
+    const d = TABLE[cc - TABLE_OFFSET];
+    chars.push(d !== NOT_DIGIT ? String.fromCharCode(d + 48) : str[i]);
+  }
+
+  return chars.join('');
+}
+
+const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
+const binRegex = /^0b[01]+$/;
+const octRegex = /^0o[0-7]+$/;
+const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
 
 const consider = {
     hex: true,
-    // oct: false,
+    binary: false,
+    octal: false,
     leadingZeros: true,
     decimalPoint: "\.",
     eNotation: true,
     //skipLike: /regex/,
     infinity: "original", // "null", "infinity" (Infinity type), "string" ("Infinity" (the string literal))
+    unicode: false,
 };
 
 function toNumber(str, options = {}) {
@@ -42360,16 +44371,21 @@ function toNumber(str, options = {}) {
     if (trimmedStr.length === 0) return str;
     else if (options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
     else if (trimmedStr === "0") return 0;
-    else if (options.hex && hexRegex.test(trimmedStr)) {
+
+    if (options.unicode) {
+        trimmedStr = anynum(trimmedStr);
+        if (trimmedStr === "0") return 0; // re-check after normalization
+    }
+    if (options.hex && hexRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 16);
-        // }else if (options.oct && octRegex.test(str)) {
-        //     return Number.parseInt(val, 8);
+    } else if (options.binary && binRegex.test(trimmedStr)) {
+        return parse_int(trimmedStr, 2);
+    } else if (options.octal && octRegex.test(trimmedStr)) {
+        return parse_int(trimmedStr, 8);
     } else if (!isFinite(trimmedStr)) { //Infinity
         return handleInfinity(str, Number(trimmedStr), options);
     } else if (trimmedStr.includes('e') || trimmedStr.includes('E')) { //eNotation
         return resolveEnotation(str, trimmedStr, options);
-        // }else if (options.parseBin && binRegex.test(str)) {
-        //     return Number.parseInt(val, 2);
     } else {
         //separate negative sign, leading zeros, and rest number
         const match = numRegex.exec(trimmedStr);
@@ -42457,7 +44473,11 @@ function resolveEnotation(str, trimmedStr, options) {
  */
 function trimZeros(numStr) {
     if (numStr && numStr.indexOf(".") !== -1) {//float
-        numStr = numStr.replace(/0+$/, ""); //remove ending zeros
+        //remove ending zeros without the O(n^2) backtracking that /0+$/ hits
+        //when the string doesn't end in 0 but has a long internal zero-run
+        let end = numStr.length;
+        while (end > 0 && numStr.charCodeAt(end - 1) === 48 /* '0' */) end--;
+        numStr = numStr.slice(0, end);
         if (numStr === ".") numStr = "0";
         else if (numStr[0] === ".") numStr = "0" + numStr;
         else if (numStr[numStr.length - 1] === ".") numStr = numStr.substring(0, numStr.length - 1);
@@ -42467,11 +44487,13 @@ function trimZeros(numStr) {
 }
 
 function parse_int(numStr, base) {
-    //polyfill
+    const str = numStr.trim();
+    if (base === 2 || base === 8) numStr = str.substring(2);
+
     if (parseInt) return parseInt(numStr, base);
     else if (Number.parseInt) return Number.parseInt(numStr, base);
     else if (window && window.parseInt) return window.parseInt(numStr, base);
-    else throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")
+    else throw new Error("parseInt, Number.parseInt, window.parseInt are not supported");
 }
 
 /**
@@ -42785,6 +44807,9 @@ class ExpressionSet {
     /** @type {import('./Expression.js').default[]} expressions containing deep wildcard (..) */
     this._deepWildcards = [];
 
+    /** @type {Map<string, import('./Expression.js').default[]>} terminalTag → deep wildcard expressions */
+    this._deepByTerminalTag = new Map();
+
     /** @type {Set<string>} pattern strings already added — used for deduplication */
     this._patterns = new Set();
 
@@ -42816,7 +44841,14 @@ class ExpressionSet {
     this._patterns.add(expression.pattern);
 
     if (expression.hasDeepWildcard()) {
-      this._deepWildcards.push(expression);
+      const lastSeg = expression.segments[expression.segments.length - 1];
+      if (lastSeg && lastSeg.type !== 'deep-wildcard' && lastSeg.tag !== '*') {
+        const tag = lastSeg.tag;
+        if (!this._deepByTerminalTag.has(tag)) this._deepByTerminalTag.set(tag, []);
+        this._deepByTerminalTag.get(tag).push(expression);
+      } else {
+        this._deepWildcards.push(expression);
+      }
       return this;
     }
 
@@ -42950,7 +44982,13 @@ class ExpressionSet {
       }
     }
 
-    // 3. Deep wildcards — cannot be pre-filtered by depth or tag
+    // 3. Deep wildcards — indexed by terminal tag, then unindexed fallback
+    const deepBucket = this._deepByTerminalTag.get(tag);
+    if (deepBucket) {
+      for (let i = 0; i < deepBucket.length; i++) {
+        if (matcher.matches(deepBucket[i])) return deepBucket[i];
+      }
+    }
     for (let i = 0; i < this._deepWildcards.length; i++) {
       if (matcher.matches(this._deepWildcards[i])) return this._deepWildcards[i];
     }
@@ -43033,6 +45071,26 @@ class MatcherView {
     if (path.length === 0) return false;
     const current = path[path.length - 1];
     return current.values !== undefined && attrName in current.values;
+  }
+
+  /**
+   * Get the value of a "kept" attribute from the nearest ancestor (or
+   * current node) that declared it via `push(tag, attrs, ns, { keep: [...] })`.
+   * @param {string} attrName
+   * @returns {*}
+   */
+  getAnyParentAttr(attrName) {
+    return this._matcher.getAnyParentAttr(attrName);
+  }
+
+  /**
+   * Check whether any ancestor (or the current node) kept the given
+   * attribute via `push(tag, attrs, ns, { keep: [...] })`.
+   * @param {string} attrName
+   * @returns {boolean}
+   */
+  hasAnyParentAttr(attrName) {
+    return this._matcher.hasAnyParentAttr(attrName);
   }
 
   /**
@@ -43143,6 +45201,9 @@ class Matcher {
     // Each siblingStacks entry: Map<tagName, count> tracking occurrences at each level
     this._pathStringCache = null;
     this._view = new MatcherView(this);
+
+    // Kept-attribute stack: only populated when push() is called with options.keep.
+    this._keptAttrs = [];
   }
 
   /**
@@ -43150,8 +45211,10 @@ class Matcher {
    * @param {string} tagName
    * @param {Object|null} [attrValues=null]
    * @param {string|null} [namespace=null]
+   * @param {Object|null} [options=null]
+   * @param {string[]} [options.keep] - Names of attributes (from attrValues)
    */
-  push(tagName, attrValues = null, namespace = null) {
+  push(tagName, attrValues = null, namespace = null, options = null) {
     this._pathStringCache = null;
 
     // Remove values from previous current node (now becoming ancestor)
@@ -43161,26 +45224,29 @@ class Matcher {
 
     // Get or create sibling tracking for current level
     const currentLevel = this.path.length;
-    if (!this.siblingStacks[currentLevel]) {
-      this.siblingStacks[currentLevel] = new Map();
+    let level = this.siblingStacks[currentLevel];
+    if (!level) {
+      // `counts` tells same-name siblings apart (the "counter" — nth <item>
+      // among other <item>s). `total` is every child seen at this level so
+      // far, kept as a running number instead of re-added from `counts` on
+      // every push — a parent with many differently-named children would
+      // otherwise cost more per child the more distinct names it has.
+      level = { counts: new Map(), total: 0 };
+      this.siblingStacks[currentLevel] = level;
     }
-
-    const siblings = this.siblingStacks[currentLevel];
 
     // Create a unique key for sibling tracking that includes namespace
     const siblingKey = namespace ? `${namespace}:${tagName}` : tagName;
 
     // Calculate counter (how many times this tag appeared at this level)
-    const counter = siblings.get(siblingKey) || 0;
+    const counter = level.counts.get(siblingKey) || 0;
 
-    // Calculate position (total children at this level so far)
-    let position = 0;
-    for (const count of siblings.values()) {
-      position += count;
-    }
+    // Position = total children at this level seen before this one.
+    const position = level.total;
 
-    // Update sibling count for this tag
-    siblings.set(siblingKey, counter + 1);
+    // Update sibling count for this tag, and the level's running total.
+    level.counts.set(siblingKey, counter + 1);
+    level.total++;
 
     // Create new node
     const node = {
@@ -43198,6 +45264,24 @@ class Matcher {
     }
 
     this.path.push(node);
+
+    // Depth of the node we just pushed (1-based, matches this.path.length)
+    const depth = this.path.length;
+
+    // Copy only the requested attributes into the kept-attrs stack. This is
+    // the one part of push() whose cost scales with input (O(keep.length))
+    // rather than being O(1) — by design, since the caller is explicitly
+    // opting in for specific attribute names. No options/keep => zero added
+    // cost beyond the two property reads below.
+    const keep = options !== null ? options.keep : null;
+    if (keep !== null && keep !== undefined && keep.length > 0 && attrValues) {
+      for (let i = 0; i < keep.length; i++) {
+        const name = keep[i];
+        if (attrValues[name] !== undefined) {
+          this._keptAttrs.push({ depth, name, value: attrValues[name] });
+        }
+      }
+    }
   }
 
   /**
@@ -43212,6 +45296,18 @@ class Matcher {
 
     if (this.siblingStacks.length > this.path.length + 1) {
       this.siblingStacks.length = this.path.length + 1;
+    }
+
+    // Drop any kept attributes that belonged to the popped node (or deeper).
+    // _keptAttrs is depth-ordered (push only ever appends increasing depths),
+    // so this is a backward scan that stops at the first surviving entry —
+    // typically O(1) since kept attrs are rare by design.
+    const poppedDepth = this.path.length + 1;
+    while (
+      this._keptAttrs.length > 0 &&
+      this._keptAttrs[this._keptAttrs.length - 1].depth >= poppedDepth
+    ) {
+      this._keptAttrs.pop();
     }
 
     return node;
@@ -43266,6 +45362,38 @@ class Matcher {
     if (this.path.length === 0) return false;
     const current = this.path[this.path.length - 1];
     return current.values !== undefined && attrName in current.values;
+  }
+
+  /**
+   * Get the value of a "kept" attribute from the nearest ancestor (or
+   * current node) that declared it via `push(tag, attrs, ns, { keep: [...] })`.
+   * Unlike getAttrValue(), this works regardless of how deep the path has
+   * gone since the attribute was pushed — but only for attribute names that
+   * were explicitly marked with `keep` at push time. Cost is proportional to
+   * the number of currently-kept attributes (typically 0-3), not path depth.
+   * @param {string} attrName
+   * @returns {*} the value, or undefined if no ancestor kept this attribute
+   */
+  getAnyParentAttr(attrName) {
+    const kept = this._keptAttrs;
+    for (let i = kept.length - 1; i >= 0; i--) {
+      if (kept[i].name === attrName) return kept[i].value;
+    }
+    return undefined;
+  }
+
+  /**
+   * Check whether any ancestor (or the current node) kept the given
+   * attribute via `push(tag, attrs, ns, { keep: [...] })`.
+   * @param {string} attrName
+   * @returns {boolean}
+   */
+  hasAnyParentAttr(attrName) {
+    const kept = this._keptAttrs;
+    for (let i = kept.length - 1; i >= 0; i--) {
+      if (kept[i].name === attrName) return true;
+    }
+    return false;
   }
 
   /**
@@ -43344,6 +45472,7 @@ class Matcher {
     this._pathStringCache = null;
     this.path = [];
     this.siblingStacks = [];
+    this._keptAttrs = [];
   }
 
   /**
@@ -43493,7 +45622,8 @@ class Matcher {
   snapshot() {
     return {
       path: this.path.map(node => ({ ...node })),
-      siblingStacks: this.siblingStacks.map(map => new Map(map))
+      siblingStacks: this.siblingStacks.map(level => level ? { counts: new Map(level.counts), total: level.total } : level),
+      keptAttrs: this._keptAttrs.map(entry => ({ ...entry }))
     };
   }
 
@@ -43504,7 +45634,8 @@ class Matcher {
   restore(snapshot) {
     this._pathStringCache = null;
     this.path = snapshot.path.map(node => ({ ...node }));
-    this.siblingStacks = snapshot.siblingStacks.map(map => new Map(map));
+    this.siblingStacks = snapshot.siblingStacks.map(level => level ? { counts: new Map(level.counts), total: level.total } : level);
+    this._keptAttrs = (snapshot.keptAttrs || []).map(entry => ({ ...entry }));
   }
 
   /**
@@ -43528,458 +45659,927 @@ class Matcher {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Built-in entity tables
-// ---------------------------------------------------------------------------
-
 /**
- * Standard XML entities — always processed after external/system so they
- * cannot be overridden by DOCTYPE, and &amp; is deferred to its own final pass.
+ * HTML context patterns.
  *
- * Each entry: { regex: RegExp, val: string }
+ * Detects XSS vectors that are dangerous when a string ends up rendered as HTML.
+ * All patterns use bounded quantifiers to ensure linear-time matching (ReDoS-safe).
+ *
+ * Each entry is { pattern: RegExp, id: string, description: string }
+ * so callers can inspect which rule fired if they need to.
  */
-const DEFAULT_XML_ENTITIES = {
-  apos: { regex: /&(apos|#0*39|#x0*27);/g, val: "'" },
-  gt: { regex: /&(gt|#0*62|#x0*3[Ee]);/g, val: '>' },
-  lt: { regex: /&(lt|#0*60|#x0*3[Cc]);/g, val: '<' },
-  quot: { regex: /&(quot|#0*34|#x0*22);/g, val: '"' },
-};
 
-/** &amp; — always expanded last to avoid double-expansion. */
-const AMP_ENTITY = { regex: /&(amp|#0*38|#x0*26);/g, val: '&' };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const SPECIAL_CHARS = new Set('!?\\\\/[]$%{}^&*()<>|+');
+const HTML_PATTERNS = [
+  {
+    id: 'html-script-open',
+    description: '<script opening tag',
+    pattern: /<script[\s>/]/i,
+  },
+  {
+    id: 'html-script-close',
+    description: '</script closing tag',
+    pattern: /<\/script[\s>]/i,
+  },
+  {
+    id: 'html-javascript-protocol',
+    description: 'javascript: URI scheme (with optional whitespace/encoding)',
+    // Handles j&#x61;vascript:, j\u0061vascript:, and whitespace variants
+    pattern: /j[\t\n\r ]*a[\t\n\r ]*v[\t\n\r ]*a[\t\n\r ]*s[\t\n\r ]*c[\t\n\r ]*r[\t\n\r ]*i[\t\n\r ]*p[\t\n\r ]*t[\t\n\r ]*:/i,
+  },
+  {
+    id: 'html-vbscript-protocol',
+    description: 'vbscript: URI scheme',
+    pattern: /vbscript[\t\n\r ]*:/i,
+  },
+  {
+    id: 'html-data-html',
+    description: 'data:text/html URI — can execute scripts in browsers',
+    pattern: /data[\t\n\r ]*:[\t\n\r ]*text\/html/i,
+  },
+  {
+    id: 'html-data-xhtml',
+    description: 'data:application/xhtml+xml URI',
+    pattern: /data[\t\n\r ]*:[\t\n\r ]*application\/xhtml/i,
+  },
+  {
+    id: 'html-data-svg',
+    description: 'data:image/svg+xml URI — can execute scripts',
+    pattern: /data[\t\n\r ]*:[\t\n\r ]*image\/svg\+xml/i,
+  },
+  {
+    id: 'html-inline-event-handler',
+    description: 'Inline event handler attributes: onclick=, onerror=, onload=, etc.',
+    // \bon ensures we match a word boundary so "phonetic=" is not caught
+    pattern: /\bon\w{1,30}\s*=/i,
+  },
+  {
+    id: 'html-entity-obfuscated-script',
+    description: 'HTML-entity-encoded <script (e.g. &#x3C;script or &lt;script)',
+    // Entities include optional trailing semicolon: &#x3C; or &#x3C (both valid in HTML5)
+    pattern: /(?:&#x0*3[Cc];?|&#0*60;?|&lt;)\s*script/i,
+  },
+  {
+    id: 'html-entity-obfuscated-javascript',
+    description: 'HTML-entity-encoded javascript: (partial — catches common &#106; or &#x6a; for "j")',
+    pattern: /(?:&#x0*6[Aa];?|&#0*106;?)\s*(?:&#x0*61;?|a)[\s\S]{0,80}script\s*:/i,
+  },
+  {
+    id: 'html-style-expression',
+    description: 'CSS expression() — IE-era code execution in style attributes',
+    pattern: /style[\s\S]{0,20}expression\s*\(/i,
+  },
+  {
+    id: 'html-object-embed',
+    description: '<object or <embed tags that can load active content',
+    pattern: /<(?:object|embed)[\s>/]/i,
+  },
+  {
+    id: 'html-base-tag',
+    description: '<base href= — can hijack all relative URLs on a page',
+    pattern: /<base[\s>]/i,
+  },
+  {
+    id: 'html-meta-refresh',
+    description: '<meta http-equiv="refresh" — can redirect users',
+    pattern: /<meta[\s\S]{0,40}http-equiv[\s\S]{0,20}refresh/i,
+  },
+  {
+    id: 'html-srcdoc',
+    description: 'srcdoc= attribute on iframes — embeds HTML that can run scripts',
+    pattern: /srcdoc\s*=/i,
+  },
+  {
+    id: 'html-iframe',
+    description: '<iframe tag',
+    pattern: /<iframe[\s>/]/i,
+  },
+  {
+    id: 'html-form',
+    description: '<form tag — can be used for phishing / credential harvesting injection',
+    pattern: /<form[\s>/]/i,
+  },
+];
 
 /**
- * Validate that an entity name contains no regex-special or otherwise
- * dangerous characters.
- * @param {string} name
- * @returns {string} the name, unchanged
- * @throws {Error} on invalid characters
+ * XML context patterns.
+ *
+ * Detects injection vectors that are specifically dangerous when a string
+ * is inserted into an XML document (not HTML rendering context).
+ *
+ * Key distinction from HTML: these patterns target parser-level attacks —
+ * things that can confuse or subvert an XML parser, trigger external entity
+ * resolution, or inject DTD content. HTML rendering concerns (XSS) belong
+ * in the HTML context.
  */
-function validateEntityName(name) {
-  for (const ch of name) {
-    if (SPECIAL_CHARS.has(ch)) {
-      throw new Error(`[EntityReplacer] Invalid character '${ch}' in entity name: "${name}"`);
+
+const XML_PATTERNS = [
+  {
+    id: 'xml-cdata-injection',
+    description: 'CDATA section injection: <![CDATA[ breaks out of text node context',
+    pattern: /<!\[CDATA\[/i,
+  },
+  {
+    id: 'xml-cdata-close',
+    description: 'CDATA close sequence: ]]> can terminate an enclosing CDATA section',
+    pattern: /\]\]>/,
+  },
+  {
+    id: 'xml-processing-instruction',
+    description: 'XML processing instruction: <?xml-stylesheet or <?php etc.',
+    pattern: /<\?(?:xml[\- ]|php|asp)/i,
+  },
+  {
+    id: 'xml-doctype-injection',
+    description: 'DOCTYPE declaration embedded in content — can define entities',
+    // Match <!DOCTYPE followed by end-of-string, whitespace, or [ (internal subset)
+    pattern: /<!DOCTYPE(?:[\s[]|$)/i,
+  },
+  {
+    id: 'xml-entity-system',
+    description: 'SYSTEM keyword — used in external entity declarations (XXE)',
+    pattern: /\bSYSTEM\s+["']/i,
+  },
+  {
+    id: 'xml-entity-public',
+    description: 'PUBLIC keyword — used in external entity declarations (XXE)',
+    pattern: /\bPUBLIC\s+["']/i,
+  },
+  {
+    id: 'xml-entity-declaration',
+    description: '<!ENTITY declaration — defines entities, potential XXE or entity expansion',
+    pattern: /<!ENTITY[\s%]/i,
+  },
+  {
+    id: 'xml-billion-laughs',
+    description: 'Entity reference chaining / billion laughs: repeated &eX; style references',
+    // Heuristic: 3+ consecutive entity refs suggests expansion attack
+    pattern: /(?:&\w{1,20};){3,}/,
+  },
+  {
+    id: 'xml-namespace-confusion',
+    description: 'xmlns: attribute injection — can redefine namespaces to confuse parsers',
+    // pattern: /\bxmlns\s*(?::\w{1,40})?\s*=/i,
+    pattern: /\bxmlns(?::\w{1,40})?\s*=/i,
+  },
+  {
+    id: 'xml-comment-injection',
+    description: '<!-- comment injection — can hide content from some parsers',
+    pattern: /<!--/,
+  },
+  {
+    id: 'xml-comment-close',
+    description: '--> closes an enclosing XML comment',
+    pattern: /-->/,
+  },
+  {
+    id: 'xml-pi-close',
+    description: '?> closes an enclosing processing instruction',
+    pattern: /\?>/,
+  },
+];
+
+/**
+ * SVG context patterns.
+ *
+ * SVG is XML-based but renders in browsers, giving it a unique attack surface
+ * that combines XML parser behaviour with browser rendering and JavaScript execution.
+ *
+ * Many of these vectors bypass HTML sanitizers that don't understand SVG semantics
+ * (DOMPurify has documented bypass vulnerabilities specifically in SVG/XML context).
+ */
+
+const SVG_PATTERNS = [
+  {
+    id: 'svg-script-element',
+    description: '<script element inside SVG executes JavaScript',
+    pattern: /<script[\s>/]/i,
+  },
+  {
+    id: 'svg-xlink-href-javascript',
+    description: 'xlink:href with javascript: — classic SVG XSS via <a> or <use>',
+    pattern: /xlink\s*:\s*href\s*=\s*["']?\s*javascript\s*:/i,
+  },
+  {
+    id: 'svg-href-javascript',
+    description: 'href= with javascript: in SVG context (<a>, <animate>, etc.)',
+    pattern: /href\s*=\s*["']?\s*javascript\s*:/i,
+  },
+  {
+    id: 'svg-foreignobject',
+    description: '<foreignObject embeds HTML inside SVG — can execute scripts',
+    pattern: /<foreignObject[\s>/]/i,
+  },
+  {
+    id: 'svg-use-external',
+    description: '<use xlink:href or href pointing to external resource (non-fragment URL)',
+    // Match <use with href= where the value starts with a non-# character (external URL)
+    // [\"'][^#] catches quoted values not starting with #; [^\"'#\s>] catches unquoted
+    pattern: /<use[\s\S]{0,60}(?:xlink\s*:\s*)?href\s*=\s*(?:["'][^#]|[^"'#\s>])/i,
+  },
+  {
+    id: 'svg-animate-href',
+    description: '<animate attributeName="href" — can dynamically change href to javascript:',
+    pattern: /<animate[\s\S]{0,80}attributeName\s*=\s*["'][\s]*href["']/i,
+  },
+  {
+    id: 'svg-animate-xlinkhref',
+    description: '<animate attributeName="xlink:href"',
+    pattern: /<animate[\s\S]{0,80}attributeName\s*=\s*["'][\s]*xlink\s*:\s*href["']/i,
+  },
+  {
+    id: 'svg-set-javascript',
+    description: '<set to="javascript:..." — sets an attribute to a javascript: URI',
+    pattern: /<set[\s\S]{0,80}to\s*=\s*["']?\s*javascript\s*:/i,
+  },
+  {
+    id: 'svg-event-handler',
+    description: 'SVG-specific event handler attributes: onload=, onerror=, onactivate=, etc.',
+    pattern: /\bon(?:load|error|activate|begin|end|repeat|focus|blur|click|mouse\w{1,20}|key\w{1,20})\s*=/i,
+  },
+  {
+    id: 'svg-handler-generic',
+    description: 'Generic on* handler catch-all for SVG attributes',
+    pattern: /\bon\w{1,30}\s*=/i,
+  },
+  {
+    id: 'svg-filter-feimage',
+    description: '<feImage href= — filter primitive that can load external resources',
+    pattern: /<feImage[\s\S]{0,80}(?:xlink\s*:\s*)?href\s*=/i,
+  },
+  {
+    id: 'svg-image-external',
+    description: '<image xlink:href with http/https or javascript protocol',
+    pattern: /<image[\s\S]{0,80}(?:xlink\s*:\s*)?href\s*=\s*["']?\s*(?:https?|javascript)\s*:/i,
+  },
+  {
+    id: 'svg-style-javascript',
+    description: 'style= attribute containing javascript: (e.g. background:url(javascript:...))',
+    pattern: /style\s*=[\s\S]{0,60}javascript\s*:/i,
+  },
+];
+
+/**
+ * SQL context patterns — high-precision rules only.
+ *
+ * These rules have very low false-positive risk and are safe to apply to
+ * general user text (names, descriptions, search queries, etc.).
+ * All patterns are ReDoS-safe — unlike the `sql-injection` npm package
+ * which has an active CVE on its own detection regexes.
+ *
+ * For exhaustive coverage including noisier heuristics (comment sequences,
+ * hex literals, stacked queries with semicolons), use 'SQL-STRICT' instead.
+ * Apply 'SQL-STRICT' only to strings that are specifically SQL fragments,
+ * not to general free-text fields.
+ */
+
+const SQL_PATTERNS = [
+  {
+    id: 'sql-block-comment-open',
+    description: 'SQL block comment open: /* ... */ — unusual in legitimate user text',
+    pattern: /\/\*/,
+  },
+  {
+    id: 'sql-union-select',
+    description: 'UNION SELECT — most common SQL injection aggregation attack',
+    pattern: /\bUNION\s{1,20}(?:ALL\s{1,20})?SELECT\b/i,
+  },
+  {
+    id: 'sql-drop-table',
+    description: 'DROP TABLE — destructive DDL injection',
+    pattern: /\bDROP\s{1,20}TABLE\b/i,
+  },
+  {
+    id: 'sql-drop-database',
+    description: 'DROP DATABASE — destructive DDL injection',
+    pattern: /\bDROP\s{1,20}DATABASE\b/i,
+  },
+  {
+    id: 'sql-insert-into',
+    description: 'INSERT INTO — data injection',
+    pattern: /\bINSERT\s{1,20}INTO\b/i,
+  },
+  {
+    id: 'sql-delete-from',
+    description: 'DELETE FROM — data deletion injection',
+    pattern: /\bDELETE\s{1,20}FROM\b/i,
+  },
+  {
+    id: 'sql-update-set',
+    description: 'UPDATE ... SET — data modification injection',
+    // Allows arbitrary content between UPDATE and SET (table name, alias, etc.)
+    pattern: /\bUPDATE\b[\s\S]{1,60}\bSET\b/i,
+  },
+  {
+    id: 'sql-exec-xp',
+    description: 'EXEC xp_ — MSSQL extended stored procedure execution',
+    pattern: /\bEXEC(?:UTE)?\s{1,20}xp_/i,
+  },
+  {
+    id: 'sql-tautology-string',
+    description: "Classic string tautology: ' OR '1'='1 or \" OR \"1\"=\"1\"",
+    // Last quote is optional — injection may truncate it: ' OR '1'='1--
+    pattern: /'\s{0,10}OR\s{0,10}'[^']{0,20}'\s*=\s*'[^']{0,20}/i,
+  },
+  {
+    id: 'sql-tautology-numeric',
+    description: 'Numeric tautology: OR 1=1',
+    pattern: /\bOR\s{1,10}1\s*=\s*1\b/i,
+  },
+  {
+    id: 'sql-always-true-zero',
+    description: 'Numeric tautology: OR 0=0',
+    pattern: /\bOR\s{1,10}0\s*=\s*0\b/i,
+  },
+  {
+    id: 'sql-sleep-benchmark',
+    description: 'Time-based blind injection: SLEEP() or BENCHMARK()',
+    pattern: /\b(?:SLEEP|BENCHMARK)\s*\(/i,
+  },
+  {
+    id: 'sql-waitfor-delay',
+    description: 'MSSQL time-based blind injection: WAITFOR DELAY',
+    pattern: /\bWAITFOR\s{1,20}DELAY\b/i,
+  },
+  {
+    id: 'sql-char-function',
+    description: 'CHAR() function — used to obfuscate injected strings',
+    pattern: /\bCHAR\s*\(\s*\d{1,3}/i,
+  },
+  {
+    id: 'sql-information-schema',
+    description: 'INFORMATION_SCHEMA — reconnaissance query for table/column enumeration',
+    pattern: /\bINFORMATION_SCHEMA\b/i,
+  },
+];
+
+/**
+ * SHELL context patterns.
+ *
+ * Detects shell injection vectors and path traversal patterns.
+ * Designed for use when a string will be passed to a shell command,
+ * used as a file path, or interpolated into OS-level operations.
+ */
+
+const SHELL_PATTERNS = [
+  {
+    id: 'shell-path-traversal-unix',
+    description: 'Unix path traversal: ../  — climbing the directory tree',
+    pattern: /\.\.\//,
+  },
+  {
+    id: 'shell-path-traversal-windows',
+    description: 'Windows path traversal: ..\\ — climbing the directory tree',
+    pattern: /\.\.\\/,
+  },
+  {
+    id: 'shell-path-traversal-encoded',
+    description: 'URL-encoded path traversal: %2e%2e or %2f variants',
+    pattern: /%2e%2e|%2f\.\.|\.\.%2f/i,
+  },
+  {
+    id: 'shell-null-byte',
+    description: 'Null byte injection: \\x00 or %00 — truncates strings in C-backed functions',
+    pattern: /\x00|%00/,
+  },
+  {
+    id: 'shell-semicolon',
+    description: 'Semicolon command separator: cmd1; cmd2',
+    pattern: /;/,
+  },
+  {
+    id: 'shell-pipe',
+    description: 'Pipe operator: cmd1 | cmd2',
+    pattern: /\|/,
+  },
+  {
+    id: 'shell-and-operator',
+    description: 'AND operator: cmd1 && cmd2',
+    pattern: /&&/,
+  },
+  {
+    id: 'shell-or-operator',
+    description: 'OR operator: cmd1 || cmd2',
+    pattern: /\|\|/,
+  },
+  {
+    id: 'shell-backtick',
+    description: 'Backtick command substitution: `cmd`',
+    pattern: /`/,
+  },
+  {
+    id: 'shell-dollar-paren',
+    description: 'Dollar-paren command substitution: $(cmd)',
+    pattern: /\$\(/,
+  },
+  {
+    id: 'shell-dollar-brace',
+    description: 'Dollar-brace variable expansion: ${var} — can be abused for injection',
+    pattern: /\$\{/,
+  },
+  {
+    id: 'shell-redirect-out',
+    description: 'Output redirection: cmd > file or cmd >> file',
+    pattern: />{1,2}/,
+  },
+  {
+    id: 'shell-redirect-in',
+    description: 'Input redirection: cmd < file',
+    pattern: /</,
+  },
+  {
+    id: 'shell-newline-injection',
+    description: 'Newline injection: \\n or \\r — can inject new shell commands',
+    pattern: /[\n\r]/,
+  },
+  {
+    id: 'shell-glob-star',
+    description: 'Glob expansion: * or ? — can expand to unintended files',
+    // Only flag when combined with path separators to reduce false positives
+    pattern: /[/\\][*?]/,
+  },
+  {
+    id: 'shell-absolute-root',
+    description: 'Absolute root path injection: string starting with / or \\ (Windows UNC)',
+    pattern: /^(?:\/|\\\\)/,
+  },
+  {
+    id: 'shell-windows-drive',
+    description: 'Windows drive letter path injection: C:\\ or D:/',
+    pattern: /^[a-zA-Z]:[/\\]/,
+  },
+  {
+    id: 'shell-curl-wget',
+    description: 'curl/wget with URL or flags — can exfiltrate data or download payloads',
+    // Require a URL scheme (http/https/ftp) or a flag (-) to reduce false positives
+    // "curl is a tool" won't match; "curl http://..." or "curl -s ..." will
+    pattern: /\b(?:curl|wget)\s+(?:https?:\/\/|ftp:\/\/|-)/i,
+  },
+];
+
+/**
+ * REDOS context patterns.
+ *
+ * Detects strings that, if used as regular expressions, could cause
+ * catastrophic backtracking (ReDoS — Regular Expression Denial of Service).
+ *
+ * These patterns detect the structural forms that lead to exponential or
+ * polynomial backtracking in NFA-based regex engines (V8, PCRE, Java, etc.).
+ *
+ * Use this context when user-supplied strings will be compiled into RegExp objects.
+ */
+
+const REDOS_PATTERNS = [
+  {
+    id: 'redos-nested-quantifier-plus',
+    description: 'Nested + quantifier inside a group with outer quantifier: (a+)+, (.+b)*, etc.',
+    // Matches any group containing a + quantifier, with an outer * or + — catches (a+)+, (.+b)*, etc.
+    pattern: /\([^)]*\+[^)]*\)[+*]/,
+  },
+  {
+    id: 'redos-nested-quantifier-star',
+    description: 'Nested * quantifier: (a*)* or (a*)+ — catastrophic backtracking',
+    pattern: /\([^)]*\*[^)]*\)[*+]/,
+  },
+  {
+    id: 'redos-nested-groups',
+    description: 'Doubly nested quantified groups: ((a+)+) — guaranteed catastrophic',
+    pattern: /\(\([^)]{0,40}\)[+*]\)[+*]/,
+  },
+  {
+    id: 'redos-alternation-overlap',
+    description: 'Overlapping alternation under quantifier: (a|a)+ — ambiguous NFA paths',
+    // Detect repeated identical alternatives under a quantifier
+    pattern: /\(([^|()]{1,20})\|(?:\1)(?:\|[^|()]{1,20}){0,5}\)[+*?]{1,2}/,
+  },
+  {
+    id: 'redos-star-plus-concat',
+    description: '(x*x)+ pattern — triggers super-linear backtracking',
+    pattern: /\([^)]{0,10}\*[^)]{0,10}\)[+*]/,
+  },
+  {
+    id: 'redos-dot-star-greedy',
+    description: '(.*){n,} or (.+){n,} — repeated greedy dot quantifiers',
+    pattern: /\(\.[*+]\)\{?\d/,
+  },
+  {
+    id: 'redos-large-repetition',
+    description: 'Very large fixed or range repetition count {1000,} or {1000,n} — denial of service via backtracking',
+    // Matches { followed by 4+ digits (≥1000), then optional ,digits }
+    pattern: /\{\d{4,}(?:,\d*)?\}/,
+  },
+  {
+    id: 'redos-catastrophic-alternation',
+    description: 'Long alternation with many similar branches — polynomial backtracking risk',
+    // Heuristic: 10+ pipe-separated alternatives in a single group
+    pattern: /\([^)]{0,200}(?:\|[^|)]{0,50}){9,}\)/,
+  },
+];
+
+/**
+ * NOSQL context patterns.
+ *
+ * Detects injection vectors specific to NoSQL databases (primarily MongoDB)
+ * and JavaScript-evaluated queries.
+ *
+ * Attack categories:
+ *   1. MongoDB query operator injection: $where, $ne, $gt, $regex, $or, $and, etc.
+ *      These operators, when injected into a JSON query object, can bypass
+ *      authentication or exfiltrate data without knowing passwords.
+ *
+ *   2. JavaScript execution: $where clauses execute arbitrary JS server-side.
+ *
+ *   3. Prototype pollution: __proto__, constructor.prototype — can corrupt
+ *      the prototype chain of all objects in the Node.js process.
+ *
+ * Pattern note: MongoDB operators appear as JSON keys. In JSON, keys are
+ * quoted: {"$where": ...} so the pattern must allow an optional closing
+ * quote between the operator name and the colon: /\$where["'\s]*:/
+ */
+
+const sep = '["\'\\s]*:';
+
+const NOSQL_PATTERNS = [
+  // ─── MongoDB $ operator injection ────────────────────────────────────────
+  {
+    id: 'nosql-where-operator',
+    description: '$where — executes arbitrary JavaScript server-side in MongoDB',
+    pattern: new RegExp(`\\$where${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-ne-operator',
+    description: '$ne — "not equal" operator used to bypass equality checks',
+    pattern: new RegExp(`\\$ne${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-gt-operator',
+    description: '$gt — "greater than" used to bypass password/value checks',
+    pattern: new RegExp(`\\$gte?${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-lt-operator',
+    description: '$lt / $lte — "less than" bypass variants',
+    pattern: new RegExp(`\\$lte?${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-regex-operator',
+    description: '$regex — can be used to extract data character by character (blind injection)',
+    pattern: new RegExp(`\\$regex${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-or-operator',
+    description: '$or — logical OR; used to create always-true conditions',
+    pattern: new RegExp(`\\$or${sep}\\s*\\[`, 'i'),
+  },
+  {
+    id: 'nosql-and-operator',
+    description: '$and — logical AND operator injection',
+    pattern: new RegExp(`\\$and${sep}\\s*\\[`, 'i'),
+  },
+  {
+    id: 'nosql-nor-operator',
+    description: '$nor — logical NOR operator injection',
+    pattern: new RegExp(`\\$nor${sep}\\s*\\[`, 'i'),
+  },
+  {
+    id: 'nosql-exists-operator',
+    description: '$exists — can enumerate fields to determine schema',
+    pattern: new RegExp(`\\$exists${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-in-operator',
+    description: '$in — matches any value in a list; can enumerate values',
+    pattern: new RegExp(`\\$in${sep}\\s*\\[`, 'i'),
+  },
+  {
+    id: 'nosql-expr-operator',
+    description: '$expr — allows aggregation expressions in queries (MongoDB 3.6+)',
+    pattern: new RegExp(`\\$expr${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-function-operator',
+    description: '$function — executes arbitrary JavaScript in MongoDB 4.4+',
+    pattern: new RegExp(`\\$function${sep}`, 'i'),
+  },
+  {
+    id: 'nosql-accumulator-operator',
+    description: '$accumulator — custom aggregation with arbitrary JS execution',
+    pattern: new RegExp(`\\$accumulator${sep}`, 'i'),
+  },
+  // ─── Prototype pollution ─────────────────────────────────────────────────
+  {
+    id: 'nosql-proto-pollution',
+    description: '__proto__ — prototype pollution via object key injection',
+    pattern: /__proto__/,
+  },
+  {
+    id: 'nosql-constructor-prototype',
+    description: 'constructor.prototype — alternative prototype pollution vector (dot notation or JSON key)',
+    // Matches dot-notation (obj.constructor.prototype) and JSON key adjacency
+    // ("constructor": {"prototype": ...})
+    pattern: /constructor[\s"':.,{\[]*prototype/i,
+  },
+  {
+    id: 'nosql-proto-bracket',
+    description: '["__proto__"] — bracket-notation prototype pollution',
+    pattern: /\[["']__proto__["']\]/,
+  },
+];
+
+/**
+ * LOG context patterns.
+ *
+ * Detects injection vectors that are dangerous when a string is written
+ * to a log file, passed to a logging framework, or interpolated into
+ * a log message that will be parsed or displayed.
+ *
+ * Attack categories:
+ *   1. CRLF injection — injects fake log lines by embedding newlines
+ *   2. Log4Shell (CVE-2021-44228) — ${jndi:...} triggers JNDI lookup in Log4j
+ *   3. SSTI in log templates — {{...}}, #{...} trigger template evaluation
+ *      if the log message is passed through a template engine
+ *   4. Null byte injection — truncates log entries in some implementations
+ *   5. ANSI escape injection — manipulates terminal output when logs are
+ *      tailed in a terminal (colour codes, cursor movement, etc.)
+ *
+ * Note: Newline characters (\n, \r) will produce false positives for
+ * multi-line legitimate values. Use this context only for single-line
+ * log field values (usernames, IDs, request parameters, etc.).
+ */
+
+const LOG_PATTERNS = [
+  // ─── CRLF / newline injection ─────────────────────────────────────────────
+  {
+    id: 'log-crlf-injection',
+    description: 'CRLF injection: literal \\r or \\n embeds fake log lines',
+    pattern: /[\r\n]/,
+  },
+  {
+    id: 'log-url-encoded-crlf',
+    description: 'URL-encoded CRLF: %0d, %0a, %0D, %0A — decoded by some log parsers',
+    pattern: /%0[dDaA]/,
+  },
+  {
+    id: 'log-unicode-newline',
+    description: 'Unicode newline variants: U+2028 (line separator), U+2029 (paragraph separator)',
+    pattern: /[\u2028\u2029]/,
+  },
+
+  // ─── Log4Shell / JNDI injection (CVE-2021-44228) ─────────────────────────
+  {
+    id: 'log-log4shell-jndi',
+    description: 'Log4Shell: ${jndi:...} triggers remote code execution in Apache Log4j',
+    pattern: /\$\{jndi\s*:/i,
+  },
+  {
+    id: 'log-log4shell-obfuscated',
+    description: 'Obfuscated Log4Shell: ${::-j}... lookup-bypass prefix used to evade WAF detection',
+    // ${::- is the Log4j lookup-bypass escape sequence; presence alone is suspicious
+    pattern: /\$\{::-/,
+  },
+  {
+    id: 'log-log4j-lookup',
+    description: 'Log4j lookup syntax: ${env:...}, ${sys:...}, ${ctx:...} — data exfiltration',
+    pattern: /\$\{(?:env|sys|ctx|main|map|sd|web|docker|k8s|spring)\s*:/i,
+  },
+
+  // ─── Server-Side Template Injection (SSTI) in log messages ───────────────
+  {
+    id: 'log-ssti-double-brace',
+    description: 'SSTI double-brace: {{expression}} — Jinja2, Twig, Handlebars, etc.',
+    pattern: /\{\{[\s\S]{0,80}\}\}/,
+  },
+  {
+    id: 'log-ssti-hash-brace',
+    description: 'SSTI hash-brace: #{expression} — Thymeleaf, Velocity, Ruby ERB',
+    pattern: /#\{[\s\S]{0,80}\}/,
+  },
+  {
+    id: 'log-ssti-dollar-brace',
+    description: 'SSTI/EL injection: ${expression with operators or method calls} — JSP EL, Freemarker, SpEL',
+    // Require that the ${...} content looks like an expression, not a plain variable name.
+    // Flags if the content contains: . ( * + operators, or known SSTI keywords.
+    // This avoids flagging ${PATH}, ${HOME} etc. (plain shell variables).
+    pattern: /\$\{[^}]*(?:\.|\(|\*|\+|\bclass\b|\bruntime\b|\bprocess\b|\bexec\b)[^}]{0,80}\}/i,
+  },
+  {
+    id: 'log-ssti-percent-tag',
+    description: 'SSTI ERB/ASP tag: <%= expression %> — Ruby ERB, ASP',
+    pattern: /<%=[\s\S]{0,80}%>/,
+  },
+
+  // ─── Null byte ────────────────────────────────────────────────────────────
+  {
+    id: 'log-null-byte',
+    description: 'Null byte: \\x00 or %00 — can truncate log entries in C-backed loggers',
+    pattern: /\x00|%00/,
+  },
+
+  // ─── ANSI escape injection ────────────────────────────────────────────────
+  {
+    id: 'log-ansi-escape',
+    description: 'ANSI escape sequence: ESC[ — can manipulate terminal output when logs are tailed',
+    pattern: /\x1b\[/,
+  },
+];
+
+/**
+ * SQL-STRICT context patterns.
+ *
+ * Extends the base 'SQL' context with three additional rules that are
+ * effective at detecting real injections but carry a higher false-positive
+ * risk on general free-text input.
+ *
+ * Use 'SQL-STRICT' when:
+ *   - The string is specifically a SQL fragment or database identifier
+ *   - You control the input domain (e.g. a dedicated SQL search field)
+ *   - You can tolerate occasional false positives in exchange for broader coverage
+ *
+ * Use 'SQL' (not STRICT) when:
+ *   - The field is general user text (names, descriptions, comments)
+ *   - False positives would block legitimate content (e.g. "see note -- above")
+ *
+ * Rules moved here from 'SQL' due to false-positive risk:
+ *
+ *   sql-line-comment   — "--" fires on "see note -- above", "value--", CSS var(--primary)
+ *   sql-stacked-query  — "; SELECT" fires on legitimate prose with semicolons + SQL words
+ *   sql-hex-encoding   — "0xDEAD" fires on hex values in technical docs and log output
+ */
+
+
+const SQL_STRICT_EXTRA = [
+  {
+    id: 'sql-line-comment',
+    description: 'SQL line comment: -- followed by whitespace or end of string',
+    pattern: /--(?:\s|$)/,
+  },
+  {
+    id: 'sql-stacked-query',
+    description: 'Stacked queries: semicolon immediately followed by a SQL keyword',
+    pattern: /;\s{0,10}(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i,
+  },
+  {
+    id: 'sql-hex-encoding',
+    description: 'Hex-encoded string injection: 0x41414141 style (MySQL)',
+    pattern: /\b0x[0-9a-f]{4,}/i,
+  },
+];
+
+// SQL-STRICT = all base SQL rules + the three noisy extras
+const SQL_STRICT_PATTERNS = [...SQL_PATTERNS, ...SQL_STRICT_EXTRA];
+
+/**
+ * is-unsafe v2
+ *
+ * Zero-dependency, DOM-free, pure predicate for detecting unsafe strings
+ * across HTML, XML, SVG, SQL, SQL-STRICT, SHELL, REDOS, NOSQL, and LOG contexts.
+ *
+ * v2 change: contexts are imported as named pattern arrays rather than resolved
+ * via a string-keyed registry. This makes each context independently
+ * tree-shakeable — bundlers can drop any context you never import.
+ *
+ * @module is-unsafe
+ */
+
+
+// ─── Attach labels to named contexts ──────────────────────────────────────
+// Each built-in PatternList carries its canonical name so matchList can read
+// list.label directly — no registry lookup needed at match time.
+// Custom PatternLists default to 'CUSTOM' unless the caller sets list.label.
+
+HTML_PATTERNS.label       = 'HTML';
+XML_PATTERNS.label        = 'XML';
+SVG_PATTERNS.label        = 'SVG';
+SQL_PATTERNS.label        = 'SQL';
+SQL_STRICT_PATTERNS.label = 'SQL-STRICT';
+SHELL_PATTERNS.label      = 'SHELL';
+REDOS_PATTERNS.label      = 'REDOS';
+NOSQL_PATTERNS.label      = 'NOSQL';
+LOG_PATTERNS.label        = 'LOG';
+
+// ─── Types ────────────────────────────────────────────────────────────────
+
+/**
+ * @typedef {{ id: string, description: string, pattern: RegExp }} Rule
+ */
+
+/**
+ * @typedef {Rule[]} PatternList
+ */
+
+/**
+ * @typedef {Object} MatchResult
+ * @property {string} context     - Label identifying which context matched ('HTML', 'CUSTOM', etc.)
+ * @property {string} id          - Rule identifier
+ * @property {string} description - Human-readable description of what was matched
+ * @property {RegExp} pattern     - The pattern that matched
+ */
+
+// ─── Internal helpers ──────────────────────────────────────────────────────
+
+/**
+ * @param {unknown} value
+ */
+function assertString(value) {
+  if (typeof value !== 'string') {
+    throw new TypeError(
+      `is-unsafe: first argument must be a string, got ${typeof value}`
+    );
+  }
+}
+
+/**
+ * @param {unknown} context
+ */
+function assertContext(context) {
+  if (context instanceof RegExp) return;
+
+  if (Array.isArray(context)) {
+    if (context.length === 0) {
+      throw new TypeError('is-unsafe: context must not be an empty array');
+    }
+    // Detect array-of-arrays vs flat pattern list
+    if (Array.isArray(context[0])) {
+      // Array of PatternLists
+      for (const list of context) {
+        if (!Array.isArray(list) || list.length === 0) {
+          throw new TypeError(
+            'is-unsafe: each context in the array must be a non-empty pattern array (PatternList)'
+          );
+        }
+      }
+    }
+    // else: flat PatternList — trust it, no deep validation needed
+    return;
+  }
+
+  throw new TypeError(
+    `is-unsafe: second argument must be a PatternList (e.g. HTML), ` +
+    `an array of PatternLists (e.g. [HTML, XML]), or a RegExp. Got: ${typeof context}`
+  );
+}
+
+/**
+ * Normalise any valid context arg into an array of PatternLists.
+ *
+ * @param {Rule[]|Rule[][]|RegExp} context
+ * @returns {{ lists: Rule[][]|null, regex: RegExp|null }}
+ */
+function normalise(context) {
+  if (context instanceof RegExp) return { lists: null, regex: context };
+  // Distinguish PatternList (array of rule objects) from array of PatternLists
+  if (Array.isArray(context[0])) return { lists: context, regex: null };
+  return { lists: [context], regex: null };
+}
+
+/**
+ * Test value against a single PatternList. Returns the first MatchResult or null.
+ *
+ * @param {string} value
+ * @param {Rule[]} list
+ * @returns {MatchResult|null}
+ */
+function matchList(value, list) {
+  const label = list.label ?? 'CUSTOM';
+  for (const rule of list) {
+    if (rule.pattern.test(value)) {
+      return { context: label, id: rule.id, description: rule.description, pattern: rule.pattern };
     }
   }
-  return name;
-}
-
-/**
- * Escape a string for use inside a RegExp character class / alternation.
- */
-function escapeForRegex(str) {
-  return str.replace(/[.\-+*:]/g, '\\$&');
-}
-
-/**
- * Resolve a constructor option to an entity table (plain object) or null.
- */
-function resolveTable(option, builtIn, enabledByDefault = false) {
-  if (option === false || option === null) return null;
-  if (option === true) return builtIn;
-  if (option === undefined) return enabledByDefault ? builtIn : null;
-  if (typeof option === 'object') return option;
   return null;
 }
 
-/**
- * Convert a category name or array of names into a Set<string>.
- */
-function resolveApplyLimitsTo(spec) {
-  if (spec === 'all') return 'all';
-  if (typeof spec === 'string') return new Set([spec]);
-  if (Array.isArray(spec)) return new Set(spec);
-  return new Set(['external']);
-}
+// ─── Public API ───────────────────────────────────────────────────────────
 
 /**
- * Build an entries array from a raw map of name → string|{regex,val}.
- * Skips string values that contain '&' (recursive expansion risk).
- * Normalises DocTypeReader's `regx` spelling to `regex`.
+ * Returns `true` if `value` is unsafe in the given context(s), `false` otherwise.
  *
- * @param {object} map
- * @returns {Array<[string, {regex: RegExp, val: string}]>}
- */
-function buildEntries(map) {
-  const entries = [];
-  for (const key of Object.keys(map)) {
-    const raw = map[key];
-    if (typeof raw === 'object' && raw !== null && (raw.val !== undefined)) {
-      // Accept pre-built { regex, val } or DocTypeReader's { regx, val }
-      entries.push([key, { regex: raw.regex ?? raw.regx, val: raw.val }]);
-    } else if (typeof raw === 'string') {
-      if (raw.indexOf('&') !== -1) continue; // skip — would cause recursive expansion
-      validateEntityName(key);
-      entries.push([key, {
-        regex: new RegExp('&' + escapeForRegex(key) + ';', 'g'),
-        val: raw,
-      }]);
-    }
-  }
-  return entries;
-}
-
-// ---------------------------------------------------------------------------
-// EntityReplacer
-// ---------------------------------------------------------------------------
-
-/**
- * Standalone, zero-dependency entity replacer for XML/HTML content.
- *
- * Entity categories:
- *  - **persistent external** — configured once, survive across documents.
- *    Set via `setExternalEntities()` or built up via `addExternalEntity()`.
- *  - **input / runtime** — DOCTYPE entities for the *current* document only.
- *    Injected via `addInputEntities()`. Wiped on every `getInstance()` call
- *    so they never leak between documents.
- *
- * Replacement order (fixed):
- *   1. persistent external
- *   2. input / runtime  (DOCTYPE)
- *   3. system           (named entity groups)
- *   4. default          (lt / gt / apos / quot)
- *   5. amp              (&amp; final pass)
+ * @param {string} value - The string to test
+ * @param {PatternList | PatternList[] | RegExp} context
+ *   - A PatternList imported from is-unsafe (e.g. `HTML`, `XML`)
+ *   - An array of PatternLists — returns true if unsafe in **any** of them
+ *   - A custom RegExp — returns true if the pattern matches
+ * @returns {boolean}
  *
  * @example
- * const replacer = new EntityReplacer({ default: true, system: COMMON_HTML });
- * replacer.setExternalEntities({ brand: 'Acme' });
+ * import { isUnsafe, HTML, SQL } from 'is-unsafe';
  *
- * // Builder factory calls getInstance() before each document:
- * const instance = replacer.getInstance();
- * // Builder calls addInputEntities() if DOCTYPE entities are present:
- * instance.addInputEntities({ version: '1.0' });
- * instance.replace('&brand; v&version; &lt;'); // 'Acme v1.0 <'
+ * isUnsafe('<script>alert(1)</script>', HTML)       // true
+ * isUnsafe('hello world', HTML)                     // false
+ * isUnsafe('value', [HTML, SQL])                    // false
+ * isUnsafe('value', /my-pattern/i)                  // false
  */
-class EntityReplacer {
-  /**
-   * @param {object} [options]
-   * @param {boolean|object|null} [options.default=true]
-   * @param {boolean|object|null} [options.amp=true]
-   * @param {boolean|object|null} [options.system=false]
-   * @param {number}              [options.maxTotalExpansions=0]
-   * @param {number}              [options.maxExpandedLength=0]
-   * @param {'external'|'all'|string[]} [options.applyLimitsTo='external']
-   * @param {((resolved: string, original: string) => string)|null} [options.postCheck=null]
-   */
-  constructor(options = {}) {
-    // Immutable config resolved at construction
-    this._defaultTable = resolveTable(options.default, DEFAULT_XML_ENTITIES, true);
-    this._systemTable = resolveTable(options.system, null, false);
-    this._ampEnabled = options.amp !== false && options.amp !== null;
+function isUnsafe(value, context) {
+  assertString(value);
+  assertContext(context);
 
-    this._maxTotalExpansions = options.maxTotalExpansions || 0;
-    this._maxExpandedLength = options.maxExpandedLength || 0;
-    this._applyLimitsTo = resolveApplyLimitsTo(options.applyLimitsTo ?? 'external');
-    this._postCheck = typeof options.postCheck === 'function' ? options.postCheck : r => r;
+  const { lists, regex } = normalise(context);
 
-    // Pre-computed category limit flags
-    this._limitExternal = this._applyLimitsTo === 'all' || (this._applyLimitsTo instanceof Set && this._applyLimitsTo.has('external'));
-    this._limitSystem = this._applyLimitsTo === 'all' || (this._applyLimitsTo instanceof Set && this._applyLimitsTo.has('system'));
-    this._limitDefault = this._applyLimitsTo === 'all' || (this._applyLimitsTo instanceof Set && this._applyLimitsTo.has('default'));
+  if (regex) return regex.test(value);
 
-    // Frozen immutable entry arrays
-    this._defaultEntries = this._defaultTable ? Object.entries(this._defaultTable) : [];
-    this._systemEntries = this._systemTable ? Object.entries(this._systemTable) : [];
-
-    // Persistent external entities — survive across documents
-    /** @type {Array<[string, {regex: RegExp, val: string}]>} */
-    this._persistentEntries = [];
-
-    // Input / runtime entities — current document only, reset per getInstance()
-    /** @type {Array<[string, {regex: RegExp, val: string}]>} */
-    this._inputEntries = [];
-
-    // Per-document counters — reset in getInstance()
-    this._totalExpansions = 0;
-    this._expandedLength = 0;
+  for (const list of lists) {
+    if (matchList(value, list) !== null) return true;
   }
-
-  // -------------------------------------------------------------------------
-  // Persistent external entity registration (survives across documents)
-  // -------------------------------------------------------------------------
-
-  /**
-   * Replace the full set of persistent external entities.
-   * These are never wiped between documents.
-   *
-   * @param {Record<string, string | { regex: RegExp, val: string | Function }>} map
-   */
-  setExternalEntities(map) {
-    this._persistentEntries = buildEntries(map);
-  }
-
-  /**
-   * Add a single persistent external entity without disturbing existing ones.
-   *
-   * @param {string} key   — bare entity name, e.g. `'copy'`
-   * @param {string} value — replacement string, e.g. `'©'`
-   */
-  addExternalEntity(key, value) {
-    validateEntityName(key);
-    if (typeof value === 'string' && value.indexOf('&') === -1) {
-      this._persistentEntries.push([key, {
-        regex: new RegExp('&' + escapeForRegex(key) + ';', 'g'),
-        val: value,
-      }]);
-    }
-  }
-
-  // -------------------------------------------------------------------------
-  // Input / runtime entity registration (per document)
-  // -------------------------------------------------------------------------
-
-  /**
-   * Inject DOCTYPE (input/runtime) entities for the current document.
-   * These are stored separately from persistent entities and wiped on the
-   * next `getInstance()` call so they never leak into subsequent documents.
-   *
-   * Also resets per-document expansion counters.
-   *
-   * @param {Record<string, string | { regx?: RegExp, regex?: RegExp, val: string | Function }>} map
-   */
-  addInputEntities(map) {
-    this._totalExpansions = 0;
-    this._expandedLength = 0;
-    this._inputEntries = buildEntries(map);
-  }
-
-  // -------------------------------------------------------------------------
-  // getInstance — builder factory integration point
-  // -------------------------------------------------------------------------
-
-  /**
-   * Reset all per-document state (input entities + expansion counters) and
-   * return `this`.
-   *
-   * The builder factory calls this each time it creates a new builder instance
-   * so DOCTYPE entities from a previous document are never carried over.
-   *
-   */
-  reset() {
-    this._inputEntries = [];
-    this._totalExpansions = 0;
-    this._expandedLength = 0;
-  }
-
-  // -------------------------------------------------------------------------
-  // Primary API
-  // -------------------------------------------------------------------------
-
-  /**
-   * Replace all entity references in `str`.
-   *
-   * Processing order:
-   *   1. persistent external
-   *   2. input / runtime  (DOCTYPE)
-   *   3. system
-   *   4. default (lt/gt/apos/quot)
-   *   5. amp
-   *   6. postCheck hook
-   *
-   * @param {string} str
-   * @returns {string}
-   */
-  replace(str) {
-    if (typeof str !== 'string' || str.length === 0) return str;
-    if (str.indexOf('&') === -1) return str; // fast path
-
-    const original = str;
-
-
-    // 1. Persistent external entities
-    if (this._persistentEntries.length > 0) {
-      str = this._applyEntries(str, this._persistentEntries, this._limitExternal);
-    }
-
-    // 2. Input / runtime entities (DOCTYPE)
-    if (this._inputEntries.length > 0 && str.indexOf('&') !== -1) {
-      str = this._applyEntries(str, this._inputEntries, this._limitExternal);
-    }
-
-    // 3. Default XML entities (lt / gt / apos / quot)
-    if (this._defaultEntries.length > 0 && str.indexOf('&') !== -1) {
-      str = this._applyEntries(str, this._defaultEntries, this._limitDefault);
-    }
-
-    // 4. System (named groups)
-    if (this._systemEntries.length > 0 && str.indexOf('&') !== -1) {
-      str = this._applyEntries(str, this._systemEntries, this._limitSystem);
-    }
-
-    // 5. &amp; — always last
-    if (this._ampEnabled && str.indexOf('&') !== -1) {
-      str = str.replace(AMP_ENTITY.regex, AMP_ENTITY.val);
-    }
-
-    // 6. postCheck
-    str = this._postCheck(str, original);
-
-    return str;
-  }
-
-
-  /**
-   * 
-   * @param {string} val 
-   * @returns 
-   */
-  parse(val) {
-    return this.replace(val);
-  }
-  // -------------------------------------------------------------------------
-  // Private helpers
-  // -------------------------------------------------------------------------
-
-  _applyEntries(str, entries, track) {
-    const limitExpansions = track && this._maxTotalExpansions > 0;
-    const limitLength = track && this._maxExpandedLength > 0;
-    const trackAny = limitExpansions || limitLength;
-
-    for (let i = 0; i < entries.length; i++) {
-      if (str.indexOf('&') === -1) break;
-
-      const entity = entries[i][1];
-
-      if (!trackAny) {
-        str = str.replace(entity.regex, entity.val);
-        continue;
-      }
-
-      if (limitExpansions && !limitLength) {
-        let count = 0;
-        str = str.replace(entity.regex, (...args) => {
-          count++;
-          return typeof entity.val === 'function' ? entity.val(...args) : entity.val;
-        });
-        if (count > 0) {
-          this._totalExpansions += count;
-          if (this._totalExpansions > this._maxTotalExpansions) {
-            throw new Error(
-              `[EntityReplacer] Entity expansion count limit exceeded: ` +
-              `${this._totalExpansions} > ${this._maxTotalExpansions}`
-            );
-          }
-        }
-      } else if (limitLength && !limitExpansions) {
-        const before = str.length;
-        str = str.replace(entity.regex, entity.val);
-        const delta = str.length - before;
-        if (delta > 0) {
-          this._expandedLength += delta;
-          if (this._expandedLength > this._maxExpandedLength) {
-            throw new Error(
-              `[EntityReplacer] Expanded content length limit exceeded: ` +
-              `${this._expandedLength} > ${this._maxExpandedLength}`
-            );
-          }
-        }
-      } else {
-        const before = str.length;
-        let count = 0;
-        str = str.replace(entity.regex, (...args) => {
-          count++;
-          return typeof entity.val === 'function' ? entity.val(...args) : entity.val;
-        });
-        if (count > 0) {
-          this._totalExpansions += count;
-          if (this._totalExpansions > this._maxTotalExpansions) {
-            throw new Error(
-              `[EntityReplacer] Entity expansion count limit exceeded: ` +
-              `${this._totalExpansions} > ${this._maxTotalExpansions}`
-            );
-          }
-        }
-        const delta = str.length - before;
-        if (delta > 0) {
-          this._expandedLength += delta;
-          if (this._expandedLength > this._maxExpandedLength) {
-            throw new Error(
-              `[EntityReplacer] Expanded content length limit exceeded: ` +
-              `${this._expandedLength} > ${this._maxExpandedLength}`
-            );
-          }
-        }
-      }
-    }
-    return str;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Named entity groups — importable separately and freely composable.
-// All groups are plain objects; no magic, no classes.
-// ---------------------------------------------------------------------------
-
-/**
- * ~20 most commonly needed HTML named entities.
- * @type {Record<string, { regex: RegExp, val: string | ((m: string, s: string) => string) }>}
- */
-const COMMON_HTML = {
-  nbsp: { regex: /&(nbsp|#0*160|#x0*[Aa]0);/g, val: '\u00a0' },
-  copy: { regex: /&(copy|#0*169|#x0*[Aa]9);/g, val: '\u00a9' },
-  reg: { regex: /&(reg|#0*174|#x0*[Aa][Ee]);/g, val: '\u00ae' },
-  trade: { regex: /&(trade|#0*8482|#x0*2122);/g, val: '\u2122' },
-  mdash: { regex: /&(mdash|#0*8212|#x0*2014);/g, val: '\u2014' },
-  ndash: { regex: /&(ndash|#0*8211|#x0*2013);/g, val: '\u2013' },
-  hellip: { regex: /&(hellip|#0*8230|#x0*2026);/g, val: '\u2026' },
-  laquo: { regex: /&(laquo|#0*171|#x0*[Aa][Bb]);/g, val: '\u00ab' },
-  raquo: { regex: /&(raquo|#0*187|#x0*[Bb][Bb]);/g, val: '\u00bb' },
-  lsquo: { regex: /&(lsquo|#0*8216|#x0*2018);/g, val: '\u2018' },
-  rsquo: { regex: /&(rsquo|#0*8217|#x0*2019);/g, val: '\u2019' },
-  ldquo: { regex: /&(ldquo|#0*8220|#x0*201[Cc]);/g, val: '\u201c' },
-  rdquo: { regex: /&(rdquo|#0*8221|#x0*201[Dd]);/g, val: '\u201d' },
-  bull: { regex: /&(bull|#0*8226|#x0*2022);/g, val: '\u2022' },
-  para: { regex: /&(para|#0*182|#x0*[Bb]6);/g, val: '\u00b6' },
-  sect: { regex: /&(sect|#0*167|#x0*[Aa]7);/g, val: '\u00a7' },
-  deg: { regex: /&(deg|#0*176|#x0*[Bb]0);/g, val: '\u00b0' },
-  frac12: { regex: /&(frac12|#0*189|#x0*[Bb][Dd]);/g, val: '\u00bd' },
-  frac14: { regex: /&(frac14|#0*188|#x0*[Bb][Cc]);/g, val: '\u00bc' },
-  frac34: { regex: /&(frac34|#0*190|#x0*[Bb][Ee]);/g, val: '\u00be' },
-  inr: { regex: /&(inr|#0*8377);/g, val: "₹" },
-};
-
-/**
- * Currency symbol entities.
- */
-const CURRENCY_ENTITIES = {
-  cent: { regex: /&(cent|#0*162|#x0*[Aa]2);/g, val: '\u00a2' },
-  pound: { regex: /&(pound|#0*163|#x0*[Aa]3);/g, val: '\u00a3' },
-  yen: { regex: /&(yen|#0*165|#x0*[Aa]5);/g, val: '\u00a5' },
-  euro: { regex: /&(euro|#0*8364|#x0*20[Aa][Cc]);/g, val: '\u20ac' },
-  inr: { regex: /&(inr|#0*8377|#x0*20[Bb]9);/g, val: '\u20b9' },
-  curren: { regex: /&(curren|#0*164|#x0*[Aa]4);/g, val: '\u00a4' },
-  fnof: { regex: /&(fnof|#0*402|#x0*192);/g, val: '\u0192' },
-};
-
-/**
- * Numeric character references — decimal &#NNN; and hex &#xHH;
- * These are function-replacers; they expand any valid code point.
- */
-const NUMERIC_ENTITIES = {
-  num_dec: {
-    regex: /&#0*([0-9]{1,7});/g,
-    val: (_, s) => fromCodePoint(s, 10, "&#"),
-  },
-  num_hex: {
-    regex: /&#x0*([0-9a-fA-F]{1,6});/g,
-    val: (_, s) => fromCodePoint(s, 16, "&#x"),
-  },
-};
-
-function fromCodePoint(str, base, prefix) {
-  const codePoint = Number.parseInt(str, base);
-
-  if (codePoint >= 0 && codePoint <= 0x10FFFF) {
-    return String.fromCodePoint(codePoint);
-  } else {
-    return prefix + str + ";";
-  }
+  return false;
 }
 
 // const regx =
@@ -44041,7 +46641,7 @@ function extractNamespace(rawTagName) {
 }
 
 class OrderedObjParser {
-  constructor(options) {
+  constructor(options, externalEntities) {
     this.options = options;
     this.currentNode = null;
     this.tagsNodeStack = [];
@@ -44057,22 +46657,32 @@ class OrderedObjParser {
     this.ignoreAttributesFn = getIgnoreAttributesFn(this.options.ignoreAttributes);
     this.entityExpansionCount = 0;
     this.currentExpandedLength = 0;
+    this.doctypefound = false;
+    let namedEntities = { ...XML };
+    if (this.options.entityDecoder) {
+      this.entityDecoder = this.options.entityDecoder;
+    } else {
+      if (typeof this.options.htmlEntities === "object") namedEntities = this.options.htmlEntities;
+      else if (this.options.htmlEntities === true) namedEntities = { ...COMMON_HTML, ...CURRENCY };
+      this.entityDecoder = new EntityDecoder({
+        namedEntities: { ...namedEntities, ...externalEntities },
+        numericAllowed: this.options.htmlEntities,
+        limit: {
+          maxTotalExpansions: this.options.processEntities.maxTotalExpansions,
+          maxExpandedLength: this.options.processEntities.maxExpandedLength,
+          applyLimitsTo: this.options.processEntities.appliesTo,
+        },
+        // onExternalEntity: (name, value) => isUnsafe(value) ? 'block' : 'allow',
+        onInputEntity: (name, value) =>
+          //TODO: VALID_CONTEXTS.HTML should be set only if this.options.htmlEntities
+          isUnsafe(value, [HTML_PATTERNS, XML_PATTERNS]) ? ENTITY_ACTION.BLOCK : ENTITY_ACTION.ALLOW,
 
-    this.entityReplacer = new EntityReplacer({
-      default: true,
-      // amp:     true,
-      system: this.options.htmlEntities ? { ...COMMON_HTML, ...NUMERIC_ENTITIES, ...CURRENCY_ENTITIES } : {},
-      maxTotalExpansions: this.options.processEntities.maxTotalExpansions,
-      maxExpandedLength: this.options.processEntities.maxExpandedLength,
-      applyLimitsTo: "all",
-      //postCheck: resolved => resolved
-    });
+        //postCheck: resolved => resolved
+      });
+    }
 
     // Initialize path matcher for path-expression-matcher
     this.matcher = new Matcher();
-
-    // Live read-only proxy of matcher — PEM creates and caches this internally.
-    // All user callbacks receive this instead of the mutable matcher.
     this.readonlyMatcher = this.matcher.readOnly();
 
     // Flag to track if current node is a stop node (optimization)
@@ -44158,9 +46768,9 @@ function resolveNameSpace(tagname) {
 //const attrsRegx = new RegExp("([\\w\\-\\.\\:]+)\\s*=\\s*(['\"])((.|\n)*?)\\2","gm");
 const attrsRegx = new RegExp('([^\\s=]+)\\s*(=\\s*([\'"])([\\s\\S]*?)\\3)?', 'gm');
 
-function buildAttributesMap(attrStr, jPath, tagName) {
+function buildAttributesMap(attrStr, jPath, tagName, force = false) {
   const options = this.options;
-  if (options.ignoreAttributes !== true && typeof attrStr === 'string') {
+  if (force === true || (options.ignoreAttributes !== true && typeof attrStr === 'string')) {
     // attrStr = attrStr.replace(/\r?\n/g, ' ');
     //attrStr = attrStr || attrStr.trim();
 
@@ -44234,7 +46844,7 @@ function buildAttributesMap(attrStr, jPath, tagName) {
 
     if (!hasAttrs) return;
 
-    if (options.attributesGroupName) {
+    if (options.attributesGroupName && !options.preserveOrder) {
       const attrCollection = {};
       attrCollection[options.attributesGroupName] = attrs;
       return attrCollection;
@@ -44250,10 +46860,12 @@ const parseXml = function (xmlData) {
 
   // Reset matcher for new document
   this.matcher.reset();
+  this.entityDecoder.reset();
 
   // Reset entity expansion counters for this document
   this.entityExpansionCount = 0;
   this.currentExpandedLength = 0;
+  this.doctypefound = false;
   const options = this.options;
   const docTypeReader = new DocTypeReader(options.processEntities);
   const xmlLen = xmlData.length;
@@ -44294,7 +46906,12 @@ const parseXml = function (xmlData) {
         this.matcher.pop();
         this.isCurrentNodeStopNode = false; // Reset flag when closing tag
 
-        currentNode = this.tagsNodeStack.pop();//avoid recursion, set the parent tag scope
+        //a closing tag with no matching opening tag leaves the stack empty
+        currentNode = this.tagsNodeStack.pop() || xmlObj;//avoid recursion, set the parent tag scope
+
+        if (options.captureMetaData && currentNode) {
+          currentNode.addEndIndex(closeIndex + 1);
+        }
         textData = "";
         i = closeIndex;
       } else if (c1 === 63) { //'?'
@@ -44303,15 +46920,26 @@ const parseXml = function (xmlData) {
         if (!tagData) throw new Error("Pi Tag is not closed.");
 
         textData = this.saveTextToParentTag(textData, currentNode, this.readonlyMatcher);
+        const attsMap = this.buildAttributesMap(tagData.tagExp, this.matcher, tagData.tagName, true);
+        if (attsMap) {
+          const ver = attsMap[this.options.attributeNamePrefix + "version"];
+          this.entityDecoder.setXmlVersion(Number(ver) || 1.0);
+          docTypeReader.setXmlVersion(Number(ver) || 1.0);
+        }
         if ((options.ignoreDeclaration && tagData.tagName === "?xml") || options.ignorePiTags) ; else {
 
           const childNode = new XmlNode(tagData.tagName);
           childNode.add(options.textNodeName, "");
 
-          if (tagData.tagName !== tagData.tagExp && tagData.attrExpPresent) {
-            childNode[":@"] = this.buildAttributesMap(tagData.tagExp, this.matcher, tagData.tagName);
+          if (tagData.tagName !== tagData.tagExp && tagData.attrExpPresent && options.ignoreAttributes !== true) {
+            childNode[":@"] = attsMap;
           }
           this.addChild(currentNode, childNode, this.readonlyMatcher, i);
+
+          if (options.captureMetaData) {
+            // closeIndex points at '?' of the closing '?>'
+            currentNode.addEndIndex(tagData.closeIndex + 2);
+          }
         }
 
 
@@ -44330,8 +46958,10 @@ const parseXml = function (xmlData) {
         i = endIndex;
       } else if (c1 === 33
         && xmlData.charCodeAt(i + 2) === 68) { //'!D'
+        if (this.doctypefound) throw new Error("Multiple DOCTYPE declarations found.");
+        this.doctypefound = true;
         const result = docTypeReader.readDocType(xmlData, i);
-        this.entityReplacer.addInputEntities(result.entities);
+        this.entityDecoder.addInputEntities(result.entities);
         i = result.i;
       } else if (c1 === 33
         && xmlData.charCodeAt(i + 2) === 91) { // '!['
@@ -44429,6 +47059,7 @@ const parseXml = function (xmlData) {
 
           if (prefixedAttrs) {
             // Extract raw attributes (without prefix) for our use
+            //TODO: seems a performance overhead
             extractRawAttributes(prefixedAttrs, options);
           }
         }
@@ -44472,6 +47103,10 @@ const parseXml = function (xmlData) {
           this.isCurrentNodeStopNode = false; // Reset flag
 
           this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
+
+          if (options.captureMetaData) {
+            currentNode.addEndIndex(i + 1);
+          }
         } else {
           //selfClosing tag
           if (isSelfClosing) {
@@ -44482,6 +47117,10 @@ const parseXml = function (xmlData) {
               childNode[":@"] = prefixedAttrs;
             }
             this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
+
+            if (options.captureMetaData) {
+              currentNode.addEndIndex(closeIndex + 1);
+            }
             this.matcher.pop(); // Pop self-closing tag
             this.isCurrentNodeStopNode = false; // Reset flag
           }
@@ -44491,6 +47130,10 @@ const parseXml = function (xmlData) {
               childNode[":@"] = prefixedAttrs;
             }
             this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
+
+            if (options.captureMetaData) {
+              currentNode.addEndIndex(result.closeIndex + 1);
+            }
             this.matcher.pop(); // Pop unpaired tag
             this.isCurrentNodeStopNode = false; // Reset flag
             i = result.closeIndex;
@@ -44569,7 +47212,7 @@ function replaceEntitiesValue(val, tagName, jPath) {
     }
   }
 
-  return this.entityReplacer.replace(val);
+  return this.entityDecoder.decode(val);
 }
 
 
@@ -44608,11 +47251,15 @@ function isItStopNode() {
  * @returns 
  */
 function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
+  //TODO: ignore boolean attributes in tag expression
+  //TODO: if ignore attributes, dont read full attribute expression but the end. But read for xml declaration
   let attrBoundary = 0;
-  const chars = [];
   const len = xmlData.length;
   const closeCode0 = closingChar.charCodeAt(0);
   const closeCode1 = closingChar.length > 1 ? closingChar.charCodeAt(1) : -1;
+
+  let result = '';
+  let segmentStart = i;
 
   for (let index = i; index < len; index++) {
     const code = xmlData.charCodeAt(index);
@@ -44624,17 +47271,18 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
     } else if (code === closeCode0) {
       if (closeCode1 !== -1) {
         if (xmlData.charCodeAt(index + 1) === closeCode1) {
-          return { data: String.fromCharCode(...chars), index };
+          result += xmlData.substring(segmentStart, index);
+          return { data: result, index };
         }
       } else {
-        return { data: String.fromCharCode(...chars), index };
+        result += xmlData.substring(segmentStart, index);
+        return { data: result, index };
       }
-    } else if (code === 9) { // \t
-      chars.push(32); // space
-      continue;
+    } else if (code === 9 && !attrBoundary) { // \t - only replace with space outside attribute values
+      // Flush accumulated segment, add space, start new segment
+      result += xmlData.substring(segmentStart, index) + ' ';
+      segmentStart = index + 1;
     }
-
-    chars.push(code);
   }
 }
 
@@ -44724,7 +47372,7 @@ function readStopNodeData(xmlData, tagName, i) {
         const closeIndex = findClosingIndex(xmlData, "]]>", i, "StopNode is not closed.") - 2;
         i = closeIndex;
       } else {
-        const tagData = readTagExp(xmlData, i, '>');
+        const tagData = readTagExp(xmlData, i, false);
 
         if (tagData) {
           const openTagName = tagData && tagData.tagName;
@@ -44844,6 +47492,10 @@ function compress(arr, options, matcher, readonlyMatcher) {
 
       let val = compress(tagObj[property], options, matcher, readonlyMatcher);
       const isLeaf = isLeafTag(val, options);
+
+      if (Object.keys(val).length === 0 && options.alwaysCreateTextNode) {
+        val[options.textNodeName] = "";
+      }
 
       if (tagObj[":@"]) {
         assignAttributes(val, tagObj[":@"], readonlyMatcher, options);
@@ -44973,8 +47625,8 @@ class XMLParser {
                 throw Error(`${result.err.msg}:${result.err.line}:${result.err.col}`)
             }
         }
-        const orderedObjParser = new OrderedObjParser(this.options);
-        orderedObjParser.entityReplacer.setExternalEntities(this.externalEntities);
+        const orderedObjParser = new OrderedObjParser(this.options, this.externalEntities);
+        // orderedObjParser.entityDecoder.setExternalEntities(this.externalEntities);
         const orderedResult = orderedObjParser.parseXml(xmlData);
         if (this.options.preserveOrder || orderedResult === undefined) return orderedResult;
         else return prettify(orderedResult, this.options, orderedObjParser.matcher, orderedObjParser.readonlyMatcher);
@@ -45088,6 +47740,115 @@ function parseJUnitXml(content) {
     const parsed = parser.parse(content);
     return extractNodeSummary(parsed.testsuites) ?? extractNodeSummary(parsed.testsuite);
 }
+const MAX_MESSAGE_LENGTH = 4096;
+const MAX_OUTPUT_LENGTH = 16_384;
+/**
+ * A zero-duration failure that produced no output means the framework aborted
+ * before the test ran (e.g. Go -failfast / suite abort). A zero-duration
+ * failure WITH a body demonstrably ran — an instant assertion failure.
+ */
+function isCollateral(status, timeSeconds, hasFailureBody) {
+    return (status === "failed" || status === "error") && timeSeconds === 0 && !hasFailureBody;
+}
+function hasBody(node) {
+    const first = Array.isArray(node) ? node[0] : node;
+    if (first === undefined) {
+        return false;
+    }
+    if (typeof first === "string" || typeof first === "number") {
+        return String(first) !== "";
+    }
+    return first["#text"] !== undefined && first["#text"] !== "";
+}
+function extractMessage(node, maxLength = MAX_MESSAGE_LENGTH) {
+    const first = Array.isArray(node) ? node[0] : node;
+    if (first === undefined) {
+        return undefined;
+    }
+    if (typeof first === "string" || typeof first === "number") {
+        return String(first).slice(0, maxLength) || undefined;
+    }
+    const parts = [first.message, first["#text"]].filter((part) => part !== undefined && part !== "").map(String);
+    return parts.length > 0 ? parts.join("\n").slice(0, maxLength) : undefined;
+}
+function toCaseStatus(node) {
+    if (node.error !== undefined) {
+        return "error";
+    }
+    if (node.failure !== undefined) {
+        return "failed";
+    }
+    if (node.skipped !== undefined) {
+        return "skipped";
+    }
+    return "passed";
+}
+function collectTestCases(node, cases) {
+    if (!node) {
+        return;
+    }
+    const suiteName = node.name === undefined ? "" : String(node.name);
+    for (const testCase of toArray(node.testcase)) {
+        if (testCase.name === undefined) {
+            continue;
+        }
+        const status = toCaseStatus(testCase);
+        const timeSeconds = Number(testCase.time ?? 0) || 0;
+        const message = extractMessage(testCase.failure ?? testCase.error);
+        const output = extractMessage(testCase["system-out"], MAX_OUTPUT_LENGTH);
+        cases.push({
+            name: String(testCase.name),
+            classname: testCase.classname === undefined ? "" : String(testCase.classname),
+            suite: suiteName,
+            timeSeconds,
+            status,
+            ...(message !== undefined ? { message } : {}),
+            ...(output !== undefined ? { output } : {}),
+            collateral: isCollateral(status, timeSeconds, hasBody(testCase.failure ?? testCase.error)),
+        });
+    }
+    for (const child of toArray(node.testsuite)) {
+        collectTestCases(child, cases);
+    }
+}
+/** A case is a leaf unless another case in the same classname extends its name (Go subtest ancestry). */
+function markLeaves(cases) {
+    const namesByClassname = new Map();
+    for (const testCase of cases) {
+        const names = namesByClassname.get(testCase.classname) ?? [];
+        names.push(testCase.name);
+        namesByClassname.set(testCase.classname, names);
+    }
+    return cases.map((testCase) => {
+        const siblings = namesByClassname.get(testCase.classname) ?? [];
+        const prefix = `${testCase.name}/`;
+        const leaf = !siblings.some((name) => name.startsWith(prefix));
+        return { ...testCase, leaf };
+    });
+}
+function summarizeTestCases(cases) {
+    const suites = new Set(cases.map((testCase) => testCase.suite)).size;
+    const failed = cases.filter((testCase) => testCase.status === "failed").length;
+    const errors = cases.filter((testCase) => testCase.status === "error").length;
+    const skipped = cases.filter((testCase) => testCase.status === "skipped").length;
+    const duration = cases.reduce((sum, testCase) => sum + testCase.timeSeconds, 0);
+    return {
+        suites,
+        total: cases.length,
+        passed: cases.length - failed - errors - skipped,
+        failed,
+        skipped,
+        errors,
+        duration,
+    };
+}
+function parseJUnitTestCases(content) {
+    const parsed = parser.parse(content);
+    const cases = [];
+    collectTestCases(parsed.testsuites, cases);
+    collectTestCases(parsed.testsuite, cases);
+    return cases.length > 0 ? markLeaves(cases) : undefined;
+}
 async function findTestResultsSummary(input) {
     const patterns = parseTestResultsGlobs(input);
     if (patterns.length === 0) {
@@ -45124,59 +47885,685 @@ async function findTestResultsSummary(input) {
     return summary;
 }
 
-/*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+// DEFLATE is a complex format; to read this code, you should probably check the RFC first:
+// https://tools.ietf.org/html/rfc1951
+// You may also wish to take a look at the guide I made about this program:
+// https://gist.github.com/101arrowz/253f31eb5abc3d9275ab943003ffecad
+// Some of the following code is similar to that of UZIP.js:
+// https://github.com/photopea/UZIP.js
+// However, the vast majority of the codebase has diverged from UZIP.js to increase performance and reduce bundle size.
+// Sometimes 0 will appear where -1 would be more appropriate. This is because using a uint
+// is better for memory in most engines (I *think*).
+
+// aliases for shorter compressed code (most minifers don't do this)
+var u8 = Uint8Array, u16 = Uint16Array, i32 = Int32Array;
+// fixed length extra bits
+var fleb = new u8([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, /* unused */ 0, 0, /* impossible */ 0]);
+// fixed distance extra bits
+var fdeb = new u8([0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, /* unused */ 0, 0]);
+// code length index map
+var clim = new u8([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
+// get base, reverse index map from extra bits
+var freb = function (eb, start) {
+    var b = new u16(31);
+    for (var i = 0; i < 31; ++i) {
+        b[i] = start += 1 << eb[i - 1];
+    }
+    // numbers here are at max 18 bits
+    var r = new i32(b[30]);
+    for (var i = 1; i < 30; ++i) {
+        for (var j = b[i]; j < b[i + 1]; ++j) {
+            r[j] = ((j - b[i]) << 5) | i;
+        }
+    }
+    return { b: b, r: r };
+};
+var _a = freb(fleb, 2), fl = _a.b, revfl = _a.r;
+// we can ignore the fact that the other numbers are wrong; they never happen anyway
+fl[28] = 258, revfl[258] = 28;
+var _b = freb(fdeb, 0), fd = _b.b;
+// map of value to reverse (assuming 16 bits)
+var rev = new u16(32768);
+for (var i = 0; i < 32768; ++i) {
+    // reverse table algorithm from SO
+    var x = ((i & 0xAAAA) >> 1) | ((i & 0x5555) << 1);
+    x = ((x & 0xCCCC) >> 2) | ((x & 0x3333) << 2);
+    x = ((x & 0xF0F0) >> 4) | ((x & 0x0F0F) << 4);
+    rev[i] = (((x & 0xFF00) >> 8) | ((x & 0x00FF) << 8)) >> 1;
+}
+// create huffman tree from u8 "map": index -> code length for code index
+// mb (max bits) must be at most 15
+// TODO: optimize/split up?
+var hMap = (function (cd, mb, r) {
+    var s = cd.length;
+    // index
+    var i = 0;
+    // u16 "map": index -> # of codes with bit length = index
+    var l = new u16(mb);
+    // length of cd must be 288 (total # of codes)
+    for (; i < s; ++i) {
+        if (cd[i])
+            ++l[cd[i] - 1];
+    }
+    // u16 "map": index -> minimum code for bit length = index
+    var le = new u16(mb);
+    for (i = 1; i < mb; ++i) {
+        le[i] = (le[i - 1] + l[i - 1]) << 1;
+    }
+    var co;
+    if (r) {
+        // u16 "map": index -> number of actual bits, symbol for code
+        co = new u16(1 << mb);
+        // bits to remove for reverser
+        var rvb = 15 - mb;
+        for (i = 0; i < s; ++i) {
+            // ignore 0 lengths
+            if (cd[i]) {
+                // num encoding both symbol and bits read
+                var sv = (i << 4) | cd[i];
+                // free bits
+                var r_1 = mb - cd[i];
+                // start value
+                var v = le[cd[i] - 1]++ << r_1;
+                // m is end value
+                for (var m = v | ((1 << r_1) - 1); v <= m; ++v) {
+                    // every 16 bit value starting with the code yields the same result
+                    co[rev[v] >> rvb] = sv;
+                }
+            }
+        }
+    }
+    else {
+        co = new u16(s);
+        for (i = 0; i < s; ++i) {
+            if (cd[i]) {
+                co[i] = rev[le[cd[i] - 1]++] >> (15 - cd[i]);
+            }
+        }
+    }
+    return co;
+});
+// fixed length tree
+var flt = new u8(288);
+for (var i = 0; i < 144; ++i)
+    flt[i] = 8;
+for (var i = 144; i < 256; ++i)
+    flt[i] = 9;
+for (var i = 256; i < 280; ++i)
+    flt[i] = 7;
+for (var i = 280; i < 288; ++i)
+    flt[i] = 8;
+// fixed distance tree
+var fdt = new u8(32);
+for (var i = 0; i < 32; ++i)
+    fdt[i] = 5;
+// fixed length map
+var flrm = /*#__PURE__*/ hMap(flt, 9, 1);
+// fixed distance map
+var fdrm = /*#__PURE__*/ hMap(fdt, 5, 1);
+// find max of array
+var max = function (a) {
+    var m = a[0];
+    for (var i = 1; i < a.length; ++i) {
+        if (a[i] > m)
+            m = a[i];
+    }
+    return m;
+};
+// read d, starting at bit p and mask with m
+var bits = function (d, p, m) {
+    var o = (p / 8) | 0;
+    return ((d[o] | (d[o + 1] << 8)) >> (p & 7)) & m;
+};
+// read d, starting at bit p continuing for at least 16 bits
+var bits16 = function (d, p) {
+    var o = (p / 8) | 0;
+    return ((d[o] | (d[o + 1] << 8) | (d[o + 2] << 16)) >> (p & 7));
+};
+// get end of byte
+var shft = function (p) { return ((p + 7) / 8) | 0; };
+// typed array slice - allows garbage collector to free original reference,
+// while being more compatible than .slice
+var slc = function (v, s, e) {
+    if (s == null || s < 0)
+        s = 0;
+    if (e == null || e > v.length)
+        e = v.length;
+    // can't use .constructor in case user-supplied
+    return new u8(v.subarray(s, e));
+};
+// error codes
+var ec = [
+    'unexpected EOF',
+    'invalid block type',
+    'invalid length/literal',
+    'invalid distance',
+    'stream finished',
+    'no stream handler',
+    , // determined by compression function
+    'no callback',
+    'invalid UTF-8 data',
+    'extra field too long',
+    'date not in range 1980-2099',
+    'filename too long',
+    'stream finishing',
+    'invalid zip data'
+    // determined by unknown compression method
+];
+var err = function (ind, msg, nt) {
+    var e = new Error(msg || ec[ind]);
+    e.code = ind;
+    if (Error.captureStackTrace)
+        Error.captureStackTrace(e, err);
+    if (!nt)
+        throw e;
+    return e;
+};
+// expands raw DEFLATE data
+var inflt = function (dat, st, buf, dict) {
+    // source length       dict length
+    var sl = dat.length, dl = dict ? dict.length : 0;
+    if (!sl || st.f && !st.l)
+        return buf || new u8(0);
+    var noBuf = !buf;
+    // have to estimate size
+    var resize = noBuf || st.i != 2;
+    // no state
+    var noSt = st.i;
+    // Assumes roughly 33% compression ratio average
+    if (noBuf)
+        buf = new u8(sl * 3);
+    // ensure buffer can fit at least l elements
+    var cbuf = function (l) {
+        var bl = buf.length;
+        // need to increase size to fit
+        if (l > bl) {
+            // Double or set to necessary, whichever is greater
+            var nbuf = new u8(Math.max(bl * 2, l));
+            nbuf.set(buf);
+            buf = nbuf;
+        }
+    };
+    //  last chunk         bitpos           bytes
+    var final = st.f || 0, pos = st.p || 0, bt = st.b || 0, lm = st.l, dm = st.d, lbt = st.m, dbt = st.n;
+    // total bits
+    var tbts = sl * 8;
+    do {
+        if (!lm) {
+            // BFINAL - this is only 1 when last chunk is next
+            final = bits(dat, pos, 1);
+            // type: 0 = no compression, 1 = fixed huffman, 2 = dynamic huffman
+            var type = bits(dat, pos + 1, 3);
+            pos += 3;
+            if (!type) {
+                // go to end of byte boundary
+                var s = shft(pos) + 4, l = dat[s - 4] | (dat[s - 3] << 8), t = s + l;
+                if (t > sl) {
+                    if (noSt)
+                        err(0);
+                    break;
+                }
+                // ensure size
+                if (resize)
+                    cbuf(bt + l);
+                // Copy over uncompressed data
+                buf.set(dat.subarray(s, t), bt);
+                // Get new bitpos, update byte count
+                st.b = bt += l, st.p = pos = t * 8, st.f = final;
+                continue;
+            }
+            else if (type == 1)
+                lm = flrm, dm = fdrm, lbt = 9, dbt = 5;
+            else if (type == 2) {
+                //  literal                            lengths
+                var hLit = bits(dat, pos, 31) + 257, hcLen = bits(dat, pos + 10, 15) + 4;
+                var tl = hLit + bits(dat, pos + 5, 31) + 1;
+                pos += 14;
+                // length+distance tree
+                var ldt = new u8(tl);
+                // code length tree
+                var clt = new u8(19);
+                for (var i = 0; i < hcLen; ++i) {
+                    // use index map to get real code
+                    clt[clim[i]] = bits(dat, pos + i * 3, 7);
+                }
+                pos += hcLen * 3;
+                // code lengths bits
+                var clb = max(clt), clbmsk = (1 << clb) - 1;
+                // code lengths map
+                var clm = hMap(clt, clb, 1);
+                for (var i = 0; i < tl;) {
+                    var r = clm[bits(dat, pos, clbmsk)];
+                    // bits read
+                    pos += r & 15;
+                    // symbol
+                    var s = r >> 4;
+                    // code length to copy
+                    if (s < 16) {
+                        ldt[i++] = s;
+                    }
+                    else {
+                        //  copy   count
+                        var c = 0, n = 0;
+                        if (s == 16)
+                            n = 3 + bits(dat, pos, 3), pos += 2, c = ldt[i - 1];
+                        else if (s == 17)
+                            n = 3 + bits(dat, pos, 7), pos += 3;
+                        else if (s == 18)
+                            n = 11 + bits(dat, pos, 127), pos += 7;
+                        while (n--)
+                            ldt[i++] = c;
+                    }
+                }
+                //    length tree                 distance tree
+                var lt = ldt.subarray(0, hLit), dt = ldt.subarray(hLit);
+                // max length bits
+                lbt = max(lt);
+                // max dist bits
+                dbt = max(dt);
+                lm = hMap(lt, lbt, 1);
+                dm = hMap(dt, dbt, 1);
+            }
+            else
+                err(1);
+            if (pos > tbts) {
+                if (noSt)
+                    err(0);
+                break;
+            }
+        }
+        // Make sure the buffer can hold this + the largest possible addition
+        // Maximum chunk size (practically, theoretically infinite) is 2^17
+        if (resize)
+            cbuf(bt + 131072);
+        var lms = (1 << lbt) - 1, dms = (1 << dbt) - 1;
+        var lpos = pos;
+        for (;; lpos = pos) {
+            // bits read, code
+            var c = lm[bits16(dat, pos) & lms], sym = c >> 4;
+            pos += c & 15;
+            if (pos > tbts) {
+                if (noSt)
+                    err(0);
+                break;
+            }
+            if (!c)
+                err(2);
+            if (sym < 256)
+                buf[bt++] = sym;
+            else if (sym == 256) {
+                lpos = pos, lm = null;
+                break;
+            }
+            else {
+                var add = sym - 254;
+                // no extra bits needed if less
+                if (sym > 264) {
+                    // index
+                    var i = sym - 257, b = fleb[i];
+                    add = bits(dat, pos, (1 << b) - 1) + fl[i];
+                    pos += b;
+                }
+                // dist
+                var d = dm[bits16(dat, pos) & dms], dsym = d >> 4;
+                if (!d)
+                    err(3);
+                pos += d & 15;
+                var dt = fd[dsym];
+                if (dsym > 3) {
+                    var b = fdeb[dsym];
+                    dt += bits16(dat, pos) & (1 << b) - 1, pos += b;
+                }
+                if (pos > tbts) {
+                    if (noSt)
+                        err(0);
+                    break;
+                }
+                if (resize)
+                    cbuf(bt + 131072);
+                var end = bt + add;
+                if (bt < dt) {
+                    var shift = dl - dt, dend = Math.min(dt, end);
+                    if (shift + bt < 0)
+                        err(3);
+                    for (; bt < dend; ++bt)
+                        buf[bt] = dict[shift + bt];
+                }
+                for (; bt < end; ++bt)
+                    buf[bt] = buf[bt - dt];
+            }
+        }
+        st.l = lm, st.p = lpos, st.b = bt, st.f = final;
+        if (lm)
+            final = 1, st.m = lbt, st.d = dm, st.n = dbt;
+    } while (!final);
+    // don't reallocate for streams or user buffers
+    return bt != buf.length && noBuf ? slc(buf, 0, bt) : buf.subarray(0, bt);
+};
+// empty
+var et = /*#__PURE__*/ new u8(0);
+// read 2 bytes
+var b2 = function (d, b) { return d[b] | (d[b + 1] << 8); };
+// read 4 bytes
+var b4 = function (d, b) { return (d[b] | (d[b + 1] << 8) | (d[b + 2] << 16) | (d[b + 3] << 24)) >>> 0; };
+// read 8 bytes
+var b8 = function (d, b) { return b4(d, b) + (b4(d, b + 4) * 4294967296); };
+function inflateSync(data, opts) {
+    return inflt(data, { i: 2 }, opts && opts.out, opts && opts.dictionary);
+}
+// text decoder
+var td = typeof TextDecoder != 'undefined' && /*#__PURE__*/ new TextDecoder();
+// text decoder stream
+var tds = 0;
+try {
+    td.decode(et, { stream: true });
+    tds = 1;
+}
+catch (e) { }
+// decode UTF8
+var dutf8 = function (d) {
+    for (var r = '', i = 0;;) {
+        var c = d[i++];
+        var eb = (c > 127) + (c > 223) + (c > 239);
+        if (i + eb > d.length)
+            return { s: r, r: slc(d, i - 1) };
+        if (!eb)
+            r += String.fromCharCode(c);
+        else if (eb == 3) {
+            c = ((c & 15) << 18 | (d[i++] & 63) << 12 | (d[i++] & 63) << 6 | (d[i++] & 63)) - 65536,
+                r += String.fromCharCode(55296 | (c >> 10), 56320 | (c & 1023));
+        }
+        else if (eb & 1)
+            r += String.fromCharCode((c & 31) << 6 | (d[i++] & 63));
+        else
+            r += String.fromCharCode((c & 15) << 12 | (d[i++] & 63) << 6 | (d[i++] & 63));
+    }
+};
+/**
+ * Converts a Uint8Array to a string
+ * @param dat The data to decode to string
+ * @param latin1 Whether or not to interpret the data as Latin-1. This should
+ *               not need to be true unless encoding to binary string.
+ * @returns The original UTF-8/Latin-1 string
  */
-/** only globals that common to node and browsers are allowed */
-// eslint-disable-next-line node/no-unsupported-features/es-builtins
-var _globalThis$1 = typeof globalThis === 'object' ? globalThis : global;
+function strFromU8(dat, latin1) {
+    if (latin1) {
+        var r = '';
+        for (var i = 0; i < dat.length; i += 16384)
+            r += String.fromCharCode.apply(null, dat.subarray(i, i + 16384));
+        return r;
+    }
+    else if (td) {
+        return td.decode(dat);
+    }
+    else {
+        var _a = dutf8(dat), s = _a.s, r = _a.r;
+        if (r.length)
+            err(8);
+        return s;
+    }
+}
+// skip local zip header
+var slzh = function (d, b) { return b + 30 + b2(d, b + 26) + b2(d, b + 28); };
+// read zip header
+var zh = function (d, b, z) {
+    var fnl = b2(d, b + 28), efl = b2(d, b + 30), fn = strFromU8(d.subarray(b + 46, b + 46 + fnl), !(b2(d, b + 8) & 2048)), es = b + 46 + fnl;
+    var _a = z64hs(d, es, efl, z, b4(d, b + 20), b4(d, b + 24), b4(d, b + 42)), sc = _a[0], su = _a[1], off = _a[2];
+    return [b2(d, b + 10), sc, su, fn, es + efl + b2(d, b + 32), off];
+};
+// read zip64 header sizes
+var z64hs = function (d, b, l, z, sc, su, off) {
+    var nsc = sc == 4294967295, nsu = su == 4294967295, noff = off == 4294967295, e = b + l;
+    var nf = nsc + nsu + noff;
+    if (z && nf) {
+        for (; b + 4 < e; b += 4 + b2(d, b + 2)) {
+            if (b2(d, b) == 1) {
+                return [
+                    nsc ? b8(d, b + 4 + 8 * nsu) : sc,
+                    nsu ? b8(d, b + 4) : su,
+                    noff ? b8(d, b + 4 + 8 * (nsu + nsc)) : off,
+                    1
+                ];
+            }
+        }
+        // z == 2 for unknown whether or not zip64
+        if (z < 2)
+            err(13);
+    }
+    return [sc, su, off, 0];
+};
+/**
+ * Synchronously decompresses a ZIP archive. Prefer using `unzip` for better
+ * performance with more than one file.
+ * @param data The raw compressed ZIP file
+ * @param opts The ZIP extraction options
+ * @returns The decompressed files
+ */
+function unzipSync(data, opts) {
+    var files = {};
+    var e = data.length - 22;
+    for (; b4(data, e) != 0x6054B50; --e) {
+        if (!e || data.length - e > 65558)
+            err(13);
+    }
+    var c = b2(data, e + 8);
+    if (!c)
+        return {};
+    var o = b4(data, e + 16);
+    var z = b4(data, e - 20) == 0x7064B50;
+    if (z) {
+        var ze = b4(data, e - 12);
+        z = b4(data, ze) == 0x6064B50;
+        if (z) {
+            c = b4(data, ze + 32);
+            o = b4(data, ze + 48);
+        }
+    }
+    for (var i = 0; i < c; ++i) {
+        var _a = zh(data, o, z), c_2 = _a[0], sc = _a[1], su = _a[2], fn = _a[3], no = _a[4], off = _a[5], b = slzh(data, off);
+        o = no;
+        {
+            if (!c_2)
+                files[fn] = slc(data, b, b + sc);
+            else if (c_2 == 8)
+                files[fn] = inflateSync(data.subarray(b, b + sc), { out: new u8(su) });
+            else
+                err(14, 'unknown compression type ' + c_2);
+        }
+    }
+    return files;
+}
+
+async function getWorkflowRun(context, octokit, runId) {
+    const res = await octokit.rest.actions.getWorkflowRun({
+        ...context.repo,
+        run_id: runId,
+    });
+    return res.data;
+}
+async function listJobsForWorkflowRun(context, octokit, runId) {
+    return await octokit.paginate(octokit.rest.actions.listJobsForWorkflowRun, {
+        ...context.repo,
+        run_id: runId,
+        filter: "latest",
+        per_page: 100,
+    });
+}
+async function getJobsAnnotations(context, octokit, jobIds) {
+    const annotations = {};
+    for (const jobId of jobIds) {
+        annotations[jobId] = await listAnnotations(context, octokit, jobId);
+    }
+    return annotations;
+}
+async function listAnnotations(context, octokit, checkRunId) {
+    return await octokit.paginate(octokit.rest.checks.listAnnotations, {
+        ...context.repo,
+        check_run_id: checkRunId,
+    });
+}
+async function getPRsLabels(context, octokit, prNumbers) {
+    const labels = {};
+    for (const prNumber of prNumbers) {
+        labels[prNumber] = await listLabelsOnIssue(context, octokit, prNumber);
+    }
+    return labels;
+}
+async function listLabelsOnIssue(context, octokit, prNumber) {
+    return await octokit.paginate(octokit.rest.issues.listLabelsOnIssue, {
+        ...context.repo,
+        issue_number: prNumber,
+    }, (response) => response.data.map((issue) => issue.name));
+}
+async function getJobsLogs(context, octokit, jobIds) {
+    const logs = {};
+    for (const jobId of jobIds) {
+        try {
+            logs[jobId] = await downloadJobLog(context, octokit, jobId);
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            warning(`Skipping logs for job ${jobId}: ${message}`);
+        }
+    }
+    return logs;
+}
+async function downloadJobLog(context, octokit, jobId) {
+    const response = await octokit.rest.actions.downloadJobLogsForWorkflowRun({
+        ...context.repo,
+        job_id: jobId,
+    });
+    // Octokit auto-follows the 302 redirect, so response.data contains the log
+    // content directly. The OpenAPI spec types the 302 as content: never, but at
+    // runtime data is the plain-text log body from the redirect target.
+    const { data } = response;
+    if (typeof data !== "string" || data.length === 0) {
+        throw new Error(`Empty log content for job ${jobId}`);
+    }
+    return data;
+}
+async function listWorkflowRunArtifacts(context, octokit, runId) {
+    return await octokit.paginate(octokit.rest.actions.listWorkflowRunArtifacts, {
+        ...context.repo,
+        run_id: runId,
+        per_page: 100,
+    });
+}
+async function downloadArtifactZip(context, octokit, artifactId) {
+    const response = await octokit.rest.actions.downloadArtifact({
+        ...context.repo,
+        artifact_id: artifactId,
+        archive_format: "zip",
+    });
+    // Octokit follows the 302 redirect; data is the zip body as an ArrayBuffer.
+    return Buffer.from(response.data);
+}
+const TRACE_COMMENT_MARKER = "<!-- groundcover-trace-comment -->";
+async function upsertPrTraceComment(context, octokit, input) {
+    const commentBody = `${TRACE_COMMENT_MARKER}\n${input.body}`;
+    const comments = await octokit.paginate(octokit.rest.issues.listComments, {
+        ...context.repo,
+        issue_number: input.prNumber,
+        per_page: 100,
+    });
+    const existingComment = [...comments]
+        .reverse()
+        .find((comment) => typeof comment.body === "string" && comment.body.startsWith(`${TRACE_COMMENT_MARKER}\n`));
+    if (!existingComment) {
+        await octokit.rest.issues.createComment({
+            ...context.repo,
+            issue_number: input.prNumber,
+            body: commentBody,
+        });
+        return;
+    }
+    if (existingComment.body === commentBody) {
+        return;
+    }
+    await octokit.rest.issues.updateComment({
+        ...context.repo,
+        comment_id: existingComment.id,
+        body: commentBody,
+    });
+}
+
+/**
+ * Mirror of the sanitization the uploading workflow applies to a job name:
+ * every run of characters GitHub forbids in artifact names collapses to "-".
+ */
+function sanitizeArtifactNamePart(part) {
+    return part.replace(/[^A-Za-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "");
+}
+/** Reusable workflows prefix job display names ("test / router:test"); the tail is the job's own name. */
+function jobNameTail(name) {
+    const segments = name.split(" / ");
+    return segments[segments.length - 1] ?? name;
+}
+function matchArtifactToJob(artifactName, prefix, jobs) {
+    if (!artifactName.startsWith(prefix)) {
+        return undefined;
+    }
+    const suffix = artifactName.slice(prefix.length);
+    return jobs.find((job) => sanitizeArtifactNamePart(jobNameTail(job.name)) === suffix);
+}
+function extractXmlFilesFromZip(zip) {
+    const entries = unzipSync(new Uint8Array(zip));
+    const files = [];
+    for (const [name, content] of Object.entries(entries)) {
+        if (name.toLowerCase().endsWith(".xml")) {
+            files.push({ name, content: strFromU8(content) });
+        }
+    }
+    return files;
+}
+async function collectTestCasesFromArtifacts(context, octokit, runId, prefix, jobs) {
+    const artifacts = await listWorkflowRunArtifacts(context, octokit, runId);
+    const testReportsByJobId = {};
+    for (const artifact of artifacts) {
+        if (!artifact.name.startsWith(prefix) || artifact.expired) {
+            continue;
+        }
+        const job = matchArtifactToJob(artifact.name, prefix, jobs);
+        if (!job) {
+            warning(`No job matches test-report artifact "${artifact.name}"; skipping it`);
+            continue;
+        }
+        const zip = await downloadArtifactZip(context, octokit, artifact.id);
+        for (const file of extractXmlFilesFromZip(zip)) {
+            const cases = parseJUnitTestCases(file.content);
+            if (!cases) {
+                warning(`No test cases found in ${artifact.name}/${file.name}; skipping it`);
+                continue;
+            }
+            const report = { name: reportName(cases, file.name), cases };
+            testReportsByJobId[job.id] = [...(testReportsByJobId[job.id] ?? []), report];
+        }
+    }
+    const reports = Object.values(testReportsByJobId).flat();
+    const total = reports.reduce((sum, report) => sum + report.cases.length, 0);
+    info(`Collected ${total} test case(s) in ${reports.length} report(s) from run artifacts for ` +
+        `${Object.keys(testReportsByJobId).length} job(s)`);
+    return testReportsByJobId;
+}
+/** The suite name when a file reports just one, else the file name — so sibling reports stay distinguishable. */
+function reportName(cases, fileName) {
+    const suites = new Set(cases.map((testCase) => testCase.suite).filter(Boolean));
+    const onlySuite = suites.size === 1 ? [...suites][0] : undefined;
+    return onlySuite ?? fileName.replace(/^.*\//, "").replace(/\.xml$/i, "");
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // this is autogenerated file, see scripts/version-update.js
-var VERSION$4 = '1.9.0';
+const VERSION$7 = '1.9.1';
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var re = /^(\d+)\.(\d+)\.(\d+)(-(.+))?$/;
+const re = /^(\d+)\.(\d+)\.(\d+)(-(.+))?$/;
 /**
  * Create a function to test an API version to see if it is compatible with the provided ownVersion.
  *
@@ -45194,14 +48581,14 @@ var re = /^(\d+)\.(\d+)\.(\d+)(-(.+))?$/;
  * @param ownVersion version which should be checked against
  */
 function _makeCompatibilityCheck(ownVersion) {
-    var acceptedVersions = new Set([ownVersion]);
-    var rejectedVersions = new Set();
-    var myVersionMatch = ownVersion.match(re);
+    const acceptedVersions = new Set([ownVersion]);
+    const rejectedVersions = new Set();
+    const myVersionMatch = ownVersion.match(re);
     if (!myVersionMatch) {
         // we cannot guarantee compatibility so we always return noop
-        return function () { return false; };
+        return () => false;
     }
-    var ownVersionParsed = {
+    const ownVersionParsed = {
         major: +myVersionMatch[1],
         minor: +myVersionMatch[2],
         patch: +myVersionMatch[3],
@@ -45228,13 +48615,13 @@ function _makeCompatibilityCheck(ownVersion) {
         if (rejectedVersions.has(globalVersion)) {
             return false;
         }
-        var globalVersionMatch = globalVersion.match(re);
+        const globalVersionMatch = globalVersion.match(re);
         if (!globalVersionMatch) {
             // cannot parse other version
             // we cannot guarantee compatibility so we always noop
             return _reject(globalVersion);
         }
-        var globalVersionParsed = {
+        const globalVersionParsed = {
             major: +globalVersionMatch[1],
             minor: +globalVersionMatch[2],
             patch: +globalVersionMatch[3],
@@ -45276,59 +48663,55 @@ function _makeCompatibilityCheck(ownVersion) {
  *
  * @param version version of the API requesting an instance of the global API
  */
-var isCompatible = _makeCompatibilityCheck(VERSION$4);
+const isCompatible = _makeCompatibilityCheck(VERSION$7);
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var major = VERSION$4.split('.')[0];
-var GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for("opentelemetry.js.api." + major);
-var _global$1 = _globalThis$1;
-function registerGlobal(type, instance, diag, allowOverride) {
+const major = VERSION$7.split('.')[0];
+const GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for(`opentelemetry.js.api.${major}`);
+const _global$1 = (typeof globalThis === 'object'
+    ? globalThis
+    : typeof self === 'object'
+        ? self
+        : typeof window === 'object'
+            ? window
+            : typeof global === 'object'
+                ? global
+                : {});
+function registerGlobal(type, instance, diag, allowOverride = false) {
     var _a;
-    if (allowOverride === void 0) { allowOverride = false; }
-    var api = (_global$1[GLOBAL_OPENTELEMETRY_API_KEY] = (_a = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) !== null && _a !== void 0 ? _a : {
-        version: VERSION$4,
+    const api = (_global$1[GLOBAL_OPENTELEMETRY_API_KEY] = (_a = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) !== null && _a !== void 0 ? _a : {
+        version: VERSION$7,
     });
     if (!allowOverride && api[type]) {
         // already registered an API of this type
-        var err = new Error("@opentelemetry/api: Attempted duplicate registration of API: " + type);
+        const err = new Error(`@opentelemetry/api: Attempted duplicate registration of API: ${type}`);
         diag.error(err.stack || err.message);
         return false;
     }
-    if (api.version !== VERSION$4) {
+    if (api.version !== VERSION$7) {
         // All registered APIs must be of the same version exactly
-        var err = new Error("@opentelemetry/api: Registration of version v" + api.version + " for " + type + " does not match previously registered API v" + VERSION$4);
+        const err = new Error(`@opentelemetry/api: Registration of version v${api.version} for ${type} does not match previously registered API v${VERSION$7}`);
         diag.error(err.stack || err.message);
         return false;
     }
     api[type] = instance;
-    diag.debug("@opentelemetry/api: Registered a global for " + type + " v" + VERSION$4 + ".");
+    diag.debug(`@opentelemetry/api: Registered a global for ${type} v${VERSION$7}.`);
     return true;
 }
 function getGlobal(type) {
     var _a, _b;
-    var globalVersion = (_a = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _a === void 0 ? void 0 : _a.version;
+    const globalVersion = (_a = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _a === void 0 ? void 0 : _a.version;
     if (!globalVersion || !isCompatible(globalVersion)) {
         return;
     }
     return (_b = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _b === void 0 ? void 0 : _b[type];
 }
 function unregisterGlobal(type, diag) {
-    diag.debug("@opentelemetry/api: Unregistering a global for " + type + " v" + VERSION$4 + ".");
-    var api = _global$1[GLOBAL_OPENTELEMETRY_API_KEY];
+    diag.debug(`@opentelemetry/api: Unregistering a global for ${type} v${VERSION$7}.`);
+    const api = _global$1[GLOBAL_OPENTELEMETRY_API_KEY];
     if (api) {
         delete api[type];
     }
@@ -45336,44 +48719,8 @@ function unregisterGlobal(type, diag) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read$4 = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __spreadArray$3 = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 /**
  * Component Logger which is meant to be used as part of any component which
  * will add automatically additional namespace in front of the log message.
@@ -45383,71 +48730,38 @@ var __spreadArray$3 = (undefined && undefined.__spreadArray) || function (to, fr
  * cLogger.debug('test');
  * // @opentelemetry/instrumentation-http test
  */
-var DiagComponentLogger = /** @class */ (function () {
-    function DiagComponentLogger(props) {
+class DiagComponentLogger {
+    constructor(props) {
         this._namespace = props.namespace || 'DiagComponentLogger';
     }
-    DiagComponentLogger.prototype.debug = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    debug(...args) {
         return logProxy('debug', this._namespace, args);
-    };
-    DiagComponentLogger.prototype.error = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    }
+    error(...args) {
         return logProxy('error', this._namespace, args);
-    };
-    DiagComponentLogger.prototype.info = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    }
+    info(...args) {
         return logProxy('info', this._namespace, args);
-    };
-    DiagComponentLogger.prototype.warn = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    }
+    warn(...args) {
         return logProxy('warn', this._namespace, args);
-    };
-    DiagComponentLogger.prototype.verbose = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    }
+    verbose(...args) {
         return logProxy('verbose', this._namespace, args);
-    };
-    return DiagComponentLogger;
-}());
+    }
+}
 function logProxy(funcName, namespace, args) {
-    var logger = getGlobal('diag');
+    const logger = getGlobal('diag');
     // shortcut if logger not set
     if (!logger) {
         return;
     }
-    args.unshift(namespace);
-    return logger[funcName].apply(logger, __spreadArray$3([], __read$4(args), false));
+    return logger[funcName](namespace, ...args);
 }
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * Defines the available internal logging levels for the diagnostic logger, the numeric values
@@ -45477,18 +48791,7 @@ var DiagLogLevel;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 function createLogLevelDiagLogger(maxLevel, logger) {
     if (maxLevel < DiagLogLevel.NONE) {
@@ -45500,7 +48803,7 @@ function createLogLevelDiagLogger(maxLevel, logger) {
     // In case the logger is null or undefined
     logger = logger || {};
     function _filterFunc(funcName, theLevel) {
-        var theFunc = logger[funcName];
+        const theFunc = logger[funcName];
         if (typeof theFunc === 'function' && maxLevel >= theLevel) {
             return theFunc.bind(logger);
         }
@@ -45517,79 +48820,47 @@ function createLogLevelDiagLogger(maxLevel, logger) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read$3 = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __spreadArray$2 = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-var API_NAME$4 = 'diag';
+const API_NAME$4 = 'diag';
 /**
  * Singleton object which represents the entry point to the OpenTelemetry internal
  * diagnostic API
+ *
+ * @since 1.0.0
  */
-var DiagAPI = /** @class */ (function () {
+class DiagAPI {
+    /** Get the singleton instance of the DiagAPI API */
+    static instance() {
+        if (!this._instance) {
+            this._instance = new DiagAPI();
+        }
+        return this._instance;
+    }
     /**
      * Private internal constructor
      * @private
      */
-    function DiagAPI() {
+    constructor() {
         function _logProxy(funcName) {
-            return function () {
-                var args = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i] = arguments[_i];
-                }
-                var logger = getGlobal('diag');
+            return function (...args) {
+                const logger = getGlobal('diag');
                 // shortcut if logger not set
                 if (!logger)
                     return;
-                return logger[funcName].apply(logger, __spreadArray$2([], __read$3(args), false));
+                return logger[funcName](...args);
             };
         }
         // Using self local variable for minification purposes as 'this' cannot be minified
-        var self = this;
+        const self = this;
         // DiagAPI specific functions
-        var setLogger = function (logger, optionsOrLogLevel) {
+        const setLogger = (logger, optionsOrLogLevel = { logLevel: DiagLogLevel.INFO }) => {
             var _a, _b, _c;
-            if (optionsOrLogLevel === void 0) { optionsOrLogLevel = { logLevel: DiagLogLevel.INFO }; }
             if (logger === self) {
                 // There isn't much we can do here.
                 // Logging to the console might break the user application.
                 // Try to log to self. If a logger was previously registered it will receive the log.
-                var err = new Error('Cannot use diag as the logger for itself. Please use a DiagLogger implementation like ConsoleDiagLogger or a custom implementation');
+                const err = new Error('Cannot use diag as the logger for itself. Please use a DiagLogger implementation like ConsoleDiagLogger or a custom implementation');
                 self.error((_a = err.stack) !== null && _a !== void 0 ? _a : err.message);
                 return false;
             }
@@ -45598,21 +48869,21 @@ var DiagAPI = /** @class */ (function () {
                     logLevel: optionsOrLogLevel,
                 };
             }
-            var oldLogger = getGlobal('diag');
-            var newLogger = createLogLevelDiagLogger((_b = optionsOrLogLevel.logLevel) !== null && _b !== void 0 ? _b : DiagLogLevel.INFO, logger);
+            const oldLogger = getGlobal('diag');
+            const newLogger = createLogLevelDiagLogger((_b = optionsOrLogLevel.logLevel) !== null && _b !== void 0 ? _b : DiagLogLevel.INFO, logger);
             // There already is an logger registered. We'll let it know before overwriting it.
             if (oldLogger && !optionsOrLogLevel.suppressOverrideMessage) {
-                var stack = (_c = new Error().stack) !== null && _c !== void 0 ? _c : '<failed to generate stacktrace>';
-                oldLogger.warn("Current logger will be overwritten from " + stack);
-                newLogger.warn("Current logger will overwrite one already registered from " + stack);
+                const stack = (_c = new Error().stack) !== null && _c !== void 0 ? _c : '<failed to generate stacktrace>';
+                oldLogger.warn(`Current logger will be overwritten from ${stack}`);
+                newLogger.warn(`Current logger will overwrite one already registered from ${stack}`);
             }
             return registerGlobal('diag', newLogger, self, true);
         };
         self.setLogger = setLogger;
-        self.disable = function () {
+        self.disable = () => {
             unregisterGlobal(API_NAME$4, self);
         };
-        self.createComponentLogger = function (options) {
+        self.createComponentLogger = (options) => {
             return new DiagComponentLogger(options);
         };
         self.verbose = _logProxy('verbose');
@@ -45621,156 +48892,68 @@ var DiagAPI = /** @class */ (function () {
         self.warn = _logProxy('warn');
         self.error = _logProxy('error');
     }
-    /** Get the singleton instance of the DiagAPI API */
-    DiagAPI.instance = function () {
-        if (!this._instance) {
-            this._instance = new DiagAPI();
-        }
-        return this._instance;
-    };
-    return DiagAPI;
-}());
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read$2 = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __values = (undefined && undefined.__values) || function(o) {
-    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-    if (m) return m.call(o);
-    if (o && typeof o.length === "number") return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-};
-var BaggageImpl = /** @class */ (function () {
-    function BaggageImpl(entries) {
+class BaggageImpl {
+    constructor(entries) {
         this._entries = entries ? new Map(entries) : new Map();
     }
-    BaggageImpl.prototype.getEntry = function (key) {
-        var entry = this._entries.get(key);
+    getEntry(key) {
+        const entry = this._entries.get(key);
         if (!entry) {
             return undefined;
         }
         return Object.assign({}, entry);
-    };
-    BaggageImpl.prototype.getAllEntries = function () {
-        return Array.from(this._entries.entries()).map(function (_a) {
-            var _b = __read$2(_a, 2), k = _b[0], v = _b[1];
-            return [k, v];
-        });
-    };
-    BaggageImpl.prototype.setEntry = function (key, entry) {
-        var newBaggage = new BaggageImpl(this._entries);
+    }
+    getAllEntries() {
+        return Array.from(this._entries.entries());
+    }
+    setEntry(key, entry) {
+        const newBaggage = new BaggageImpl(this._entries);
         newBaggage._entries.set(key, entry);
         return newBaggage;
-    };
-    BaggageImpl.prototype.removeEntry = function (key) {
-        var newBaggage = new BaggageImpl(this._entries);
+    }
+    removeEntry(key) {
+        const newBaggage = new BaggageImpl(this._entries);
         newBaggage._entries.delete(key);
         return newBaggage;
-    };
-    BaggageImpl.prototype.removeEntries = function () {
-        var e_1, _a;
-        var keys = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            keys[_i] = arguments[_i];
-        }
-        var newBaggage = new BaggageImpl(this._entries);
-        try {
-            for (var keys_1 = __values(keys), keys_1_1 = keys_1.next(); !keys_1_1.done; keys_1_1 = keys_1.next()) {
-                var key = keys_1_1.value;
-                newBaggage._entries.delete(key);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (keys_1_1 && !keys_1_1.done && (_a = keys_1.return)) _a.call(keys_1);
-            }
-            finally { if (e_1) throw e_1.error; }
+    }
+    removeEntries(...keys) {
+        const newBaggage = new BaggageImpl(this._entries);
+        for (const key of keys) {
+            newBaggage._entries.delete(key);
         }
         return newBaggage;
-    };
-    BaggageImpl.prototype.clear = function () {
+    }
+    clear() {
         return new BaggageImpl();
-    };
-    return BaggageImpl;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * Symbol used to make BaggageEntryMetadata an opaque type
  */
-var baggageEntryMetadataSymbol = Symbol('BaggageEntryMetadata');
+const baggageEntryMetadataSymbol = Symbol('BaggageEntryMetadata');
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var diag$1 = DiagAPI.instance();
+const diag$1 = DiagAPI.instance();
 /**
  * Create a new Baggage with optional entries
  *
  * @param entries An array of baggage entries the new baggage should contain
  */
-function createBaggage(entries) {
-    if (entries === void 0) { entries = {}; }
+function createBaggage(entries = {}) {
     return new BaggageImpl(new Map(Object.entries(entries)));
 }
 /**
@@ -45778,15 +48961,16 @@ function createBaggage(entries) {
  *
  * @param str string metadata. Format is currently not defined by the spec and has no special meaning.
  *
+ * @since 1.0.0
  */
 function baggageEntryMetadataFromString(str) {
     if (typeof str !== 'string') {
-        diag$1.error("Cannot create baggage metadata from unknown type: " + typeof str);
+        diag$1.error(`Cannot create baggage metadata from unknown type: ${typeof str}`);
         str = '';
     }
     return {
         __TYPE__: baggageEntryMetadataSymbol,
-        toString: function () {
+        toString() {
             return str;
         },
     };
@@ -45794,20 +48978,13 @@ function baggageEntryMetadataFromString(str) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-/** Get a key to uniquely identify a context value */
+/**
+ * Get a key to uniquely identify a context value
+ *
+ * @since 1.0.0
+ */
 function createContextKey(description) {
     // The specification states that for the same input, multiple calls should
     // return different keys. Due to the nature of the JS dependency management
@@ -45817,257 +48994,204 @@ function createContextKey(description) {
     // Therefore, we use Symbol.for which returns the same key for the same input.
     return Symbol.for(description);
 }
-var BaseContext = /** @class */ (function () {
+class BaseContext {
     /**
      * Construct a new context which inherits values from an optional parent context.
      *
      * @param parentContext a context from which to inherit values
      */
-    function BaseContext(parentContext) {
+    constructor(parentContext) {
         // for minification
-        var self = this;
+        const self = this;
         self._currentContext = parentContext ? new Map(parentContext) : new Map();
-        self.getValue = function (key) { return self._currentContext.get(key); };
-        self.setValue = function (key, value) {
-            var context = new BaseContext(self._currentContext);
+        self.getValue = (key) => self._currentContext.get(key);
+        self.setValue = (key, value) => {
+            const context = new BaseContext(self._currentContext);
             context._currentContext.set(key, value);
             return context;
         };
-        self.deleteValue = function (key) {
-            var context = new BaseContext(self._currentContext);
+        self.deleteValue = (key) => {
+            const context = new BaseContext(self._currentContext);
             context._currentContext.delete(key);
             return context;
         };
     }
-    return BaseContext;
-}());
-/** The root context is used as the default parent context when there is no active context */
-var ROOT_CONTEXT = new BaseContext();
+}
+/**
+ * The root context is used as the default parent context when there is no active context
+ *
+ * @since 1.0.0
+ */
+const ROOT_CONTEXT = new BaseContext();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var consoleMap = [
+const consoleMap = [
     { n: 'error', c: 'error' },
     { n: 'warn', c: 'warn' },
     { n: 'info', c: 'info' },
     { n: 'debug', c: 'debug' },
     { n: 'verbose', c: 'trace' },
 ];
+// Save original console methods at module load time, before any instrumentation
+// can wrap them. This ensures DiagConsoleLogger calls the unwrapped originals.
+// Exported for testing only — not part of the public API.
+const _originalConsoleMethods = {};
+if (typeof console !== 'undefined') {
+    const keys = [
+        'error',
+        'warn',
+        'info',
+        'debug',
+        'trace',
+        'log',
+    ];
+    for (const key of keys) {
+        // eslint-disable-next-line no-console
+        if (typeof console[key] === 'function') {
+            // eslint-disable-next-line no-console
+            _originalConsoleMethods[key] = console[key];
+        }
+    }
+}
 /**
  * A simple Immutable Console based diagnostic logger which will output any messages to the Console.
  * If you want to limit the amount of logging to a specific level or lower use the
  * {@link createLogLevelDiagLogger}
+ *
+ * @since 1.0.0
  */
-var DiagConsoleLogger = /** @class */ (function () {
-    function DiagConsoleLogger() {
+class DiagConsoleLogger {
+    constructor() {
         function _consoleFunc(funcName) {
-            return function () {
-                var args = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i] = arguments[_i];
+            return function (...args) {
+                // Prefer original (pre-instrumentation) methods saved at module load time.
+                let theFunc = _originalConsoleMethods[funcName];
+                // Some environments only expose the console when the F12 developer console is open
+                if (typeof theFunc !== 'function') {
+                    theFunc = _originalConsoleMethods['log'];
                 }
-                if (console) {
-                    // Some environments only expose the console when the F12 developer console is open
+                // Fall back in case console was not available at module load time but became available later.
+                if (typeof theFunc !== 'function' && console) {
                     // eslint-disable-next-line no-console
-                    var theFunc = console[funcName];
+                    theFunc = console[funcName];
                     if (typeof theFunc !== 'function') {
-                        // Not all environments support all functions
                         // eslint-disable-next-line no-console
                         theFunc = console.log;
                     }
-                    // One last final check
-                    if (typeof theFunc === 'function') {
-                        return theFunc.apply(console, args);
-                    }
+                }
+                if (typeof theFunc === 'function') {
+                    return theFunc.apply(console, args);
                 }
             };
         }
-        for (var i = 0; i < consoleMap.length; i++) {
+        for (let i = 0; i < consoleMap.length; i++) {
             this[consoleMap[i].n] = _consoleFunc(consoleMap[i].c);
         }
     }
-    return DiagConsoleLogger;
-}());
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __extends$1 = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 /**
  * NoopMeter is a noop implementation of the {@link Meter} interface. It reuses
  * constant NoopMetrics for all of its methods.
  */
-var NoopMeter = /** @class */ (function () {
-    function NoopMeter() {
-    }
+class NoopMeter {
+    constructor() { }
     /**
      * @see {@link Meter.createGauge}
      */
-    NoopMeter.prototype.createGauge = function (_name, _options) {
+    createGauge(_name, _options) {
         return NOOP_GAUGE_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createHistogram}
      */
-    NoopMeter.prototype.createHistogram = function (_name, _options) {
+    createHistogram(_name, _options) {
         return NOOP_HISTOGRAM_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createCounter}
      */
-    NoopMeter.prototype.createCounter = function (_name, _options) {
+    createCounter(_name, _options) {
         return NOOP_COUNTER_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createUpDownCounter}
      */
-    NoopMeter.prototype.createUpDownCounter = function (_name, _options) {
+    createUpDownCounter(_name, _options) {
         return NOOP_UP_DOWN_COUNTER_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createObservableGauge}
      */
-    NoopMeter.prototype.createObservableGauge = function (_name, _options) {
+    createObservableGauge(_name, _options) {
         return NOOP_OBSERVABLE_GAUGE_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createObservableCounter}
      */
-    NoopMeter.prototype.createObservableCounter = function (_name, _options) {
+    createObservableCounter(_name, _options) {
         return NOOP_OBSERVABLE_COUNTER_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createObservableUpDownCounter}
      */
-    NoopMeter.prototype.createObservableUpDownCounter = function (_name, _options) {
+    createObservableUpDownCounter(_name, _options) {
         return NOOP_OBSERVABLE_UP_DOWN_COUNTER_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.addBatchObservableCallback}
      */
-    NoopMeter.prototype.addBatchObservableCallback = function (_callback, _observables) { };
+    addBatchObservableCallback(_callback, _observables) { }
     /**
      * @see {@link Meter.removeBatchObservableCallback}
      */
-    NoopMeter.prototype.removeBatchObservableCallback = function (_callback) { };
-    return NoopMeter;
-}());
-var NoopMetric = /** @class */ (function () {
-    function NoopMetric() {
-    }
-    return NoopMetric;
-}());
-var NoopCounterMetric = /** @class */ (function (_super) {
-    __extends$1(NoopCounterMetric, _super);
-    function NoopCounterMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    NoopCounterMetric.prototype.add = function (_value, _attributes) { };
-    return NoopCounterMetric;
-}(NoopMetric));
-var NoopUpDownCounterMetric = /** @class */ (function (_super) {
-    __extends$1(NoopUpDownCounterMetric, _super);
-    function NoopUpDownCounterMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    NoopUpDownCounterMetric.prototype.add = function (_value, _attributes) { };
-    return NoopUpDownCounterMetric;
-}(NoopMetric));
-var NoopGaugeMetric = /** @class */ (function (_super) {
-    __extends$1(NoopGaugeMetric, _super);
-    function NoopGaugeMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    NoopGaugeMetric.prototype.record = function (_value, _attributes) { };
-    return NoopGaugeMetric;
-}(NoopMetric));
-var NoopHistogramMetric = /** @class */ (function (_super) {
-    __extends$1(NoopHistogramMetric, _super);
-    function NoopHistogramMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    NoopHistogramMetric.prototype.record = function (_value, _attributes) { };
-    return NoopHistogramMetric;
-}(NoopMetric));
-var NoopObservableMetric = /** @class */ (function () {
-    function NoopObservableMetric() {
-    }
-    NoopObservableMetric.prototype.addCallback = function (_callback) { };
-    NoopObservableMetric.prototype.removeCallback = function (_callback) { };
-    return NoopObservableMetric;
-}());
-var NoopObservableCounterMetric = /** @class */ (function (_super) {
-    __extends$1(NoopObservableCounterMetric, _super);
-    function NoopObservableCounterMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return NoopObservableCounterMetric;
-}(NoopObservableMetric));
-var NoopObservableGaugeMetric = /** @class */ (function (_super) {
-    __extends$1(NoopObservableGaugeMetric, _super);
-    function NoopObservableGaugeMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return NoopObservableGaugeMetric;
-}(NoopObservableMetric));
-var NoopObservableUpDownCounterMetric = /** @class */ (function (_super) {
-    __extends$1(NoopObservableUpDownCounterMetric, _super);
-    function NoopObservableUpDownCounterMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return NoopObservableUpDownCounterMetric;
-}(NoopObservableMetric));
-var NOOP_METER = new NoopMeter();
+    removeBatchObservableCallback(_callback) { }
+}
+class NoopMetric {
+}
+class NoopCounterMetric extends NoopMetric {
+    add(_value, _attributes) { }
+}
+class NoopUpDownCounterMetric extends NoopMetric {
+    add(_value, _attributes) { }
+}
+class NoopGaugeMetric extends NoopMetric {
+    record(_value, _attributes) { }
+}
+class NoopHistogramMetric extends NoopMetric {
+    record(_value, _attributes) { }
+}
+class NoopObservableMetric {
+    addCallback(_callback) { }
+    removeCallback(_callback) { }
+}
+class NoopObservableCounterMetric extends NoopObservableMetric {
+}
+class NoopObservableGaugeMetric extends NoopObservableMetric {
+}
+class NoopObservableUpDownCounterMetric extends NoopObservableMetric {
+}
+const NOOP_METER = new NoopMeter();
 // Synchronous instruments
-var NOOP_COUNTER_METRIC = new NoopCounterMetric();
-var NOOP_GAUGE_METRIC = new NoopGaugeMetric();
-var NOOP_HISTOGRAM_METRIC = new NoopHistogramMetric();
-var NOOP_UP_DOWN_COUNTER_METRIC = new NoopUpDownCounterMetric();
+const NOOP_COUNTER_METRIC = new NoopCounterMetric();
+const NOOP_GAUGE_METRIC = new NoopGaugeMetric();
+const NOOP_HISTOGRAM_METRIC = new NoopHistogramMetric();
+const NOOP_UP_DOWN_COUNTER_METRIC = new NoopUpDownCounterMetric();
 // Asynchronous instruments
-var NOOP_OBSERVABLE_COUNTER_METRIC = new NoopObservableCounterMetric();
-var NOOP_OBSERVABLE_GAUGE_METRIC = new NoopObservableGaugeMetric();
-var NOOP_OBSERVABLE_UP_DOWN_COUNTER_METRIC = new NoopObservableUpDownCounterMetric();
+const NOOP_OBSERVABLE_COUNTER_METRIC = new NoopObservableCounterMetric();
+const NOOP_OBSERVABLE_GAUGE_METRIC = new NoopObservableGaugeMetric();
+const NOOP_OBSERVABLE_UP_DOWN_COUNTER_METRIC = new NoopObservableUpDownCounterMetric();
 /**
  * Create a no-op Meter
+ *
+ * @since 1.3.0
  */
 function createNoopMeter() {
     return NOOP_METER;
@@ -46075,20 +49199,13 @@ function createNoopMeter() {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-/** The Type of value. It describes how the data is reported. */
+/**
+ * The Type of value. It describes how the data is reported.
+ *
+ * @since 1.3.0
+ */
 var ValueType;
 (function (ValueType) {
     ValueType[ValueType["INT"] = 0] = "INT";
@@ -46097,35 +49214,30 @@ var ValueType;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var defaultTextMapGetter = {
-    get: function (carrier, key) {
+/**
+ * @since 1.0.0
+ */
+const defaultTextMapGetter = {
+    get(carrier, key) {
         if (carrier == null) {
             return undefined;
         }
         return carrier[key];
     },
-    keys: function (carrier) {
+    keys(carrier) {
         if (carrier == null) {
             return [];
         }
         return Object.keys(carrier);
     },
 };
-var defaultTextMapSetter = {
-    set: function (carrier, key, value) {
+/**
+ * @since 1.0.0
+ */
+const defaultTextMapSetter = {
+    set(carrier, key, value) {
         if (carrier == null) {
             return;
         }
@@ -46135,139 +49247,61 @@ var defaultTextMapSetter = {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read$1 = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __spreadArray$1 = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-var NoopContextManager = /** @class */ (function () {
-    function NoopContextManager() {
-    }
-    NoopContextManager.prototype.active = function () {
+class NoopContextManager {
+    active() {
         return ROOT_CONTEXT;
-    };
-    NoopContextManager.prototype.with = function (_context, fn, thisArg) {
-        var args = [];
-        for (var _i = 3; _i < arguments.length; _i++) {
-            args[_i - 3] = arguments[_i];
-        }
-        return fn.call.apply(fn, __spreadArray$1([thisArg], __read$1(args), false));
-    };
-    NoopContextManager.prototype.bind = function (_context, target) {
+    }
+    with(_context, fn, thisArg, ...args) {
+        return fn.call(thisArg, ...args);
+    }
+    bind(_context, target) {
         return target;
-    };
-    NoopContextManager.prototype.enable = function () {
+    }
+    enable() {
         return this;
-    };
-    NoopContextManager.prototype.disable = function () {
+    }
+    disable() {
         return this;
-    };
-    return NoopContextManager;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-var API_NAME$3 = 'context';
-var NOOP_CONTEXT_MANAGER = new NoopContextManager();
+const API_NAME$3 = 'context';
+const NOOP_CONTEXT_MANAGER = new NoopContextManager();
 /**
  * Singleton object which represents the entry point to the OpenTelemetry Context API
+ *
+ * @since 1.0.0
  */
-var ContextAPI = /** @class */ (function () {
+class ContextAPI {
     /** Empty private constructor prevents end users from constructing a new instance of the API */
-    function ContextAPI() {
-    }
+    constructor() { }
     /** Get the singleton instance of the Context API */
-    ContextAPI.getInstance = function () {
+    static getInstance() {
         if (!this._instance) {
             this._instance = new ContextAPI();
         }
         return this._instance;
-    };
+    }
     /**
      * Set the current context manager.
      *
      * @returns true if the context manager was successfully registered, else false
      */
-    ContextAPI.prototype.setGlobalContextManager = function (contextManager) {
+    setGlobalContextManager(contextManager) {
         return registerGlobal(API_NAME$3, contextManager, DiagAPI.instance());
-    };
+    }
     /**
      * Get the currently active context
      */
-    ContextAPI.prototype.active = function () {
+    active() {
         return this._getContextManager().active();
-    };
+    }
     /**
      * Execute a function with an active context
      *
@@ -46276,48 +49310,34 @@ var ContextAPI = /** @class */ (function () {
      * @param thisArg optional receiver to be used for calling fn
      * @param args optional arguments forwarded to fn
      */
-    ContextAPI.prototype.with = function (context, fn, thisArg) {
-        var _a;
-        var args = [];
-        for (var _i = 3; _i < arguments.length; _i++) {
-            args[_i - 3] = arguments[_i];
-        }
-        return (_a = this._getContextManager()).with.apply(_a, __spreadArray([context, fn, thisArg], __read(args), false));
-    };
+    with(context, fn, thisArg, ...args) {
+        return this._getContextManager().with(context, fn, thisArg, ...args);
+    }
     /**
      * Bind a context to a target function or event emitter
      *
      * @param context context to bind to the event emitter or function. Defaults to the currently active context
      * @param target function or event emitter to bind
      */
-    ContextAPI.prototype.bind = function (context, target) {
+    bind(context, target) {
         return this._getContextManager().bind(context, target);
-    };
-    ContextAPI.prototype._getContextManager = function () {
+    }
+    _getContextManager() {
         return getGlobal(API_NAME$3) || NOOP_CONTEXT_MANAGER;
-    };
+    }
     /** Disable and remove the global context manager */
-    ContextAPI.prototype.disable = function () {
+    disable() {
         this._getContextManager().disable();
         unregisterGlobal(API_NAME$3, DiagAPI.instance());
-    };
-    return ContextAPI;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @since 1.0.0
  */
 var TraceFlags;
 (function (TraceFlags) {
@@ -46329,22 +49349,20 @@ var TraceFlags;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var INVALID_SPANID = '0000000000000000';
-var INVALID_TRACEID = '00000000000000000000000000000000';
-var INVALID_SPAN_CONTEXT = {
+/**
+ * @since 1.0.0
+ */
+const INVALID_SPANID = '0000000000000000';
+/**
+ * @since 1.0.0
+ */
+const INVALID_TRACEID = '00000000000000000000000000000000';
+/**
+ * @since 1.0.0
+ */
+const INVALID_SPAN_CONTEXT = {
     traceId: INVALID_TRACEID,
     spanId: INVALID_SPANID,
     traceFlags: TraceFlags.NONE,
@@ -46352,89 +49370,65 @@ var INVALID_SPAN_CONTEXT = {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * The NonRecordingSpan is the default {@link Span} that is used when no Span
  * implementation is available. All operations are no-op including context
  * propagation.
  */
-var NonRecordingSpan = /** @class */ (function () {
-    function NonRecordingSpan(_spanContext) {
-        if (_spanContext === void 0) { _spanContext = INVALID_SPAN_CONTEXT; }
-        this._spanContext = _spanContext;
+class NonRecordingSpan {
+    constructor(spanContext = INVALID_SPAN_CONTEXT) {
+        this._spanContext = spanContext;
     }
     // Returns a SpanContext.
-    NonRecordingSpan.prototype.spanContext = function () {
+    spanContext() {
         return this._spanContext;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.setAttribute = function (_key, _value) {
+    setAttribute(_key, _value) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.setAttributes = function (_attributes) {
+    setAttributes(_attributes) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.addEvent = function (_name, _attributes) {
+    addEvent(_name, _attributes) {
         return this;
-    };
-    NonRecordingSpan.prototype.addLink = function (_link) {
+    }
+    addLink(_link) {
         return this;
-    };
-    NonRecordingSpan.prototype.addLinks = function (_links) {
+    }
+    addLinks(_links) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.setStatus = function (_status) {
+    setStatus(_status) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.updateName = function (_name) {
+    updateName(_name) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.end = function (_endTime) { };
+    end(_endTime) { }
     // isRecording always returns false for NonRecordingSpan.
-    NonRecordingSpan.prototype.isRecording = function () {
+    isRecording() {
         return false;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.recordException = function (_exception, _time) { };
-    return NonRecordingSpan;
-}());
+    recordException(_exception, _time) { }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * span key
  */
-var SPAN_KEY = createContextKey('OpenTelemetry Context Key SPAN');
+const SPAN_KEY = createContextKey('OpenTelemetry Context Key SPAN');
 /**
  * Return the span if one exists
  *
@@ -46488,30 +49482,47 @@ function getSpanContext(context) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var VALID_TRACEID_REGEX = /^([0-9a-f]{32})$/i;
-var VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i;
-function isValidTraceId(traceId) {
-    return VALID_TRACEID_REGEX.test(traceId) && traceId !== INVALID_TRACEID;
+// Valid characters (0-9, a-f, A-F) are marked as 1.
+const isHex = new Uint8Array([
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+]);
+function isValidHex(id, length) {
+    // As of 1.9.0 the id was allowed to be a non-string value,
+    // even though it was not possible in the types.
+    if (typeof id !== 'string' || id.length !== length)
+        return false;
+    let r = 0;
+    for (let i = 0; i < id.length; i += 4) {
+        r +=
+            (isHex[id.charCodeAt(i)] | 0) +
+                (isHex[id.charCodeAt(i + 1)] | 0) +
+                (isHex[id.charCodeAt(i + 2)] | 0) +
+                (isHex[id.charCodeAt(i + 3)] | 0);
+    }
+    return r === length;
 }
+/**
+ * @since 1.0.0
+ */
+function isValidTraceId(traceId) {
+    return isValidHex(traceId, 32) && traceId !== INVALID_TRACEID;
+}
+/**
+ * @since 1.0.0
+ */
 function isValidSpanId(spanId) {
-    return VALID_SPANID_REGEX.test(spanId) && spanId !== INVALID_SPANID;
+    return isValidHex(spanId, 16) && spanId !== INVALID_SPANID;
 }
 /**
  * Returns true if this {@link SpanContext} is valid.
  * @return true if this {@link SpanContext} is valid.
+ *
+ * @since 1.0.0
  */
 function isSpanContextValid(spanContext) {
     return (isValidTraceId(spanContext.traceId) && isValidSpanId(spanContext.spanId));
@@ -46528,34 +49539,20 @@ function wrapSpanContext(spanContext) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var contextApi = ContextAPI.getInstance();
+const contextApi = ContextAPI.getInstance();
 /**
  * No-op implementations of {@link Tracer}.
  */
-var NoopTracer = /** @class */ (function () {
-    function NoopTracer() {
-    }
+class NoopTracer {
     // startSpan starts a noop span.
-    NoopTracer.prototype.startSpan = function (name, options, context) {
-        if (context === void 0) { context = contextApi.active(); }
-        var root = Boolean(options === null || options === void 0 ? void 0 : options.root);
+    startSpan(name, options, context = contextApi.active()) {
+        const root = Boolean(options === null || options === void 0 ? void 0 : options.root);
         if (root) {
             return new NonRecordingSpan();
         }
-        var parentFromContext = context && getSpanContext(context);
+        const parentFromContext = context && getSpanContext(context);
         if (isSpanContext(parentFromContext) &&
             isSpanContextValid(parentFromContext)) {
             return new NonRecordingSpan(parentFromContext);
@@ -46563,11 +49560,11 @@ var NoopTracer = /** @class */ (function () {
         else {
             return new NonRecordingSpan();
         }
-    };
-    NoopTracer.prototype.startActiveSpan = function (name, arg2, arg3, arg4) {
-        var opts;
-        var ctx;
-        var fn;
+    }
+    startActiveSpan(name, arg2, arg3, arg4) {
+        let opts;
+        let ctx;
+        let fn;
         if (arguments.length < 2) {
             return;
         }
@@ -46583,85 +49580,67 @@ var NoopTracer = /** @class */ (function () {
             ctx = arg3;
             fn = arg4;
         }
-        var parentContext = ctx !== null && ctx !== void 0 ? ctx : contextApi.active();
-        var span = this.startSpan(name, opts, parentContext);
-        var contextWithSpanSet = setSpan(parentContext, span);
+        const parentContext = ctx !== null && ctx !== void 0 ? ctx : contextApi.active();
+        const span = this.startSpan(name, opts, parentContext);
+        const contextWithSpanSet = setSpan(parentContext, span);
         return contextApi.with(contextWithSpanSet, fn, undefined, span);
-    };
-    return NoopTracer;
-}());
+    }
+}
 function isSpanContext(spanContext) {
-    return (typeof spanContext === 'object' &&
+    return (spanContext !== null &&
+        typeof spanContext === 'object' &&
+        'spanId' in spanContext &&
         typeof spanContext['spanId'] === 'string' &&
+        'traceId' in spanContext &&
         typeof spanContext['traceId'] === 'string' &&
+        'traceFlags' in spanContext &&
         typeof spanContext['traceFlags'] === 'number');
 }
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var NOOP_TRACER = new NoopTracer();
+const NOOP_TRACER = new NoopTracer();
 /**
  * Proxy tracer provided by the proxy tracer provider
+ *
+ * @since 1.0.0
  */
-var ProxyTracer = /** @class */ (function () {
-    function ProxyTracer(_provider, name, version, options) {
-        this._provider = _provider;
+class ProxyTracer {
+    constructor(provider, name, version, options) {
+        this._provider = provider;
         this.name = name;
         this.version = version;
         this.options = options;
     }
-    ProxyTracer.prototype.startSpan = function (name, options, context) {
+    startSpan(name, options, context) {
         return this._getTracer().startSpan(name, options, context);
-    };
-    ProxyTracer.prototype.startActiveSpan = function (_name, _options, _context, _fn) {
-        var tracer = this._getTracer();
+    }
+    startActiveSpan(_name, _options, _context, _fn) {
+        const tracer = this._getTracer();
         return Reflect.apply(tracer.startActiveSpan, tracer, arguments);
-    };
+    }
     /**
      * Try to get a tracer from the proxy tracer provider.
      * If the proxy tracer provider has no delegate, return a noop tracer.
      */
-    ProxyTracer.prototype._getTracer = function () {
+    _getTracer() {
         if (this._delegate) {
             return this._delegate;
         }
-        var tracer = this._provider.getDelegateTracer(this.name, this.version, this.options);
+        const tracer = this._provider.getDelegateTracer(this.name, this.version, this.options);
         if (!tracer) {
             return NOOP_TRACER;
         }
         this._delegate = tracer;
         return this._delegate;
-    };
-    return ProxyTracer;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * An implementation of the {@link TracerProvider} which returns an impotent
@@ -46669,31 +49648,17 @@ var ProxyTracer = /** @class */ (function () {
  *
  * All operations are no-op.
  */
-var NoopTracerProvider = /** @class */ (function () {
-    function NoopTracerProvider() {
-    }
-    NoopTracerProvider.prototype.getTracer = function (_name, _version, _options) {
+class NoopTracerProvider {
+    getTracer(_name, _version, _options) {
         return new NoopTracer();
-    };
-    return NoopTracerProvider;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var NOOP_TRACER_PROVIDER = new NoopTracerProvider();
+const NOOP_TRACER_PROVIDER = new NoopTracerProvider();
 /**
  * Tracer provider which provides {@link ProxyTracer}s.
  *
@@ -46701,53 +49666,44 @@ var NOOP_TRACER_PROVIDER = new NoopTracerProvider();
  *   When a delegate is set, traces are provided from the delegate.
  *   When a delegate is set after tracers have already been provided,
  *   all tracers already provided will use the provided delegate implementation.
+ *
+ * @deprecated This will be removed in the next major version.
+ * @since 1.0.0
  */
-var ProxyTracerProvider = /** @class */ (function () {
-    function ProxyTracerProvider() {
-    }
+class ProxyTracerProvider {
     /**
      * Get a {@link ProxyTracer}
      */
-    ProxyTracerProvider.prototype.getTracer = function (name, version, options) {
+    getTracer(name, version, options) {
         var _a;
         return ((_a = this.getDelegateTracer(name, version, options)) !== null && _a !== void 0 ? _a : new ProxyTracer(this, name, version, options));
-    };
-    ProxyTracerProvider.prototype.getDelegate = function () {
+    }
+    getDelegate() {
         var _a;
         return (_a = this._delegate) !== null && _a !== void 0 ? _a : NOOP_TRACER_PROVIDER;
-    };
+    }
     /**
      * Set the delegate tracer provider
      */
-    ProxyTracerProvider.prototype.setDelegate = function (delegate) {
+    setDelegate(delegate) {
         this._delegate = delegate;
-    };
-    ProxyTracerProvider.prototype.getDelegateTracer = function (name, version, options) {
+    }
+    getDelegateTracer(name, version, options) {
         var _a;
         return (_a = this._delegate) === null || _a === void 0 ? void 0 : _a.getTracer(name, version, options);
-    };
-    return ProxyTracerProvider;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * @deprecated use the one declared in @opentelemetry/sdk-trace-base instead.
  * A sampling decision that determines how a {@link Span} will be recorded
  * and collected.
+ *
+ * @since 1.0.0
  */
 var SamplingDecision$1;
 (function (SamplingDecision) {
@@ -46770,18 +49726,10 @@ var SamplingDecision$1;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @since 1.0.0
  */
 var SpanKind;
 (function (SpanKind) {
@@ -46811,8 +49759,14 @@ var SpanKind;
     SpanKind[SpanKind["CONSUMER"] = 4] = "CONSUMER";
 })(SpanKind || (SpanKind = {}));
 
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /**
  * An enumeration of status codes.
+ *
+ * @since 1.0.0
  */
 var SpanStatusCode;
 (function (SpanStatusCode) {
@@ -46833,25 +49787,14 @@ var SpanStatusCode;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var VALID_KEY_CHAR_RANGE$1 = '[_0-9a-z-*/]';
-var VALID_KEY$1 = "[a-z]" + VALID_KEY_CHAR_RANGE$1 + "{0,255}";
-var VALID_VENDOR_KEY$1 = "[a-z0-9]" + VALID_KEY_CHAR_RANGE$1 + "{0,240}@[a-z]" + VALID_KEY_CHAR_RANGE$1 + "{0,13}";
-var VALID_KEY_REGEX$1 = new RegExp("^(?:" + VALID_KEY$1 + "|" + VALID_VENDOR_KEY$1 + ")$");
-var VALID_VALUE_BASE_REGEX$1 = /^[ -~]{0,255}[!-~]$/;
-var INVALID_VALUE_COMMA_EQUAL_REGEX$1 = /,|=/;
+const VALID_KEY_CHAR_RANGE$2 = '[_0-9a-z-*/]';
+const VALID_KEY$2 = `[a-z]${VALID_KEY_CHAR_RANGE$2}{0,255}`;
+const VALID_VENDOR_KEY$2 = `[a-z0-9]${VALID_KEY_CHAR_RANGE$2}{0,240}@[a-z]${VALID_KEY_CHAR_RANGE$2}{0,13}`;
+const VALID_KEY_REGEX$2 = new RegExp(`^(?:${VALID_KEY$2}|${VALID_VENDOR_KEY$2})$`);
+const VALID_VALUE_BASE_REGEX$2 = /^[ -~]{0,255}[!-~]$/;
+const INVALID_VALUE_COMMA_EQUAL_REGEX$2 = /,|=/;
 /**
  * Key is opaque string up to 256 characters printable. It MUST begin with a
  * lowercase letter, and can only contain lowercase letters a-z, digits 0-9,
@@ -46860,37 +49803,26 @@ var INVALID_VALUE_COMMA_EQUAL_REGEX$1 = /,|=/;
  * vendor name. Vendors SHOULD set the tenant ID at the beginning of the key.
  * see https://www.w3.org/TR/trace-context/#key
  */
-function validateKey$1(key) {
-    return VALID_KEY_REGEX$1.test(key);
+function validateKey$2(key) {
+    return VALID_KEY_REGEX$2.test(key);
 }
 /**
  * Value is opaque string up to 256 characters printable ASCII RFC0020
  * characters (i.e., the range 0x20 to 0x7E) except comma , and =.
  */
-function validateValue$1(value) {
-    return (VALID_VALUE_BASE_REGEX$1.test(value) &&
-        !INVALID_VALUE_COMMA_EQUAL_REGEX$1.test(value));
+function validateValue$2(value) {
+    return (VALID_VALUE_BASE_REGEX$2.test(value) &&
+        !INVALID_VALUE_COMMA_EQUAL_REGEX$2.test(value));
 }
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var MAX_TRACE_STATE_ITEMS$1 = 32;
-var MAX_TRACE_STATE_LEN$1 = 512;
-var LIST_MEMBERS_SEPARATOR$1 = ',';
-var LIST_MEMBER_KEY_VALUE_SPLITTER$1 = '=';
+const MAX_TRACE_STATE_ITEMS$2 = 32;
+const MAX_TRACE_STATE_LEN$2 = 512;
+const LIST_MEMBERS_SEPARATOR$2 = ',';
+const LIST_MEMBER_KEY_VALUE_SPLITTER$2 = '=';
 /**
  * TraceState must be a class and not a simple object type because of the spec
  * requirement (https://www.w3.org/TR/trace-context/#tracestate-field).
@@ -46900,89 +49832,81 @@ var LIST_MEMBER_KEY_VALUE_SPLITTER$1 = '=';
  * - The value of any key can be updated. Modified keys MUST be moved to the
  * beginning of the list.
  */
-var TraceStateImpl = /** @class */ (function () {
-    function TraceStateImpl(rawTraceState) {
+class TraceStateImpl {
+    constructor(rawTraceState) {
         this._internalState = new Map();
         if (rawTraceState)
             this._parse(rawTraceState);
     }
-    TraceStateImpl.prototype.set = function (key, value) {
+    set(key, value) {
         // TODO: Benchmark the different approaches(map vs list) and
         // use the faster one.
-        var traceState = this._clone();
+        const traceState = this._clone();
         if (traceState._internalState.has(key)) {
             traceState._internalState.delete(key);
         }
         traceState._internalState.set(key, value);
         return traceState;
-    };
-    TraceStateImpl.prototype.unset = function (key) {
-        var traceState = this._clone();
+    }
+    unset(key) {
+        const traceState = this._clone();
         traceState._internalState.delete(key);
         return traceState;
-    };
-    TraceStateImpl.prototype.get = function (key) {
+    }
+    get(key) {
         return this._internalState.get(key);
-    };
-    TraceStateImpl.prototype.serialize = function () {
-        var _this = this;
-        return this._keys()
-            .reduce(function (agg, key) {
-            agg.push(key + LIST_MEMBER_KEY_VALUE_SPLITTER$1 + _this.get(key));
+    }
+    serialize() {
+        return (Array.from(this._internalState.keys())
+            // Use reduceRight() because keys are stored in reverse insertion order.
+            .reduceRight((agg, key) => {
+            agg.push(key + LIST_MEMBER_KEY_VALUE_SPLITTER$2 + this.get(key));
             return agg;
         }, [])
-            .join(LIST_MEMBERS_SEPARATOR$1);
-    };
-    TraceStateImpl.prototype._parse = function (rawTraceState) {
-        if (rawTraceState.length > MAX_TRACE_STATE_LEN$1)
+            .join(LIST_MEMBERS_SEPARATOR$2));
+    }
+    _parse(rawTraceState) {
+        if (rawTraceState.length > MAX_TRACE_STATE_LEN$2)
             return;
         this._internalState = rawTraceState
-            .split(LIST_MEMBERS_SEPARATOR$1)
-            .reverse() // Store in reverse so new keys (.set(...)) will be placed at the beginning
-            .reduce(function (agg, part) {
-            var listMember = part.trim(); // Optional Whitespace (OWS) handling
-            var i = listMember.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER$1);
+            .split(LIST_MEMBERS_SEPARATOR$2)
+            // Use reduceRight() so new keys (.set(...)) will be placed at the beginning
+            .reduceRight((agg, part) => {
+            const listMember = part.trim(); // Optional Whitespace (OWS) handling
+            const i = listMember.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER$2);
             if (i !== -1) {
-                var key = listMember.slice(0, i);
-                var value = listMember.slice(i + 1, part.length);
-                if (validateKey$1(key) && validateValue$1(value)) {
+                const key = listMember.slice(0, i);
+                const value = listMember.slice(i + 1, part.length);
+                if (validateKey$2(key) && validateValue$2(value)) {
                     agg.set(key, value);
                 }
             }
             return agg;
         }, new Map());
         // Because of the reverse() requirement, trunc must be done after map is created
-        if (this._internalState.size > MAX_TRACE_STATE_ITEMS$1) {
+        if (this._internalState.size > MAX_TRACE_STATE_ITEMS$2) {
             this._internalState = new Map(Array.from(this._internalState.entries())
                 .reverse() // Use reverse same as original tracestate parse chain
-                .slice(0, MAX_TRACE_STATE_ITEMS$1));
+                .slice(0, MAX_TRACE_STATE_ITEMS$2));
         }
-    };
-    TraceStateImpl.prototype._keys = function () {
+    }
+    // @ts-expect-error TS6133 Accessed in tests only.
+    _keys() {
         return Array.from(this._internalState.keys()).reverse();
-    };
-    TraceStateImpl.prototype._clone = function () {
-        var traceState = new TraceStateImpl();
+    }
+    _clone() {
+        const traceState = new TraceStateImpl();
         traceState._internalState = new Map(this._internalState);
         return traceState;
-    };
-    return TraceStateImpl;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @since 1.1.0
  */
 function createTraceState(rawTraceState) {
     return new TraceStateImpl(rawTraceState);
@@ -46990,38 +49914,19 @@ function createTraceState(rawTraceState) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
-/** Entrypoint for context API */
-var context = ContextAPI.getInstance();
+/**
+ * Entrypoint for context API
+ * @since 1.0.0
+ */
+const context = ContextAPI.getInstance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
@@ -47030,166 +49935,109 @@ var context = ContextAPI.getInstance();
  * Defines Diagnostic handler used for internal diagnostic logging operations.
  * The default provides a Noop DiagLogger implementation which may be changed via the
  * diag.setLogger(logger: DiagLogger) function.
+ *
+ * @since 1.0.0
  */
-var diag = DiagAPI.instance();
+const diag = DiagAPI.instance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * An implementation of the {@link MeterProvider} which returns an impotent Meter
  * for all calls to `getMeter`
  */
-var NoopMeterProvider = /** @class */ (function () {
-    function NoopMeterProvider() {
-    }
-    NoopMeterProvider.prototype.getMeter = function (_name, _version, _options) {
+class NoopMeterProvider {
+    getMeter(_name, _version, _options) {
         return NOOP_METER;
-    };
-    return NoopMeterProvider;
-}());
-var NOOP_METER_PROVIDER = new NoopMeterProvider();
+    }
+}
+const NOOP_METER_PROVIDER = new NoopMeterProvider();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var API_NAME$2 = 'metrics';
+const API_NAME$2 = 'metrics';
 /**
  * Singleton object which represents the entry point to the OpenTelemetry Metrics API
  */
-var MetricsAPI = /** @class */ (function () {
+class MetricsAPI {
     /** Empty private constructor prevents end users from constructing a new instance of the API */
-    function MetricsAPI() {
-    }
+    constructor() { }
     /** Get the singleton instance of the Metrics API */
-    MetricsAPI.getInstance = function () {
+    static getInstance() {
         if (!this._instance) {
             this._instance = new MetricsAPI();
         }
         return this._instance;
-    };
+    }
     /**
      * Set the current global meter provider.
      * Returns true if the meter provider was successfully registered, else false.
      */
-    MetricsAPI.prototype.setGlobalMeterProvider = function (provider) {
+    setGlobalMeterProvider(provider) {
         return registerGlobal(API_NAME$2, provider, DiagAPI.instance());
-    };
+    }
     /**
      * Returns the global meter provider.
      */
-    MetricsAPI.prototype.getMeterProvider = function () {
+    getMeterProvider() {
         return getGlobal(API_NAME$2) || NOOP_METER_PROVIDER;
-    };
+    }
     /**
      * Returns a meter from the global meter provider.
      */
-    MetricsAPI.prototype.getMeter = function (name, version, options) {
+    getMeter(name, version, options) {
         return this.getMeterProvider().getMeter(name, version, options);
-    };
+    }
     /** Remove the global meter provider */
-    MetricsAPI.prototype.disable = function () {
+    disable() {
         unregisterGlobal(API_NAME$2, DiagAPI.instance());
-    };
-    return MetricsAPI;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
-/** Entrypoint for metrics API */
-var metrics = MetricsAPI.getInstance();
+/**
+ * Entrypoint for metrics API
+ *
+ * @since 1.3.0
+ */
+const metrics = MetricsAPI.getInstance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * No-op implementations of {@link TextMapPropagator}.
  */
-var NoopTextMapPropagator = /** @class */ (function () {
-    function NoopTextMapPropagator() {
-    }
+class NoopTextMapPropagator {
     /** Noop inject function does nothing */
-    NoopTextMapPropagator.prototype.inject = function (_context, _carrier) { };
+    inject(_context, _carrier) { }
     /** Noop extract function does nothing and returns the input context */
-    NoopTextMapPropagator.prototype.extract = function (context, _carrier) {
+    extract(context, _carrier) {
         return context;
-    };
-    NoopTextMapPropagator.prototype.fields = function () {
+    }
+    fields() {
         return [];
-    };
-    return NoopTextMapPropagator;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * Baggage key
  */
-var BAGGAGE_KEY = createContextKey('OpenTelemetry Baggage Key');
+const BAGGAGE_KEY = createContextKey('OpenTelemetry Baggage Key');
 /**
  * Retrieve the current baggage from the given context
  *
@@ -47227,27 +50075,18 @@ function deleteBaggage(context) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var API_NAME$1 = 'propagation';
-var NOOP_TEXT_MAP_PROPAGATOR = new NoopTextMapPropagator();
+const API_NAME$1 = 'propagation';
+const NOOP_TEXT_MAP_PROPAGATOR = new NoopTextMapPropagator();
 /**
  * Singleton object which represents the entry point to the OpenTelemetry Propagation API
+ *
+ * @since 1.0.0
  */
-var PropagationAPI = /** @class */ (function () {
+class PropagationAPI {
     /** Empty private constructor prevents end users from constructing a new instance of the API */
-    function PropagationAPI() {
+    constructor() {
         this.createBaggage = createBaggage;
         this.getBaggage = getBaggage;
         this.getActiveBaggage = getActiveBaggage;
@@ -47255,20 +50094,20 @@ var PropagationAPI = /** @class */ (function () {
         this.deleteBaggage = deleteBaggage;
     }
     /** Get the singleton instance of the Propagator API */
-    PropagationAPI.getInstance = function () {
+    static getInstance() {
         if (!this._instance) {
             this._instance = new PropagationAPI();
         }
         return this._instance;
-    };
+    }
     /**
      * Set the current propagator.
      *
      * @returns true if the propagator was successfully registered, else false
      */
-    PropagationAPI.prototype.setGlobalPropagator = function (propagator) {
+    setGlobalPropagator(propagator) {
         return registerGlobal(API_NAME$1, propagator, DiagAPI.instance());
-    };
+    }
     /**
      * Inject context into a carrier to be propagated inter-process
      *
@@ -47276,10 +50115,9 @@ var PropagationAPI = /** @class */ (function () {
      * @param carrier carrier to inject context into
      * @param setter Function used to set values on the carrier
      */
-    PropagationAPI.prototype.inject = function (context, carrier, setter) {
-        if (setter === void 0) { setter = defaultTextMapSetter; }
+    inject(context, carrier, setter = defaultTextMapSetter) {
         return this._getGlobalPropagator().inject(context, carrier, setter);
-    };
+    }
     /**
      * Extract context from a carrier
      *
@@ -47287,68 +50125,50 @@ var PropagationAPI = /** @class */ (function () {
      * @param carrier Carrier to extract context from
      * @param getter Function used to extract keys from a carrier
      */
-    PropagationAPI.prototype.extract = function (context, carrier, getter) {
-        if (getter === void 0) { getter = defaultTextMapGetter; }
+    extract(context, carrier, getter = defaultTextMapGetter) {
         return this._getGlobalPropagator().extract(context, carrier, getter);
-    };
+    }
     /**
      * Return a list of all fields which may be used by the propagator.
      */
-    PropagationAPI.prototype.fields = function () {
+    fields() {
         return this._getGlobalPropagator().fields();
-    };
+    }
     /** Remove the global propagator */
-    PropagationAPI.prototype.disable = function () {
+    disable() {
         unregisterGlobal(API_NAME$1, DiagAPI.instance());
-    };
-    PropagationAPI.prototype._getGlobalPropagator = function () {
+    }
+    _getGlobalPropagator() {
         return getGlobal(API_NAME$1) || NOOP_TEXT_MAP_PROPAGATOR;
-    };
-    return PropagationAPI;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
-/** Entrypoint for propagation API */
-var propagation = PropagationAPI.getInstance();
+/**
+ * Entrypoint for propagation API
+ *
+ * @since 1.0.0
+ */
+const propagation = PropagationAPI.getInstance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var API_NAME = 'trace';
+const API_NAME = 'trace';
 /**
  * Singleton object which represents the entry point to the OpenTelemetry Tracing API
+ *
+ * @since 1.0.0
  */
-var TraceAPI = /** @class */ (function () {
+class TraceAPI {
     /** Empty private constructor prevents end users from constructing a new instance of the API */
-    function TraceAPI() {
+    constructor() {
         this._proxyTracerProvider = new ProxyTracerProvider();
         this.wrapSpanContext = wrapSpanContext;
         this.isSpanContextValid = isSpanContextValid;
@@ -47360,86 +50180,67 @@ var TraceAPI = /** @class */ (function () {
         this.setSpanContext = setSpanContext;
     }
     /** Get the singleton instance of the Trace API */
-    TraceAPI.getInstance = function () {
+    static getInstance() {
         if (!this._instance) {
             this._instance = new TraceAPI();
         }
         return this._instance;
-    };
+    }
     /**
      * Set the current global tracer.
      *
      * @returns true if the tracer provider was successfully registered, else false
      */
-    TraceAPI.prototype.setGlobalTracerProvider = function (provider) {
-        var success = registerGlobal(API_NAME, this._proxyTracerProvider, DiagAPI.instance());
+    setGlobalTracerProvider(provider) {
+        const success = registerGlobal(API_NAME, this._proxyTracerProvider, DiagAPI.instance());
         if (success) {
             this._proxyTracerProvider.setDelegate(provider);
         }
         return success;
-    };
+    }
     /**
      * Returns the global tracer provider.
      */
-    TraceAPI.prototype.getTracerProvider = function () {
+    getTracerProvider() {
         return getGlobal(API_NAME) || this._proxyTracerProvider;
-    };
+    }
     /**
      * Returns a tracer from the global tracer provider.
      */
-    TraceAPI.prototype.getTracer = function (name, version) {
+    getTracer(name, version) {
         return this.getTracerProvider().getTracer(name, version);
-    };
+    }
     /** Remove the global tracer provider */
-    TraceAPI.prototype.disable = function () {
+    disable() {
         unregisterGlobal(API_NAME, DiagAPI.instance());
         this._proxyTracerProvider = new ProxyTracerProvider();
-    };
-    return TraceAPI;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
-/** Entrypoint for trace API */
-var trace = TraceAPI.getInstance();
+/**
+ * Entrypoint for trace API
+ *
+ * @since 1.0.0
+ */
+const trace = TraceAPI.getInstance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Default export.
 var index = {
-    context: context,
-    diag: diag,
-    metrics: metrics,
-    propagation: propagation,
-    trace: trace,
+    context,
+    diag,
+    metrics,
+    propagation,
+    trace,
 };
 
 var esm$4 = /*#__PURE__*/Object.freeze({
@@ -47754,6 +50555,108 @@ function toStepResult(conclusion) {
     }
 }
 
+/**
+ * Each report gets a wrapper span carrying that file's rollup, so a job with
+ * several JUnit files keeps them apart instead of one flat list of tests.
+ *
+ * JUnit reports carry durations but no per-test timestamps, so every test span
+ * is anchored at the job start; durations are exact, overlaps are expected
+ * (tests run in parallel anyway). The wrapper covers the job's own window.
+ */
+function traceTestReports(reports, job) {
+    const tracer = trace.getTracer("otel-cicd-export-action");
+    const startTime = new Date(job.started_at);
+    // Some skipped and post jobs report completed_at before started_at.
+    const endTime = new Date(Math.max(startTime.getTime(), new Date(job.completed_at).getTime()));
+    for (const report of reports) {
+        tracer.startActiveSpan(`Tests / ${report.name}`, { attributes: reportToAttributes(report, job), startTime, kind: SpanKind.INTERNAL }, (reportSpan) => {
+            for (const testCase of report.cases) {
+                traceTestCase(testCase, job, tracer, startTime);
+            }
+            reportSpan.end(endTime);
+        });
+    }
+}
+function traceTestCase(testCase, job, tracer, startTime) {
+    const span = tracer.startSpan(testCase.name, {
+        attributes: testCaseToAttributes(testCase, job),
+        startTime,
+        kind: SpanKind.INTERNAL,
+    });
+    if (testCase.status === "failed" || testCase.status === "error") {
+        span.setStatus({ code: SpanStatusCode.ERROR, ...(testCase.message ? { message: testCase.message } : {}) });
+        span.setAttribute(ATTR_ERROR_TYPE, testCase.status);
+        emitTestFailureLog(testCase, job, span, startTime);
+    }
+    span.end(new Date(startTime.getTime() + testCase.timeSeconds * 1000));
+}
+function reportToAttributes(report, job) {
+    const summary = summarizeTestCases(report.cases);
+    return {
+        "test.report": report.name,
+        "test.suites": summary.suites,
+        "test.total": summary.total,
+        "test.passed": summary.passed,
+        "test.failed": summary.failed,
+        "test.skipped": summary.skipped,
+        "test.errors": summary.errors,
+        "test.duration": summary.duration,
+        "github.job.id": job.id,
+        "github.job.name": job.name,
+        "github.run_id": job.run_id,
+        "github.run_attempt": job.run_attempt ?? 1,
+        "github.head_sha": job.head_sha,
+        ...(job.head_branch ? { "github.head_branch": job.head_branch } : {}),
+        error: summary.failed + summary.errors > 0,
+    };
+}
+/**
+ * Correlating the record with the test's span is what makes a red span show
+ * what the test printed. Only failures: passing-test stdout has no consumer
+ * and real volume.
+ */
+function emitTestFailureLog(testCase, job, span, startTime) {
+    const body = [testCase.message, testCase.output].filter(Boolean).join("\n");
+    if (!body) {
+        return;
+    }
+    const logger = logs.getLogger("otel-cicd-export-action");
+    logger.emit({
+        timestamp: startTime,
+        body,
+        severityNumber: SeverityNumber.ERROR,
+        severityText: "ERROR",
+        context: trace.setSpan(context.active(), span),
+        attributes: {
+            "test.name": testCase.name,
+            "test.classname": testCase.classname,
+            "test.suite": testCase.suite,
+            "test.status": testCase.status,
+            "github.job.id": job.id,
+            "github.job.name": job.name,
+        },
+    });
+}
+function testCaseToAttributes(testCase, job) {
+    return {
+        "test.name": testCase.name,
+        "test.classname": testCase.classname,
+        "test.suite": testCase.suite,
+        "test.status": testCase.status,
+        "test.duration_ms": Math.round(testCase.timeSeconds * 1000),
+        "test.leaf": testCase.leaf,
+        "test.collateral": testCase.collateral,
+        ...(testCase.message ? { "test.failure.message": testCase.message } : {}),
+        "github.job.id": job.id,
+        "github.job.name": job.name,
+        "github.run_id": job.run_id,
+        "github.run_attempt": job.run_attempt ?? 1,
+        "github.head_sha": job.head_sha,
+        ...(job.head_branch ? { "github.head_branch": job.head_branch } : {}),
+        error: testCase.status === "failed" || testCase.status === "error",
+    };
+}
+
 const GITHUB_LOG_LINE_REGEX = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s(.*)$/;
 /** 1-second buffer to account for API second precision vs sub-second log timestamps */
 const STEP_TIME_BUFFER_MS = 1000;
@@ -47854,7 +50757,7 @@ function emitJobLogs(logLines, jobId, jobName, conclusion, htmlUrl) {
         },
     });
 }
-function traceJob(job, annotations, jobLog) {
+function traceJob(job, annotations, jobLog, testReports) {
     const tracer = trace.getTracer("otel-cicd-export-action");
     if (!job.completed_at) {
         info(`Job ${job.id} is not completed yet`);
@@ -47884,6 +50787,9 @@ function traceJob(job, annotations, jobLog) {
         // Emit unmatched log lines at job level as fallback
         if (correlated && correlated.unmatched.length > 0) {
             emitJobLogs(correlated.unmatched, job.id, job.name, job.conclusion, job.html_url);
+        }
+        if (testReports && testReports.length > 0) {
+            traceTestReports(testReports, completedJob);
         }
         // Some skipped and post jobs return completed_at dates that are older than started_at
         span.end(new Date(Math.max(startTime.getTime(), completedTime.getTime())));
@@ -47965,7 +50871,7 @@ function annotationsToAttributes(annotations) {
     return attributes;
 }
 
-function traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs) {
+function traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs, testReportsByJobId) {
     const tracer = trace.getTracer("otel-cicd-export-action");
     const startTime = new Date(workflowRun.run_started_at ?? workflowRun.created_at);
     const attributes = {
@@ -48001,7 +50907,7 @@ function traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentCon
             }
         }
         for (const job of jobs) {
-            traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id]);
+            traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id], testReportsByJobId?.[job.id]);
         }
         rootSpan.end(new Date(workflowRun.updated_at));
         return rootSpan.spanContext().traceId;
@@ -48243,7 +51149,7 @@ function requireConstants () {
 	return constants;
 }
 
-var version$2 = "1.14.3";
+var version$2 = "1.14.4";
 var require$$12 = {
 	version: version$2};
 
@@ -48252,7 +51158,7 @@ var hasRequiredLogging;
 function requireLogging () {
 	if (hasRequiredLogging) return logging;
 	hasRequiredLogging = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2019 gRPC authors.
 		 *
@@ -48270,10 +51176,10 @@ function requireLogging () {
 		 *
 		 */
 		var _a, _b, _c, _d;
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.log = exports$1.setLoggerVerbosity = exports$1.setLogger = exports$1.getLogger = void 0;
-		exports$1.trace = trace;
-		exports$1.isTracerEnabled = isTracerEnabled;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.log = exports.setLoggerVerbosity = exports.setLogger = exports.getLogger = void 0;
+		exports.trace = trace;
+		exports.isTracerEnabled = isTracerEnabled;
 		const constants_1 = requireConstants();
 		const process_1 = process$1;
 		const clientVersion = require$$12.version;
@@ -48309,15 +51215,15 @@ function requireLogging () {
 		const getLogger = () => {
 		    return _logger;
 		};
-		exports$1.getLogger = getLogger;
+		exports.getLogger = getLogger;
 		const setLogger = (logger) => {
 		    _logger = logger;
 		};
-		exports$1.setLogger = setLogger;
+		exports.setLogger = setLogger;
 		const setLoggerVerbosity = (verbosity) => {
 		    _logVerbosity = verbosity;
 		};
-		exports$1.setLoggerVerbosity = setLoggerVerbosity;
+		exports.setLoggerVerbosity = setLoggerVerbosity;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const log = (severity, ...args) => {
 		    let logFunction;
@@ -48343,7 +51249,7 @@ function requireLogging () {
 		        }
 		    }
 		};
-		exports$1.log = log;
+		exports.log = log;
 		const tracersString = (_d = (_c = process.env.GRPC_NODE_TRACE) !== null && _c !== void 0 ? _c : process.env.GRPC_TRACE) !== null && _d !== void 0 ? _d : '';
 		const enabledTracers = new Set();
 		const disabledTracers = new Set();
@@ -48358,7 +51264,7 @@ function requireLogging () {
 		const allEnabled = enabledTracers.has('all');
 		function trace(severity, tracer, text) {
 		    if (isTracerEnabled(tracer)) {
-		        (0, exports$1.log)(severity, new Date().toISOString() +
+		        (0, exports.log)(severity, new Date().toISOString() +
 		            ' | v' +
 		            clientVersion +
 		            ' ' +
@@ -51070,7 +53976,7 @@ function requireSubchannelAddress () {
 	subchannelAddress.endpointEqual = endpointEqual;
 	subchannelAddress.endpointToString = endpointToString;
 	subchannelAddress.endpointHasAddress = endpointHasAddress;
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	function isTcpSubchannelAddress(address) {
 	    return 'port' in address;
 	}
@@ -52300,8 +55206,8 @@ function requireCall () {
 	Object.defineProperty(call, "__esModule", { value: true });
 	call.ClientDuplexStreamImpl = call.ClientWritableStreamImpl = call.ClientReadableStreamImpl = call.ClientUnaryCallImpl = void 0;
 	call.callErrorFromStatus = callErrorFromStatus;
-	const events_1 = require$$0$5;
-	const stream_1 = require$$0$6;
+	const events_1 = require$$0$4;
+	const stream_1 = require$$0$5;
 	const constants_1 = requireConstants();
 	/**
 	 * Construct a ServiceError from a StatusObject. This function exists primarily
@@ -54253,14 +57159,14 @@ var hasRequiredBase64;
 function requireBase64 () {
 	if (hasRequiredBase64) return base64;
 	hasRequiredBase64 = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * A minimal base64 implementation for number arrays.
 		 * @memberof util
 		 * @namespace
 		 */
-		var base64 = exports$1;
+		var base64 = exports;
 
 		/**
 		 * Calculates the byte length of a base64 encoded string.
@@ -54417,15 +57323,23 @@ function requireEventemitter () {
 	     * @type {Object.<string,*>}
 	     * @private
 	     */
-	    this._listeners = {};
+	    this._listeners = Object.create(null);
 	}
+
+	/**
+	 * Event listener as used by {@link util.EventEmitter}.
+	 * @typedef EventEmitterListener
+	 * @type {function}
+	 * @param {...*} args Arguments
+	 * @returns {undefined}
+	 */
 
 	/**
 	 * Registers an event listener.
 	 * @param {string} evt Event name
-	 * @param {function} fn Listener
+	 * @param {EventEmitterListener} fn Listener
 	 * @param {*} [ctx] Listener context
-	 * @returns {util.EventEmitter} `this`
+	 * @returns {this} `this`
 	 */
 	EventEmitter.prototype.on = function on(evt, fn, ctx) {
 	    (this._listeners[evt] || (this._listeners[evt] = [])).push({
@@ -54438,17 +57352,19 @@ function requireEventemitter () {
 	/**
 	 * Removes an event listener or any matching listeners if arguments are omitted.
 	 * @param {string} [evt] Event name. Removes all listeners if omitted.
-	 * @param {function} [fn] Listener to remove. Removes all listeners of `evt` if omitted.
-	 * @returns {util.EventEmitter} `this`
+	 * @param {EventEmitterListener} [fn] Listener to remove. Removes all listeners of `evt` if omitted.
+	 * @returns {this} `this`
 	 */
 	EventEmitter.prototype.off = function off(evt, fn) {
 	    if (evt === undefined)
-	        this._listeners = {};
+	        this._listeners = Object.create(null);
 	    else {
 	        if (fn === undefined)
 	            this._listeners[evt] = [];
 	        else {
 	            var listeners = this._listeners[evt];
+	            if (!listeners)
+	                return this;
 	            for (var i = 0; i < listeners.length;)
 	                if (listeners[i].fn === fn)
 	                    listeners.splice(i, 1);
@@ -54463,7 +57379,7 @@ function requireEventemitter () {
 	 * Emits an event by calling its listeners with the specified arguments.
 	 * @param {string} evt Event name
 	 * @param {...*} args Arguments
-	 * @returns {util.EventEmitter} `this`
+	 * @returns {this} `this`
 	 */
 	EventEmitter.prototype.emit = function emit(evt) {
 	    var listeners = this._listeners[evt];
@@ -54572,7 +57488,7 @@ function requireFloat () {
 	 */
 
 	// Factory function for the purpose of node-based testing in modified global environments
-	function factory(exports$1) {
+	function factory(exports) {
 
 	    // float: typed array
 	    if (typeof Float32Array !== "undefined") (function() {
@@ -54598,9 +57514,9 @@ function requireFloat () {
 	        }
 
 	        /* istanbul ignore next */
-	        exports$1.writeFloatLE = le ? writeFloat_f32_cpy : writeFloat_f32_rev;
+	        exports.writeFloatLE = le ? writeFloat_f32_cpy : writeFloat_f32_rev;
 	        /* istanbul ignore next */
-	        exports$1.writeFloatBE = le ? writeFloat_f32_rev : writeFloat_f32_cpy;
+	        exports.writeFloatBE = le ? writeFloat_f32_rev : writeFloat_f32_cpy;
 
 	        function readFloat_f32_cpy(buf, pos) {
 	            f8b[0] = buf[pos    ];
@@ -54619,9 +57535,9 @@ function requireFloat () {
 	        }
 
 	        /* istanbul ignore next */
-	        exports$1.readFloatLE = le ? readFloat_f32_cpy : readFloat_f32_rev;
+	        exports.readFloatLE = le ? readFloat_f32_cpy : readFloat_f32_rev;
 	        /* istanbul ignore next */
-	        exports$1.readFloatBE = le ? readFloat_f32_rev : readFloat_f32_cpy;
+	        exports.readFloatBE = le ? readFloat_f32_rev : readFloat_f32_cpy;
 
 	    // float: ieee754
 	    })(); else (function() {
@@ -54645,8 +57561,8 @@ function requireFloat () {
 	            }
 	        }
 
-	        exports$1.writeFloatLE = writeFloat_ieee754.bind(null, writeUintLE);
-	        exports$1.writeFloatBE = writeFloat_ieee754.bind(null, writeUintBE);
+	        exports.writeFloatLE = writeFloat_ieee754.bind(null, writeUintLE);
+	        exports.writeFloatBE = writeFloat_ieee754.bind(null, writeUintBE);
 
 	        function readFloat_ieee754(readUint, buf, pos) {
 	            var uint = readUint(buf, pos),
@@ -54662,8 +57578,8 @@ function requireFloat () {
 	                : sign * Math.pow(2, exponent - 150) * (mantissa + 8388608);
 	        }
 
-	        exports$1.readFloatLE = readFloat_ieee754.bind(null, readUintLE);
-	        exports$1.readFloatBE = readFloat_ieee754.bind(null, readUintBE);
+	        exports.readFloatLE = readFloat_ieee754.bind(null, readUintLE);
+	        exports.readFloatBE = readFloat_ieee754.bind(null, readUintBE);
 
 	    })();
 
@@ -54699,9 +57615,9 @@ function requireFloat () {
 	        }
 
 	        /* istanbul ignore next */
-	        exports$1.writeDoubleLE = le ? writeDouble_f64_cpy : writeDouble_f64_rev;
+	        exports.writeDoubleLE = le ? writeDouble_f64_cpy : writeDouble_f64_rev;
 	        /* istanbul ignore next */
-	        exports$1.writeDoubleBE = le ? writeDouble_f64_rev : writeDouble_f64_cpy;
+	        exports.writeDoubleBE = le ? writeDouble_f64_rev : writeDouble_f64_cpy;
 
 	        function readDouble_f64_cpy(buf, pos) {
 	            f8b[0] = buf[pos    ];
@@ -54728,9 +57644,9 @@ function requireFloat () {
 	        }
 
 	        /* istanbul ignore next */
-	        exports$1.readDoubleLE = le ? readDouble_f64_cpy : readDouble_f64_rev;
+	        exports.readDoubleLE = le ? readDouble_f64_cpy : readDouble_f64_rev;
 	        /* istanbul ignore next */
-	        exports$1.readDoubleBE = le ? readDouble_f64_rev : readDouble_f64_cpy;
+	        exports.readDoubleBE = le ? readDouble_f64_rev : readDouble_f64_cpy;
 
 	    // double: ieee754
 	    })(); else (function() {
@@ -54765,8 +57681,8 @@ function requireFloat () {
 	            }
 	        }
 
-	        exports$1.writeDoubleLE = writeDouble_ieee754.bind(null, writeUintLE, 0, 4);
-	        exports$1.writeDoubleBE = writeDouble_ieee754.bind(null, writeUintBE, 4, 0);
+	        exports.writeDoubleLE = writeDouble_ieee754.bind(null, writeUintLE, 0, 4);
+	        exports.writeDoubleBE = writeDouble_ieee754.bind(null, writeUintBE, 4, 0);
 
 	        function readDouble_ieee754(readUint, off0, off1, buf, pos) {
 	            var lo = readUint(buf, pos + off0),
@@ -54783,12 +57699,12 @@ function requireFloat () {
 	                : sign * Math.pow(2, exponent - 1075) * (mantissa + 4503599627370496);
 	        }
 
-	        exports$1.readDoubleLE = readDouble_ieee754.bind(null, readUintLE, 0, 4);
-	        exports$1.readDoubleBE = readDouble_ieee754.bind(null, readUintBE, 4, 0);
+	        exports.readDoubleLE = readDouble_ieee754.bind(null, readUintLE, 0, 4);
+	        exports.readDoubleBE = readDouble_ieee754.bind(null, readUintBE, 4, 0);
 
 	    })();
 
-	    return exports$1;
+	    return exports;
 	}
 
 	// uint helpers
@@ -54823,31 +57739,6 @@ function requireFloat () {
 	return float;
 }
 
-var inquire_1;
-var hasRequiredInquire;
-
-function requireInquire () {
-	if (hasRequiredInquire) return inquire_1;
-	hasRequiredInquire = 1;
-	inquire_1 = inquire;
-
-	/**
-	 * Requires a module only if available.
-	 * @memberof util
-	 * @param {string} moduleName Module to require
-	 * @returns {?Object} Required module if available and not empty, otherwise `null`
-	 */
-	function inquire(moduleName) {
-	    try {
-	        var mod = eval("quire".replace(/^/,"re"))(moduleName); // eslint-disable-line no-eval
-	        if (mod && (mod.length || Object.keys(mod).length))
-	            return mod;
-	    } catch (e) {} // eslint-disable-line no-empty
-	    return null;
-	}
-	return inquire_1;
-}
-
 var utf8 = {};
 
 var hasRequiredUtf8;
@@ -54855,14 +57746,15 @@ var hasRequiredUtf8;
 function requireUtf8 () {
 	if (hasRequiredUtf8) return utf8;
 	hasRequiredUtf8 = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * A minimal UTF8 implementation for number arrays.
 		 * @memberof util
 		 * @namespace
 		 */
-		var utf8 = exports$1;
+		var utf8 = exports,
+		    replacementCharCode = 0xFFFD; // U+FFFD REPLACEMENT CHARACTER
 
 		/**
 		 * Calculates the UTF8 byte length of a string.
@@ -54895,27 +57787,36 @@ function requireUtf8 () {
 		 * @returns {string} String read
 		 */
 		utf8.read = function utf8_read(buffer, start, end) {
-		    var len = end - start;
-		    if (len < 1)
+		    if (end - start < 1)
 		        return "";
+		    // Batch code units and flush via String.fromCharCode.apply in 8192-unit
+		    // chunks to avoid the per-character ConsString buildup of `str += ...`.
 		    var parts = null,
 		        chunk = [],
-		        i = 0, // char offset
-		        t;     // temporary
+		        i = 0, // chunk write index
+		        t, t2, c2, c3;
 		    while (start < end) {
 		        t = buffer[start++];
-		        if (t < 128)
+		        if (t <= 0x7F) {
 		            chunk[i++] = t;
-		        else if (t > 191 && t < 224)
-		            chunk[i++] = (t & 31) << 6 | buffer[start++] & 63;
-		        else if (t > 239 && t < 365) {
-		            t = ((t & 7) << 18 | (buffer[start++] & 63) << 12 | (buffer[start++] & 63) << 6 | buffer[start++] & 63) - 0x10000;
-		            chunk[i++] = 0xD800 + (t >> 10);
-		            chunk[i++] = 0xDC00 + (t & 1023);
-		        } else
-		            chunk[i++] = (t & 15) << 12 | (buffer[start++] & 63) << 6 | buffer[start++] & 63;
+		        } else if (t >= 0xC0 && t < 0xE0) {
+		            c2 = (t & 0x1F) << 6 | buffer[start++] & 0x3F;
+		            chunk[i++] = c2 >= 0x80 ? c2 : replacementCharCode;
+		        } else if (t >= 0xE0 && t < 0xF0) {
+		            c3 = (t & 0xF) << 12 | (buffer[start++] & 0x3F) << 6 | buffer[start++] & 0x3F;
+		            chunk[i++] = c3 >= 0x800 ? c3 : replacementCharCode;
+		        } else if (t >= 0xF0) {
+		            t2 = (t & 7) << 18 | (buffer[start++] & 0x3F) << 12 | (buffer[start++] & 0x3F) << 6 | buffer[start++] & 0x3F;
+		            if (t2 < 0x10000 || t2 > 0x10FFFF)
+		                chunk[i++] = replacementCharCode;
+		            else {
+		                t2 -= 0x10000;
+		                chunk[i++] = 0xD800 + (t2 >> 10);
+		                chunk[i++] = 0xDC00 + (t2 & 0x3FF);
+		            }
+		        }
 		        if (i > 8191) {
-		            (parts || (parts = [])).push(String.fromCharCode.apply(String, chunk));
+		            (parts || (parts = [])).push(String.fromCharCode.apply(String, chunk.slice(0, i)));
 		            i = 0;
 		        }
 		    }
@@ -55228,13 +58129,1636 @@ function requireLongbits () {
 	return longbits;
 }
 
+var umd$1 = {exports: {}};
+
+var umd = umd$1.exports;
+
+var hasRequiredUmd;
+
+function requireUmd () {
+	if (hasRequiredUmd) return umd$1.exports;
+	hasRequiredUmd = 1;
+	(function (module, exports) {
+		// GENERATED FILE. DO NOT EDIT.
+		(function (global, factory) {
+		  function preferDefault(exports) {
+		    return exports.default || exports;
+		  }
+		  {
+		    factory(exports);
+		    module.exports = preferDefault(exports);
+		  }
+		})(
+		  typeof globalThis !== "undefined"
+		    ? globalThis
+		    : typeof self !== "undefined"
+		      ? self
+		      : umd,
+		  function (_exports) {
+
+		    Object.defineProperty(_exports, "__esModule", {
+		      value: true,
+		    });
+		    _exports.default = void 0;
+		    /**
+		     * @license
+		     * Copyright 2009 The Closure Library Authors
+		     * Copyright 2020 Daniel Wirtz / The long.js Authors.
+		     *
+		     * Licensed under the Apache License, Version 2.0 (the "License");
+		     * you may not use this file except in compliance with the License.
+		     * You may obtain a copy of the License at
+		     *
+		     *     http://www.apache.org/licenses/LICENSE-2.0
+		     *
+		     * Unless required by applicable law or agreed to in writing, software
+		     * distributed under the License is distributed on an "AS IS" BASIS,
+		     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+		     * See the License for the specific language governing permissions and
+		     * limitations under the License.
+		     *
+		     * SPDX-License-Identifier: Apache-2.0
+		     */
+
+		    // WebAssembly optimizations to do native i64 multiplication and divide
+		    var wasm = null;
+		    try {
+		      wasm = new WebAssembly.Instance(
+		        new WebAssembly.Module(
+		          new Uint8Array([
+		            // \0asm
+		            0, 97, 115, 109,
+		            // version 1
+		            1, 0, 0, 0,
+		            // section "type"
+		            1, 13, 2,
+		            // 0, () => i32
+		            96, 0, 1, 127,
+		            // 1, (i32, i32, i32, i32) => i32
+		            96, 4, 127, 127, 127, 127, 1, 127,
+		            // section "function"
+		            3, 7, 6,
+		            // 0, type 0
+		            0,
+		            // 1, type 1
+		            1,
+		            // 2, type 1
+		            1,
+		            // 3, type 1
+		            1,
+		            // 4, type 1
+		            1,
+		            // 5, type 1
+		            1,
+		            // section "global"
+		            6, 6, 1,
+		            // 0, "high", mutable i32
+		            127, 1, 65, 0, 11,
+		            // section "export"
+		            7, 50, 6,
+		            // 0, "mul"
+		            3, 109, 117, 108, 0, 1,
+		            // 1, "div_s"
+		            5, 100, 105, 118, 95, 115, 0, 2,
+		            // 2, "div_u"
+		            5, 100, 105, 118, 95, 117, 0, 3,
+		            // 3, "rem_s"
+		            5, 114, 101, 109, 95, 115, 0, 4,
+		            // 4, "rem_u"
+		            5, 114, 101, 109, 95, 117, 0, 5,
+		            // 5, "get_high"
+		            8, 103, 101, 116, 95, 104, 105, 103, 104, 0, 0,
+		            // section "code"
+		            10, 191, 1, 6,
+		            // 0, "get_high"
+		            4, 0, 35, 0, 11,
+		            // 1, "mul"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 126, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		            // 2, "div_s"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 127, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		            // 3, "div_u"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 128, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		            // 4, "rem_s"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 129, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		            // 5, "rem_u"
+		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
+		            32, 3, 173, 66, 32, 134, 132, 130, 34, 4, 66, 32, 135, 167, 36, 0,
+		            32, 4, 167, 11,
+		          ]),
+		        ),
+		        {},
+		      ).exports;
+		    } catch {
+		      // no wasm support :(
+		    }
+
+		    /**
+		     * Constructs a 64 bit two's-complement integer, given its low and high 32 bit values as *signed* integers.
+		     *  See the from* functions below for more convenient ways of constructing Longs.
+		     * @exports Long
+		     * @class A Long class for representing a 64 bit two's-complement integer value.
+		     * @param {number} low The low (signed) 32 bits of the long
+		     * @param {number} high The high (signed) 32 bits of the long
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @constructor
+		     */
+		    function Long(low, high, unsigned) {
+		      /**
+		       * The low 32 bits as a signed value.
+		       * @type {number}
+		       */
+		      this.low = low | 0;
+
+		      /**
+		       * The high 32 bits as a signed value.
+		       * @type {number}
+		       */
+		      this.high = high | 0;
+
+		      /**
+		       * Whether unsigned or not.
+		       * @type {boolean}
+		       */
+		      this.unsigned = !!unsigned;
+		    }
+
+		    // The internal representation of a long is the two given signed, 32-bit values.
+		    // We use 32-bit pieces because these are the size of integers on which
+		    // Javascript performs bit-operations.  For operations like addition and
+		    // multiplication, we split each number into 16 bit pieces, which can easily be
+		    // multiplied within Javascript's floating-point representation without overflow
+		    // or change in sign.
+		    //
+		    // In the algorithms below, we frequently reduce the negative case to the
+		    // positive case by negating the input(s) and then post-processing the result.
+		    // Note that we must ALWAYS check specially whether those values are MIN_VALUE
+		    // (-2^63) because -MIN_VALUE == MIN_VALUE (since 2^63 cannot be represented as
+		    // a positive number, it overflows back into a negative).  Not handling this
+		    // case would often result in infinite recursion.
+		    //
+		    // Common constant values ZERO, ONE, NEG_ONE, etc. are defined below the from*
+		    // methods on which they depend.
+
+		    /**
+		     * An indicator used to reliably determine if an object is a Long or not.
+		     * @type {boolean}
+		     * @const
+		     * @private
+		     */
+		    Long.prototype.__isLong__;
+		    Object.defineProperty(Long.prototype, "__isLong__", {
+		      value: true,
+		    });
+
+		    /**
+		     * @function
+		     * @param {*} obj Object
+		     * @returns {boolean}
+		     * @inner
+		     */
+		    function isLong(obj) {
+		      return (obj && obj["__isLong__"]) === true;
+		    }
+
+		    /**
+		     * @function
+		     * @param {*} value number
+		     * @returns {number}
+		     * @inner
+		     */
+		    function ctz32(value) {
+		      var c = Math.clz32(value & -value);
+		      return value ? 31 - c : c;
+		    }
+
+		    /**
+		     * Tests if the specified object is a Long.
+		     * @function
+		     * @param {*} obj Object
+		     * @returns {boolean}
+		     */
+		    Long.isLong = isLong;
+
+		    /**
+		     * A cache of the Long representations of small integer values.
+		     * @type {!Object}
+		     * @inner
+		     */
+		    var INT_CACHE = {};
+
+		    /**
+		     * A cache of the Long representations of small unsigned integer values.
+		     * @type {!Object}
+		     * @inner
+		     */
+		    var UINT_CACHE = {};
+
+		    /**
+		     * @param {number} value
+		     * @param {boolean=} unsigned
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromInt(value, unsigned) {
+		      var obj, cachedObj, cache;
+		      if (unsigned) {
+		        value >>>= 0;
+		        if ((cache = 0 <= value && value < 256)) {
+		          cachedObj = UINT_CACHE[value];
+		          if (cachedObj) return cachedObj;
+		        }
+		        obj = fromBits(value, 0, true);
+		        if (cache) UINT_CACHE[value] = obj;
+		        return obj;
+		      } else {
+		        value |= 0;
+		        if ((cache = -128 <= value && value < 128)) {
+		          cachedObj = INT_CACHE[value];
+		          if (cachedObj) return cachedObj;
+		        }
+		        obj = fromBits(value, value < 0 ? -1 : 0, false);
+		        if (cache) INT_CACHE[value] = obj;
+		        return obj;
+		      }
+		    }
+
+		    /**
+		     * Returns a Long representing the given 32 bit integer value.
+		     * @function
+		     * @param {number} value The 32 bit integer in question
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {!Long} The corresponding Long value
+		     */
+		    Long.fromInt = fromInt;
+
+		    /**
+		     * @param {number} value
+		     * @param {boolean=} unsigned
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromNumber(value, unsigned) {
+		      if (isNaN(value)) return unsigned ? UZERO : ZERO;
+		      if (unsigned) {
+		        if (value < 0) return UZERO;
+		        if (value >= TWO_PWR_64_DBL) return MAX_UNSIGNED_VALUE;
+		      } else {
+		        if (value <= -TWO_PWR_63_DBL) return MIN_VALUE;
+		        if (value + 1 >= TWO_PWR_63_DBL) return MAX_VALUE;
+		      }
+		      if (value < 0) return fromNumber(-value, unsigned).neg();
+		      return fromBits(
+		        value % TWO_PWR_32_DBL | 0,
+		        (value / TWO_PWR_32_DBL) | 0,
+		        unsigned,
+		      );
+		    }
+
+		    /**
+		     * Returns a Long representing the given value, provided that it is a finite number. Otherwise, zero is returned.
+		     * @function
+		     * @param {number} value The number in question
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {!Long} The corresponding Long value
+		     */
+		    Long.fromNumber = fromNumber;
+
+		    /**
+		     * @param {number} lowBits
+		     * @param {number} highBits
+		     * @param {boolean=} unsigned
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromBits(lowBits, highBits, unsigned) {
+		      return new Long(lowBits, highBits, unsigned);
+		    }
+
+		    /**
+		     * Returns a Long representing the 64 bit integer that comes by concatenating the given low and high bits. Each is
+		     *  assumed to use 32 bits.
+		     * @function
+		     * @param {number} lowBits The low 32 bits
+		     * @param {number} highBits The high 32 bits
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {!Long} The corresponding Long value
+		     */
+		    Long.fromBits = fromBits;
+
+		    /**
+		     * @function
+		     * @param {number} base
+		     * @param {number} exponent
+		     * @returns {number}
+		     * @inner
+		     */
+		    var pow_dbl = Math.pow; // Used 4 times (4*8 to 15+4)
+
+		    /**
+		     * @param {string} str
+		     * @param {(boolean|number)=} unsigned
+		     * @param {number=} radix
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromString(str, unsigned, radix) {
+		      if (str.length === 0) throw Error("empty string");
+		      if (typeof unsigned === "number") {
+		        // For goog.math.long compatibility
+		        radix = unsigned;
+		        unsigned = false;
+		      } else {
+		        unsigned = !!unsigned;
+		      }
+		      if (
+		        str === "NaN" ||
+		        str === "Infinity" ||
+		        str === "+Infinity" ||
+		        str === "-Infinity"
+		      )
+		        return unsigned ? UZERO : ZERO;
+		      radix = radix || 10;
+		      if (radix < 2 || 36 < radix) throw RangeError("radix");
+		      var p;
+		      if ((p = str.indexOf("-")) > 0) throw Error("interior hyphen");
+		      else if (p === 0) {
+		        return fromString(str.substring(1), unsigned, radix).neg();
+		      }
+
+		      // Do several (8) digits each time through the loop, so as to
+		      // minimize the calls to the very expensive emulated div.
+		      var radixToPower = fromNumber(pow_dbl(radix, 8));
+		      var result = ZERO;
+		      for (var i = 0; i < str.length; i += 8) {
+		        var size = Math.min(8, str.length - i),
+		          value = parseInt(str.substring(i, i + size), radix);
+		        if (size < 8) {
+		          var power = fromNumber(pow_dbl(radix, size));
+		          result = result.mul(power).add(fromNumber(value));
+		        } else {
+		          result = result.mul(radixToPower);
+		          result = result.add(fromNumber(value));
+		        }
+		      }
+		      result.unsigned = unsigned;
+		      return result;
+		    }
+
+		    /**
+		     * Returns a Long representation of the given string, written using the specified radix.
+		     * @function
+		     * @param {string} str The textual representation of the Long
+		     * @param {(boolean|number)=} unsigned Whether unsigned or not, defaults to signed
+		     * @param {number=} radix The radix in which the text is written (2-36), defaults to 10
+		     * @returns {!Long} The corresponding Long value
+		     */
+		    Long.fromString = fromString;
+
+		    /**
+		     * @function
+		     * @param {!Long|number|string|!{low: number, high: number, unsigned: boolean}} val
+		     * @param {boolean=} unsigned
+		     * @returns {!Long}
+		     * @inner
+		     */
+		    function fromValue(val, unsigned) {
+		      if (typeof val === "number") return fromNumber(val, unsigned);
+		      if (typeof val === "string") return fromString(val, unsigned);
+		      // Throws for non-objects, converts non-instanceof Long:
+		      return fromBits(
+		        val.low,
+		        val.high,
+		        typeof unsigned === "boolean" ? unsigned : val.unsigned,
+		      );
+		    }
+
+		    /**
+		     * Converts the specified value to a Long using the appropriate from* function for its type.
+		     * @function
+		     * @param {!Long|number|bigint|string|!{low: number, high: number, unsigned: boolean}} val Value
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {!Long}
+		     */
+		    Long.fromValue = fromValue;
+
+		    // NOTE: the compiler should inline these constant values below and then remove these variables, so there should be
+		    // no runtime penalty for these.
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_16_DBL = 1 << 16;
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_24_DBL = 1 << 24;
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_32_DBL = TWO_PWR_16_DBL * TWO_PWR_16_DBL;
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_64_DBL = TWO_PWR_32_DBL * TWO_PWR_32_DBL;
+
+		    /**
+		     * @type {number}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_63_DBL = TWO_PWR_64_DBL / 2;
+
+		    /**
+		     * @type {!Long}
+		     * @const
+		     * @inner
+		     */
+		    var TWO_PWR_24 = fromInt(TWO_PWR_24_DBL);
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var ZERO = fromInt(0);
+
+		    /**
+		     * Signed zero.
+		     * @type {!Long}
+		     */
+		    Long.ZERO = ZERO;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var UZERO = fromInt(0, true);
+
+		    /**
+		     * Unsigned zero.
+		     * @type {!Long}
+		     */
+		    Long.UZERO = UZERO;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var ONE = fromInt(1);
+
+		    /**
+		     * Signed one.
+		     * @type {!Long}
+		     */
+		    Long.ONE = ONE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var UONE = fromInt(1, true);
+
+		    /**
+		     * Unsigned one.
+		     * @type {!Long}
+		     */
+		    Long.UONE = UONE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var NEG_ONE = fromInt(-1);
+
+		    /**
+		     * Signed negative one.
+		     * @type {!Long}
+		     */
+		    Long.NEG_ONE = NEG_ONE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var MAX_VALUE = fromBits(0xffffffff | 0, 0x7fffffff | 0, false);
+
+		    /**
+		     * Maximum signed value.
+		     * @type {!Long}
+		     */
+		    Long.MAX_VALUE = MAX_VALUE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var MAX_UNSIGNED_VALUE = fromBits(0xffffffff | 0, 0xffffffff | 0, true);
+
+		    /**
+		     * Maximum unsigned value.
+		     * @type {!Long}
+		     */
+		    Long.MAX_UNSIGNED_VALUE = MAX_UNSIGNED_VALUE;
+
+		    /**
+		     * @type {!Long}
+		     * @inner
+		     */
+		    var MIN_VALUE = fromBits(0, 0x80000000 | 0, false);
+
+		    /**
+		     * Minimum signed value.
+		     * @type {!Long}
+		     */
+		    Long.MIN_VALUE = MIN_VALUE;
+
+		    /**
+		     * @alias Long.prototype
+		     * @inner
+		     */
+		    var LongPrototype = Long.prototype;
+
+		    /**
+		     * Converts the Long to a 32 bit integer, assuming it is a 32 bit integer.
+		     * @this {!Long}
+		     * @returns {number}
+		     */
+		    LongPrototype.toInt = function toInt() {
+		      return this.unsigned ? this.low >>> 0 : this.low;
+		    };
+
+		    /**
+		     * Converts the Long to a the nearest floating-point representation of this value (double, 53 bit mantissa).
+		     * @this {!Long}
+		     * @returns {number}
+		     */
+		    LongPrototype.toNumber = function toNumber() {
+		      if (this.unsigned)
+		        return (this.high >>> 0) * TWO_PWR_32_DBL + (this.low >>> 0);
+		      return this.high * TWO_PWR_32_DBL + (this.low >>> 0);
+		    };
+
+		    /**
+		     * Converts the Long to a string written in the specified radix.
+		     * @this {!Long}
+		     * @param {number=} radix Radix (2-36), defaults to 10
+		     * @returns {string}
+		     * @override
+		     * @throws {RangeError} If `radix` is out of range
+		     */
+		    LongPrototype.toString = function toString(radix) {
+		      radix = radix || 10;
+		      if (radix < 2 || 36 < radix) throw RangeError("radix");
+		      if (this.isZero()) return "0";
+		      if (this.isNegative()) {
+		        // Unsigned Longs are never negative
+		        if (this.eq(MIN_VALUE)) {
+		          // We need to change the Long value before it can be negated, so we remove
+		          // the bottom-most digit in this base and then recurse to do the rest.
+		          var radixLong = fromNumber(radix),
+		            div = this.div(radixLong),
+		            rem1 = div.mul(radixLong).sub(this);
+		          return div.toString(radix) + rem1.toInt().toString(radix);
+		        } else return "-" + this.neg().toString(radix);
+		      }
+
+		      // Do several (6) digits each time through the loop, so as to
+		      // minimize the calls to the very expensive emulated div.
+		      var radixToPower = fromNumber(pow_dbl(radix, 6), this.unsigned),
+		        rem = this;
+		      var result = "";
+		      while (true) {
+		        var remDiv = rem.div(radixToPower),
+		          intval = rem.sub(remDiv.mul(radixToPower)).toInt() >>> 0,
+		          digits = intval.toString(radix);
+		        rem = remDiv;
+		        if (rem.isZero()) return digits + result;
+		        else {
+		          while (digits.length < 6) digits = "0" + digits;
+		          result = "" + digits + result;
+		        }
+		      }
+		    };
+
+		    /**
+		     * Gets the high 32 bits as a signed integer.
+		     * @this {!Long}
+		     * @returns {number} Signed high bits
+		     */
+		    LongPrototype.getHighBits = function getHighBits() {
+		      return this.high;
+		    };
+
+		    /**
+		     * Gets the high 32 bits as an unsigned integer.
+		     * @this {!Long}
+		     * @returns {number} Unsigned high bits
+		     */
+		    LongPrototype.getHighBitsUnsigned = function getHighBitsUnsigned() {
+		      return this.high >>> 0;
+		    };
+
+		    /**
+		     * Gets the low 32 bits as a signed integer.
+		     * @this {!Long}
+		     * @returns {number} Signed low bits
+		     */
+		    LongPrototype.getLowBits = function getLowBits() {
+		      return this.low;
+		    };
+
+		    /**
+		     * Gets the low 32 bits as an unsigned integer.
+		     * @this {!Long}
+		     * @returns {number} Unsigned low bits
+		     */
+		    LongPrototype.getLowBitsUnsigned = function getLowBitsUnsigned() {
+		      return this.low >>> 0;
+		    };
+
+		    /**
+		     * Gets the number of bits needed to represent the absolute value of this Long.
+		     * @this {!Long}
+		     * @returns {number}
+		     */
+		    LongPrototype.getNumBitsAbs = function getNumBitsAbs() {
+		      if (this.isNegative())
+		        // Unsigned Longs are never negative
+		        return this.eq(MIN_VALUE) ? 64 : this.neg().getNumBitsAbs();
+		      var val = this.high != 0 ? this.high : this.low;
+		      for (var bit = 31; bit > 0; bit--) if ((val & (1 << bit)) != 0) break;
+		      return this.high != 0 ? bit + 33 : bit + 1;
+		    };
+
+		    /**
+		     * Tests if this Long can be safely represented as a JavaScript number.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isSafeInteger = function isSafeInteger() {
+		      // 2^53-1 is the maximum safe value
+		      var top11Bits = this.high >> 21;
+		      // [0, 2^53-1]
+		      if (!top11Bits) return true;
+		      // > 2^53-1
+		      if (this.unsigned) return false;
+		      // [-2^53, -1] except -2^53
+		      return top11Bits === -1 && !(this.low === 0 && this.high === -2097152);
+		    };
+
+		    /**
+		     * Tests if this Long's value equals zero.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isZero = function isZero() {
+		      return this.high === 0 && this.low === 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value equals zero. This is an alias of {@link Long#isZero}.
+		     * @returns {boolean}
+		     */
+		    LongPrototype.eqz = LongPrototype.isZero;
+
+		    /**
+		     * Tests if this Long's value is negative.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isNegative = function isNegative() {
+		      return !this.unsigned && this.high < 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is positive or zero.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isPositive = function isPositive() {
+		      return this.unsigned || this.high >= 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is odd.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isOdd = function isOdd() {
+		      return (this.low & 1) === 1;
+		    };
+
+		    /**
+		     * Tests if this Long's value is even.
+		     * @this {!Long}
+		     * @returns {boolean}
+		     */
+		    LongPrototype.isEven = function isEven() {
+		      return (this.low & 1) === 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value equals the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.equals = function equals(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      if (
+		        this.unsigned !== other.unsigned &&
+		        this.high >>> 31 === 1 &&
+		        other.high >>> 31 === 1
+		      )
+		        return false;
+		      return this.high === other.high && this.low === other.low;
+		    };
+
+		    /**
+		     * Tests if this Long's value equals the specified's. This is an alias of {@link Long#equals}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.eq = LongPrototype.equals;
+
+		    /**
+		     * Tests if this Long's value differs from the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.notEquals = function notEquals(other) {
+		      return !this.eq(/* validates */ other);
+		    };
+
+		    /**
+		     * Tests if this Long's value differs from the specified's. This is an alias of {@link Long#notEquals}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.neq = LongPrototype.notEquals;
+
+		    /**
+		     * Tests if this Long's value differs from the specified's. This is an alias of {@link Long#notEquals}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.ne = LongPrototype.notEquals;
+
+		    /**
+		     * Tests if this Long's value is less than the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.lessThan = function lessThan(other) {
+		      return this.comp(/* validates */ other) < 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is less than the specified's. This is an alias of {@link Long#lessThan}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.lt = LongPrototype.lessThan;
+
+		    /**
+		     * Tests if this Long's value is less than or equal the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.lessThanOrEqual = function lessThanOrEqual(other) {
+		      return this.comp(/* validates */ other) <= 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is less than or equal the specified's. This is an alias of {@link Long#lessThanOrEqual}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.lte = LongPrototype.lessThanOrEqual;
+
+		    /**
+		     * Tests if this Long's value is less than or equal the specified's. This is an alias of {@link Long#lessThanOrEqual}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.le = LongPrototype.lessThanOrEqual;
+
+		    /**
+		     * Tests if this Long's value is greater than the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.greaterThan = function greaterThan(other) {
+		      return this.comp(/* validates */ other) > 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is greater than the specified's. This is an alias of {@link Long#greaterThan}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.gt = LongPrototype.greaterThan;
+
+		    /**
+		     * Tests if this Long's value is greater than or equal the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.greaterThanOrEqual = function greaterThanOrEqual(other) {
+		      return this.comp(/* validates */ other) >= 0;
+		    };
+
+		    /**
+		     * Tests if this Long's value is greater than or equal the specified's. This is an alias of {@link Long#greaterThanOrEqual}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.gte = LongPrototype.greaterThanOrEqual;
+
+		    /**
+		     * Tests if this Long's value is greater than or equal the specified's. This is an alias of {@link Long#greaterThanOrEqual}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {boolean}
+		     */
+		    LongPrototype.ge = LongPrototype.greaterThanOrEqual;
+
+		    /**
+		     * Compares this Long's value with the specified's.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
+		     *  if the given one is greater
+		     */
+		    LongPrototype.compare = function compare(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      if (this.eq(other)) return 0;
+		      var thisNeg = this.isNegative(),
+		        otherNeg = other.isNegative();
+		      if (thisNeg && !otherNeg) return -1;
+		      if (!thisNeg && otherNeg) return 1;
+		      // At this point the sign bits are the same
+		      if (!this.unsigned) return this.sub(other).isNegative() ? -1 : 1;
+		      // Both are positive if at least one is unsigned
+		      return other.high >>> 0 > this.high >>> 0 ||
+		        (other.high === this.high && other.low >>> 0 > this.low >>> 0)
+		        ? -1
+		        : 1;
+		    };
+
+		    /**
+		     * Compares this Long's value with the specified's. This is an alias of {@link Long#compare}.
+		     * @function
+		     * @param {!Long|number|bigint|string} other Other value
+		     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
+		     *  if the given one is greater
+		     */
+		    LongPrototype.comp = LongPrototype.compare;
+
+		    /**
+		     * Negates this Long's value.
+		     * @this {!Long}
+		     * @returns {!Long} Negated Long
+		     */
+		    LongPrototype.negate = function negate() {
+		      if (!this.unsigned && this.eq(MIN_VALUE)) return MIN_VALUE;
+		      return this.not().add(ONE);
+		    };
+
+		    /**
+		     * Negates this Long's value. This is an alias of {@link Long#negate}.
+		     * @function
+		     * @returns {!Long} Negated Long
+		     */
+		    LongPrototype.neg = LongPrototype.negate;
+
+		    /**
+		     * Returns the sum of this and the specified Long.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} addend Addend
+		     * @returns {!Long} Sum
+		     */
+		    LongPrototype.add = function add(addend) {
+		      if (!isLong(addend)) addend = fromValue(addend);
+
+		      // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
+
+		      var a48 = this.high >>> 16;
+		      var a32 = this.high & 0xffff;
+		      var a16 = this.low >>> 16;
+		      var a00 = this.low & 0xffff;
+		      var b48 = addend.high >>> 16;
+		      var b32 = addend.high & 0xffff;
+		      var b16 = addend.low >>> 16;
+		      var b00 = addend.low & 0xffff;
+		      var c48 = 0,
+		        c32 = 0,
+		        c16 = 0,
+		        c00 = 0;
+		      c00 += a00 + b00;
+		      c16 += c00 >>> 16;
+		      c00 &= 0xffff;
+		      c16 += a16 + b16;
+		      c32 += c16 >>> 16;
+		      c16 &= 0xffff;
+		      c32 += a32 + b32;
+		      c48 += c32 >>> 16;
+		      c32 &= 0xffff;
+		      c48 += a48 + b48;
+		      c48 &= 0xffff;
+		      return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
+		    };
+
+		    /**
+		     * Returns the difference of this and the specified Long.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} subtrahend Subtrahend
+		     * @returns {!Long} Difference
+		     */
+		    LongPrototype.subtract = function subtract(subtrahend) {
+		      if (!isLong(subtrahend)) subtrahend = fromValue(subtrahend);
+		      return this.add(subtrahend.neg());
+		    };
+
+		    /**
+		     * Returns the difference of this and the specified Long. This is an alias of {@link Long#subtract}.
+		     * @function
+		     * @param {!Long|number|bigint|string} subtrahend Subtrahend
+		     * @returns {!Long} Difference
+		     */
+		    LongPrototype.sub = LongPrototype.subtract;
+
+		    /**
+		     * Returns the product of this and the specified Long.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} multiplier Multiplier
+		     * @returns {!Long} Product
+		     */
+		    LongPrototype.multiply = function multiply(multiplier) {
+		      if (this.isZero()) return this;
+		      if (!isLong(multiplier)) multiplier = fromValue(multiplier);
+
+		      // use wasm support if present
+		      if (wasm) {
+		        var low = wasm["mul"](
+		          this.low,
+		          this.high,
+		          multiplier.low,
+		          multiplier.high,
+		        );
+		        return fromBits(low, wasm["get_high"](), this.unsigned);
+		      }
+		      if (multiplier.isZero()) return this.unsigned ? UZERO : ZERO;
+		      if (this.eq(MIN_VALUE)) return multiplier.isOdd() ? MIN_VALUE : ZERO;
+		      if (multiplier.eq(MIN_VALUE)) return this.isOdd() ? MIN_VALUE : ZERO;
+		      if (this.isNegative()) {
+		        if (multiplier.isNegative()) return this.neg().mul(multiplier.neg());
+		        else return this.neg().mul(multiplier).neg();
+		      } else if (multiplier.isNegative())
+		        return this.mul(multiplier.neg()).neg();
+
+		      // If both longs are small, use float multiplication
+		      if (this.lt(TWO_PWR_24) && multiplier.lt(TWO_PWR_24))
+		        return fromNumber(
+		          this.toNumber() * multiplier.toNumber(),
+		          this.unsigned,
+		        );
+
+		      // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
+		      // We can skip products that would overflow.
+
+		      var a48 = this.high >>> 16;
+		      var a32 = this.high & 0xffff;
+		      var a16 = this.low >>> 16;
+		      var a00 = this.low & 0xffff;
+		      var b48 = multiplier.high >>> 16;
+		      var b32 = multiplier.high & 0xffff;
+		      var b16 = multiplier.low >>> 16;
+		      var b00 = multiplier.low & 0xffff;
+		      var c48 = 0,
+		        c32 = 0,
+		        c16 = 0,
+		        c00 = 0;
+		      c00 += a00 * b00;
+		      c16 += c00 >>> 16;
+		      c00 &= 0xffff;
+		      c16 += a16 * b00;
+		      c32 += c16 >>> 16;
+		      c16 &= 0xffff;
+		      c16 += a00 * b16;
+		      c32 += c16 >>> 16;
+		      c16 &= 0xffff;
+		      c32 += a32 * b00;
+		      c48 += c32 >>> 16;
+		      c32 &= 0xffff;
+		      c32 += a16 * b16;
+		      c48 += c32 >>> 16;
+		      c32 &= 0xffff;
+		      c32 += a00 * b32;
+		      c48 += c32 >>> 16;
+		      c32 &= 0xffff;
+		      c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
+		      c48 &= 0xffff;
+		      return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
+		    };
+
+		    /**
+		     * Returns the product of this and the specified Long. This is an alias of {@link Long#multiply}.
+		     * @function
+		     * @param {!Long|number|bigint|string} multiplier Multiplier
+		     * @returns {!Long} Product
+		     */
+		    LongPrototype.mul = LongPrototype.multiply;
+
+		    /**
+		     * Returns this Long divided by the specified. The result is signed if this Long is signed or
+		     *  unsigned if this Long is unsigned.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Quotient
+		     */
+		    LongPrototype.divide = function divide(divisor) {
+		      if (!isLong(divisor)) divisor = fromValue(divisor);
+		      if (divisor.isZero()) throw Error("division by zero");
+
+		      // use wasm support if present
+		      if (wasm) {
+		        // guard against signed division overflow: the largest
+		        // negative number / -1 would be 1 larger than the largest
+		        // positive number, due to two's complement.
+		        if (
+		          !this.unsigned &&
+		          this.high === -2147483648 &&
+		          divisor.low === -1 &&
+		          divisor.high === -1
+		        ) {
+		          // be consistent with non-wasm code path
+		          return this;
+		        }
+		        var low = (this.unsigned ? wasm["div_u"] : wasm["div_s"])(
+		          this.low,
+		          this.high,
+		          divisor.low,
+		          divisor.high,
+		        );
+		        return fromBits(low, wasm["get_high"](), this.unsigned);
+		      }
+		      if (this.isZero()) return this.unsigned ? UZERO : ZERO;
+		      var approx, rem, res;
+		      if (!this.unsigned) {
+		        // This section is only relevant for signed longs and is derived from the
+		        // closure library as a whole.
+		        if (this.eq(MIN_VALUE)) {
+		          if (divisor.eq(ONE) || divisor.eq(NEG_ONE))
+		            return MIN_VALUE; // recall that -MIN_VALUE == MIN_VALUE
+		          else if (divisor.eq(MIN_VALUE)) return ONE;
+		          else {
+		            // At this point, we have |other| >= 2, so |this/other| < |MIN_VALUE|.
+		            var halfThis = this.shr(1);
+		            approx = halfThis.div(divisor).shl(1);
+		            if (approx.eq(ZERO)) {
+		              return divisor.isNegative() ? ONE : NEG_ONE;
+		            } else {
+		              rem = this.sub(divisor.mul(approx));
+		              res = approx.add(rem.div(divisor));
+		              return res;
+		            }
+		          }
+		        } else if (divisor.eq(MIN_VALUE)) return this.unsigned ? UZERO : ZERO;
+		        if (this.isNegative()) {
+		          if (divisor.isNegative()) return this.neg().div(divisor.neg());
+		          return this.neg().div(divisor).neg();
+		        } else if (divisor.isNegative()) return this.div(divisor.neg()).neg();
+		        res = ZERO;
+		      } else {
+		        // The algorithm below has not been made for unsigned longs. It's therefore
+		        // required to take special care of the MSB prior to running it.
+		        if (!divisor.unsigned) divisor = divisor.toUnsigned();
+		        if (divisor.gt(this)) return UZERO;
+		        if (divisor.gt(this.shru(1)))
+		          // 15 >>> 1 = 7 ; with divisor = 8 ; true
+		          return UONE;
+		        res = UZERO;
+		      }
+
+		      // Repeat the following until the remainder is less than other:  find a
+		      // floating-point that approximates remainder / other *from below*, add this
+		      // into the result, and subtract it from the remainder.  It is critical that
+		      // the approximate value is less than or equal to the real value so that the
+		      // remainder never becomes negative.
+		      rem = this;
+		      while (rem.gte(divisor)) {
+		        // Approximate the result of division. This may be a little greater or
+		        // smaller than the actual value.
+		        approx = Math.max(1, Math.floor(rem.toNumber() / divisor.toNumber()));
+
+		        // We will tweak the approximate result by changing it in the 48-th digit or
+		        // the smallest non-fractional digit, whichever is larger.
+		        var log2 = Math.ceil(Math.log(approx) / Math.LN2),
+		          delta = log2 <= 48 ? 1 : pow_dbl(2, log2 - 48),
+		          // Decrease the approximation until it is smaller than the remainder.  Note
+		          // that if it is too large, the product overflows and is negative.
+		          approxRes = fromNumber(approx),
+		          approxRem = approxRes.mul(divisor);
+		        while (approxRem.isNegative() || approxRem.gt(rem)) {
+		          approx -= delta;
+		          approxRes = fromNumber(approx, this.unsigned);
+		          approxRem = approxRes.mul(divisor);
+		        }
+
+		        // We know the answer can't be zero... and actually, zero would cause
+		        // infinite recursion since we would make no progress.
+		        if (approxRes.isZero()) approxRes = ONE;
+		        res = res.add(approxRes);
+		        rem = rem.sub(approxRem);
+		      }
+		      return res;
+		    };
+
+		    /**
+		     * Returns this Long divided by the specified. This is an alias of {@link Long#divide}.
+		     * @function
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Quotient
+		     */
+		    LongPrototype.div = LongPrototype.divide;
+
+		    /**
+		     * Returns this Long modulo the specified.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Remainder
+		     */
+		    LongPrototype.modulo = function modulo(divisor) {
+		      if (!isLong(divisor)) divisor = fromValue(divisor);
+
+		      // use wasm support if present
+		      if (wasm) {
+		        var low = (this.unsigned ? wasm["rem_u"] : wasm["rem_s"])(
+		          this.low,
+		          this.high,
+		          divisor.low,
+		          divisor.high,
+		        );
+		        return fromBits(low, wasm["get_high"](), this.unsigned);
+		      }
+		      return this.sub(this.div(divisor).mul(divisor));
+		    };
+
+		    /**
+		     * Returns this Long modulo the specified. This is an alias of {@link Long#modulo}.
+		     * @function
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Remainder
+		     */
+		    LongPrototype.mod = LongPrototype.modulo;
+
+		    /**
+		     * Returns this Long modulo the specified. This is an alias of {@link Long#modulo}.
+		     * @function
+		     * @param {!Long|number|bigint|string} divisor Divisor
+		     * @returns {!Long} Remainder
+		     */
+		    LongPrototype.rem = LongPrototype.modulo;
+
+		    /**
+		     * Returns the bitwise NOT of this Long.
+		     * @this {!Long}
+		     * @returns {!Long}
+		     */
+		    LongPrototype.not = function not() {
+		      return fromBits(~this.low, ~this.high, this.unsigned);
+		    };
+
+		    /**
+		     * Returns count leading zeros of this Long.
+		     * @this {!Long}
+		     * @returns {!number}
+		     */
+		    LongPrototype.countLeadingZeros = function countLeadingZeros() {
+		      return this.high ? Math.clz32(this.high) : Math.clz32(this.low) + 32;
+		    };
+
+		    /**
+		     * Returns count leading zeros. This is an alias of {@link Long#countLeadingZeros}.
+		     * @function
+		     * @param {!Long}
+		     * @returns {!number}
+		     */
+		    LongPrototype.clz = LongPrototype.countLeadingZeros;
+
+		    /**
+		     * Returns count trailing zeros of this Long.
+		     * @this {!Long}
+		     * @returns {!number}
+		     */
+		    LongPrototype.countTrailingZeros = function countTrailingZeros() {
+		      return this.low ? ctz32(this.low) : ctz32(this.high) + 32;
+		    };
+
+		    /**
+		     * Returns count trailing zeros. This is an alias of {@link Long#countTrailingZeros}.
+		     * @function
+		     * @param {!Long}
+		     * @returns {!number}
+		     */
+		    LongPrototype.ctz = LongPrototype.countTrailingZeros;
+
+		    /**
+		     * Returns the bitwise AND of this Long and the specified.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other Long
+		     * @returns {!Long}
+		     */
+		    LongPrototype.and = function and(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      return fromBits(
+		        this.low & other.low,
+		        this.high & other.high,
+		        this.unsigned,
+		      );
+		    };
+
+		    /**
+		     * Returns the bitwise OR of this Long and the specified.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other Long
+		     * @returns {!Long}
+		     */
+		    LongPrototype.or = function or(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      return fromBits(
+		        this.low | other.low,
+		        this.high | other.high,
+		        this.unsigned,
+		      );
+		    };
+
+		    /**
+		     * Returns the bitwise XOR of this Long and the given one.
+		     * @this {!Long}
+		     * @param {!Long|number|bigint|string} other Other Long
+		     * @returns {!Long}
+		     */
+		    LongPrototype.xor = function xor(other) {
+		      if (!isLong(other)) other = fromValue(other);
+		      return fromBits(
+		        this.low ^ other.low,
+		        this.high ^ other.high,
+		        this.unsigned,
+		      );
+		    };
+
+		    /**
+		     * Returns this Long with bits shifted to the left by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shiftLeft = function shiftLeft(numBits) {
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      else if (numBits < 32)
+		        return fromBits(
+		          this.low << numBits,
+		          (this.high << numBits) | (this.low >>> (32 - numBits)),
+		          this.unsigned,
+		        );
+		      else return fromBits(0, this.low << (numBits - 32), this.unsigned);
+		    };
+
+		    /**
+		     * Returns this Long with bits shifted to the left by the given amount. This is an alias of {@link Long#shiftLeft}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shl = LongPrototype.shiftLeft;
+
+		    /**
+		     * Returns this Long with bits arithmetically shifted to the right by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shiftRight = function shiftRight(numBits) {
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      else if (numBits < 32)
+		        return fromBits(
+		          (this.low >>> numBits) | (this.high << (32 - numBits)),
+		          this.high >> numBits,
+		          this.unsigned,
+		        );
+		      else
+		        return fromBits(
+		          this.high >> (numBits - 32),
+		          this.high >= 0 ? 0 : -1,
+		          this.unsigned,
+		        );
+		    };
+
+		    /**
+		     * Returns this Long with bits arithmetically shifted to the right by the given amount. This is an alias of {@link Long#shiftRight}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shr = LongPrototype.shiftRight;
+
+		    /**
+		     * Returns this Long with bits logically shifted to the right by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shiftRightUnsigned = function shiftRightUnsigned(numBits) {
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      if (numBits < 32)
+		        return fromBits(
+		          (this.low >>> numBits) | (this.high << (32 - numBits)),
+		          this.high >>> numBits,
+		          this.unsigned,
+		        );
+		      if (numBits === 32) return fromBits(this.high, 0, this.unsigned);
+		      return fromBits(this.high >>> (numBits - 32), 0, this.unsigned);
+		    };
+
+		    /**
+		     * Returns this Long with bits logically shifted to the right by the given amount. This is an alias of {@link Long#shiftRightUnsigned}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shru = LongPrototype.shiftRightUnsigned;
+
+		    /**
+		     * Returns this Long with bits logically shifted to the right by the given amount. This is an alias of {@link Long#shiftRightUnsigned}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Shifted Long
+		     */
+		    LongPrototype.shr_u = LongPrototype.shiftRightUnsigned;
+
+		    /**
+		     * Returns this Long with bits rotated to the left by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Rotated Long
+		     */
+		    LongPrototype.rotateLeft = function rotateLeft(numBits) {
+		      var b;
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      if (numBits === 32) return fromBits(this.high, this.low, this.unsigned);
+		      if (numBits < 32) {
+		        b = 32 - numBits;
+		        return fromBits(
+		          (this.low << numBits) | (this.high >>> b),
+		          (this.high << numBits) | (this.low >>> b),
+		          this.unsigned,
+		        );
+		      }
+		      numBits -= 32;
+		      b = 32 - numBits;
+		      return fromBits(
+		        (this.high << numBits) | (this.low >>> b),
+		        (this.low << numBits) | (this.high >>> b),
+		        this.unsigned,
+		      );
+		    };
+		    /**
+		     * Returns this Long with bits rotated to the left by the given amount. This is an alias of {@link Long#rotateLeft}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Rotated Long
+		     */
+		    LongPrototype.rotl = LongPrototype.rotateLeft;
+
+		    /**
+		     * Returns this Long with bits rotated to the right by the given amount.
+		     * @this {!Long}
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Rotated Long
+		     */
+		    LongPrototype.rotateRight = function rotateRight(numBits) {
+		      var b;
+		      if (isLong(numBits)) numBits = numBits.toInt();
+		      if ((numBits &= 63) === 0) return this;
+		      if (numBits === 32) return fromBits(this.high, this.low, this.unsigned);
+		      if (numBits < 32) {
+		        b = 32 - numBits;
+		        return fromBits(
+		          (this.high << b) | (this.low >>> numBits),
+		          (this.low << b) | (this.high >>> numBits),
+		          this.unsigned,
+		        );
+		      }
+		      numBits -= 32;
+		      b = 32 - numBits;
+		      return fromBits(
+		        (this.low << b) | (this.high >>> numBits),
+		        (this.high << b) | (this.low >>> numBits),
+		        this.unsigned,
+		      );
+		    };
+		    /**
+		     * Returns this Long with bits rotated to the right by the given amount. This is an alias of {@link Long#rotateRight}.
+		     * @function
+		     * @param {number|!Long} numBits Number of bits
+		     * @returns {!Long} Rotated Long
+		     */
+		    LongPrototype.rotr = LongPrototype.rotateRight;
+
+		    /**
+		     * Converts this Long to signed.
+		     * @this {!Long}
+		     * @returns {!Long} Signed long
+		     */
+		    LongPrototype.toSigned = function toSigned() {
+		      if (!this.unsigned) return this;
+		      return fromBits(this.low, this.high, false);
+		    };
+
+		    /**
+		     * Converts this Long to unsigned.
+		     * @this {!Long}
+		     * @returns {!Long} Unsigned long
+		     */
+		    LongPrototype.toUnsigned = function toUnsigned() {
+		      if (this.unsigned) return this;
+		      return fromBits(this.low, this.high, true);
+		    };
+
+		    /**
+		     * Converts this Long to its byte representation.
+		     * @param {boolean=} le Whether little or big endian, defaults to big endian
+		     * @this {!Long}
+		     * @returns {!Array.<number>} Byte representation
+		     */
+		    LongPrototype.toBytes = function toBytes(le) {
+		      return le ? this.toBytesLE() : this.toBytesBE();
+		    };
+
+		    /**
+		     * Converts this Long to its little endian byte representation.
+		     * @this {!Long}
+		     * @returns {!Array.<number>} Little endian byte representation
+		     */
+		    LongPrototype.toBytesLE = function toBytesLE() {
+		      var hi = this.high,
+		        lo = this.low;
+		      return [
+		        lo & 0xff,
+		        (lo >>> 8) & 0xff,
+		        (lo >>> 16) & 0xff,
+		        lo >>> 24,
+		        hi & 0xff,
+		        (hi >>> 8) & 0xff,
+		        (hi >>> 16) & 0xff,
+		        hi >>> 24,
+		      ];
+		    };
+
+		    /**
+		     * Converts this Long to its big endian byte representation.
+		     * @this {!Long}
+		     * @returns {!Array.<number>} Big endian byte representation
+		     */
+		    LongPrototype.toBytesBE = function toBytesBE() {
+		      var hi = this.high,
+		        lo = this.low;
+		      return [
+		        hi >>> 24,
+		        (hi >>> 16) & 0xff,
+		        (hi >>> 8) & 0xff,
+		        hi & 0xff,
+		        lo >>> 24,
+		        (lo >>> 16) & 0xff,
+		        (lo >>> 8) & 0xff,
+		        lo & 0xff,
+		      ];
+		    };
+
+		    /**
+		     * Creates a Long from its byte representation.
+		     * @param {!Array.<number>} bytes Byte representation
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @param {boolean=} le Whether little or big endian, defaults to big endian
+		     * @returns {Long} The corresponding Long value
+		     */
+		    Long.fromBytes = function fromBytes(bytes, unsigned, le) {
+		      return le
+		        ? Long.fromBytesLE(bytes, unsigned)
+		        : Long.fromBytesBE(bytes, unsigned);
+		    };
+
+		    /**
+		     * Creates a Long from its little endian byte representation.
+		     * @param {!Array.<number>} bytes Little endian byte representation
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {Long} The corresponding Long value
+		     */
+		    Long.fromBytesLE = function fromBytesLE(bytes, unsigned) {
+		      return new Long(
+		        bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24),
+		        bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24),
+		        unsigned,
+		      );
+		    };
+
+		    /**
+		     * Creates a Long from its big endian byte representation.
+		     * @param {!Array.<number>} bytes Big endian byte representation
+		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		     * @returns {Long} The corresponding Long value
+		     */
+		    Long.fromBytesBE = function fromBytesBE(bytes, unsigned) {
+		      return new Long(
+		        (bytes[4] << 24) | (bytes[5] << 16) | (bytes[6] << 8) | bytes[7],
+		        (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3],
+		        unsigned,
+		      );
+		    };
+
+		    // Support conversion to/from BigInt where available
+		    if (typeof BigInt === "function") {
+		      /**
+		       * Returns a Long representing the given big integer.
+		       * @function
+		       * @param {number} value The big integer value
+		       * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
+		       * @returns {!Long} The corresponding Long value
+		       */
+		      Long.fromBigInt = function fromBigInt(value, unsigned) {
+		        var lowBits = Number(BigInt.asIntN(32, value));
+		        var highBits = Number(BigInt.asIntN(32, value >> BigInt(32)));
+		        return fromBits(lowBits, highBits, unsigned);
+		      };
+
+		      // Override
+		      Long.fromValue = function fromValueWithBigInt(value, unsigned) {
+		        if (typeof value === "bigint") return Long.fromBigInt(value, unsigned);
+		        return fromValue(value, unsigned);
+		      };
+
+		      /**
+		       * Converts the Long to its big integer representation.
+		       * @this {!Long}
+		       * @returns {bigint}
+		       */
+		      LongPrototype.toBigInt = function toBigInt() {
+		        var lowBigInt = BigInt(this.low >>> 0);
+		        var highBigInt = BigInt(this.unsigned ? this.high >>> 0 : this.high);
+		        return (highBigInt << BigInt(32)) | lowBigInt;
+		      };
+		    }
+		    (_exports.default = Long);
+		  },
+		); 
+	} (umd$1, umd$1.exports));
+	return umd$1.exports;
+}
+
 var hasRequiredMinimal$1;
 
 function requireMinimal$1 () {
 	if (hasRequiredMinimal$1) return minimal$1;
 	hasRequiredMinimal$1 = 1;
-	(function (exports$1) {
-		var util = exports$1;
+	(function (exports) {
+		var util = exports;
 
 		// used to return a Promise where callback is omitted
 		util.asPromise = requireAspromise();
@@ -55248,9 +59772,6 @@ function requireMinimal$1 () {
 		// float handling accross browsers
 		util.float = requireFloat();
 
-		// requires modules optionally and hides the call from bundlers
-		util.inquire = requireInquire();
-
 		// converts to / from utf8 encoded strings
 		util.utf8 = requireUtf8();
 
@@ -55259,6 +59780,18 @@ function requireMinimal$1 () {
 
 		// utility to work with the low and high bits of a 64 bit value
 		util.LongBits = requireLongbits();
+
+		/**
+		 * Tests if the specified key can affect object prototypes.
+		 * @memberof util
+		 * @param {string} key Key to test
+		 * @returns {boolean} `true` if the key is unsafe
+		 */
+		function isUnsafeProperty(key) {
+		    return key === "__proto__" || key === "prototype" || key === "constructor";
+		}
+
+		util.isUnsafeProperty = isUnsafeProperty;
 
 		/**
 		 * Whether running within node or not.
@@ -55342,7 +59875,7 @@ function requireMinimal$1 () {
 		 */
 		util.isSet = function isSet(obj, prop) {
 		    var value = obj[prop];
-		    if (value != null && obj.hasOwnProperty(prop)) // eslint-disable-line eqeqeq, no-prototype-builtins
+		    if (value != null && Object.hasOwnProperty.call(obj, prop)) // eslint-disable-line eqeqeq
 		        return typeof value !== "object" || (Array.isArray(value) ? value.length : Object.keys(value).length) > 0;
 		    return false;
 		};
@@ -55360,7 +59893,7 @@ function requireMinimal$1 () {
 		 */
 		util.Buffer = (function() {
 		    try {
-		        var Buffer = util.inquire("buffer").Buffer;
+		        var Buffer = util.global.Buffer;
 		        // refuse to use non-node buffers if not explicitly assigned (perf reasons):
 		        return Buffer.prototype.utf8Write ? Buffer : /* istanbul ignore next */ null;
 		    } catch (e) {
@@ -55414,7 +59947,15 @@ function requireMinimal$1 () {
 		 */
 		util.Long = /* istanbul ignore next */ util.global.dcodeIO && /* istanbul ignore next */ util.global.dcodeIO.Long
 		         || /* istanbul ignore next */ util.global.Long
-		         || util.inquire("long");
+		         || (function() {
+		                try {
+		                    var Long = requireUmd();
+		                    return Long && Long.isLong ? Long : null;
+		                } catch (e) {
+		                    /* istanbul ignore next */
+		                    return null;
+		                }
+		            })();
 
 		/**
 		 * Regular expression used to verify 2 bit (`bool`) map keys.
@@ -55465,18 +60006,54 @@ function requireMinimal$1 () {
 		 * Merges the properties of the source object into the destination object.
 		 * @memberof util
 		 * @param {Object.<string,*>} dst Destination object
-		 * @param {Object.<string,*>} src Source object
-		 * @param {boolean} [ifNotSet=false] Merges only if the key is not already set
+		 * @param {...(Object.<string,*>|boolean)} src Source objects, optionally followed by an `ifNotSet` flag
 		 * @returns {Object.<string,*>} Destination object
 		 */
-		function merge(dst, src, ifNotSet) { // used by converters
-		    for (var keys = Object.keys(src), i = 0; i < keys.length; ++i)
-		        if (dst[keys[i]] === undefined || !ifNotSet)
-		            dst[keys[i]] = src[keys[i]];
+		function merge(dst) { // used by converters
+		    var ifNotSet = typeof arguments[arguments.length - 1] === "boolean",
+		        limit = ifNotSet ? arguments.length - 1 : arguments.length;
+		    ifNotSet = ifNotSet && arguments[arguments.length - 1];
+		    for (var a = 1; a < limit; ++a) {
+		        var src = arguments[a];
+		        if (!src)
+		            continue;
+		        for (var keys = Object.keys(src), i = 0; i < keys.length; ++i)
+		            if (!isUnsafeProperty(keys[i]) && (dst[keys[i]] === undefined || !ifNotSet))
+		                dst[keys[i]] = src[keys[i]];
+		    }
 		    return dst;
 		}
 
 		util.merge = merge;
+
+		/**
+		 * Schema declaration nesting limit.
+		 * @memberof util
+		 * @type {number}
+		 */
+		util.nestingLimit = 32; // protoc: MaxMessageDeclarationNestingDepth
+
+		/**
+		 * Recursion limit.
+		 * @memberof util
+		 * @type {number}
+		 */
+		util.recursionLimit = 100; // protoc: CodedInputStream::default_recursion_limit_
+
+		/**
+		 * Makes a property safe for assignment as an own property.
+		 * @memberof util
+		 * @param {Object.<string,*>} obj Object
+		 * @param {string} key Property key
+		 * @returns {undefined}
+		 */
+		util.makeProp = function makeProp(obj, key) {
+		    Object.defineProperty(obj, key, {
+		        enumerable: true,
+		        configurable: true,
+		        writable: true
+		    });
+		};
 
 		/**
 		 * Converts the first character of a string to lower case.
@@ -55907,7 +60484,7 @@ function requireWriter () {
 	 * @returns {Writer} `this`
 	 */
 	Writer.prototype.int32 = function write_int32(value) {
-	    return value < 0
+	    return (value |= 0) < 0
 	        ? this._push(writeVarint64, 10, LongBits.fromNumber(value)) // 10 bytes per spec
 	        : this.uint32(value);
 	};
@@ -55922,16 +60499,18 @@ function requireWriter () {
 	};
 
 	function writeVarint64(val, buf, pos) {
-	    while (val.hi) {
-	        buf[pos++] = val.lo & 127 | 128;
-	        val.lo = (val.lo >>> 7 | val.hi << 25) >>> 0;
-	        val.hi >>>= 7;
+	    var lo = val.lo,
+	        hi = val.hi;
+	    while (hi) {
+	        buf[pos++] = lo & 127 | 128;
+	        lo = (lo >>> 7 | hi << 25) >>> 0;
+	        hi >>>= 7;
 	    }
-	    while (val.lo > 127) {
-	        buf[pos++] = val.lo & 127 | 128;
-	        val.lo = val.lo >>> 7;
+	    while (lo > 127) {
+	        buf[pos++] = lo & 127 | 128;
+	        lo = lo >>> 7;
 	    }
-	    buf[pos++] = val.lo;
+	    buf[pos++] = lo;
 	}
 
 	/**
@@ -56326,6 +60905,20 @@ function requireReader () {
 
 	Reader.prototype._slice = util.Array.prototype.subarray || /* istanbul ignore next */ util.Array.prototype.slice;
 
+	function readVarint32NearEnd(reader) {
+	    // Safely read up to four bytes of a varint32 near the reader limit
+	    var value = 0;
+	    for (var i = 0; i < 4; ++i) {
+	        if (reader.pos >= reader.len)
+	            throw indexOutOfRange(reader);
+	        var b = reader.buf[reader.pos++];
+	        value = (value | (b & 127) << i * 7) >>> 0;
+	        if (b < 128)
+	            return value;
+	    }
+	    throw indexOutOfRange(reader);
+	}
+
 	/**
 	 * Reads a varint as an unsigned 32 bit value.
 	 * @function
@@ -56334,6 +60927,12 @@ function requireReader () {
 	Reader.prototype.uint32 = (function read_uint32_setup() {
 	    var value = 4294967295; // optimizer type-hint, tends to deopt otherwise (?!)
 	    return function read_uint32() {
+	        if (this.len - this.pos < 5) {
+	            if (this.pos >= this.len)
+	                throw indexOutOfRange(this);
+	            if (this.buf[this.pos] >= 128)
+	                return readVarint32NearEnd(this);
+	        }
 	        value = (         this.buf[this.pos] & 127       ) >>> 0; if (this.buf[this.pos++] < 128) return value;
 	        value = (value | (this.buf[this.pos] & 127) <<  7) >>> 0; if (this.buf[this.pos++] < 128) return value;
 	        value = (value | (this.buf[this.pos] & 127) << 14) >>> 0; if (this.buf[this.pos++] < 128) return value;
@@ -56601,11 +61200,21 @@ function requireReader () {
 	};
 
 	/**
+	 * Recursion limit.
+	 * @type {number}
+	 */
+	Reader.recursionLimit = util.recursionLimit;
+
+	/**
 	 * Skips the next element of the specified wire type.
 	 * @param {number} wireType Wire type received
+	 * @param {number} [depth] Depth of recursion to control nested calls; 0 if omitted
 	 * @returns {Reader} `this`
 	 */
-	Reader.prototype.skipType = function(wireType) {
+	Reader.prototype.skipType = function(wireType, depth) {
+	    if (depth === undefined) depth = 0;
+	    if (depth > Reader.recursionLimit)
+	        throw Error("maximum nesting depth exceeded");
 	    switch (wireType) {
 	        case 0:
 	            this.skip();
@@ -56618,7 +61227,7 @@ function requireReader () {
 	            break;
 	        case 3:
 	            while ((wireType = this.uint32() & 7) !== 4) {
-	                this.skipType(wireType);
+	                this.skipType(wireType, depth + 1);
 	            }
 	            break;
 	        case 5:
@@ -56881,13 +61490,13 @@ var hasRequiredRpc;
 function requireRpc () {
 	if (hasRequiredRpc) return rpc;
 	hasRequiredRpc = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * Streaming RPC helpers.
 		 * @namespace
 		 */
-		var rpc = exports$1;
+		var rpc = exports;
 
 		/**
 		 * RPC implementation passed to {@link Service#create} performing a service request on network level, i.e. by utilizing http requests or websockets.
@@ -56927,7 +61536,7 @@ var hasRequiredRoots;
 function requireRoots () {
 	if (hasRequiredRoots) return roots;
 	hasRequiredRoots = 1;
-	roots = {};
+	roots = Object.create(null);
 
 	/**
 	 * Named roots.
@@ -56952,8 +61561,8 @@ var hasRequiredIndexMinimal;
 function requireIndexMinimal () {
 	if (hasRequiredIndexMinimal) return indexMinimal;
 	hasRequiredIndexMinimal = 1;
-	(function (exports$1) {
-		var protobuf = exports$1;
+	(function (exports) {
+		var protobuf = exports;
 
 		/**
 		 * Build type, one of `"full"`, `"light"` or `"minimal"`.
@@ -57003,6 +61612,8 @@ function requireCodegen () {
 	if (hasRequiredCodegen) return codegen_1;
 	hasRequiredCodegen = 1;
 	codegen_1 = codegen;
+
+	var reservedRe = /^(?:do|if|in|for|let|new|try|var|case|else|enum|eval|false|null|this|true|void|with|break|catch|class|const|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$/;
 
 	/**
 	 * Begins generating a function.
@@ -57078,7 +61689,7 @@ function requireCodegen () {
 	    }
 
 	    function toString(functionNameOverride) {
-	        return "function " + (functionNameOverride || functionName || "") + "(" + (functionParams && functionParams.join(",") || "") + "){\n  " + body.join("\n  ") + "\n}";
+	        return "function " + safeFunctionName(functionNameOverride || functionName) + "(" + (functionParams && functionParams.join(",") || "") + "){\n  " + body.join("\n  ") + "\n}";
 	    }
 
 	    Codegen.toString = toString;
@@ -57100,7 +61711,37 @@ function requireCodegen () {
 	 * @type {boolean}
 	 */
 	codegen.verbose = false;
+
+	function safeFunctionName(name) {
+	    if (!name)
+	        return "";
+	    name = String(name).replace(/[^\w$]/g, "");
+	    if (!name)
+	        return "";
+	    if (/^\d/.test(name))
+	        name = "_" + name;
+	    return reservedRe.test(name) ? name + "_" : name;
+	}
 	return codegen_1;
+}
+
+var fs_1$1;
+var hasRequiredFs$1;
+
+function requireFs$1 () {
+	if (hasRequiredFs$1) return fs_1$1;
+	hasRequiredFs$1 = 1;
+
+	var fs = null;
+	try {
+	    fs = require(/* webpackIgnore: true */ "fs");
+	    if (!fs || !fs.readFile || !fs.readFileSync)
+	        fs = null;
+	} catch (e) {
+	    // `fs` is unavailable in browsers and browser-like bundles.
+	}
+	fs_1$1 = fs;
+	return fs_1$1;
 }
 
 var fetch_1;
@@ -57112,9 +61753,7 @@ function requireFetch () {
 	fetch_1 = fetch;
 
 	var asPromise = requireAspromise(),
-	    inquire   = requireInquire();
-
-	var fs = inquire("fs");
+	    fs        = requireFs$1();
 
 	/**
 	 * Node-style callback as used by {@link util.fetch}.
@@ -57127,8 +61766,7 @@ function requireFetch () {
 
 	/**
 	 * Options as used by {@link util.fetch}.
-	 * @typedef FetchOptions
-	 * @type {Object}
+	 * @interface IFetchOptions
 	 * @property {boolean} [binary=false] Whether expecting a binary response
 	 * @property {boolean} [xhr=false] If `true`, forces the use of XMLHttpRequest
 	 */
@@ -57137,7 +61775,7 @@ function requireFetch () {
 	 * Fetches the contents of a file.
 	 * @memberof util
 	 * @param {string} filename File path or url
-	 * @param {FetchOptions} options Fetch options
+	 * @param {IFetchOptions} options Fetch options
 	 * @param {FetchCallback} callback Callback function
 	 * @returns {undefined}
 	 */
@@ -57180,7 +61818,7 @@ function requireFetch () {
 	 * @name util.fetch
 	 * @function
 	 * @param {string} path File path or url
-	 * @param {FetchOptions} [options] Fetch options
+	 * @param {IFetchOptions} [options] Fetch options
 	 * @returns {Promise<string|Uint8Array>} Promise
 	 * @variation 3
 	 */
@@ -57233,14 +61871,14 @@ var hasRequiredPath;
 function requirePath () {
 	if (hasRequiredPath) return path;
 	hasRequiredPath = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * A minimal path module to resolve Unix, Windows and URL paths alike.
 		 * @memberof util
 		 * @namespace
 		 */
-		var path = exports$1;
+		var path = exports;
 
 		var isAbsolute =
 		/**
@@ -57302,6 +61940,43 @@ function requirePath () {
 	return path;
 }
 
+var patterns = {};
+
+var hasRequiredPatterns;
+
+function requirePatterns () {
+	if (hasRequiredPatterns) return patterns;
+	hasRequiredPatterns = 1;
+	(function (exports) {
+
+		var patterns = exports;
+
+		patterns.numberRe    = /^(?![eE])[0-9]*(?:\.[0-9]*)?(?:[eE][+-]?[0-9]+)?$/;
+		patterns.typeRefRe   = /^(?:\.?[a-zA-Z_][a-zA-Z_0-9]*)(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*$/;
+		patterns.reservedRe  = /^(?:do|if|in|for|let|new|try|var|case|else|enum|eval|false|null|this|true|void|with|break|catch|class|const|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$/; 
+	} (patterns));
+	return patterns;
+}
+
+var fs_1;
+var hasRequiredFs;
+
+function requireFs () {
+	if (hasRequiredFs) return fs_1;
+	hasRequiredFs = 1;
+
+	var fs = null;
+	try {
+	    fs = require(/* webpackIgnore: true */ "fs");
+	    if (!fs || !fs.readFile || !fs.readFileSync)
+	        fs = null;
+	} catch (e) {
+	    // `fs` is unavailable in browsers and browser-like bundles.
+	}
+	fs_1 = fs;
+	return fs_1;
+}
+
 var namespace;
 var hasRequiredNamespace;
 
@@ -57338,11 +62013,13 @@ function requireNamespace () {
 	 * @function
 	 * @param {string} name Namespace name
 	 * @param {Object.<string,*>} json JSON object
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Namespace} Created namespace
 	 * @throws {TypeError} If arguments are invalid
 	 */
-	Namespace.fromJSON = function fromJSON(name, json) {
-	    return new Namespace(name, json.options).addJSON(json.nested);
+	Namespace.fromJSON = function fromJSON(name, json, depth) {
+	    depth = util.checkDepth(depth);
+	    return new Namespace(name, json.options).addJSON(json.nested, depth);
 	};
 
 	/**
@@ -57425,7 +62102,7 @@ function requireNamespace () {
 	     * @type {Object.<string,ReflectionObject|null>}
 	     * @private
 	     */
-	    this._lookupCache = {};
+	    this._lookupCache = Object.create(null);
 
 	    /**
 	     * Whether or not objects contained in this namespace need feature resolution.
@@ -57444,12 +62121,12 @@ function requireNamespace () {
 
 	function clearCache(namespace) {
 	    namespace._nestedArray = null;
-	    namespace._lookupCache = {};
+	    namespace._lookupCache = Object.create(null);
 
 	    // Also clear parent caches, since they include nested lookups.
 	    var parent = namespace;
 	    while(parent = parent.parent) {
-	        parent._lookupCache = {};
+	        parent._lookupCache = Object.create(null);
 	    }
 	    return namespace;
 	}
@@ -57500,9 +62177,11 @@ function requireNamespace () {
 	/**
 	 * Adds nested objects to this namespace from nested object descriptors.
 	 * @param {Object.<string,AnyNestedObject>} nestedJson Any nested object descriptors
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Namespace} `this`
 	 */
-	Namespace.prototype.addJSON = function addJSON(nestedJson) {
+	Namespace.prototype.addJSON = function addJSON(nestedJson, depth) {
+	    depth = util.checkDepth(depth);
 	    var ns = this;
 	    /* istanbul ignore else */
 	    if (nestedJson) {
@@ -57517,7 +62196,7 @@ function requireNamespace () {
 	                ? Service.fromJSON
 	                : nested.id !== undefined
 	                ? Field.fromJSON
-	                : Namespace.fromJSON )(names[i], nested)
+	                : Namespace.fromJSON )(names[i], nested, depth + 1)
 	            );
 	        }
 	    }
@@ -57530,8 +62209,9 @@ function requireNamespace () {
 	 * @returns {ReflectionObject|null} The reflection object or `null` if it doesn't exist
 	 */
 	Namespace.prototype.get = function get(name) {
-	    return this.nested && this.nested[name]
-	        || null;
+	    return this.nested && Object.prototype.hasOwnProperty.call(this.nested, name)
+	        ? this.nested[name]
+	        : null;
 	};
 
 	/**
@@ -57542,7 +62222,7 @@ function requireNamespace () {
 	 * @throws {Error} If there is no such enum
 	 */
 	Namespace.prototype.getEnum = function getEnum(name) {
-	    if (this.nested && this.nested[name] instanceof Enum)
+	    if (this.nested && Object.prototype.hasOwnProperty.call(this.nested, name) && this.nested[name] instanceof Enum)
 	        return this.nested[name].values;
 	    throw Error("no such enum: " + name);
 	};
@@ -57558,6 +62238,9 @@ function requireNamespace () {
 
 	    if (!(object instanceof Field && object.extend !== undefined || object instanceof Type  || object instanceof OneOf || object instanceof Enum || object instanceof Service || object instanceof Namespace))
 	        throw TypeError("object must be a valid nested object");
+
+	    if (object.name === "__proto__")
+	        return this;
 
 	    if (!this.nested)
 	        this.nested = {};
@@ -57638,6 +62321,8 @@ function requireNamespace () {
 	        throw TypeError("illegal path");
 	    if (path && path.length && path[0] === "")
 	        throw Error("path must be relative");
+	    if (path.length > util.recursionLimit)
+	        throw Error("max depth exceeded");
 
 	    var ptr = this;
 	    while (path.length > 0) {
@@ -57771,8 +62456,10 @@ function requireNamespace () {
 	    // Otherwise try each nested namespace
 	    } else {
 	        for (var i = 0; i < this.nestedArray.length; ++i)
-	            if (this._nestedArray[i] instanceof Namespace && (found = this._nestedArray[i]._lookupImpl(path, flatPath)))
+	            if (this._nestedArray[i] instanceof Namespace && (found = this._nestedArray[i]._lookupImpl(path, flatPath))) {
 	                exact = found;
+	                break;
+	            }
 	    }
 
 	    // Set this even when null, so that when we walk up the tree we can quickly bail on repeated checks back down.
@@ -58211,17 +62898,19 @@ function requireService () {
 	 * Constructs a service from a service descriptor.
 	 * @param {string} name Service name
 	 * @param {IService} json Service descriptor
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Service} Created service
 	 * @throws {TypeError} If arguments are invalid
 	 */
-	Service.fromJSON = function fromJSON(name, json) {
+	Service.fromJSON = function fromJSON(name, json, depth) {
+	    depth = util.checkDepth(depth);
 	    var service = new Service(name, json.options);
 	    /* istanbul ignore else */
 	    if (json.methods)
 	        for (var names = Object.keys(json.methods), i = 0; i < names.length; ++i)
 	            service.add(Method.fromJSON(names[i], json.methods[names[i]]));
 	    if (json.nested)
-	        service.addJSON(json.nested);
+	        service.addJSON(json.nested, depth);
 	    if (json.edition)
 	        service._edition = json.edition;
 	    service.comment = json.comment;
@@ -58267,8 +62956,9 @@ function requireService () {
 	 * @override
 	 */
 	Service.prototype.get = function get(name) {
-	    return this.methods[name]
-	        || Namespace.prototype.get.call(this, name);
+	    return Object.prototype.hasOwnProperty.call(this.methods, name)
+	        ? this.methods[name]
+	        : Namespace.prototype.get.call(this, name);
 	};
 
 	/**
@@ -58303,12 +62993,13 @@ function requireService () {
 	 * @override
 	 */
 	Service.prototype.add = function add(object) {
-
 	    /* istanbul ignore if */
 	    if (this.get(object.name))
 	        throw Error("duplicate name '" + object.name + "' in " + this);
 
 	    if (object instanceof Method) {
+	        if (object.name === "__proto__")
+	            return this;
 	        this.methods[object.name] = object;
 	        object.parent = this;
 	        return clearCache(this);
@@ -58344,11 +63035,11 @@ function requireService () {
 	    var rpcService = new rpc.Service(rpcImpl, requestDelimited, responseDelimited);
 	    for (var i = 0, method; i < /* initializes */ this.methodsArray.length; ++i) {
 	        var methodName = util.lcFirst((method = this._methodsArray[i]).resolve().name).replace(/[^$\w_]/g, "");
-	        rpcService[methodName] = util.codegen(["r","c"], util.isReserved(methodName) ? methodName + "_" : methodName)("return this.rpcCall(m,q,s,r,c)")({
-	            m: method,
-	            q: method.resolvedRequestType.ctor,
-	            s: method.resolvedResponseType.ctor
-	        });
+	        rpcService[methodName] = (function(method, requestType, responseType) {
+	            return function rpcMethod(request, callback) {
+	                return rpc.Service.prototype.rpcCall.call(this, method, requestType, responseType, request, callback);
+	            };
+	        })(method, method.resolvedRequestType.ctor, method.resolvedResponseType.ctor);
 	    }
 	    return rpcService;
 	};
@@ -58375,8 +63066,12 @@ function requireMessage () {
 	function Message(properties) {
 	    // not used internally
 	    if (properties)
-	        for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-	            this[keys[i]] = properties[keys[i]];
+	        for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i) {
+	            var key = keys[i];
+	            if (key === "__proto__")
+	                continue;
+	            this[key] = properties[key];
+	        }
 	}
 
 	/**
@@ -58525,10 +63220,23 @@ function requireDecoder () {
 	 */
 	function decoder(mtype) {
 	    /* eslint-disable no-unexpected-multiline */
-	    var gen = util.codegen(["r", "l", "e"], mtype.name + "$decode")
+	    var gen = util.codegen(["r", "l", "e", "n"], mtype.name + "$decode")
 	    ("if(!(r instanceof Reader))")
 	        ("r=Reader.create(r)")
-	    ("var c=l===undefined?r.len:r.pos+l,m=new this.ctor" + (mtype.fieldsArray.filter(function(field) { return field.map; }).length ? ",k,value" : ""))
+	    ("if(n===undefined)n=0")
+	    ("if(n>Reader.recursionLimit)")
+	        ("throw Error(\"maximum nesting depth exceeded\")")
+	    ("var c,m" + (mtype.fieldsArray.filter(function(field) { return field.map; }).length ? ",k,value" : ""))
+	    ("if(l===undefined)")
+	        ("c=r.len")
+	    ("else{")
+	        ("c=r.pos+l")
+	        ("if(c>r.len)")
+	            ("throw RangeError(\"index out of range\")")
+	        ("l=r.len")
+	        ("r.len=c")
+	    ("}")
+	    ("m=new this.ctor")
 	    ("while(r.pos<c){")
 	        ("var t=r.uint32()")
 	        ("if(t===e)")
@@ -58546,7 +63254,10 @@ function requireDecoder () {
 	        if (field.map) { gen
 	                ("if(%s===util.emptyObject)", ref)
 	                    ("%s={}", ref)
-	                ("var c2 = r.uint32()+r.pos");
+	                ("var c2=r.uint32()+r.pos")
+	                ("if(c2>r.len)")
+	                    ("throw RangeError(\"index out of range\")")
+	                ("r.len=c2");
 
 	            if (types.defaults[field.keyType] !== undefined) gen
 	                ("k=%j", types.defaults[field.keyType]);
@@ -58566,22 +63277,30 @@ function requireDecoder () {
 	                        ("case 2:");
 
 	            if (types.basic[type] === undefined) gen
-	                            ("value=types[%i].decode(r,r.uint32())", i); // can't be groups
+	                            ("value=types[%i].decode(r,r.uint32(),undefined,n+1)", i); // can't be groups
 	            else gen
 	                            ("value=r.%s()", type);
 
 	            gen
 	                            ("break")
 	                        ("default:")
-	                            ("r.skipType(tag2&7)")
+	                            ("r.skipType(tag2&7,n)")
 	                            ("break")
 	                    ("}")
-	                ("}");
+	                ("}")
+	                ("if(r.pos!==c2)")
+	                    ("throw RangeError(\"index out of range\")")
+	                ("r.len=c");
 
 	            if (types.long[field.keyType] !== undefined) gen
 	                ("%s[typeof k===\"object\"?util.longToHash(k):k]=value", ref);
-	            else gen
+	            else {
+	                if (field.keyType === "string") gen
+	                ("if(k===\"__proto__\")")
+	                    ("util.makeProp(%s,k)", ref);
+	                gen
 	                ("%s[k]=value", ref);
+	            }
 
 	        // Repeated fields
 	        } else if (field.repeated) { gen
@@ -58593,21 +63312,27 @@ function requireDecoder () {
 	            if (types.packed[type] !== undefined) gen
 	                ("if((t&7)===2){")
 	                    ("var c2=r.uint32()+r.pos")
+	                    ("if(c2>r.len)")
+	                        ("throw RangeError(\"index out of range\")")
+	                    ("r.len=c2")
 	                    ("while(r.pos<c2)")
 	                        ("%s.push(r.%s())", ref, type)
+	                    ("if(r.pos!==c2)")
+	                        ("throw RangeError(\"index out of range\")")
+	                    ("r.len=c")
 	                ("}else");
 
 	            // Non-packed
 	            if (types.basic[type] === undefined) gen(field.delimited
-	                    ? "%s.push(types[%i].decode(r,undefined,((t&~7)|4)))"
-	                    : "%s.push(types[%i].decode(r,r.uint32()))", ref, i);
+	                    ? "%s.push(types[%i].decode(r,undefined,((t&~7)|4),n+1))"
+	                    : "%s.push(types[%i].decode(r,r.uint32(),undefined,n+1))", ref, i);
 	            else gen
 	                    ("%s.push(r.%s())", ref, type);
 
 	        // Non-repeated
 	        } else if (types.basic[type] === undefined) gen(field.delimited
-	                ? "%s=types[%i].decode(r,undefined,((t&~7)|4))"
-	                : "%s=types[%i].decode(r,r.uint32())", ref, i);
+	                ? "%s=types[%i].decode(r,undefined,((t&~7)|4),n+1)"
+	                : "%s=types[%i].decode(r,r.uint32(),undefined,n+1)", ref, i);
 	        else gen
 	                ("%s=r.%s()", ref, type);
 	        gen
@@ -58616,17 +63341,24 @@ function requireDecoder () {
 	        // Unknown fields
 	    } gen
 	            ("default:")
-	                ("r.skipType(t&7)")
+	                ("r.skipType(t&7,n)")
 	                ("break")
 
 	        ("}")
+	    ("}");
+
+	    gen
+	    ("if(l!==undefined){")
+	        ("if(r.pos!==c)")
+	            ("throw RangeError(\"index out of range\")")
+	        ("r.len=l")
 	    ("}");
 
 	    // Field presence
 	    for (i = 0; i < mtype._fieldsArray.length; ++i) {
 	        var rfield = mtype._fieldsArray[i];
 	        if (rfield.required) gen
-	    ("if(!m.hasOwnProperty(%j))", rfield.name)
+	            ("if(!Object.hasOwnProperty.call(m,%j))", rfield.name)
 	        ("throw util.ProtocolError(%j,{instance:m})", missing(rfield));
 	    }
 
@@ -58676,7 +63408,7 @@ function requireVerifier () {
 	        } else {
 	            gen
 	            ("{")
-	                ("var e=types[%i].verify(%s);", fieldIndex, ref)
+	                ("var e=types[%i].verify(%s,n+1);", fieldIndex, ref)
 	                ("if(e)")
 	                    ("return%j+e", field.name + ".")
 	            ("}");
@@ -58766,9 +63498,12 @@ function requireVerifier () {
 	function verifier(mtype) {
 	    /* eslint-disable no-unexpected-multiline */
 
-	    var gen = util.codegen(["m"], mtype.name + "$verify")
+	    var gen = util.codegen(["m", "n"], mtype.name + "$verify")
 	    ("if(typeof m!==\"object\"||m===null)")
-	        ("return%j", "object expected");
+	        ("return%j", "object expected")
+	    ("if(n===undefined)n=0")
+	    ("if(n>util.recursionLimit)")
+	        ("return%j", "maximum nesting depth exceeded");
 	    var oneofs = mtype.oneofsArray,
 	        seenFirstField = {};
 	    if (oneofs.length) gen
@@ -58779,7 +63514,7 @@ function requireVerifier () {
 	            ref   = "m" + util.safeProp(field.name);
 
 	        if (field.optional) gen
-	        ("if(%s!=null&&m.hasOwnProperty(%j)){", ref, field.name); // !== undefined && !== null
+	        ("if(%s!=null&&Object.hasOwnProperty.call(m,%j)){", ref, field.name); // !== undefined && !== null
 
 	        // map fields
 	        if (field.map) { gen
@@ -58829,12 +63564,12 @@ var hasRequiredConverter;
 function requireConverter () {
 	if (hasRequiredConverter) return converter;
 	hasRequiredConverter = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/**
 		 * Runtime message from/to plain object converters.
 		 * @namespace
 		 */
-		var converter = exports$1;
+		var converter = exports;
 
 		var Enum = require_enum(),
 		    util = requireUtil$1();
@@ -58872,9 +63607,9 @@ function requireConverter () {
 		            } gen
 		            ("}");
 		        } else gen
-		            ("if(typeof d%s!==\"object\")", prop)
+		            ("if(!util.isObject(d%s))", prop)
 		                ("throw TypeError(%j)", field.fullName + ": object expected")
-		            ("m%s=types[%i].fromObject(d%s)", prop, fieldIndex, prop);
+		            ("m%s=types[%i].fromObject(d%s,n+1)", prop, fieldIndex, prop);
 		    } else {
 		        var isUnsigned = false;
 		        switch (field.type) {
@@ -58892,14 +63627,14 @@ function requireConverter () {
 		                ("m%s=d%s|0", prop, prop);
 		                break;
 		            case "uint64":
+		            case "fixed64":
 		                isUnsigned = true;
 		                // eslint-disable-next-line no-fallthrough
 		            case "int64":
 		            case "sint64":
-		            case "fixed64":
 		            case "sfixed64": gen
 		                ("if(util.Long)")
-		                    ("(m%s=util.Long.fromValue(d%s)).unsigned=%j", prop, prop, isUnsigned)
+		                    ("m%s=util.Long.fromValue(d%s,%j)", prop, prop, isUnsigned)
 		                ("else if(typeof d%s===\"string\")", prop)
 		                    ("m%s=parseInt(d%s,10)", prop, prop)
 		                ("else if(typeof d%s===\"number\")", prop)
@@ -58936,11 +63671,17 @@ function requireConverter () {
 		converter.fromObject = function fromObject(mtype) {
 		    /* eslint-disable no-unexpected-multiline, block-scoped-var, no-redeclare */
 		    var fields = mtype.fieldsArray;
-		    var gen = util.codegen(["d"], mtype.name + "$fromObject")
+		    var gen = util.codegen(["d", "n"], mtype.name + "$fromObject")
 		    ("if(d instanceof this.ctor)")
 		        ("return d");
 		    if (!fields.length) return gen
 		    ("return new this.ctor");
+		    gen
+		    ("if(!util.isObject(d))")
+		        ("throw TypeError(%j)", mtype.fullName + ": object expected")
+		    ("if(n===undefined)n=0")
+		    ("if(n>util.recursionLimit)")
+		        ("throw Error(\"maximum nesting depth exceeded\")");
 		    gen
 		    ("var m=new this.ctor");
 		    for (var i = 0; i < fields.length; ++i) {
@@ -58950,10 +63691,13 @@ function requireConverter () {
 		        // Map fields
 		        if (field.map) { gen
 		    ("if(d%s){", prop)
-		        ("if(typeof d%s!==\"object\")", prop)
+		        ("if(!util.isObject(d%s))", prop)
 		            ("throw TypeError(%j)", field.fullName + ": object expected")
 		        ("m%s={}", prop)
 		        ("for(var ks=Object.keys(d%s),i=0;i<ks.length;++i){", prop);
+		            gen
+		        ("if(ks[i]===\"__proto__\")")
+		            ("util.makeProp(m%s,ks[i])", prop);
 		            genValuePartial_fromObject(gen, field, /* not sorted */ i, prop + "[ks[i]]")
 		        ("}")
 		    ("}");
@@ -58997,7 +63741,7 @@ function requireConverter () {
 		        if (field.resolvedType instanceof Enum) gen
 		            ("d%s=o.enums===String?(types[%i].values[m%s]===undefined?m%s:types[%i].values[m%s]):m%s", prop, fieldIndex, prop, prop, fieldIndex, prop, prop);
 		        else gen
-		            ("d%s=types[%i].toObject(m%s,o)", prop, fieldIndex, prop);
+		            ("d%s=types[%i].toObject(m%s,o,q+1)", prop, fieldIndex, prop);
 		    } else {
 		        var isUnsigned = false;
 		        switch (field.type) {
@@ -59006,13 +63750,15 @@ function requireConverter () {
 		            ("d%s=o.json&&!isFinite(m%s)?String(m%s):m%s", prop, prop, prop, prop);
 		                break;
 		            case "uint64":
+		            case "fixed64":
 		                isUnsigned = true;
 		                // eslint-disable-next-line no-fallthrough
 		            case "int64":
 		            case "sint64":
-		            case "fixed64":
 		            case "sfixed64": gen
-		            ("if(typeof m%s===\"number\")", prop)
+		            ("if(typeof BigInt!==\"undefined\"&&o.longs===BigInt)")
+		                ("d%s=typeof m%s===\"number\"?BigInt(m%s):util.Long.fromBits(m%s.low>>>0,m%s.high>>>0,%j).toBigInt()", prop, prop, prop, prop, prop, isUnsigned)
+		            ("else if(typeof m%s===\"number\")", prop)
 		                ("d%s=o.longs===String?String(m%s):m%s", prop, prop, prop)
 		            ("else") // Long-like
 		                ("d%s=o.longs===String?util.Long.prototype.toString.call(m%s):o.longs===Number?new util.LongBits(m%s.low>>>0,m%s.high>>>0).toNumber(%s):m%s", prop, prop, prop, prop, isUnsigned ? "true": "", prop);
@@ -59039,9 +63785,12 @@ function requireConverter () {
 		    var fields = mtype.fieldsArray.slice().sort(util.compareFieldsById);
 		    if (!fields.length)
 		        return util.codegen()("return {}");
-		    var gen = util.codegen(["m", "o"], mtype.name + "$toObject")
+		    var gen = util.codegen(["m", "o", "q"], mtype.name + "$toObject")
 		    ("if(!o)")
 		        ("o={}")
+		    ("if(q===undefined)q=0")
+		    ("if(q>util.recursionLimit)")
+		        ("throw Error(\"max depth exceeded\")")
 		    ("var d={}");
 
 		    var repeatedFields = [],
@@ -59080,15 +63829,15 @@ function requireConverter () {
 		            else if (field.long) gen
 		        ("if(util.Long){")
 		            ("var n=new util.Long(%i,%i,%j)", field.typeDefault.low, field.typeDefault.high, field.typeDefault.unsigned)
-		            ("d%s=o.longs===String?n.toString():o.longs===Number?n.toNumber():n", prop)
+		            ("d%s=o.longs===String?n.toString():o.longs===Number?n.toNumber():typeof BigInt!==\"undefined\"&&o.longs===BigInt?n.toBigInt():n", prop)
 		        ("}else")
-		            ("d%s=o.longs===String?%j:%i", prop, field.typeDefault.toString(), field.typeDefault.toNumber());
+		            ("d%s=o.longs===String?%j:typeof BigInt!==\"undefined\"&&o.longs===BigInt?BigInt(%j):%i", prop, field.typeDefault.toString(), field.typeDefault.toString(), field.typeDefault.toNumber());
 		            else if (field.bytes) {
-		                var arrayDefault = "[" + Array.prototype.slice.call(field.typeDefault).join(",") + "]";
+		                var arrayDefault = Array.prototype.slice.call(field.typeDefault);
 		                gen
 		        ("if(o.bytes===String)d%s=%j", prop, String.fromCharCode.apply(String, field.typeDefault))
 		        ("else{")
-		            ("d%s=%s", prop, arrayDefault)
+		            ("d%s=%j", prop, arrayDefault)
 		            ("if(o.bytes!==Array)d%s=util.newBuffer(d%s)", prop, prop)
 		        ("}");
 		            } else gen
@@ -59108,6 +63857,9 @@ function requireConverter () {
 		    ("if(m%s&&(ks2=Object.keys(m%s)).length){", prop, prop)
 		        ("d%s={}", prop)
 		        ("for(var j=0;j<ks2.length;++j){");
+		            gen
+		        ("if(ks2[j]===\"__proto__\")")
+		            ("util.makeProp(d%s,ks2[j])", prop);
 		            genValuePartial_toObject(gen, field, /* sorted */ index, prop + "[ks2[j]]")
 		        ("}");
 		        } else if (field.repeated) { gen
@@ -59117,7 +63869,7 @@ function requireConverter () {
 		            genValuePartial_toObject(gen, field, /* sorted */ index, prop + "[j]")
 		        ("}");
 		        } else { gen
-		    ("if(m%s!=null&&m.hasOwnProperty(%j)){", prop, field.name); // !== undefined && !== null
+		    ("if(m%s!=null&&Object.hasOwnProperty.call(m,%j)){", prop, field.name); // !== undefined && !== null
 		        genValuePartial_toObject(gen, field, /* sorted */ index, prop);
 		        if (field.partOf) gen
 		        ("if(o.oneofs)")
@@ -59141,16 +63893,17 @@ var hasRequiredWrappers;
 function requireWrappers () {
 	if (hasRequiredWrappers) return wrappers;
 	hasRequiredWrappers = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * Wrappers for common types.
 		 * @type {Object.<string,IWrapper>}
 		 * @const
 		 */
-		var wrappers = exports$1;
+		var wrappers = exports;
 
-		var Message = requireMessage();
+		var Message = requireMessage(),
+		    util    = requireMinimal$1();
 
 		/**
 		 * From object converter part of an {@link IWrapper}.
@@ -59181,7 +63934,11 @@ function requireWrappers () {
 		// Custom wrapper for Any
 		wrappers[".google.protobuf.Any"] = {
 
-		    fromObject: function(object) {
+		    fromObject: function(object, depth) {
+		        if (depth === undefined)
+		            depth = 0;
+		        if (depth > util.recursionLimit)
+		            throw Error("max depth exceeded");
 
 		        // unwrap value type if mapped
 		        if (object && object["@type"]) {
@@ -59199,15 +63956,19 @@ function requireWrappers () {
 		                }
 		                return this.create({
 		                    type_url: type_url,
-		                    value: type.encode(type.fromObject(object)).finish()
+		                    value: type.encode(type.fromObject(object, depth + 1)).finish()
 		                });
 		            }
 		        }
 
-		        return this.fromObject(object);
+		        return this.fromObject(object, depth);
 		    },
 
-		    toObject: function(message, options) {
+		    toObject: function(message, options, depth) {
+		        if (depth === undefined)
+		            depth = 0;
+		        if (depth > util.recursionLimit)
+		            throw Error("max depth exceeded");
 
 		        // Default prefix
 		        var googleApi = "type.googleapis.com/";
@@ -59223,12 +63984,12 @@ function requireWrappers () {
 		            var type = this.lookup(name);
 		            /* istanbul ignore else */
 		            if (type)
-		                message = type.decode(message.value);
+		                message = type.decode(message.value, undefined, undefined, depth + 1);
 		        }
 
 		        // wrap value if unmapped
 		        if (!(message instanceof this.ctor) && message instanceof Message) {
-		            var object = message.$type.toObject(message, options);
+		            var object = message.$type.toObject(message, options, depth + 1);
 		            var messageName = message.$type.fullName[0] === "." ?
 		                message.$type.fullName.slice(1) : message.$type.fullName;
 		            // Default to type.googleapis.com prefix if no prefix is used
@@ -59240,7 +64001,7 @@ function requireWrappers () {
 		            return object;
 		        }
 
-		        return this.toObject(message, options);
+		        return this.toObject(message, options, depth);
 		    }
 		}; 
 	} (wrappers));
@@ -59283,6 +64044,7 @@ function requireType () {
 	 * @param {Object.<string,*>} [options] Declared options
 	 */
 	function Type(name, options) {
+	    name = name.replace(/\W/g, "");
 	    Namespace.call(this, name, options);
 
 	    /**
@@ -59458,7 +64220,7 @@ function requireType () {
 	        else if (field.repeated) gen
 	            ("this%s=[]", util.safeProp(field.name));
 	    return gen
-	    ("if(p)for(var ks=Object.keys(p),i=0;i<ks.length;++i)if(p[ks[i]]!=null)") // omit undefined or null
+	    ("if(p)for(var ks=Object.keys(p),i=0;i<ks.length;++i)if(p[ks[i]]!=null&&ks[i]!==\"__proto__\")") // omit undefined or null
 	        ("this[ks[i]]=p[ks[i]]");
 	    /* eslint-enable no-unexpected-multiline */
 	};
@@ -59486,9 +64248,14 @@ function requireType () {
 	 * Creates a message type from a message type descriptor.
 	 * @param {string} name Message name
 	 * @param {IType} json Message type descriptor
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Type} Created message type
 	 */
-	Type.fromJSON = function fromJSON(name, json) {
+	Type.fromJSON = function fromJSON(name, json, depth) {
+	    if (depth === undefined)
+	        depth = 0;
+	    if (depth > util.nestingLimit)
+	        throw Error("max depth exceeded");
 	    var type = new Type(name, json.options);
 	    type.extensions = json.extensions;
 	    type.reserved = json.reserved;
@@ -59515,7 +64282,7 @@ function requireType () {
 	                ? Enum.fromJSON
 	                : nested.methods !== undefined
 	                ? Service.fromJSON
-	                : Namespace.fromJSON )(names[i], nested)
+	                : Namespace.fromJSON )(names[i], nested, depth + 1)
 	            );
 	        }
 	    if (json.extensions && json.extensions.length)
@@ -59591,10 +64358,13 @@ function requireType () {
 	 * @override
 	 */
 	Type.prototype.get = function get(name) {
-	    return this.fields[name]
-	        || this.oneofs && this.oneofs[name]
-	        || this.nested && this.nested[name]
-	        || null;
+	    if (Object.prototype.hasOwnProperty.call(this.fields, name))
+	        return this.fields[name];
+	    if (this.oneofs && Object.prototype.hasOwnProperty.call(this.oneofs, name))
+	        return this.oneofs[name];
+	    if (this.nested && Object.prototype.hasOwnProperty.call(this.nested, name))
+	        return this.nested[name];
+	    return null;
 	};
 
 	/**
@@ -59605,7 +64375,6 @@ function requireType () {
 	 * @throws {Error} If there is already a nested object with this name or, if a field, when there is already a field with this id
 	 */
 	Type.prototype.add = function add(object) {
-
 	    if (this.get(object.name))
 	        throw Error("duplicate name '" + object.name + "' in " + this);
 
@@ -59619,8 +64388,10 @@ function requireType () {
 	            throw Error("duplicate id " + object.id + " in " + this);
 	        if (this.isReservedId(object.id))
 	            throw Error("id " + object.id + " is reserved in " + this);
-	        if (this.isReservedName(object.name))
+	        if (this.isReservedName(object.name) || object.name.charAt(0) === "$")
 	            throw Error("name '" + object.name + "' is reserved in " + this);
+	        if (object.name === "__proto__")
+	            return this;
 
 	        if (object.parent)
 	            object.parent.remove(object);
@@ -59630,6 +64401,10 @@ function requireType () {
 	        return clearCache(this);
 	    }
 	    if (object instanceof OneOf) {
+	        if (object.name.charAt(0) === "$")
+	            throw Error("name '" + object.name + "' is reserved in " + this);
+	        if (object.name === "__proto__")
+	            return this;
 	        if (!this.oneofs)
 	            this.oneofs = {};
 	        this.oneofs[object.name] = object;
@@ -59760,8 +64535,8 @@ function requireType () {
 	 * @param {Writer} [writer] Writer to encode to
 	 * @returns {Writer} writer
 	 */
-	Type.prototype.encode = function encode_setup(message, writer) {
-	    return this.setup().encode(message, writer); // overrides this method
+	Type.prototype.encode = function encode_setup(message, writer) { // eslint-disable-line no-unused-vars
+	    return this.setup().encode.apply(this, arguments); // overrides this method
 	};
 
 	/**
@@ -59778,12 +64553,14 @@ function requireType () {
 	 * Decodes a message of this type.
 	 * @param {Reader|Uint8Array} reader Reader or buffer to decode from
 	 * @param {number} [length] Length of the message, if known beforehand
+	 * @param {number} [end] Expected group end tag, if decoding a group
+	 * @param {number} [depth] Current nesting depth
 	 * @returns {Message<{}>} Decoded message
 	 * @throws {Error} If the payload is not a reader or valid buffer
 	 * @throws {util.ProtocolError<{}>} If required fields are missing
 	 */
-	Type.prototype.decode = function decode_setup(reader, length) {
-	    return this.setup().decode(reader, length); // overrides this method
+	Type.prototype.decode = function decode_setup(reader, length, end, depth) {
+	    return this.setup().decode(reader, length, end, depth); // overrides this method
 	};
 
 	/**
@@ -59802,26 +64579,28 @@ function requireType () {
 	/**
 	 * Verifies that field values are valid and that required fields are present.
 	 * @param {Object.<string,*>} message Plain object to verify
+	 * @param {number} [depth] Current nesting depth
 	 * @returns {null|string} `null` if valid, otherwise the reason why it is not
 	 */
-	Type.prototype.verify = function verify_setup(message) {
-	    return this.setup().verify(message); // overrides this method
+	Type.prototype.verify = function verify_setup(message, depth) {
+	    return this.setup().verify(message, depth); // overrides this method
 	};
 
 	/**
 	 * Creates a new message of this type from a plain object. Also converts values to their respective internal types.
 	 * @param {Object.<string,*>} object Plain object to convert
+	 * @param {number} [depth] Current nesting depth
 	 * @returns {Message<{}>} Message instance
 	 */
-	Type.prototype.fromObject = function fromObject(object) {
-	    return this.setup().fromObject(object);
+	Type.prototype.fromObject = function fromObject(object, depth) {
+	    return this.setup().fromObject(object, depth);
 	};
 
 	/**
 	 * Conversion options as used by {@link Type#toObject} and {@link Message.toObject}.
 	 * @interface IConversionOptions
 	 * @property {Function} [longs] Long conversion type.
-	 * Valid values are `String` and `Number` (the global types).
+	 * Valid values are `BigInt`, `String` and `Number` (the global types).
 	 * Defaults to copy the present value, which is a possibly unsafe number without and a {@link Long} with a long library.
 	 * @property {Function} [enums] Enum value conversion type.
 	 * Only valid value is `String` (the global type).
@@ -59842,8 +64621,8 @@ function requireType () {
 	 * @param {IConversionOptions} [options] Conversion options
 	 * @returns {Object.<string,*>} Plain object
 	 */
-	Type.prototype.toObject = function toObject(message, options) {
-	    return this.setup().toObject(message, options);
+	Type.prototype.toObject = function toObject(message, options) { // eslint-disable-line no-unused-vars
+	    return this.setup().toObject.apply(this, arguments);
 	};
 
 	/**
@@ -59931,14 +64710,16 @@ function requireRoot$1 () {
 	 * Loads a namespace descriptor into a root namespace.
 	 * @param {INamespace} json Namespace descriptor
 	 * @param {Root} [root] Root namespace, defaults to create a new one if omitted
+	 * @param {number} [depth] Current nesting depth, defaults to `0`
 	 * @returns {Root} Root namespace
 	 */
-	Root.fromJSON = function fromJSON(json, root) {
+	Root.fromJSON = function fromJSON(json, root, depth) {
+	    depth = util.checkDepth(depth);
 	    if (!root)
 	        root = new Root();
 	    if (json.options)
 	        root.setOptions(json.options);
-	    return root.addJSON(json.nested).resolveAll();
+	    return root.addJSON(json.nested, depth).resolveAll();
 	};
 
 	/**
@@ -60012,8 +64793,12 @@ function requireRoot$1 () {
 	    }
 
 	    // Processes a single file
-	    function process(filename, source) {
+	    function process(filename, source, depth) {
+	        if (depth === undefined)
+	            depth = 0;
 	        try {
+	            if (depth > util.recursionLimit)
+	                throw Error("max depth exceeded");
 	            if (util.isString(source) && source.charAt(0) === "{")
 	                source = JSON.parse(source);
 	            if (!util.isString(source))
@@ -60026,11 +64811,11 @@ function requireRoot$1 () {
 	                if (parsed.imports)
 	                    for (; i < parsed.imports.length; ++i)
 	                        if (resolved = getBundledFileName(parsed.imports[i]) || self.resolvePath(filename, parsed.imports[i]))
-	                            fetch(resolved);
+	                            fetch(resolved, false, depth + 1);
 	                if (parsed.weakImports)
 	                    for (i = 0; i < parsed.weakImports.length; ++i)
 	                        if (resolved = getBundledFileName(parsed.weakImports[i]) || self.resolvePath(filename, parsed.weakImports[i]))
-	                            fetch(resolved, true);
+	                            fetch(resolved, true, depth + 1);
 	            }
 	        } catch (err) {
 	            finish(err);
@@ -60041,7 +64826,9 @@ function requireRoot$1 () {
 	    }
 
 	    // Fetches a single file
-	    function fetch(filename, weak) {
+	    function fetch(filename, weak, depth) {
+	        if (depth === undefined)
+	            depth = 0;
 	        filename = getBundledFileName(filename) || filename;
 
 	        // Skip if already loaded / attempted
@@ -60053,12 +64840,12 @@ function requireRoot$1 () {
 	        // Shortcut bundled definitions
 	        if (filename in common) {
 	            if (sync) {
-	                process(filename, common[filename]);
+	                process(filename, common[filename], depth);
 	            } else {
 	                ++queued;
 	                setTimeout(function() {
 	                    --queued;
-	                    process(filename, common[filename]);
+	                    process(filename, common[filename], depth);
 	                });
 	            }
 	            return;
@@ -60074,7 +64861,7 @@ function requireRoot$1 () {
 	                    finish(err);
 	                return;
 	            }
-	            process(filename, source);
+	            process(filename, source, depth);
 	        } else {
 	            ++queued;
 	            self.fetch(filename, function(err, source) {
@@ -60091,7 +64878,7 @@ function requireRoot$1 () {
 	                        finish(null, self);
 	                    return;
 	                }
-	                process(filename, source);
+	                process(filename, source, depth);
 	            });
 	        }
 	    }
@@ -60301,12 +65088,29 @@ function requireUtil$1 () {
 	util.codegen = requireCodegen();
 	util.fetch   = requireFetch();
 	util.path    = requirePath();
+	util.patterns = requirePatterns();
+
+	var reservedRe = util.patterns.reservedRe;
 
 	/**
 	 * Node's fs module if available.
 	 * @type {Object.<string,*>}
 	 */
-	util.fs = util.inquire("fs");
+	util.fs = requireFs();
+
+	/**
+	 * Checks a recursion depth.
+	 * @param {number|undefined} depth Depth of recursion
+	 * @returns {number} Depth of recursion
+	 * @throws {Error} If depth exceeds util.recursionLimit
+	 */
+	util.checkDepth = function checkDepth(depth) {
+	    if (depth === undefined)
+	        depth = 0;
+	    if (depth > util.recursionLimit)
+	        throw Error("max depth exceeded");
+	    return depth;
+	};
 
 	/**
 	 * Converts an object's values to an array.
@@ -60342,16 +65146,13 @@ function requireUtil$1 () {
 	    return object;
 	};
 
-	var safePropBackslashRe = /\\/g,
-	    safePropQuoteRe     = /"/g;
-
 	/**
 	 * Tests whether the specified name is a reserved word in JS.
 	 * @param {string} name Name to test
 	 * @returns {boolean} `true` if reserved, otherwise `false`
 	 */
 	util.isReserved = function isReserved(name) {
-	    return /^(?:do|if|in|for|let|new|try|var|case|else|enum|eval|false|null|this|true|void|with|break|catch|class|const|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$/.test(name);
+	    return reservedRe.test(name);
 	};
 
 	/**
@@ -60360,8 +65161,8 @@ function requireUtil$1 () {
 	 * @returns {string} Safe accessor
 	 */
 	util.safeProp = function safeProp(prop) {
-	    if (!/^[$\w_]+$/.test(prop) || util.isReserved(prop))
-	        return "[\"" + prop.replace(safePropBackslashRe, "\\\\").replace(safePropQuoteRe, "\\\"") + "\"]";
+	    if (!/^[$\w_]+$/.test(prop) || reservedRe.test(prop))
+	        return "[" + JSON.stringify(prop) + "]";
 	    return "." + prop;
 	};
 
@@ -60464,9 +65265,8 @@ function requireUtil$1 () {
 	util.setProperty = function setProperty(dst, path, value, ifNotSet) {
 	    function setProp(dst, path, value) {
 	        var part = path.shift();
-	        if (part === "__proto__" || part === "prototype") {
-	          return dst;
-	        }
+	        if (util.isUnsafeProperty(part))
+	            return dst;
 	        if (path.length > 0) {
 	            dst[part] = setProp(dst[part] || {}, path, value);
 	        } else {
@@ -60486,6 +65286,8 @@ function requireUtil$1 () {
 	        throw TypeError("path must be specified");
 
 	    path = path.split(".");
+	    if (path.length > util.recursionLimit)
+	        throw Error("max depth exceeded");
 	    return setProp(dst, path, value);
 	};
 
@@ -60508,13 +65310,13 @@ var hasRequiredTypes;
 function requireTypes () {
 	if (hasRequiredTypes) return types;
 	hasRequiredTypes = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * Common type constants.
 		 * @namespace
 		 */
-		var types = exports$1;
+		var types = exports;
 
 		var util = requireUtil$1();
 
@@ -60537,7 +65339,7 @@ function requireTypes () {
 		];
 
 		function bake(values, offset) {
-		    var i = 0, o = {};
+		    var i = 0, o = Object.create(null);
 		    offset |= 0;
 		    while (i < values.length) o[s[i + offset]] = values[i++];
 		    return o;
@@ -61043,7 +65845,7 @@ function requireField () {
 
 	    // convert to internal data type if necesssary
 	    if (this.long) {
-	        this.typeDefault = util.Long.fromNumber(this.typeDefault, this.type.charAt(0) === "u");
+	        this.typeDefault = util.Long.fromNumber(this.typeDefault, this.type === "uint64" || this.type === "fixed64");
 
 	        /* istanbul ignore else */
 	        if (Object.freeze)
@@ -61619,7 +66421,7 @@ function requireObject () {
 	        throw new Error("Unknown edition for " + this.fullName);
 	    }
 
-	    var protoFeatures = Object.assign(this.options ? Object.assign({},  this.options.features) : {},
+	    var protoFeatures = util.merge({}, this.options && this.options.features,
 	        this._inferLegacyProtoFeatures(edition));
 
 	    if (this._edition) {
@@ -61634,7 +66436,7 @@ function requireObject () {
 	        } else {
 	            throw new Error("Unknown edition: " + edition);
 	        }
-	        this._features = Object.assign(defaults, protoFeatures || {});
+	        this._features = util.merge(defaults, protoFeatures);
 	        this._featuresResolved = true;
 	        return;
 	    }
@@ -61643,11 +66445,11 @@ function requireObject () {
 	    // special-case it
 	    /* istanbul ignore else */
 	    if (this.partOf instanceof OneOf) {
-	        var lexicalParentFeaturesCopy = Object.assign({}, this.partOf._features);
-	        this._features = Object.assign(lexicalParentFeaturesCopy, protoFeatures || {});
+	        var lexicalParentFeaturesCopy = util.merge({}, this.partOf._features);
+	        this._features = util.merge(lexicalParentFeaturesCopy, protoFeatures);
 	    } else if (this.declaringField) ; else if (this.parent) {
-	        var parentFeaturesCopy = Object.assign({}, this.parent._features);
-	        this._features = Object.assign(parentFeaturesCopy, protoFeatures || {});
+	        var parentFeaturesCopy = util.merge({}, this.parent._features);
+	        this._features = util.merge(parentFeaturesCopy, protoFeatures);
 	    } else {
 	        throw new Error("Unable to find a parent for " + this.fullName);
 	    }
@@ -61687,6 +66489,8 @@ function requireObject () {
 	 * @returns {ReflectionObject} `this`
 	 */
 	ReflectionObject.prototype.setOption = function setOption(name, value, ifNotSet) {
+	    if (name === "__proto__")
+	        return this;
 	    if (!this.options)
 	        this.options = {};
 	    if (/^features\./.test(name)) {
@@ -61707,6 +66511,8 @@ function requireObject () {
 	 * @returns {ReflectionObject} `this`
 	 */
 	ReflectionObject.prototype.setParsedOption = function setParsedOption(name, value, propName) {
+	    if (name === "__proto__")
+	        return this;
 	    if (!this.parsedOptions) {
 	        this.parsedOptions = [];
 	    }
@@ -61864,7 +66670,7 @@ function require_enum () {
 
 	    if (values)
 	        for (var keys = Object.keys(values), i = 0; i < keys.length; ++i)
-	            if (typeof values[keys[i]] === "number") // use forward entries only
+	            if (keys[i] !== "__proto__" && typeof values[keys[i]] === "number") // use forward entries only
 	                this.valuesById[ this.values[keys[i]] = values[keys[i]] ] = keys[i];
 	}
 
@@ -61876,8 +66682,8 @@ function require_enum () {
 	    ReflectionObject.prototype._resolveFeatures.call(this, edition);
 
 	    Object.keys(this.values).forEach(key => {
-	        var parentFeaturesCopy = Object.assign({}, this._features);
-	        this._valuesFeatures[key] = Object.assign(parentFeaturesCopy, this.valuesOptions && this.valuesOptions[key] && this.valuesOptions[key].features);
+	        var parentFeaturesCopy = util.merge({}, this._features);
+	        this._valuesFeatures[key] = util.merge(parentFeaturesCopy, this.valuesOptions && this.valuesOptions[key] && this.valuesOptions[key].features || {});
 	    });
 
 	    return this;
@@ -61942,6 +66748,9 @@ function require_enum () {
 
 	    if (!util.isInteger(id))
 	        throw TypeError("id must be an integer");
+
+	    if (name === "__proto__")
+	        return this;
 
 	    if (this.values[name] !== undefined)
 	        throw Error("duplicate name '" + name + "' in " + this);
@@ -62037,8 +66846,8 @@ function requireEncoder () {
 	 */
 	function genTypePartial(gen, field, fieldIndex, ref) {
 	    return field.delimited
-	        ? gen("types[%i].encode(%s,w.uint32(%i)).uint32(%i)", fieldIndex, ref, (field.id << 3 | 3) >>> 0, (field.id << 3 | 4) >>> 0)
-	        : gen("types[%i].encode(%s,w.uint32(%i).fork()).ldelim()", fieldIndex, ref, (field.id << 3 | 2) >>> 0);
+	        ? gen("types[%i].encode(%s,w.uint32(%i),q+1).uint32(%i)", fieldIndex, ref, (field.id << 3 | 3) >>> 0, (field.id << 3 | 4) >>> 0)
+	        : gen("types[%i].encode(%s,w.uint32(%i).fork(),q+1).ldelim()", fieldIndex, ref, (field.id << 3 | 2) >>> 0);
 	}
 
 	/**
@@ -62048,9 +66857,12 @@ function requireEncoder () {
 	 */
 	function encoder(mtype) {
 	    /* eslint-disable no-unexpected-multiline, block-scoped-var, no-redeclare */
-	    var gen = util.codegen(["m", "w"], mtype.name + "$encode")
+	    var gen = util.codegen(["m", "w", "q"], mtype.name + "$encode")
 	    ("if(!w)")
-	        ("w=Writer.create()");
+	        ("w=Writer.create()")
+	    ("if(q===undefined)q=0")
+	    ("if(q>util.recursionLimit)")
+	        ("throw Error(\"max depth exceeded\")");
 
 	    var i, ref;
 
@@ -62071,7 +66883,7 @@ function requireEncoder () {
 	        ("for(var ks=Object.keys(%s),i=0;i<ks.length;++i){", ref)
 	            ("w.uint32(%i).fork().uint32(%i).%s(ks[i])", (field.id << 3 | 2) >>> 0, 8 | types.mapKey[field.keyType], field.keyType);
 	            if (wireType === undefined) gen
-	            ("types[%i].encode(%s[ks[i]],w.uint32(18).fork()).ldelim().ldelim()", index, ref); // can't be groups
+	            ("types[%i].encode(%s[ks[i]],w.uint32(18).fork(),q+1).ldelim().ldelim()", index, ref); // can't be groups
 	            else gen
 	            (".uint32(%i).%s(%s[ks[i]]).ldelim()", 16 | wireType, type, ref);
 	            gen
@@ -62687,9 +67499,9 @@ function requireParse () {
 	    base16NegRe = /^-?0[x][0-9a-fA-F]+$/,
 	    base8Re     = /^0[0-7]+$/,
 	    base8NegRe  = /^-?0[0-7]+$/,
-	    numberRe    = /^(?![eE])[0-9]*(?:\.[0-9]*)?(?:[eE][+-]?[0-9]+)?$/,
+	    numberRe    = util.patterns.numberRe,
 	    nameRe      = /^[a-zA-Z_][a-zA-Z_0-9]*$/,
-	    typeRefRe   = /^(?:\.?[a-zA-Z_][a-zA-Z_0-9]*)(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*$/;
+	    typeRefRe   = util.patterns.typeRefRe;
 
 	/**
 	 * Result object returned from {@link parse}.
@@ -62965,7 +67777,10 @@ function requireParse () {
 	    }
 
 
-	    function parseCommon(parent, token) {
+	    function parseCommon(parent, token, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        // depth is checked by dispatched functions
 	        switch (token) {
 
 	            case "option":
@@ -62974,7 +67789,7 @@ function requireParse () {
 	                return true;
 
 	            case "message":
-	                parseType(parent, token);
+	                parseType(parent, token, depth + 1);
 	                return true;
 
 	            case "enum":
@@ -62982,11 +67797,11 @@ function requireParse () {
 	                return true;
 
 	            case "service":
-	                parseService(parent, token);
+	                parseService(parent, token, depth + 1);
 	                return true;
 
 	            case "extend":
-	                parseExtension(parent, token);
+	                parseExtension(parent, token, depth);
 	                return true;
 	        }
 	        return false;
@@ -63014,7 +67829,11 @@ function requireParse () {
 	        }
 	    }
 
-	    function parseType(parent, token) {
+	    function parseType(parent, token, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        if (depth > util.nestingLimit)
+	            throw Error("max depth exceeded");
 
 	        /* istanbul ignore if */
 	        if (!nameRe.test(token = next()))
@@ -63022,7 +67841,7 @@ function requireParse () {
 
 	        var type = new Type(token);
 	        ifBlock(type, function parseType_block(token) {
-	            if (parseCommon(type, token))
+	            if (parseCommon(type, token, depth))
 	                return;
 
 	            switch (token) {
@@ -63036,22 +67855,22 @@ function requireParse () {
 	                        throw illegal(token);
 	                /* eslint-disable no-fallthrough */
 	                case "repeated":
-	                    parseField(type, token);
+	                    parseField(type, token, undefined, depth + 1);
 	                    break;
 
 	                case "optional":
 	                    /* istanbul ignore if */
 	                    if (edition === "proto3") {
-	                        parseField(type, "proto3_optional");
+	                        parseField(type, "proto3_optional", undefined, depth + 1);
 	                    } else if (edition !== "proto2") {
 	                        throw illegal(token);
 	                    } else {
-	                        parseField(type, "optional");
+	                        parseField(type, "optional", undefined, depth + 1);
 	                    }
 	                    break;
 
 	                case "oneof":
-	                    parseOneOf(type, token);
+	                    parseOneOf(type, token, depth + 1);
 	                    break;
 
 	                case "extensions":
@@ -63069,7 +67888,7 @@ function requireParse () {
 	                    }
 
 	                    push(token);
-	                    parseField(type, "optional");
+	                    parseField(type, "optional", undefined, depth + 1);
 	                    break;
 	            }
 	        });
@@ -63079,10 +67898,10 @@ function requireParse () {
 	        }
 	    }
 
-	    function parseField(parent, rule, extend) {
+	    function parseField(parent, rule, extend, depth) {
 	        var type = next();
 	        if (type === "group") {
-	            parseGroup(parent, rule);
+	            parseGroup(parent, rule, depth);
 	            return;
 	        }
 	        // Type names can consume multiple tokens, in multiple variants:
@@ -63139,7 +67958,11 @@ function requireParse () {
 	        }
 	    }
 
-	    function parseGroup(parent, rule) {
+	    function parseGroup(parent, rule, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        if (depth > util.nestingLimit)
+	            throw Error("max depth exceeded");
 	        if (edition >= 2023) {
 	            throw illegal("group");
 	        }
@@ -63167,20 +67990,20 @@ function requireParse () {
 	                    break;
 	                case "required":
 	                case "repeated":
-	                    parseField(type, token);
+	                    parseField(type, token, undefined, depth + 1);
 	                    break;
 
 	                case "optional":
 	                    /* istanbul ignore if */
 	                    if (edition === "proto3") {
-	                        parseField(type, "proto3_optional");
+	                        parseField(type, "proto3_optional", undefined, depth + 1);
 	                    } else {
-	                        parseField(type, "optional");
+	                        parseField(type, "optional", undefined, depth + 1);
 	                    }
 	                    break;
 
 	                case "message":
-	                    parseType(type, token);
+	                    parseType(type, token, depth + 1);
 	                    break;
 
 	                case "enum":
@@ -63239,7 +68062,7 @@ function requireParse () {
 	        parent.add(field);
 	    }
 
-	    function parseOneOf(parent, token) {
+	    function parseOneOf(parent, token, depth) {
 
 	        /* istanbul ignore if */
 	        if (!nameRe.test(token = next()))
@@ -63252,7 +68075,7 @@ function requireParse () {
 	                skip(";");
 	            } else {
 	                push(token);
-	                parseField(oneof, "optional");
+	                parseField(oneof, "optional", undefined, depth);
 	            }
 	        });
 	        parent.add(oneof);
@@ -63331,6 +68154,9 @@ function requireParse () {
 	            }
 
 	            while (token !== "=") {
+	                if (token === null) {
+	                    throw illegal(token, "end of input");
+	                }
 	                if (token === "(") {
 	                    var parensValue = next();
 	                    skip(")");
@@ -63357,7 +68183,11 @@ function requireParse () {
 	            setParsedOption(parent, option, optionValue, propName);
 	    }
 
-	    function parseOptionValue(parent, name) {
+	    function parseOptionValue(parent, name, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        if (depth > util.recursionLimit)
+	            throw Error("max depth exceeded");
 	        // { a: "foo" b { c: "bar" } }
 	        if (skip("{", true)) {
 	            var objectResult = {};
@@ -63380,7 +68210,7 @@ function requireParse () {
 	                    // option (my_option) = {
 	                    //     repeated_value: [ "foo", "bar" ]
 	                    // };
-	                    value = parseOptionValue(parent, name + "." + token);
+	                    value = parseOptionValue(parent, name + "." + token, depth + 1);
 	                } else if (peek() === "[") {
 	                    value = [];
 	                    var lastValue;
@@ -63404,7 +68234,8 @@ function requireParse () {
 	                if (prevValue)
 	                    value = [].concat(prevValue).concat(value);
 
-	                objectResult[propName] = value;
+	                if (propName !== "__proto__")
+	                    objectResult[propName] = value;
 
 	                // Semicolons and commas can be optional
 	                skip(",", true);
@@ -63444,7 +68275,11 @@ function requireParse () {
 	        return parent;
 	    }
 
-	    function parseService(parent, token) {
+	    function parseService(parent, token, depth) {
+	        if (depth === undefined)
+	            depth = 0;
+	        if (depth > util.recursionLimit)
+	            throw Error("max depth exceeded");
 
 	        /* istanbul ignore if */
 	        if (!nameRe.test(token = next()))
@@ -63452,7 +68287,7 @@ function requireParse () {
 
 	        var service = new Service(token);
 	        ifBlock(service, function parseService_block(token) {
-	            if (parseCommon(service, token)) {
+	            if (parseCommon(service, token, depth)) {
 	                return;
 	            }
 
@@ -63518,7 +68353,7 @@ function requireParse () {
 	        parent.add(method);
 	    }
 
-	    function parseExtension(parent, token) {
+	    function parseExtension(parent, token, depth) {
 
 	        /* istanbul ignore if */
 	        if (!typeRefRe.test(token = next()))
@@ -63530,15 +68365,15 @@ function requireParse () {
 
 	                case "required":
 	                case "repeated":
-	                    parseField(parent, token, reference);
+	                    parseField(parent, token, reference, depth + 1);
 	                    break;
 
 	                case "optional":
 	                    /* istanbul ignore if */
 	                    if (edition === "proto3") {
-	                        parseField(parent, "proto3_optional", reference);
+	                        parseField(parent, "proto3_optional", reference, depth + 1);
 	                    } else {
-	                        parseField(parent, "optional", reference);
+	                        parseField(parent, "optional", reference, depth + 1);
 	                    }
 	                    break;
 
@@ -63547,7 +68382,7 @@ function requireParse () {
 	                    if (edition === "proto2" || !typeRefRe.test(token))
 	                        throw illegal(token);
 	                    push(token);
-	                    parseField(parent, "optional", reference);
+	                    parseField(parent, "optional", reference, depth + 1);
 	                    break;
 	            }
 	        });
@@ -63599,7 +68434,7 @@ function requireParse () {
 	            default:
 
 	                /* istanbul ignore else */
-	                if (parseCommon(ptr, token)) {
+	                if (parseCommon(ptr, token, 0)) {
 	                    head = false;
 	                    continue;
 	                }
@@ -65462,9 +70297,9 @@ var hasRequiredDescriptor;
 function requireDescriptor () {
 	if (hasRequiredDescriptor) return descriptor.exports;
 	hasRequiredDescriptor = 1;
-	(function (module, exports$1) {
+	(function (module, exports) {
 		var $protobuf = requireProtobufjs();
-		module.exports = exports$1 = $protobuf.descriptor = $protobuf.Root.fromJSON(require$$4).lookup(".google.protobuf");
+		module.exports = exports = $protobuf.descriptor = $protobuf.Root.fromJSON(require$$4).lookup(".google.protobuf");
 
 		var Namespace = $protobuf.Namespace,
 		    Root      = $protobuf.Root,
@@ -65474,7 +70309,11 @@ function requireDescriptor () {
 		    MapField  = $protobuf.MapField,
 		    OneOf     = $protobuf.OneOf,
 		    Service   = $protobuf.Service,
-		    Method    = $protobuf.Method;
+		    Method    = $protobuf.Method,
+		    patterns  = $protobuf.util.patterns;
+
+		var numberRe  = patterns.numberRe,
+		    typeRefRe = patterns.typeRefRe;
 
 		// --- Root ---
 
@@ -65557,7 +70396,7 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.FileDescriptorSet.decode(descriptor);
+		        descriptor = exports.FileDescriptorSet.decode(descriptor);
 
 		    var root = new Root();
 
@@ -65583,7 +70422,7 @@ function requireDescriptor () {
 		            if (fileDescriptor.service)
 		                for (i = 0; i < fileDescriptor.service.length; ++i)
 		                    filePackage.add(Service.fromDescriptor(fileDescriptor.service[i], edition));
-		            var opts = fromDescriptorOptions(fileDescriptor.options, exports$1.FileOptions);
+		            var opts = fromDescriptorOptions(fileDescriptor.options, exports.FileOptions);
 		            if (opts) {
 		                var ks = Object.keys(opts);
 		                for (i = 0; i < ks.length; ++i)
@@ -65601,7 +70440,7 @@ function requireDescriptor () {
 		 * @param {string} [edition="proto2"] The syntax or edition to use
 		 */
 		Root.prototype.toDescriptor = function toDescriptor(edition) {
-		    var set = exports$1.FileDescriptorSet.create();
+		    var set = exports.FileDescriptorSet.create();
 		    Root_toDescriptorRecursive(this, set.file, edition);
 		    return set;
 		};
@@ -65610,7 +70449,7 @@ function requireDescriptor () {
 		function Root_toDescriptorRecursive(ns, files, edition) {
 
 		    // Create a new file
-		    var file = exports$1.FileDescriptorProto.create({ name: ns.filename || (ns.fullName.substring(1).replace(/\./g, "_") || "root") + ".proto" });
+		    var file = exports.FileDescriptorProto.create({ name: ns.filename || (ns.fullName.substring(1).replace(/\./g, "_") || "root") + ".proto" });
 		    editionToDescriptor(edition, file);
 		    if (!(ns instanceof Root))
 		        file["package"] = ns.fullName.substring(1);
@@ -65629,7 +70468,7 @@ function requireDescriptor () {
 		            Root_toDescriptorRecursive(nested, files, edition); // requires new file
 
 		    // Keep package-level options
-		    file.options = toDescriptorOptions(ns.options, exports$1.FileOptions);
+		    file.options = toDescriptorOptions(ns.options, exports.FileOptions);
 
 		    // And keep the file only if there is at least one nested object
 		    if (file.messageType.length + file.enumType.length + file.extension.length + file.service.length)
@@ -65683,15 +70522,20 @@ function requireDescriptor () {
 		 * @param {IDescriptorProto|Reader|Uint8Array} descriptor Descriptor
 		 * @param {string} [edition="proto2"] The syntax or edition to use
 		 * @param {boolean} [nested=false] Whether or not this is a nested object
+		 * @param {number} [depth] Current nesting depth, defaults to `0`
 		 * @returns {Type} Type instance
 		 */
-		Type.fromDescriptor = function fromDescriptor(descriptor, edition, nested) {
+		Type.fromDescriptor = function fromDescriptor(descriptor, edition, nested, depth) {
+		    if (depth === undefined)
+		        depth = 0;
+		    if (depth > $protobuf.util.nestingLimit)
+		        throw Error("max depth exceeded");
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.DescriptorProto.decode(descriptor);
+		        descriptor = exports.DescriptorProto.decode(descriptor);
 
 		    // Create the message type
-		    var type = new Type(descriptor.name.length ? descriptor.name : "Type" + unnamedMessageIndex++, fromDescriptorOptions(descriptor.options, exports$1.MessageOptions)),
+		    var type = new Type(descriptor.name.length ? descriptor.name : "Type" + unnamedMessageIndex++, fromDescriptorOptions(descriptor.options, exports.MessageOptions)),
 		        i;
 
 		    if (!nested)
@@ -65712,7 +70556,7 @@ function requireDescriptor () {
 		            type.add(Field.fromDescriptor(descriptor.extension[i], edition, true));
 		    /* Nested types */ if (descriptor.nestedType)
 		        for (i = 0; i < descriptor.nestedType.length; ++i) {
-		            type.add(Type.fromDescriptor(descriptor.nestedType[i], edition, true));
+		            type.add(Type.fromDescriptor(descriptor.nestedType[i], edition, true, depth + 1));
 		            if (descriptor.nestedType[i].options && descriptor.nestedType[i].options.mapEntry)
 		                type.setOption("map_entry", true);
 		        }
@@ -65743,7 +70587,7 @@ function requireDescriptor () {
 		 * @param {string} [edition="proto2"] The syntax or edition to use
 		 */
 		Type.prototype.toDescriptor = function toDescriptor(edition) {
-		    var descriptor = exports$1.DescriptorProto.create({ name: this.name }),
+		    var descriptor = exports.DescriptorProto.create({ name: this.name }),
 		        i;
 
 		    /* Fields */ for (i = 0; i < this.fieldsArray.length; ++i) {
@@ -65755,13 +70599,13 @@ function requireDescriptor () {
 		                valueTypeName = valueType === /* type */ 11 || valueType === /* enum */ 14
 		                    ? this._fieldsArray[i].resolvedType && shortname(this.parent, this._fieldsArray[i].resolvedType) || this._fieldsArray[i].type
 		                    : undefined;
-		            descriptor.nestedType.push(exports$1.DescriptorProto.create({
+		            descriptor.nestedType.push(exports.DescriptorProto.create({
 		                name: fieldDescriptor.typeName,
 		                field: [
-		                    exports$1.FieldDescriptorProto.create({ name: "key", number: 1, label: 1, type: keyType }), // can't reference a type or enum
-		                    exports$1.FieldDescriptorProto.create({ name: "value", number: 2, label: 1, type: valueType, typeName: valueTypeName })
+		                    exports.FieldDescriptorProto.create({ name: "key", number: 1, label: 1, type: keyType }), // can't reference a type or enum
+		                    exports.FieldDescriptorProto.create({ name: "value", number: 2, label: 1, type: valueType, typeName: valueTypeName })
 		                ],
-		                options: exports$1.MessageOptions.create({ mapEntry: true })
+		                options: exports.MessageOptions.create({ mapEntry: true })
 		            }));
 		        }
 		    }
@@ -65778,15 +70622,15 @@ function requireDescriptor () {
 		    }
 		    /* Extension ranges */ if (this.extensions)
 		        for (i = 0; i < this.extensions.length; ++i)
-		            descriptor.extensionRange.push(exports$1.DescriptorProto.ExtensionRange.create({ start: this.extensions[i][0], end: this.extensions[i][1] }));
+		            descriptor.extensionRange.push(exports.DescriptorProto.ExtensionRange.create({ start: this.extensions[i][0], end: this.extensions[i][1] }));
 		    /* Reserved... */ if (this.reserved)
 		        for (i = 0; i < this.reserved.length; ++i)
 		            /* Names */ if (typeof this.reserved[i] === "string")
 		                descriptor.reservedName.push(this.reserved[i]);
 		            /* Ranges */ else
-		                descriptor.reservedRange.push(exports$1.DescriptorProto.ReservedRange.create({ start: this.reserved[i][0], end: this.reserved[i][1] }));
+		                descriptor.reservedRange.push(exports.DescriptorProto.ReservedRange.create({ start: this.reserved[i][0], end: this.reserved[i][1] }));
 
-		    descriptor.options = toDescriptorOptions(this.options, exports$1.MessageOptions);
+		    descriptor.options = toDescriptorOptions(this.options, exports.MessageOptions);
 
 		    return descriptor;
 		};
@@ -65857,9 +70701,6 @@ function requireDescriptor () {
 		 * @property {number} JS_NUMBER=2
 		 */
 
-		// copied here from parse.js
-		var numberRe = /^(?![eE])[0-9]*(?:\.[0-9]*)?(?:[eE][+-]?[0-9]+)?$/;
-
 		/**
 		 * Creates a field from a descriptor.
 		 *
@@ -65874,16 +70715,19 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.DescriptorProto.decode(descriptor);
+		        descriptor = exports.DescriptorProto.decode(descriptor);
 
 		    if (typeof descriptor.number !== "number")
 		        throw Error("missing field id");
 
 		    // Rewire field type
-		    var fieldType;
-		    if (descriptor.typeName && descriptor.typeName.length)
-		        fieldType = descriptor.typeName;
-		    else
+		    var typeName = descriptor.typeName,
+		        fieldType;
+		    if (typeName != null && typeName !== "") {
+		        if (typeof typeName !== "string" || !typeRefRe.test(typeName))
+		            throw Error("illegal type name: " + typeName);
+		        fieldType = typeName;
+		    } else
 		        fieldType = fromDescriptorType(descriptor.type);
 
 		    // Rewire field rule
@@ -65896,10 +70740,12 @@ function requireDescriptor () {
 		        default: throw Error("illegal label: " + descriptor.label);
 		    }
 
-			var extendee = descriptor.extendee;
-			if (descriptor.extendee !== undefined) {
-				extendee = extendee.length ? extendee : undefined;
-			}
+		    var extendee = descriptor.extendee;
+		    if (extendee != null && extendee !== "") {
+		        if (typeof extendee !== "string" || !typeRefRe.test(extendee))
+		            throw Error("illegal type name: " + extendee);
+		    } else
+		        extendee = undefined;
 		    var field = new Field(
 		        descriptor.name.length ? descriptor.name : "field" + descriptor.number,
 		        descriptor.number,
@@ -65911,7 +70757,7 @@ function requireDescriptor () {
 		    if (!nested)
 		        field._edition = edition;
 
-		    field.options = fromDescriptorOptions(descriptor.options, exports$1.FieldOptions);
+		    field.options = fromDescriptorOptions(descriptor.options, exports.FieldOptions);
 		    if (descriptor.proto3_optional)
 		        field.options.proto3_optional = true;
 
@@ -65950,7 +70796,7 @@ function requireDescriptor () {
 		 * @param {string} [edition="proto2"] The syntax or edition to use
 		 */
 		Field.prototype.toDescriptor = function toDescriptor(edition) {
-		    var descriptor = exports$1.FieldDescriptorProto.create({ name: this.name, number: this.id });
+		    var descriptor = exports.FieldDescriptorProto.create({ name: this.name, number: this.id });
 
 		    if (this.map) {
 
@@ -65982,13 +70828,14 @@ function requireDescriptor () {
 		    // Handle extension field
 		    descriptor.extendee = this.extensionField ? this.extensionField.parent.fullName : this.extend;
 
-		    // Handle part of oneof
-		    if (this.partOf)
+		    // Handle part of oneof (only meaningful for message types)
+		    if (this.partOf && this.parent instanceof Type) {
 		        if ((descriptor.oneofIndex = this.parent.oneofsArray.indexOf(this.partOf)) < 0)
 		            throw Error("missing oneof");
+		    }
 
 		    if (this.options) {
-		        descriptor.options = toDescriptorOptions(this.options, exports$1.FieldOptions);
+		        descriptor.options = toDescriptorOptions(this.options, exports.FieldOptions);
 		        if (this.options["default"] != null)
 		            descriptor.defaultValue = String(this.options["default"]);
 		        if (this.options.proto3_optional)
@@ -65997,9 +70844,9 @@ function requireDescriptor () {
 
 		    if (edition === "proto3") { // defaults to packed=true
 		        if (!this.packed)
-		            (descriptor.options || (descriptor.options = exports$1.FieldOptions.create())).packed = false;
+		            (descriptor.options || (descriptor.options = exports.FieldOptions.create())).packed = false;
 		    } else if ((!edition || edition === "proto2") && this.packed) // defaults to packed=false
-		        (descriptor.options || (descriptor.options = exports$1.FieldOptions.create())).packed = true;
+		        (descriptor.options || (descriptor.options = exports.FieldOptions.create())).packed = true;
 
 		    return descriptor;
 		};
@@ -66045,7 +70892,7 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.EnumDescriptorProto.decode(descriptor);
+		        descriptor = exports.EnumDescriptorProto.decode(descriptor);
 
 		    // Construct values object
 		    var values = {};
@@ -66059,7 +70906,7 @@ function requireDescriptor () {
 		    var enm = new Enum(
 		        descriptor.name && descriptor.name.length ? descriptor.name : "Enum" + unnamedEnumIndex++,
 		        values,
-		        fromDescriptorOptions(descriptor.options, exports$1.EnumOptions)
+		        fromDescriptorOptions(descriptor.options, exports.EnumOptions)
 		    );
 
 		    if (!nested)
@@ -66077,12 +70924,12 @@ function requireDescriptor () {
 		    // Values
 		    var values = [];
 		    for (var i = 0, ks = Object.keys(this.values); i < ks.length; ++i)
-		        values.push(exports$1.EnumValueDescriptorProto.create({ name: ks[i], number: this.values[ks[i]] }));
+		        values.push(exports.EnumValueDescriptorProto.create({ name: ks[i], number: this.values[ks[i]] }));
 
-		    return exports$1.EnumDescriptorProto.create({
+		    return exports.EnumDescriptorProto.create({
 		        name: this.name,
 		        value: values,
-		        options: toDescriptorOptions(this.options, exports$1.EnumOptions)
+		        options: toDescriptorOptions(this.options, exports.EnumOptions)
 		    });
 		};
 
@@ -66109,7 +70956,7 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.OneofDescriptorProto.decode(descriptor);
+		        descriptor = exports.OneofDescriptorProto.decode(descriptor);
 
 		    return new OneOf(
 		        // unnamedOneOfIndex is global, not per type, because we have no ref to a type here
@@ -66123,7 +70970,7 @@ function requireDescriptor () {
 		 * @returns {Message<IOneofDescriptorProto>} Descriptor
 		 */
 		OneOf.prototype.toDescriptor = function toDescriptor() {
-		    return exports$1.OneofDescriptorProto.create({
+		    return exports.OneofDescriptorProto.create({
 		        name: this.name
 		        // options: toDescriptorOptions(this.options, exports.OneofOptions) - only uninterpreted_option
 		    });
@@ -66161,9 +71008,9 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.ServiceDescriptorProto.decode(descriptor);
+		        descriptor = exports.ServiceDescriptorProto.decode(descriptor);
 
-		    var service = new Service(descriptor.name && descriptor.name.length ? descriptor.name : "Service" + unnamedServiceIndex++, fromDescriptorOptions(descriptor.options, exports$1.ServiceOptions));
+		    var service = new Service(descriptor.name && descriptor.name.length ? descriptor.name : "Service" + unnamedServiceIndex++, fromDescriptorOptions(descriptor.options, exports.ServiceOptions));
 		    if (!nested)
 		        service._edition = edition;
 		    if (descriptor.method)
@@ -66184,10 +71031,10 @@ function requireDescriptor () {
 		    for (var i = 0; i < this.methodsArray.length; ++i)
 		        methods.push(this._methodsArray[i].toDescriptor());
 
-		    return exports$1.ServiceDescriptorProto.create({
+		    return exports.ServiceDescriptorProto.create({
 		        name: this.name,
 		        method: methods,
-		        options: toDescriptorOptions(this.options, exports$1.ServiceOptions)
+		        options: toDescriptorOptions(this.options, exports.ServiceOptions)
 		    });
 		};
 
@@ -66224,17 +71071,29 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.MethodDescriptorProto.decode(descriptor);
+		        descriptor = exports.MethodDescriptorProto.decode(descriptor);
+
+		    var inputType = descriptor.inputType,
+		        outputType = descriptor.outputType;
+
+		    if (inputType != null && inputType !== "") {
+		        if (typeof inputType !== "string" || !typeRefRe.test(inputType))
+		            throw Error("illegal type name: " + inputType);
+		    }
+		    if (outputType != null && outputType !== "") {
+		        if (typeof outputType !== "string" || !typeRefRe.test(outputType))
+		            throw Error("illegal type name: " + outputType);
+		    }
 
 		    return new Method(
 		        // unnamedMethodIndex is global, not per service, because we have no ref to a service here
 		        descriptor.name && descriptor.name.length ? descriptor.name : "Method" + unnamedMethodIndex++,
 		        "rpc",
-		        descriptor.inputType,
-		        descriptor.outputType,
+		        inputType,
+		        outputType,
 		        Boolean(descriptor.clientStreaming),
 		        Boolean(descriptor.serverStreaming),
-		        fromDescriptorOptions(descriptor.options, exports$1.MethodOptions)
+		        fromDescriptorOptions(descriptor.options, exports.MethodOptions)
 		    );
 		};
 
@@ -66243,13 +71102,13 @@ function requireDescriptor () {
 		 * @returns {Message<IMethodDescriptorProto>} Descriptor
 		 */
 		Method.prototype.toDescriptor = function toDescriptor() {
-		    return exports$1.MethodDescriptorProto.create({
+		    return exports.MethodDescriptorProto.create({
 		        name: this.name,
 		        inputType: this.resolvedRequestType ? this.resolvedRequestType.fullName : this.requestType,
 		        outputType: this.resolvedResponseType ? this.resolvedResponseType.fullName : this.responseType,
 		        clientStreaming: this.requestStream,
 		        serverStreaming: this.responseStream,
-		        options: toDescriptorOptions(this.options, exports$1.MethodOptions)
+		        options: toDescriptorOptions(this.options, exports.MethodOptions)
 		    });
 		};
 
@@ -66408,7 +71267,7 @@ function requireDescriptor () {
 		function editionFromDescriptor(fileDescriptor) {
 		    if (fileDescriptor.syntax === "editions") {
 		        switch(fileDescriptor.edition) {
-		            case exports$1.Edition.EDITION_2023:
+		            case exports.Edition.EDITION_2023:
 		                return "2023";
 		            default:
 		                throw new Error("Unsupported edition " + fileDescriptor.edition);
@@ -66428,7 +71287,7 @@ function requireDescriptor () {
 		        fileDescriptor.syntax = "editions";
 		        switch(edition) {
 		            case "2023":
-		                fileDescriptor.edition = exports$1.Edition.EDITION_2023;
+		                fileDescriptor.edition = exports.Edition.EDITION_2023;
 		                break;
 		            default:
 		                throw new Error("Unsupported edition " + edition);
@@ -67072,1635 +71931,12 @@ function requireUtil () {
 	return util;
 }
 
-var umd$1 = {exports: {}};
-
-var umd = umd$1.exports;
-
-var hasRequiredUmd;
-
-function requireUmd () {
-	if (hasRequiredUmd) return umd$1.exports;
-	hasRequiredUmd = 1;
-	(function (module, exports$1) {
-		// GENERATED FILE. DO NOT EDIT.
-		(function (global, factory) {
-		  function preferDefault(exports$1) {
-		    return exports$1.default || exports$1;
-		  }
-		  {
-		    factory(exports$1);
-		    module.exports = preferDefault(exports$1);
-		  }
-		})(
-		  typeof globalThis !== "undefined"
-		    ? globalThis
-		    : typeof self !== "undefined"
-		      ? self
-		      : umd,
-		  function (_exports) {
-
-		    Object.defineProperty(_exports, "__esModule", {
-		      value: true,
-		    });
-		    _exports.default = void 0;
-		    /**
-		     * @license
-		     * Copyright 2009 The Closure Library Authors
-		     * Copyright 2020 Daniel Wirtz / The long.js Authors.
-		     *
-		     * Licensed under the Apache License, Version 2.0 (the "License");
-		     * you may not use this file except in compliance with the License.
-		     * You may obtain a copy of the License at
-		     *
-		     *     http://www.apache.org/licenses/LICENSE-2.0
-		     *
-		     * Unless required by applicable law or agreed to in writing, software
-		     * distributed under the License is distributed on an "AS IS" BASIS,
-		     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-		     * See the License for the specific language governing permissions and
-		     * limitations under the License.
-		     *
-		     * SPDX-License-Identifier: Apache-2.0
-		     */
-
-		    // WebAssembly optimizations to do native i64 multiplication and divide
-		    var wasm = null;
-		    try {
-		      wasm = new WebAssembly.Instance(
-		        new WebAssembly.Module(
-		          new Uint8Array([
-		            // \0asm
-		            0, 97, 115, 109,
-		            // version 1
-		            1, 0, 0, 0,
-		            // section "type"
-		            1, 13, 2,
-		            // 0, () => i32
-		            96, 0, 1, 127,
-		            // 1, (i32, i32, i32, i32) => i32
-		            96, 4, 127, 127, 127, 127, 1, 127,
-		            // section "function"
-		            3, 7, 6,
-		            // 0, type 0
-		            0,
-		            // 1, type 1
-		            1,
-		            // 2, type 1
-		            1,
-		            // 3, type 1
-		            1,
-		            // 4, type 1
-		            1,
-		            // 5, type 1
-		            1,
-		            // section "global"
-		            6, 6, 1,
-		            // 0, "high", mutable i32
-		            127, 1, 65, 0, 11,
-		            // section "export"
-		            7, 50, 6,
-		            // 0, "mul"
-		            3, 109, 117, 108, 0, 1,
-		            // 1, "div_s"
-		            5, 100, 105, 118, 95, 115, 0, 2,
-		            // 2, "div_u"
-		            5, 100, 105, 118, 95, 117, 0, 3,
-		            // 3, "rem_s"
-		            5, 114, 101, 109, 95, 115, 0, 4,
-		            // 4, "rem_u"
-		            5, 114, 101, 109, 95, 117, 0, 5,
-		            // 5, "get_high"
-		            8, 103, 101, 116, 95, 104, 105, 103, 104, 0, 0,
-		            // section "code"
-		            10, 191, 1, 6,
-		            // 0, "get_high"
-		            4, 0, 35, 0, 11,
-		            // 1, "mul"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 126, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		            // 2, "div_s"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 127, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		            // 3, "div_u"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 128, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		            // 4, "rem_s"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 129, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		            // 5, "rem_u"
-		            36, 1, 1, 126, 32, 0, 173, 32, 1, 173, 66, 32, 134, 132, 32, 2, 173,
-		            32, 3, 173, 66, 32, 134, 132, 130, 34, 4, 66, 32, 135, 167, 36, 0,
-		            32, 4, 167, 11,
-		          ]),
-		        ),
-		        {},
-		      ).exports;
-		    } catch {
-		      // no wasm support :(
-		    }
-
-		    /**
-		     * Constructs a 64 bit two's-complement integer, given its low and high 32 bit values as *signed* integers.
-		     *  See the from* functions below for more convenient ways of constructing Longs.
-		     * @exports Long
-		     * @class A Long class for representing a 64 bit two's-complement integer value.
-		     * @param {number} low The low (signed) 32 bits of the long
-		     * @param {number} high The high (signed) 32 bits of the long
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @constructor
-		     */
-		    function Long(low, high, unsigned) {
-		      /**
-		       * The low 32 bits as a signed value.
-		       * @type {number}
-		       */
-		      this.low = low | 0;
-
-		      /**
-		       * The high 32 bits as a signed value.
-		       * @type {number}
-		       */
-		      this.high = high | 0;
-
-		      /**
-		       * Whether unsigned or not.
-		       * @type {boolean}
-		       */
-		      this.unsigned = !!unsigned;
-		    }
-
-		    // The internal representation of a long is the two given signed, 32-bit values.
-		    // We use 32-bit pieces because these are the size of integers on which
-		    // Javascript performs bit-operations.  For operations like addition and
-		    // multiplication, we split each number into 16 bit pieces, which can easily be
-		    // multiplied within Javascript's floating-point representation without overflow
-		    // or change in sign.
-		    //
-		    // In the algorithms below, we frequently reduce the negative case to the
-		    // positive case by negating the input(s) and then post-processing the result.
-		    // Note that we must ALWAYS check specially whether those values are MIN_VALUE
-		    // (-2^63) because -MIN_VALUE == MIN_VALUE (since 2^63 cannot be represented as
-		    // a positive number, it overflows back into a negative).  Not handling this
-		    // case would often result in infinite recursion.
-		    //
-		    // Common constant values ZERO, ONE, NEG_ONE, etc. are defined below the from*
-		    // methods on which they depend.
-
-		    /**
-		     * An indicator used to reliably determine if an object is a Long or not.
-		     * @type {boolean}
-		     * @const
-		     * @private
-		     */
-		    Long.prototype.__isLong__;
-		    Object.defineProperty(Long.prototype, "__isLong__", {
-		      value: true,
-		    });
-
-		    /**
-		     * @function
-		     * @param {*} obj Object
-		     * @returns {boolean}
-		     * @inner
-		     */
-		    function isLong(obj) {
-		      return (obj && obj["__isLong__"]) === true;
-		    }
-
-		    /**
-		     * @function
-		     * @param {*} value number
-		     * @returns {number}
-		     * @inner
-		     */
-		    function ctz32(value) {
-		      var c = Math.clz32(value & -value);
-		      return value ? 31 - c : c;
-		    }
-
-		    /**
-		     * Tests if the specified object is a Long.
-		     * @function
-		     * @param {*} obj Object
-		     * @returns {boolean}
-		     */
-		    Long.isLong = isLong;
-
-		    /**
-		     * A cache of the Long representations of small integer values.
-		     * @type {!Object}
-		     * @inner
-		     */
-		    var INT_CACHE = {};
-
-		    /**
-		     * A cache of the Long representations of small unsigned integer values.
-		     * @type {!Object}
-		     * @inner
-		     */
-		    var UINT_CACHE = {};
-
-		    /**
-		     * @param {number} value
-		     * @param {boolean=} unsigned
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromInt(value, unsigned) {
-		      var obj, cachedObj, cache;
-		      if (unsigned) {
-		        value >>>= 0;
-		        if ((cache = 0 <= value && value < 256)) {
-		          cachedObj = UINT_CACHE[value];
-		          if (cachedObj) return cachedObj;
-		        }
-		        obj = fromBits(value, 0, true);
-		        if (cache) UINT_CACHE[value] = obj;
-		        return obj;
-		      } else {
-		        value |= 0;
-		        if ((cache = -128 <= value && value < 128)) {
-		          cachedObj = INT_CACHE[value];
-		          if (cachedObj) return cachedObj;
-		        }
-		        obj = fromBits(value, value < 0 ? -1 : 0, false);
-		        if (cache) INT_CACHE[value] = obj;
-		        return obj;
-		      }
-		    }
-
-		    /**
-		     * Returns a Long representing the given 32 bit integer value.
-		     * @function
-		     * @param {number} value The 32 bit integer in question
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {!Long} The corresponding Long value
-		     */
-		    Long.fromInt = fromInt;
-
-		    /**
-		     * @param {number} value
-		     * @param {boolean=} unsigned
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromNumber(value, unsigned) {
-		      if (isNaN(value)) return unsigned ? UZERO : ZERO;
-		      if (unsigned) {
-		        if (value < 0) return UZERO;
-		        if (value >= TWO_PWR_64_DBL) return MAX_UNSIGNED_VALUE;
-		      } else {
-		        if (value <= -TWO_PWR_63_DBL) return MIN_VALUE;
-		        if (value + 1 >= TWO_PWR_63_DBL) return MAX_VALUE;
-		      }
-		      if (value < 0) return fromNumber(-value, unsigned).neg();
-		      return fromBits(
-		        value % TWO_PWR_32_DBL | 0,
-		        (value / TWO_PWR_32_DBL) | 0,
-		        unsigned,
-		      );
-		    }
-
-		    /**
-		     * Returns a Long representing the given value, provided that it is a finite number. Otherwise, zero is returned.
-		     * @function
-		     * @param {number} value The number in question
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {!Long} The corresponding Long value
-		     */
-		    Long.fromNumber = fromNumber;
-
-		    /**
-		     * @param {number} lowBits
-		     * @param {number} highBits
-		     * @param {boolean=} unsigned
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromBits(lowBits, highBits, unsigned) {
-		      return new Long(lowBits, highBits, unsigned);
-		    }
-
-		    /**
-		     * Returns a Long representing the 64 bit integer that comes by concatenating the given low and high bits. Each is
-		     *  assumed to use 32 bits.
-		     * @function
-		     * @param {number} lowBits The low 32 bits
-		     * @param {number} highBits The high 32 bits
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {!Long} The corresponding Long value
-		     */
-		    Long.fromBits = fromBits;
-
-		    /**
-		     * @function
-		     * @param {number} base
-		     * @param {number} exponent
-		     * @returns {number}
-		     * @inner
-		     */
-		    var pow_dbl = Math.pow; // Used 4 times (4*8 to 15+4)
-
-		    /**
-		     * @param {string} str
-		     * @param {(boolean|number)=} unsigned
-		     * @param {number=} radix
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromString(str, unsigned, radix) {
-		      if (str.length === 0) throw Error("empty string");
-		      if (typeof unsigned === "number") {
-		        // For goog.math.long compatibility
-		        radix = unsigned;
-		        unsigned = false;
-		      } else {
-		        unsigned = !!unsigned;
-		      }
-		      if (
-		        str === "NaN" ||
-		        str === "Infinity" ||
-		        str === "+Infinity" ||
-		        str === "-Infinity"
-		      )
-		        return unsigned ? UZERO : ZERO;
-		      radix = radix || 10;
-		      if (radix < 2 || 36 < radix) throw RangeError("radix");
-		      var p;
-		      if ((p = str.indexOf("-")) > 0) throw Error("interior hyphen");
-		      else if (p === 0) {
-		        return fromString(str.substring(1), unsigned, radix).neg();
-		      }
-
-		      // Do several (8) digits each time through the loop, so as to
-		      // minimize the calls to the very expensive emulated div.
-		      var radixToPower = fromNumber(pow_dbl(radix, 8));
-		      var result = ZERO;
-		      for (var i = 0; i < str.length; i += 8) {
-		        var size = Math.min(8, str.length - i),
-		          value = parseInt(str.substring(i, i + size), radix);
-		        if (size < 8) {
-		          var power = fromNumber(pow_dbl(radix, size));
-		          result = result.mul(power).add(fromNumber(value));
-		        } else {
-		          result = result.mul(radixToPower);
-		          result = result.add(fromNumber(value));
-		        }
-		      }
-		      result.unsigned = unsigned;
-		      return result;
-		    }
-
-		    /**
-		     * Returns a Long representation of the given string, written using the specified radix.
-		     * @function
-		     * @param {string} str The textual representation of the Long
-		     * @param {(boolean|number)=} unsigned Whether unsigned or not, defaults to signed
-		     * @param {number=} radix The radix in which the text is written (2-36), defaults to 10
-		     * @returns {!Long} The corresponding Long value
-		     */
-		    Long.fromString = fromString;
-
-		    /**
-		     * @function
-		     * @param {!Long|number|string|!{low: number, high: number, unsigned: boolean}} val
-		     * @param {boolean=} unsigned
-		     * @returns {!Long}
-		     * @inner
-		     */
-		    function fromValue(val, unsigned) {
-		      if (typeof val === "number") return fromNumber(val, unsigned);
-		      if (typeof val === "string") return fromString(val, unsigned);
-		      // Throws for non-objects, converts non-instanceof Long:
-		      return fromBits(
-		        val.low,
-		        val.high,
-		        typeof unsigned === "boolean" ? unsigned : val.unsigned,
-		      );
-		    }
-
-		    /**
-		     * Converts the specified value to a Long using the appropriate from* function for its type.
-		     * @function
-		     * @param {!Long|number|bigint|string|!{low: number, high: number, unsigned: boolean}} val Value
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {!Long}
-		     */
-		    Long.fromValue = fromValue;
-
-		    // NOTE: the compiler should inline these constant values below and then remove these variables, so there should be
-		    // no runtime penalty for these.
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_16_DBL = 1 << 16;
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_24_DBL = 1 << 24;
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_32_DBL = TWO_PWR_16_DBL * TWO_PWR_16_DBL;
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_64_DBL = TWO_PWR_32_DBL * TWO_PWR_32_DBL;
-
-		    /**
-		     * @type {number}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_63_DBL = TWO_PWR_64_DBL / 2;
-
-		    /**
-		     * @type {!Long}
-		     * @const
-		     * @inner
-		     */
-		    var TWO_PWR_24 = fromInt(TWO_PWR_24_DBL);
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var ZERO = fromInt(0);
-
-		    /**
-		     * Signed zero.
-		     * @type {!Long}
-		     */
-		    Long.ZERO = ZERO;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var UZERO = fromInt(0, true);
-
-		    /**
-		     * Unsigned zero.
-		     * @type {!Long}
-		     */
-		    Long.UZERO = UZERO;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var ONE = fromInt(1);
-
-		    /**
-		     * Signed one.
-		     * @type {!Long}
-		     */
-		    Long.ONE = ONE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var UONE = fromInt(1, true);
-
-		    /**
-		     * Unsigned one.
-		     * @type {!Long}
-		     */
-		    Long.UONE = UONE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var NEG_ONE = fromInt(-1);
-
-		    /**
-		     * Signed negative one.
-		     * @type {!Long}
-		     */
-		    Long.NEG_ONE = NEG_ONE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var MAX_VALUE = fromBits(0xffffffff | 0, 0x7fffffff | 0, false);
-
-		    /**
-		     * Maximum signed value.
-		     * @type {!Long}
-		     */
-		    Long.MAX_VALUE = MAX_VALUE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var MAX_UNSIGNED_VALUE = fromBits(0xffffffff | 0, 0xffffffff | 0, true);
-
-		    /**
-		     * Maximum unsigned value.
-		     * @type {!Long}
-		     */
-		    Long.MAX_UNSIGNED_VALUE = MAX_UNSIGNED_VALUE;
-
-		    /**
-		     * @type {!Long}
-		     * @inner
-		     */
-		    var MIN_VALUE = fromBits(0, 0x80000000 | 0, false);
-
-		    /**
-		     * Minimum signed value.
-		     * @type {!Long}
-		     */
-		    Long.MIN_VALUE = MIN_VALUE;
-
-		    /**
-		     * @alias Long.prototype
-		     * @inner
-		     */
-		    var LongPrototype = Long.prototype;
-
-		    /**
-		     * Converts the Long to a 32 bit integer, assuming it is a 32 bit integer.
-		     * @this {!Long}
-		     * @returns {number}
-		     */
-		    LongPrototype.toInt = function toInt() {
-		      return this.unsigned ? this.low >>> 0 : this.low;
-		    };
-
-		    /**
-		     * Converts the Long to a the nearest floating-point representation of this value (double, 53 bit mantissa).
-		     * @this {!Long}
-		     * @returns {number}
-		     */
-		    LongPrototype.toNumber = function toNumber() {
-		      if (this.unsigned)
-		        return (this.high >>> 0) * TWO_PWR_32_DBL + (this.low >>> 0);
-		      return this.high * TWO_PWR_32_DBL + (this.low >>> 0);
-		    };
-
-		    /**
-		     * Converts the Long to a string written in the specified radix.
-		     * @this {!Long}
-		     * @param {number=} radix Radix (2-36), defaults to 10
-		     * @returns {string}
-		     * @override
-		     * @throws {RangeError} If `radix` is out of range
-		     */
-		    LongPrototype.toString = function toString(radix) {
-		      radix = radix || 10;
-		      if (radix < 2 || 36 < radix) throw RangeError("radix");
-		      if (this.isZero()) return "0";
-		      if (this.isNegative()) {
-		        // Unsigned Longs are never negative
-		        if (this.eq(MIN_VALUE)) {
-		          // We need to change the Long value before it can be negated, so we remove
-		          // the bottom-most digit in this base and then recurse to do the rest.
-		          var radixLong = fromNumber(radix),
-		            div = this.div(radixLong),
-		            rem1 = div.mul(radixLong).sub(this);
-		          return div.toString(radix) + rem1.toInt().toString(radix);
-		        } else return "-" + this.neg().toString(radix);
-		      }
-
-		      // Do several (6) digits each time through the loop, so as to
-		      // minimize the calls to the very expensive emulated div.
-		      var radixToPower = fromNumber(pow_dbl(radix, 6), this.unsigned),
-		        rem = this;
-		      var result = "";
-		      while (true) {
-		        var remDiv = rem.div(radixToPower),
-		          intval = rem.sub(remDiv.mul(radixToPower)).toInt() >>> 0,
-		          digits = intval.toString(radix);
-		        rem = remDiv;
-		        if (rem.isZero()) return digits + result;
-		        else {
-		          while (digits.length < 6) digits = "0" + digits;
-		          result = "" + digits + result;
-		        }
-		      }
-		    };
-
-		    /**
-		     * Gets the high 32 bits as a signed integer.
-		     * @this {!Long}
-		     * @returns {number} Signed high bits
-		     */
-		    LongPrototype.getHighBits = function getHighBits() {
-		      return this.high;
-		    };
-
-		    /**
-		     * Gets the high 32 bits as an unsigned integer.
-		     * @this {!Long}
-		     * @returns {number} Unsigned high bits
-		     */
-		    LongPrototype.getHighBitsUnsigned = function getHighBitsUnsigned() {
-		      return this.high >>> 0;
-		    };
-
-		    /**
-		     * Gets the low 32 bits as a signed integer.
-		     * @this {!Long}
-		     * @returns {number} Signed low bits
-		     */
-		    LongPrototype.getLowBits = function getLowBits() {
-		      return this.low;
-		    };
-
-		    /**
-		     * Gets the low 32 bits as an unsigned integer.
-		     * @this {!Long}
-		     * @returns {number} Unsigned low bits
-		     */
-		    LongPrototype.getLowBitsUnsigned = function getLowBitsUnsigned() {
-		      return this.low >>> 0;
-		    };
-
-		    /**
-		     * Gets the number of bits needed to represent the absolute value of this Long.
-		     * @this {!Long}
-		     * @returns {number}
-		     */
-		    LongPrototype.getNumBitsAbs = function getNumBitsAbs() {
-		      if (this.isNegative())
-		        // Unsigned Longs are never negative
-		        return this.eq(MIN_VALUE) ? 64 : this.neg().getNumBitsAbs();
-		      var val = this.high != 0 ? this.high : this.low;
-		      for (var bit = 31; bit > 0; bit--) if ((val & (1 << bit)) != 0) break;
-		      return this.high != 0 ? bit + 33 : bit + 1;
-		    };
-
-		    /**
-		     * Tests if this Long can be safely represented as a JavaScript number.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isSafeInteger = function isSafeInteger() {
-		      // 2^53-1 is the maximum safe value
-		      var top11Bits = this.high >> 21;
-		      // [0, 2^53-1]
-		      if (!top11Bits) return true;
-		      // > 2^53-1
-		      if (this.unsigned) return false;
-		      // [-2^53, -1] except -2^53
-		      return top11Bits === -1 && !(this.low === 0 && this.high === -2097152);
-		    };
-
-		    /**
-		     * Tests if this Long's value equals zero.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isZero = function isZero() {
-		      return this.high === 0 && this.low === 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value equals zero. This is an alias of {@link Long#isZero}.
-		     * @returns {boolean}
-		     */
-		    LongPrototype.eqz = LongPrototype.isZero;
-
-		    /**
-		     * Tests if this Long's value is negative.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isNegative = function isNegative() {
-		      return !this.unsigned && this.high < 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is positive or zero.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isPositive = function isPositive() {
-		      return this.unsigned || this.high >= 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is odd.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isOdd = function isOdd() {
-		      return (this.low & 1) === 1;
-		    };
-
-		    /**
-		     * Tests if this Long's value is even.
-		     * @this {!Long}
-		     * @returns {boolean}
-		     */
-		    LongPrototype.isEven = function isEven() {
-		      return (this.low & 1) === 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value equals the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.equals = function equals(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      if (
-		        this.unsigned !== other.unsigned &&
-		        this.high >>> 31 === 1 &&
-		        other.high >>> 31 === 1
-		      )
-		        return false;
-		      return this.high === other.high && this.low === other.low;
-		    };
-
-		    /**
-		     * Tests if this Long's value equals the specified's. This is an alias of {@link Long#equals}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.eq = LongPrototype.equals;
-
-		    /**
-		     * Tests if this Long's value differs from the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.notEquals = function notEquals(other) {
-		      return !this.eq(/* validates */ other);
-		    };
-
-		    /**
-		     * Tests if this Long's value differs from the specified's. This is an alias of {@link Long#notEquals}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.neq = LongPrototype.notEquals;
-
-		    /**
-		     * Tests if this Long's value differs from the specified's. This is an alias of {@link Long#notEquals}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.ne = LongPrototype.notEquals;
-
-		    /**
-		     * Tests if this Long's value is less than the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.lessThan = function lessThan(other) {
-		      return this.comp(/* validates */ other) < 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is less than the specified's. This is an alias of {@link Long#lessThan}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.lt = LongPrototype.lessThan;
-
-		    /**
-		     * Tests if this Long's value is less than or equal the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.lessThanOrEqual = function lessThanOrEqual(other) {
-		      return this.comp(/* validates */ other) <= 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is less than or equal the specified's. This is an alias of {@link Long#lessThanOrEqual}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.lte = LongPrototype.lessThanOrEqual;
-
-		    /**
-		     * Tests if this Long's value is less than or equal the specified's. This is an alias of {@link Long#lessThanOrEqual}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.le = LongPrototype.lessThanOrEqual;
-
-		    /**
-		     * Tests if this Long's value is greater than the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.greaterThan = function greaterThan(other) {
-		      return this.comp(/* validates */ other) > 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is greater than the specified's. This is an alias of {@link Long#greaterThan}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.gt = LongPrototype.greaterThan;
-
-		    /**
-		     * Tests if this Long's value is greater than or equal the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.greaterThanOrEqual = function greaterThanOrEqual(other) {
-		      return this.comp(/* validates */ other) >= 0;
-		    };
-
-		    /**
-		     * Tests if this Long's value is greater than or equal the specified's. This is an alias of {@link Long#greaterThanOrEqual}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.gte = LongPrototype.greaterThanOrEqual;
-
-		    /**
-		     * Tests if this Long's value is greater than or equal the specified's. This is an alias of {@link Long#greaterThanOrEqual}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {boolean}
-		     */
-		    LongPrototype.ge = LongPrototype.greaterThanOrEqual;
-
-		    /**
-		     * Compares this Long's value with the specified's.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
-		     *  if the given one is greater
-		     */
-		    LongPrototype.compare = function compare(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      if (this.eq(other)) return 0;
-		      var thisNeg = this.isNegative(),
-		        otherNeg = other.isNegative();
-		      if (thisNeg && !otherNeg) return -1;
-		      if (!thisNeg && otherNeg) return 1;
-		      // At this point the sign bits are the same
-		      if (!this.unsigned) return this.sub(other).isNegative() ? -1 : 1;
-		      // Both are positive if at least one is unsigned
-		      return other.high >>> 0 > this.high >>> 0 ||
-		        (other.high === this.high && other.low >>> 0 > this.low >>> 0)
-		        ? -1
-		        : 1;
-		    };
-
-		    /**
-		     * Compares this Long's value with the specified's. This is an alias of {@link Long#compare}.
-		     * @function
-		     * @param {!Long|number|bigint|string} other Other value
-		     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
-		     *  if the given one is greater
-		     */
-		    LongPrototype.comp = LongPrototype.compare;
-
-		    /**
-		     * Negates this Long's value.
-		     * @this {!Long}
-		     * @returns {!Long} Negated Long
-		     */
-		    LongPrototype.negate = function negate() {
-		      if (!this.unsigned && this.eq(MIN_VALUE)) return MIN_VALUE;
-		      return this.not().add(ONE);
-		    };
-
-		    /**
-		     * Negates this Long's value. This is an alias of {@link Long#negate}.
-		     * @function
-		     * @returns {!Long} Negated Long
-		     */
-		    LongPrototype.neg = LongPrototype.negate;
-
-		    /**
-		     * Returns the sum of this and the specified Long.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} addend Addend
-		     * @returns {!Long} Sum
-		     */
-		    LongPrototype.add = function add(addend) {
-		      if (!isLong(addend)) addend = fromValue(addend);
-
-		      // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
-
-		      var a48 = this.high >>> 16;
-		      var a32 = this.high & 0xffff;
-		      var a16 = this.low >>> 16;
-		      var a00 = this.low & 0xffff;
-		      var b48 = addend.high >>> 16;
-		      var b32 = addend.high & 0xffff;
-		      var b16 = addend.low >>> 16;
-		      var b00 = addend.low & 0xffff;
-		      var c48 = 0,
-		        c32 = 0,
-		        c16 = 0,
-		        c00 = 0;
-		      c00 += a00 + b00;
-		      c16 += c00 >>> 16;
-		      c00 &= 0xffff;
-		      c16 += a16 + b16;
-		      c32 += c16 >>> 16;
-		      c16 &= 0xffff;
-		      c32 += a32 + b32;
-		      c48 += c32 >>> 16;
-		      c32 &= 0xffff;
-		      c48 += a48 + b48;
-		      c48 &= 0xffff;
-		      return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
-		    };
-
-		    /**
-		     * Returns the difference of this and the specified Long.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} subtrahend Subtrahend
-		     * @returns {!Long} Difference
-		     */
-		    LongPrototype.subtract = function subtract(subtrahend) {
-		      if (!isLong(subtrahend)) subtrahend = fromValue(subtrahend);
-		      return this.add(subtrahend.neg());
-		    };
-
-		    /**
-		     * Returns the difference of this and the specified Long. This is an alias of {@link Long#subtract}.
-		     * @function
-		     * @param {!Long|number|bigint|string} subtrahend Subtrahend
-		     * @returns {!Long} Difference
-		     */
-		    LongPrototype.sub = LongPrototype.subtract;
-
-		    /**
-		     * Returns the product of this and the specified Long.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} multiplier Multiplier
-		     * @returns {!Long} Product
-		     */
-		    LongPrototype.multiply = function multiply(multiplier) {
-		      if (this.isZero()) return this;
-		      if (!isLong(multiplier)) multiplier = fromValue(multiplier);
-
-		      // use wasm support if present
-		      if (wasm) {
-		        var low = wasm["mul"](
-		          this.low,
-		          this.high,
-		          multiplier.low,
-		          multiplier.high,
-		        );
-		        return fromBits(low, wasm["get_high"](), this.unsigned);
-		      }
-		      if (multiplier.isZero()) return this.unsigned ? UZERO : ZERO;
-		      if (this.eq(MIN_VALUE)) return multiplier.isOdd() ? MIN_VALUE : ZERO;
-		      if (multiplier.eq(MIN_VALUE)) return this.isOdd() ? MIN_VALUE : ZERO;
-		      if (this.isNegative()) {
-		        if (multiplier.isNegative()) return this.neg().mul(multiplier.neg());
-		        else return this.neg().mul(multiplier).neg();
-		      } else if (multiplier.isNegative())
-		        return this.mul(multiplier.neg()).neg();
-
-		      // If both longs are small, use float multiplication
-		      if (this.lt(TWO_PWR_24) && multiplier.lt(TWO_PWR_24))
-		        return fromNumber(
-		          this.toNumber() * multiplier.toNumber(),
-		          this.unsigned,
-		        );
-
-		      // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
-		      // We can skip products that would overflow.
-
-		      var a48 = this.high >>> 16;
-		      var a32 = this.high & 0xffff;
-		      var a16 = this.low >>> 16;
-		      var a00 = this.low & 0xffff;
-		      var b48 = multiplier.high >>> 16;
-		      var b32 = multiplier.high & 0xffff;
-		      var b16 = multiplier.low >>> 16;
-		      var b00 = multiplier.low & 0xffff;
-		      var c48 = 0,
-		        c32 = 0,
-		        c16 = 0,
-		        c00 = 0;
-		      c00 += a00 * b00;
-		      c16 += c00 >>> 16;
-		      c00 &= 0xffff;
-		      c16 += a16 * b00;
-		      c32 += c16 >>> 16;
-		      c16 &= 0xffff;
-		      c16 += a00 * b16;
-		      c32 += c16 >>> 16;
-		      c16 &= 0xffff;
-		      c32 += a32 * b00;
-		      c48 += c32 >>> 16;
-		      c32 &= 0xffff;
-		      c32 += a16 * b16;
-		      c48 += c32 >>> 16;
-		      c32 &= 0xffff;
-		      c32 += a00 * b32;
-		      c48 += c32 >>> 16;
-		      c32 &= 0xffff;
-		      c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
-		      c48 &= 0xffff;
-		      return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
-		    };
-
-		    /**
-		     * Returns the product of this and the specified Long. This is an alias of {@link Long#multiply}.
-		     * @function
-		     * @param {!Long|number|bigint|string} multiplier Multiplier
-		     * @returns {!Long} Product
-		     */
-		    LongPrototype.mul = LongPrototype.multiply;
-
-		    /**
-		     * Returns this Long divided by the specified. The result is signed if this Long is signed or
-		     *  unsigned if this Long is unsigned.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Quotient
-		     */
-		    LongPrototype.divide = function divide(divisor) {
-		      if (!isLong(divisor)) divisor = fromValue(divisor);
-		      if (divisor.isZero()) throw Error("division by zero");
-
-		      // use wasm support if present
-		      if (wasm) {
-		        // guard against signed division overflow: the largest
-		        // negative number / -1 would be 1 larger than the largest
-		        // positive number, due to two's complement.
-		        if (
-		          !this.unsigned &&
-		          this.high === -2147483648 &&
-		          divisor.low === -1 &&
-		          divisor.high === -1
-		        ) {
-		          // be consistent with non-wasm code path
-		          return this;
-		        }
-		        var low = (this.unsigned ? wasm["div_u"] : wasm["div_s"])(
-		          this.low,
-		          this.high,
-		          divisor.low,
-		          divisor.high,
-		        );
-		        return fromBits(low, wasm["get_high"](), this.unsigned);
-		      }
-		      if (this.isZero()) return this.unsigned ? UZERO : ZERO;
-		      var approx, rem, res;
-		      if (!this.unsigned) {
-		        // This section is only relevant for signed longs and is derived from the
-		        // closure library as a whole.
-		        if (this.eq(MIN_VALUE)) {
-		          if (divisor.eq(ONE) || divisor.eq(NEG_ONE))
-		            return MIN_VALUE; // recall that -MIN_VALUE == MIN_VALUE
-		          else if (divisor.eq(MIN_VALUE)) return ONE;
-		          else {
-		            // At this point, we have |other| >= 2, so |this/other| < |MIN_VALUE|.
-		            var halfThis = this.shr(1);
-		            approx = halfThis.div(divisor).shl(1);
-		            if (approx.eq(ZERO)) {
-		              return divisor.isNegative() ? ONE : NEG_ONE;
-		            } else {
-		              rem = this.sub(divisor.mul(approx));
-		              res = approx.add(rem.div(divisor));
-		              return res;
-		            }
-		          }
-		        } else if (divisor.eq(MIN_VALUE)) return this.unsigned ? UZERO : ZERO;
-		        if (this.isNegative()) {
-		          if (divisor.isNegative()) return this.neg().div(divisor.neg());
-		          return this.neg().div(divisor).neg();
-		        } else if (divisor.isNegative()) return this.div(divisor.neg()).neg();
-		        res = ZERO;
-		      } else {
-		        // The algorithm below has not been made for unsigned longs. It's therefore
-		        // required to take special care of the MSB prior to running it.
-		        if (!divisor.unsigned) divisor = divisor.toUnsigned();
-		        if (divisor.gt(this)) return UZERO;
-		        if (divisor.gt(this.shru(1)))
-		          // 15 >>> 1 = 7 ; with divisor = 8 ; true
-		          return UONE;
-		        res = UZERO;
-		      }
-
-		      // Repeat the following until the remainder is less than other:  find a
-		      // floating-point that approximates remainder / other *from below*, add this
-		      // into the result, and subtract it from the remainder.  It is critical that
-		      // the approximate value is less than or equal to the real value so that the
-		      // remainder never becomes negative.
-		      rem = this;
-		      while (rem.gte(divisor)) {
-		        // Approximate the result of division. This may be a little greater or
-		        // smaller than the actual value.
-		        approx = Math.max(1, Math.floor(rem.toNumber() / divisor.toNumber()));
-
-		        // We will tweak the approximate result by changing it in the 48-th digit or
-		        // the smallest non-fractional digit, whichever is larger.
-		        var log2 = Math.ceil(Math.log(approx) / Math.LN2),
-		          delta = log2 <= 48 ? 1 : pow_dbl(2, log2 - 48),
-		          // Decrease the approximation until it is smaller than the remainder.  Note
-		          // that if it is too large, the product overflows and is negative.
-		          approxRes = fromNumber(approx),
-		          approxRem = approxRes.mul(divisor);
-		        while (approxRem.isNegative() || approxRem.gt(rem)) {
-		          approx -= delta;
-		          approxRes = fromNumber(approx, this.unsigned);
-		          approxRem = approxRes.mul(divisor);
-		        }
-
-		        // We know the answer can't be zero... and actually, zero would cause
-		        // infinite recursion since we would make no progress.
-		        if (approxRes.isZero()) approxRes = ONE;
-		        res = res.add(approxRes);
-		        rem = rem.sub(approxRem);
-		      }
-		      return res;
-		    };
-
-		    /**
-		     * Returns this Long divided by the specified. This is an alias of {@link Long#divide}.
-		     * @function
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Quotient
-		     */
-		    LongPrototype.div = LongPrototype.divide;
-
-		    /**
-		     * Returns this Long modulo the specified.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Remainder
-		     */
-		    LongPrototype.modulo = function modulo(divisor) {
-		      if (!isLong(divisor)) divisor = fromValue(divisor);
-
-		      // use wasm support if present
-		      if (wasm) {
-		        var low = (this.unsigned ? wasm["rem_u"] : wasm["rem_s"])(
-		          this.low,
-		          this.high,
-		          divisor.low,
-		          divisor.high,
-		        );
-		        return fromBits(low, wasm["get_high"](), this.unsigned);
-		      }
-		      return this.sub(this.div(divisor).mul(divisor));
-		    };
-
-		    /**
-		     * Returns this Long modulo the specified. This is an alias of {@link Long#modulo}.
-		     * @function
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Remainder
-		     */
-		    LongPrototype.mod = LongPrototype.modulo;
-
-		    /**
-		     * Returns this Long modulo the specified. This is an alias of {@link Long#modulo}.
-		     * @function
-		     * @param {!Long|number|bigint|string} divisor Divisor
-		     * @returns {!Long} Remainder
-		     */
-		    LongPrototype.rem = LongPrototype.modulo;
-
-		    /**
-		     * Returns the bitwise NOT of this Long.
-		     * @this {!Long}
-		     * @returns {!Long}
-		     */
-		    LongPrototype.not = function not() {
-		      return fromBits(~this.low, ~this.high, this.unsigned);
-		    };
-
-		    /**
-		     * Returns count leading zeros of this Long.
-		     * @this {!Long}
-		     * @returns {!number}
-		     */
-		    LongPrototype.countLeadingZeros = function countLeadingZeros() {
-		      return this.high ? Math.clz32(this.high) : Math.clz32(this.low) + 32;
-		    };
-
-		    /**
-		     * Returns count leading zeros. This is an alias of {@link Long#countLeadingZeros}.
-		     * @function
-		     * @param {!Long}
-		     * @returns {!number}
-		     */
-		    LongPrototype.clz = LongPrototype.countLeadingZeros;
-
-		    /**
-		     * Returns count trailing zeros of this Long.
-		     * @this {!Long}
-		     * @returns {!number}
-		     */
-		    LongPrototype.countTrailingZeros = function countTrailingZeros() {
-		      return this.low ? ctz32(this.low) : ctz32(this.high) + 32;
-		    };
-
-		    /**
-		     * Returns count trailing zeros. This is an alias of {@link Long#countTrailingZeros}.
-		     * @function
-		     * @param {!Long}
-		     * @returns {!number}
-		     */
-		    LongPrototype.ctz = LongPrototype.countTrailingZeros;
-
-		    /**
-		     * Returns the bitwise AND of this Long and the specified.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other Long
-		     * @returns {!Long}
-		     */
-		    LongPrototype.and = function and(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      return fromBits(
-		        this.low & other.low,
-		        this.high & other.high,
-		        this.unsigned,
-		      );
-		    };
-
-		    /**
-		     * Returns the bitwise OR of this Long and the specified.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other Long
-		     * @returns {!Long}
-		     */
-		    LongPrototype.or = function or(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      return fromBits(
-		        this.low | other.low,
-		        this.high | other.high,
-		        this.unsigned,
-		      );
-		    };
-
-		    /**
-		     * Returns the bitwise XOR of this Long and the given one.
-		     * @this {!Long}
-		     * @param {!Long|number|bigint|string} other Other Long
-		     * @returns {!Long}
-		     */
-		    LongPrototype.xor = function xor(other) {
-		      if (!isLong(other)) other = fromValue(other);
-		      return fromBits(
-		        this.low ^ other.low,
-		        this.high ^ other.high,
-		        this.unsigned,
-		      );
-		    };
-
-		    /**
-		     * Returns this Long with bits shifted to the left by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shiftLeft = function shiftLeft(numBits) {
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      else if (numBits < 32)
-		        return fromBits(
-		          this.low << numBits,
-		          (this.high << numBits) | (this.low >>> (32 - numBits)),
-		          this.unsigned,
-		        );
-		      else return fromBits(0, this.low << (numBits - 32), this.unsigned);
-		    };
-
-		    /**
-		     * Returns this Long with bits shifted to the left by the given amount. This is an alias of {@link Long#shiftLeft}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shl = LongPrototype.shiftLeft;
-
-		    /**
-		     * Returns this Long with bits arithmetically shifted to the right by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shiftRight = function shiftRight(numBits) {
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      else if (numBits < 32)
-		        return fromBits(
-		          (this.low >>> numBits) | (this.high << (32 - numBits)),
-		          this.high >> numBits,
-		          this.unsigned,
-		        );
-		      else
-		        return fromBits(
-		          this.high >> (numBits - 32),
-		          this.high >= 0 ? 0 : -1,
-		          this.unsigned,
-		        );
-		    };
-
-		    /**
-		     * Returns this Long with bits arithmetically shifted to the right by the given amount. This is an alias of {@link Long#shiftRight}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shr = LongPrototype.shiftRight;
-
-		    /**
-		     * Returns this Long with bits logically shifted to the right by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shiftRightUnsigned = function shiftRightUnsigned(numBits) {
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      if (numBits < 32)
-		        return fromBits(
-		          (this.low >>> numBits) | (this.high << (32 - numBits)),
-		          this.high >>> numBits,
-		          this.unsigned,
-		        );
-		      if (numBits === 32) return fromBits(this.high, 0, this.unsigned);
-		      return fromBits(this.high >>> (numBits - 32), 0, this.unsigned);
-		    };
-
-		    /**
-		     * Returns this Long with bits logically shifted to the right by the given amount. This is an alias of {@link Long#shiftRightUnsigned}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shru = LongPrototype.shiftRightUnsigned;
-
-		    /**
-		     * Returns this Long with bits logically shifted to the right by the given amount. This is an alias of {@link Long#shiftRightUnsigned}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Shifted Long
-		     */
-		    LongPrototype.shr_u = LongPrototype.shiftRightUnsigned;
-
-		    /**
-		     * Returns this Long with bits rotated to the left by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Rotated Long
-		     */
-		    LongPrototype.rotateLeft = function rotateLeft(numBits) {
-		      var b;
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      if (numBits === 32) return fromBits(this.high, this.low, this.unsigned);
-		      if (numBits < 32) {
-		        b = 32 - numBits;
-		        return fromBits(
-		          (this.low << numBits) | (this.high >>> b),
-		          (this.high << numBits) | (this.low >>> b),
-		          this.unsigned,
-		        );
-		      }
-		      numBits -= 32;
-		      b = 32 - numBits;
-		      return fromBits(
-		        (this.high << numBits) | (this.low >>> b),
-		        (this.low << numBits) | (this.high >>> b),
-		        this.unsigned,
-		      );
-		    };
-		    /**
-		     * Returns this Long with bits rotated to the left by the given amount. This is an alias of {@link Long#rotateLeft}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Rotated Long
-		     */
-		    LongPrototype.rotl = LongPrototype.rotateLeft;
-
-		    /**
-		     * Returns this Long with bits rotated to the right by the given amount.
-		     * @this {!Long}
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Rotated Long
-		     */
-		    LongPrototype.rotateRight = function rotateRight(numBits) {
-		      var b;
-		      if (isLong(numBits)) numBits = numBits.toInt();
-		      if ((numBits &= 63) === 0) return this;
-		      if (numBits === 32) return fromBits(this.high, this.low, this.unsigned);
-		      if (numBits < 32) {
-		        b = 32 - numBits;
-		        return fromBits(
-		          (this.high << b) | (this.low >>> numBits),
-		          (this.low << b) | (this.high >>> numBits),
-		          this.unsigned,
-		        );
-		      }
-		      numBits -= 32;
-		      b = 32 - numBits;
-		      return fromBits(
-		        (this.low << b) | (this.high >>> numBits),
-		        (this.high << b) | (this.low >>> numBits),
-		        this.unsigned,
-		      );
-		    };
-		    /**
-		     * Returns this Long with bits rotated to the right by the given amount. This is an alias of {@link Long#rotateRight}.
-		     * @function
-		     * @param {number|!Long} numBits Number of bits
-		     * @returns {!Long} Rotated Long
-		     */
-		    LongPrototype.rotr = LongPrototype.rotateRight;
-
-		    /**
-		     * Converts this Long to signed.
-		     * @this {!Long}
-		     * @returns {!Long} Signed long
-		     */
-		    LongPrototype.toSigned = function toSigned() {
-		      if (!this.unsigned) return this;
-		      return fromBits(this.low, this.high, false);
-		    };
-
-		    /**
-		     * Converts this Long to unsigned.
-		     * @this {!Long}
-		     * @returns {!Long} Unsigned long
-		     */
-		    LongPrototype.toUnsigned = function toUnsigned() {
-		      if (this.unsigned) return this;
-		      return fromBits(this.low, this.high, true);
-		    };
-
-		    /**
-		     * Converts this Long to its byte representation.
-		     * @param {boolean=} le Whether little or big endian, defaults to big endian
-		     * @this {!Long}
-		     * @returns {!Array.<number>} Byte representation
-		     */
-		    LongPrototype.toBytes = function toBytes(le) {
-		      return le ? this.toBytesLE() : this.toBytesBE();
-		    };
-
-		    /**
-		     * Converts this Long to its little endian byte representation.
-		     * @this {!Long}
-		     * @returns {!Array.<number>} Little endian byte representation
-		     */
-		    LongPrototype.toBytesLE = function toBytesLE() {
-		      var hi = this.high,
-		        lo = this.low;
-		      return [
-		        lo & 0xff,
-		        (lo >>> 8) & 0xff,
-		        (lo >>> 16) & 0xff,
-		        lo >>> 24,
-		        hi & 0xff,
-		        (hi >>> 8) & 0xff,
-		        (hi >>> 16) & 0xff,
-		        hi >>> 24,
-		      ];
-		    };
-
-		    /**
-		     * Converts this Long to its big endian byte representation.
-		     * @this {!Long}
-		     * @returns {!Array.<number>} Big endian byte representation
-		     */
-		    LongPrototype.toBytesBE = function toBytesBE() {
-		      var hi = this.high,
-		        lo = this.low;
-		      return [
-		        hi >>> 24,
-		        (hi >>> 16) & 0xff,
-		        (hi >>> 8) & 0xff,
-		        hi & 0xff,
-		        lo >>> 24,
-		        (lo >>> 16) & 0xff,
-		        (lo >>> 8) & 0xff,
-		        lo & 0xff,
-		      ];
-		    };
-
-		    /**
-		     * Creates a Long from its byte representation.
-		     * @param {!Array.<number>} bytes Byte representation
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @param {boolean=} le Whether little or big endian, defaults to big endian
-		     * @returns {Long} The corresponding Long value
-		     */
-		    Long.fromBytes = function fromBytes(bytes, unsigned, le) {
-		      return le
-		        ? Long.fromBytesLE(bytes, unsigned)
-		        : Long.fromBytesBE(bytes, unsigned);
-		    };
-
-		    /**
-		     * Creates a Long from its little endian byte representation.
-		     * @param {!Array.<number>} bytes Little endian byte representation
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {Long} The corresponding Long value
-		     */
-		    Long.fromBytesLE = function fromBytesLE(bytes, unsigned) {
-		      return new Long(
-		        bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24),
-		        bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24),
-		        unsigned,
-		      );
-		    };
-
-		    /**
-		     * Creates a Long from its big endian byte representation.
-		     * @param {!Array.<number>} bytes Big endian byte representation
-		     * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		     * @returns {Long} The corresponding Long value
-		     */
-		    Long.fromBytesBE = function fromBytesBE(bytes, unsigned) {
-		      return new Long(
-		        (bytes[4] << 24) | (bytes[5] << 16) | (bytes[6] << 8) | bytes[7],
-		        (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3],
-		        unsigned,
-		      );
-		    };
-
-		    // Support conversion to/from BigInt where available
-		    if (typeof BigInt === "function") {
-		      /**
-		       * Returns a Long representing the given big integer.
-		       * @function
-		       * @param {number} value The big integer value
-		       * @param {boolean=} unsigned Whether unsigned or not, defaults to signed
-		       * @returns {!Long} The corresponding Long value
-		       */
-		      Long.fromBigInt = function fromBigInt(value, unsigned) {
-		        var lowBits = Number(BigInt.asIntN(32, value));
-		        var highBits = Number(BigInt.asIntN(32, value >> BigInt(32)));
-		        return fromBits(lowBits, highBits, unsigned);
-		      };
-
-		      // Override
-		      Long.fromValue = function fromValueWithBigInt(value, unsigned) {
-		        if (typeof value === "bigint") return Long.fromBigInt(value, unsigned);
-		        return fromValue(value, unsigned);
-		      };
-
-		      /**
-		       * Converts the Long to its big integer representation.
-		       * @this {!Long}
-		       * @returns {bigint}
-		       */
-		      LongPrototype.toBigInt = function toBigInt() {
-		        var lowBigInt = BigInt(this.low >>> 0);
-		        var highBigInt = BigInt(this.unsigned ? this.high >>> 0 : this.high);
-		        return (highBigInt << BigInt(32)) | lowBigInt;
-		      };
-		    }
-		    (_exports.default = Long);
-		  },
-		); 
-	} (umd$1, umd$1.exports));
-	return umd$1.exports;
-}
-
 var hasRequiredSrc$5;
 
 function requireSrc$5 () {
 	if (hasRequiredSrc$5) return src$5;
 	hasRequiredSrc$5 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/**
 		 * @license
 		 * Copyright 2018 gRPC authors.
@@ -68718,24 +71954,24 @@ function requireSrc$5 () {
 		 * limitations under the License.
 		 *
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.loadFileDescriptorSetFromObject = exports$1.loadFileDescriptorSetFromBuffer = exports$1.fromJSON = exports$1.loadSync = exports$1.load = exports$1.IdempotencyLevel = exports$1.isAnyExtension = exports$1.Long = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.loadFileDescriptorSetFromObject = exports.loadFileDescriptorSetFromBuffer = exports.fromJSON = exports.loadSync = exports.load = exports.IdempotencyLevel = exports.isAnyExtension = exports.Long = void 0;
 		const camelCase = requireLodash_camelcase();
 		const Protobuf = requireProtobufjs();
 		const descriptor = requireDescriptor();
 		const util_1 = requireUtil();
 		const Long = requireUmd();
-		exports$1.Long = Long;
+		exports.Long = Long;
 		function isAnyExtension(obj) {
 		    return ('@type' in obj) && (typeof obj['@type'] === 'string');
 		}
-		exports$1.isAnyExtension = isAnyExtension;
+		exports.isAnyExtension = isAnyExtension;
 		var IdempotencyLevel;
 		(function (IdempotencyLevel) {
 		    IdempotencyLevel["IDEMPOTENCY_UNKNOWN"] = "IDEMPOTENCY_UNKNOWN";
 		    IdempotencyLevel["NO_SIDE_EFFECTS"] = "NO_SIDE_EFFECTS";
 		    IdempotencyLevel["IDEMPOTENT"] = "IDEMPOTENT";
-		})(IdempotencyLevel = exports$1.IdempotencyLevel || (exports$1.IdempotencyLevel = {}));
+		})(IdempotencyLevel = exports.IdempotencyLevel || (exports.IdempotencyLevel = {}));
 		const descriptorOptions = {
 		    longs: String,
 		    enums: String,
@@ -68921,29 +72157,29 @@ function requireSrc$5 () {
 		        return createPackageDefinition(loadedRoot, options);
 		    });
 		}
-		exports$1.load = load;
+		exports.load = load;
 		function loadSync(filename, options) {
 		    const loadedRoot = (0, util_1.loadProtosWithOptionsSync)(filename, options);
 		    return createPackageDefinition(loadedRoot, options);
 		}
-		exports$1.loadSync = loadSync;
+		exports.loadSync = loadSync;
 		function fromJSON(json, options) {
 		    options = options || {};
 		    const loadedRoot = Protobuf.Root.fromJSON(json);
 		    loadedRoot.resolveAll();
 		    return createPackageDefinition(loadedRoot, options);
 		}
-		exports$1.fromJSON = fromJSON;
+		exports.fromJSON = fromJSON;
 		function loadFileDescriptorSetFromBuffer(descriptorSet, options) {
 		    const decodedDescriptorSet = descriptor.FileDescriptorSet.decode(descriptorSet);
 		    return createPackageDefinitionFromDescriptorSet(decodedDescriptorSet, options);
 		}
-		exports$1.loadFileDescriptorSetFromBuffer = loadFileDescriptorSetFromBuffer;
+		exports.loadFileDescriptorSetFromBuffer = loadFileDescriptorSetFromBuffer;
 		function loadFileDescriptorSetFromObject(descriptorSet, options) {
 		    const decodedDescriptorSet = descriptor.FileDescriptorSet.fromObject(descriptorSet);
 		    return createPackageDefinitionFromDescriptorSet(decodedDescriptorSet, options);
 		}
-		exports$1.loadFileDescriptorSetFromObject = loadFileDescriptorSetFromObject;
+		exports.loadFileDescriptorSetFromObject = loadFileDescriptorSetFromObject;
 		(0, util_1.addCommonProtos)();
 		
 	} (src$5));
@@ -68977,7 +72213,7 @@ function requireChannelz () {
 	channelz.getChannelzHandlers = getChannelzHandlers;
 	channelz.getChannelzServiceDefinition = getChannelzServiceDefinition;
 	channelz.setup = setup;
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	const ordered_map_1 = require$$1$1;
 	const connectivity_state_1 = requireConnectivityState();
 	const constants_1 = requireConstants();
@@ -69774,6 +73010,12 @@ function requireCompressionFilter () {
 	            let totalLength = 0;
 	            const messageParts = [];
 	            const decompresser = zlib.createInflate();
+	            decompresser.on('error', (error) => {
+	                reject({
+	                    code: constants_1.Status.INTERNAL,
+	                    details: 'Failed to decompress deflate-encoded message'
+	                });
+	            });
 	            decompresser.on('data', (chunk) => {
 	                messageParts.push(chunk);
 	                totalLength += chunk.byteLength;
@@ -69815,6 +73057,12 @@ function requireCompressionFilter () {
 	            let totalLength = 0;
 	            const messageParts = [];
 	            const decompresser = zlib.createGunzip();
+	            decompresser.on('error', (error) => {
+	                reject({
+	                    code: constants_1.Status.INTERNAL,
+	                    details: 'Failed to decompress gzip-encoded message'
+	                });
+	            });
 	            decompresser.on('data', (chunk) => {
 	                messageParts.push(chunk);
 	                totalLength += chunk.byteLength;
@@ -70933,7 +74181,7 @@ var hasRequiredResolverDns;
 function requireResolverDns () {
 	if (hasRequiredResolverDns) return resolverDns;
 	hasRequiredResolverDns = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2019 gRPC authors.
 		 *
@@ -70949,9 +74197,9 @@ function requireResolverDns () {
 		 * See the License for the specific language governing permissions and
 		 * limitations under the License.
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.DEFAULT_PORT = void 0;
-		exports$1.setup = setup;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.DEFAULT_PORT = void 0;
+		exports.setup = setup;
 		const resolver_1 = requireResolver();
 		const dns_1 = require$$1$3;
 		const service_config_1 = requireServiceConfig();
@@ -70961,7 +74209,7 @@ function requireResolverDns () {
 		const logging = requireLogging();
 		const constants_2 = requireConstants();
 		const uri_parser_1 = requireUriParser();
-		const net_1 = require$$0$7;
+		const net_1 = require$$0$6;
 		const backoff_timeout_1 = requireBackoffTimeout();
 		const environment_1 = requireEnvironment();
 		const TRACER_NAME = 'dns_resolver';
@@ -70971,7 +74219,7 @@ function requireResolverDns () {
 		/**
 		 * The default TCP port to connect to if not explicitly specified in the target.
 		 */
-		exports$1.DEFAULT_PORT = 443;
+		exports.DEFAULT_PORT = 443;
 		const DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS = 30000;
 		/**
 		 * Resolver implementation that handles DNS names and IP addresses.
@@ -71007,7 +74255,7 @@ function requireResolverDns () {
 		                        addresses: [
 		                            {
 		                                host: hostPort.host,
-		                                port: (_a = hostPort.port) !== null && _a !== void 0 ? _a : exports$1.DEFAULT_PORT,
+		                                port: (_a = hostPort.port) !== null && _a !== void 0 ? _a : exports.DEFAULT_PORT,
 		                            },
 		                        ],
 		                    },
@@ -71018,7 +74266,7 @@ function requireResolverDns () {
 		            else {
 		                this.ipResult = null;
 		                this.dnsHostname = hostPort.host;
-		                this.port = (_b = hostPort.port) !== null && _b !== void 0 ? _b : exports$1.DEFAULT_PORT;
+		                this.port = (_b = hostPort.port) !== null && _b !== void 0 ? _b : exports.DEFAULT_PORT;
 		            }
 		        }
 		        this.percentage = Math.random() * 100;
@@ -71327,7 +74575,7 @@ function requireHttp_proxy () {
 	http_proxy.getProxiedConnection = getProxiedConnection;
 	const logging_1 = requireLogging();
 	const constants_1 = requireConstants();
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	const http$1 = http;
 	const logging = requireLogging();
 	const subchannel_address_1 = requireSubchannelAddress();
@@ -71715,7 +74963,7 @@ function requireSubchannelCall () {
 	 */
 	Object.defineProperty(subchannelCall, "__esModule", { value: true });
 	subchannelCall.Http2SubchannelCall = void 0;
-	const http2 = require$$0$8;
+	const http2 = require$$0$7;
 	const os = os__default;
 	const constants_1 = requireConstants();
 	const metadata_1 = requireMetadata();
@@ -72267,7 +75515,7 @@ function requireTransport () {
 	 */
 	Object.defineProperty(transport, "__esModule", { value: true });
 	transport.Http2SubchannelConnector = void 0;
-	const http2 = require$$0$8;
+	const http2 = require$$0$7;
 	const tls_1 = require$$1$2;
 	const channelz_1 = requireChannelz();
 	const constants_1 = requireConstants();
@@ -72276,7 +75524,7 @@ function requireTransport () {
 	const resolver_1 = requireResolver();
 	const subchannel_address_1 = requireSubchannelAddress();
 	const uri_parser_1 = requireUriParser();
-	const net = require$$0$7;
+	const net = require$$0$6;
 	const subchannel_call_1 = requireSubchannelCall();
 	const call_number_1 = requireCallNumber();
 	const TRACER_NAME = 'transport';
@@ -73068,7 +76316,7 @@ function requireLoadBalancingCall () {
 	const uri_parser_1 = requireUriParser();
 	const logging = requireLogging();
 	const control_plane_status_1 = requireControlPlaneStatus();
-	const http2 = require$$0$8;
+	const http2 = require$$0$7;
 	const TRACER_NAME = 'load_balancing_call';
 	class LoadBalancingCall {
 	    constructor(channel, callConfig, methodName, host, credentials, deadline, callNumber) {
@@ -74532,7 +77780,7 @@ var hasRequiredInternalChannel;
 function requireInternalChannel () {
 	if (hasRequiredInternalChannel) return internalChannel;
 	hasRequiredInternalChannel = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2019 gRPC authors.
 		 *
@@ -74549,8 +77797,8 @@ function requireInternalChannel () {
 		 * limitations under the License.
 		 *
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.InternalChannel = exports$1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.InternalChannel = exports.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = void 0;
 		const channel_credentials_1 = requireChannelCredentials();
 		const resolving_load_balancer_1 = requireResolvingLoadBalancer();
 		const subchannel_pool_1 = requireSubchannelPool();
@@ -74623,7 +77871,7 @@ function requireInternalChannel () {
 		        };
 		    }
 		}
-		exports$1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = 'grpc.internal.no_subchannel';
+		exports.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = 'grpc.internal.no_subchannel';
 		class ChannelzInfoTracker {
 		    constructor(target) {
 		        this.target = target;
@@ -74735,7 +77983,7 @@ function requireInternalChannel () {
 		            createSubchannel: (subchannelAddress, subchannelArgs) => {
 		                const finalSubchannelArgs = {};
 		                for (const [key, value] of Object.entries(subchannelArgs)) {
-		                    if (!key.startsWith(exports$1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX)) {
+		                    if (!key.startsWith(exports.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX)) {
 		                        finalSubchannelArgs[key] = value;
 		                    }
 		                }
@@ -75135,7 +78383,7 @@ function requireInternalChannel () {
 		        return this.options;
 		    }
 		}
-		exports$1.InternalChannel = InternalChannel;
+		exports.InternalChannel = InternalChannel;
 		
 	} (internalChannel));
 	return internalChannel;
@@ -75244,8 +78492,8 @@ function requireServerCall () {
 	Object.defineProperty(serverCall, "__esModule", { value: true });
 	serverCall.ServerDuplexStreamImpl = serverCall.ServerWritableStreamImpl = serverCall.ServerReadableStreamImpl = serverCall.ServerUnaryCallImpl = void 0;
 	serverCall.serverErrorToStatus = serverErrorToStatus;
-	const events_1 = require$$0$5;
-	const stream_1 = require$$0$6;
+	const events_1 = require$$0$4;
+	const stream_1 = require$$0$5;
 	const constants_1 = requireConstants();
 	const metadata_1 = requireMetadata();
 	function serverErrorToStatus(error, overrideTrailers) {
@@ -75868,7 +79116,7 @@ var hasRequiredOrca;
 function requireOrca () {
 	if (hasRequiredOrca) return orca;
 	hasRequiredOrca = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2025 gRPC authors.
 		 *
@@ -75885,10 +79133,10 @@ function requireOrca () {
 		 * limitations under the License.
 		 *
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.OrcaOobMetricsSubchannelWrapper = exports$1.GRPC_METRICS_HEADER = exports$1.ServerMetricRecorder = exports$1.PerRequestMetricRecorder = void 0;
-		exports$1.createOrcaClient = createOrcaClient;
-		exports$1.createMetricsReader = createMetricsReader;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.OrcaOobMetricsSubchannelWrapper = exports.GRPC_METRICS_HEADER = exports.ServerMetricRecorder = exports.PerRequestMetricRecorder = void 0;
+		exports.createOrcaClient = createOrcaClient;
+		exports.createMetricsReader = createMetricsReader;
 		const make_client_1 = requireMakeClient();
 		const duration_1 = requireDuration();
 		const channel_credentials_1 = requireChannelCredentials();
@@ -75994,7 +79242,7 @@ function requireOrca () {
 		        return orcaProto.xds.data.orca.v3.OrcaLoadReport.serialize(this.message);
 		    }
 		}
-		exports$1.PerRequestMetricRecorder = PerRequestMetricRecorder;
+		exports.PerRequestMetricRecorder = PerRequestMetricRecorder;
 		const DEFAULT_REPORT_INTERVAL_MS = 30000;
 		class ServerMetricRecorder {
 		    constructor() {
@@ -76055,12 +79303,12 @@ function requireOrca () {
 		        server.addService(serviceDefinition, this.serviceImplementation);
 		    }
 		}
-		exports$1.ServerMetricRecorder = ServerMetricRecorder;
+		exports.ServerMetricRecorder = ServerMetricRecorder;
 		function createOrcaClient(channel) {
 		    const ClientClass = loadOrcaProto().xds.service.orca.v3.OpenRcaService;
 		    return new ClientClass('unused', channel_credentials_1.ChannelCredentials.createInsecure(), { channelOverride: channel });
 		}
-		exports$1.GRPC_METRICS_HEADER = 'endpoint-load-metrics-bin';
+		exports.GRPC_METRICS_HEADER = 'endpoint-load-metrics-bin';
 		const PARSED_LOAD_REPORT_KEY = 'grpc_orca_load_report';
 		/**
 		 * Create an onCallEnded callback for use in a picker.
@@ -76076,7 +79324,7 @@ function requireOrca () {
 		            listener(parsedLoadReport);
 		        }
 		        else {
-		            const serializedLoadReport = metadata.get(exports$1.GRPC_METRICS_HEADER);
+		            const serializedLoadReport = metadata.get(exports.GRPC_METRICS_HEADER);
 		            if (serializedLoadReport.length > 0) {
 		                const orcaProto = loadOrcaProto();
 		                parsedLoadReport = orcaProto.xds.data.orca.v3.OrcaLoadReport.deserialize(serializedLoadReport[0]);
@@ -76182,7 +79430,7 @@ function requireOrca () {
 		        return this.child;
 		    }
 		}
-		exports$1.OrcaOobMetricsSubchannelWrapper = OrcaOobMetricsSubchannelWrapper;
+		exports.OrcaOobMetricsSubchannelWrapper = OrcaOobMetricsSubchannelWrapper;
 		function createOobMetricsDataProducer(subchannel) {
 		    return new OobMetricsDataProducer(subchannel);
 		}
@@ -76218,7 +79466,7 @@ function requireServerInterceptors () {
 	serverInterceptors.getServerInterceptingCall = getServerInterceptingCall;
 	const metadata_1 = requireMetadata();
 	const constants_1 = requireConstants();
-	const http2 = require$$0$8;
+	const http2 = require$$0$7;
 	const error_1 = requireError();
 	const zlib = require$$0__default$1;
 	const stream_decoder_1 = requireStreamDecoder();
@@ -76559,13 +79807,6 @@ function requireServerInterceptors () {
 	        this.receivedHalfClose = false;
 	        this.streamEnded = false;
 	        this.metricsRecorder = new orca_1.PerRequestMetricRecorder();
-	        this.stream.once('error', (err) => {
-	            /* We need an error handler to avoid uncaught error event exceptions, but
-	             * there is nothing we can reasonably do here. Any error event should
-	             * have a corresponding close event, which handles emitting the cancelled
-	             * event. And the stream is now in a bad state, so we can't reasonably
-	             * expect to be able to send an error over it. */
-	        });
 	        this.stream.once('close', () => {
 	            var _a;
 	            trace('Request to method ' +
@@ -76723,6 +79964,12 @@ function requireServerInterceptors () {
 	            return new Promise((resolve, reject) => {
 	                let totalLength = 0;
 	                const messageParts = [];
+	                decompresser.on('error', (error) => {
+	                    reject({
+	                        code: constants_1.Status.INTERNAL,
+	                        details: 'Failed to decompress message'
+	                    });
+	                });
 	                decompresser.on('data', (chunk) => {
 	                    messageParts.push(chunk);
 	                    totalLength += chunk.byteLength;
@@ -77072,8 +80319,8 @@ function requireServer () {
 	};
 	Object.defineProperty(server, "__esModule", { value: true });
 	server.Server = void 0;
-	const http2 = require$$0$8;
-	const util = require$$0$4;
+	const http2 = require$$0$7;
+	const util = util$a;
 	const constants_1 = requireConstants();
 	const server_call_1 = requireServerCall();
 	const server_credentials_1 = requireServerCredentials();
@@ -77958,6 +81205,13 @@ function requireServer () {
 	                channelzSessionInfo === null || channelzSessionInfo === void 0 ? void 0 : channelzSessionInfo.streamTracker.addCallFailed();
 	            }
 	            _channelzHandler(extraInterceptors, stream, headers) {
+	                stream.once('error', (err) => {
+	                    /* We need an error handler to avoid uncaught error event exceptions, but
+	                     * there is nothing we can reasonably do here. Any error event should
+	                     * have a corresponding close event, which handles emitting the cancelled
+	                     * event. And the stream is now in a bad state, so we can't reasonably
+	                     * expect to be able to send an error over it. */
+	                });
 	                // for handling idle timeout
 	                this.onStreamOpened(stream);
 	                const channelzSessionInfo = this.sessions.get(stream.session);
@@ -78017,6 +81271,13 @@ function requireServer () {
 	                }
 	            }
 	            _streamHandler(extraInterceptors, stream, headers) {
+	                stream.once('error', (err) => {
+	                    /* We need an error handler to avoid uncaught error event exceptions, but
+	                     * there is nothing we can reasonably do here. Any error event should
+	                     * have a corresponding close event, which handles emitting the cancelled
+	                     * event. And the stream is now in a bad state, so we can't reasonably
+	                     * expect to be able to send an error over it. */
+	                });
 	                // for handling idle timeout
 	                this.onStreamOpened(stream);
 	                if (this._verifyContentType(stream, headers) !== true) {
@@ -78743,7 +82004,7 @@ function requireLoadBalancerPickFirst () {
 	const logging = requireLogging();
 	const constants_1 = requireConstants();
 	const subchannel_address_2 = requireSubchannelAddress();
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	const call_interface_1 = requireCallInterface();
 	const TRACER_NAME = 'pick_first';
 	function trace(text) {
@@ -79260,7 +82521,7 @@ function requireCertificateProvider () {
 	const fs = require$$0__default;
 	const logging = requireLogging();
 	const constants_1 = requireConstants();
-	const util_1 = require$$0$4;
+	const util_1 = util$a;
 	const TRACER_NAME = 'certificate_provider';
 	function trace(text) {
 	    logging.trace(constants_1.LogVerbosity.DEBUG, TRACER_NAME, text);
@@ -79387,63 +82648,63 @@ var hasRequiredExperimental;
 function requireExperimental () {
 	if (hasRequiredExperimental) return experimental;
 	hasRequiredExperimental = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = exports$1.createCertificateProviderChannelCredentials = exports$1.FileWatcherCertificateProvider = exports$1.createCertificateProviderServerCredentials = exports$1.createServerCredentialsWithInterceptors = exports$1.BaseSubchannelWrapper = exports$1.registerAdminService = exports$1.FilterStackFactory = exports$1.BaseFilter = exports$1.statusOrFromError = exports$1.statusOrFromValue = exports$1.PickResultType = exports$1.QueuePicker = exports$1.UnavailablePicker = exports$1.ChildLoadBalancerHandler = exports$1.EndpointMap = exports$1.endpointHasAddress = exports$1.endpointToString = exports$1.subchannelAddressToString = exports$1.LeafLoadBalancer = exports$1.isLoadBalancerNameRegistered = exports$1.parseLoadBalancingConfig = exports$1.selectLbConfigFromList = exports$1.registerLoadBalancerType = exports$1.createChildChannelControlHelper = exports$1.BackoffTimeout = exports$1.parseDuration = exports$1.durationToMs = exports$1.splitHostPort = exports$1.uriToString = exports$1.CHANNEL_ARGS_CONFIG_SELECTOR_KEY = exports$1.createResolver = exports$1.registerResolver = exports$1.log = exports$1.trace = void 0;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = exports.createCertificateProviderChannelCredentials = exports.FileWatcherCertificateProvider = exports.createCertificateProviderServerCredentials = exports.createServerCredentialsWithInterceptors = exports.BaseSubchannelWrapper = exports.registerAdminService = exports.FilterStackFactory = exports.BaseFilter = exports.statusOrFromError = exports.statusOrFromValue = exports.PickResultType = exports.QueuePicker = exports.UnavailablePicker = exports.ChildLoadBalancerHandler = exports.EndpointMap = exports.endpointHasAddress = exports.endpointToString = exports.subchannelAddressToString = exports.LeafLoadBalancer = exports.isLoadBalancerNameRegistered = exports.parseLoadBalancingConfig = exports.selectLbConfigFromList = exports.registerLoadBalancerType = exports.createChildChannelControlHelper = exports.BackoffTimeout = exports.parseDuration = exports.durationToMs = exports.splitHostPort = exports.uriToString = exports.CHANNEL_ARGS_CONFIG_SELECTOR_KEY = exports.createResolver = exports.registerResolver = exports.log = exports.trace = void 0;
 		var logging_1 = requireLogging();
-		Object.defineProperty(exports$1, "trace", { enumerable: true, get: function () { return logging_1.trace; } });
-		Object.defineProperty(exports$1, "log", { enumerable: true, get: function () { return logging_1.log; } });
+		Object.defineProperty(exports, "trace", { enumerable: true, get: function () { return logging_1.trace; } });
+		Object.defineProperty(exports, "log", { enumerable: true, get: function () { return logging_1.log; } });
 		var resolver_1 = requireResolver();
-		Object.defineProperty(exports$1, "registerResolver", { enumerable: true, get: function () { return resolver_1.registerResolver; } });
-		Object.defineProperty(exports$1, "createResolver", { enumerable: true, get: function () { return resolver_1.createResolver; } });
-		Object.defineProperty(exports$1, "CHANNEL_ARGS_CONFIG_SELECTOR_KEY", { enumerable: true, get: function () { return resolver_1.CHANNEL_ARGS_CONFIG_SELECTOR_KEY; } });
+		Object.defineProperty(exports, "registerResolver", { enumerable: true, get: function () { return resolver_1.registerResolver; } });
+		Object.defineProperty(exports, "createResolver", { enumerable: true, get: function () { return resolver_1.createResolver; } });
+		Object.defineProperty(exports, "CHANNEL_ARGS_CONFIG_SELECTOR_KEY", { enumerable: true, get: function () { return resolver_1.CHANNEL_ARGS_CONFIG_SELECTOR_KEY; } });
 		var uri_parser_1 = requireUriParser();
-		Object.defineProperty(exports$1, "uriToString", { enumerable: true, get: function () { return uri_parser_1.uriToString; } });
-		Object.defineProperty(exports$1, "splitHostPort", { enumerable: true, get: function () { return uri_parser_1.splitHostPort; } });
+		Object.defineProperty(exports, "uriToString", { enumerable: true, get: function () { return uri_parser_1.uriToString; } });
+		Object.defineProperty(exports, "splitHostPort", { enumerable: true, get: function () { return uri_parser_1.splitHostPort; } });
 		var duration_1 = requireDuration();
-		Object.defineProperty(exports$1, "durationToMs", { enumerable: true, get: function () { return duration_1.durationToMs; } });
-		Object.defineProperty(exports$1, "parseDuration", { enumerable: true, get: function () { return duration_1.parseDuration; } });
+		Object.defineProperty(exports, "durationToMs", { enumerable: true, get: function () { return duration_1.durationToMs; } });
+		Object.defineProperty(exports, "parseDuration", { enumerable: true, get: function () { return duration_1.parseDuration; } });
 		var backoff_timeout_1 = requireBackoffTimeout();
-		Object.defineProperty(exports$1, "BackoffTimeout", { enumerable: true, get: function () { return backoff_timeout_1.BackoffTimeout; } });
+		Object.defineProperty(exports, "BackoffTimeout", { enumerable: true, get: function () { return backoff_timeout_1.BackoffTimeout; } });
 		var load_balancer_1 = requireLoadBalancer();
-		Object.defineProperty(exports$1, "createChildChannelControlHelper", { enumerable: true, get: function () { return load_balancer_1.createChildChannelControlHelper; } });
-		Object.defineProperty(exports$1, "registerLoadBalancerType", { enumerable: true, get: function () { return load_balancer_1.registerLoadBalancerType; } });
-		Object.defineProperty(exports$1, "selectLbConfigFromList", { enumerable: true, get: function () { return load_balancer_1.selectLbConfigFromList; } });
-		Object.defineProperty(exports$1, "parseLoadBalancingConfig", { enumerable: true, get: function () { return load_balancer_1.parseLoadBalancingConfig; } });
-		Object.defineProperty(exports$1, "isLoadBalancerNameRegistered", { enumerable: true, get: function () { return load_balancer_1.isLoadBalancerNameRegistered; } });
+		Object.defineProperty(exports, "createChildChannelControlHelper", { enumerable: true, get: function () { return load_balancer_1.createChildChannelControlHelper; } });
+		Object.defineProperty(exports, "registerLoadBalancerType", { enumerable: true, get: function () { return load_balancer_1.registerLoadBalancerType; } });
+		Object.defineProperty(exports, "selectLbConfigFromList", { enumerable: true, get: function () { return load_balancer_1.selectLbConfigFromList; } });
+		Object.defineProperty(exports, "parseLoadBalancingConfig", { enumerable: true, get: function () { return load_balancer_1.parseLoadBalancingConfig; } });
+		Object.defineProperty(exports, "isLoadBalancerNameRegistered", { enumerable: true, get: function () { return load_balancer_1.isLoadBalancerNameRegistered; } });
 		var load_balancer_pick_first_1 = requireLoadBalancerPickFirst();
-		Object.defineProperty(exports$1, "LeafLoadBalancer", { enumerable: true, get: function () { return load_balancer_pick_first_1.LeafLoadBalancer; } });
+		Object.defineProperty(exports, "LeafLoadBalancer", { enumerable: true, get: function () { return load_balancer_pick_first_1.LeafLoadBalancer; } });
 		var subchannel_address_1 = requireSubchannelAddress();
-		Object.defineProperty(exports$1, "subchannelAddressToString", { enumerable: true, get: function () { return subchannel_address_1.subchannelAddressToString; } });
-		Object.defineProperty(exports$1, "endpointToString", { enumerable: true, get: function () { return subchannel_address_1.endpointToString; } });
-		Object.defineProperty(exports$1, "endpointHasAddress", { enumerable: true, get: function () { return subchannel_address_1.endpointHasAddress; } });
-		Object.defineProperty(exports$1, "EndpointMap", { enumerable: true, get: function () { return subchannel_address_1.EndpointMap; } });
+		Object.defineProperty(exports, "subchannelAddressToString", { enumerable: true, get: function () { return subchannel_address_1.subchannelAddressToString; } });
+		Object.defineProperty(exports, "endpointToString", { enumerable: true, get: function () { return subchannel_address_1.endpointToString; } });
+		Object.defineProperty(exports, "endpointHasAddress", { enumerable: true, get: function () { return subchannel_address_1.endpointHasAddress; } });
+		Object.defineProperty(exports, "EndpointMap", { enumerable: true, get: function () { return subchannel_address_1.EndpointMap; } });
 		var load_balancer_child_handler_1 = requireLoadBalancerChildHandler();
-		Object.defineProperty(exports$1, "ChildLoadBalancerHandler", { enumerable: true, get: function () { return load_balancer_child_handler_1.ChildLoadBalancerHandler; } });
+		Object.defineProperty(exports, "ChildLoadBalancerHandler", { enumerable: true, get: function () { return load_balancer_child_handler_1.ChildLoadBalancerHandler; } });
 		var picker_1 = requirePicker();
-		Object.defineProperty(exports$1, "UnavailablePicker", { enumerable: true, get: function () { return picker_1.UnavailablePicker; } });
-		Object.defineProperty(exports$1, "QueuePicker", { enumerable: true, get: function () { return picker_1.QueuePicker; } });
-		Object.defineProperty(exports$1, "PickResultType", { enumerable: true, get: function () { return picker_1.PickResultType; } });
+		Object.defineProperty(exports, "UnavailablePicker", { enumerable: true, get: function () { return picker_1.UnavailablePicker; } });
+		Object.defineProperty(exports, "QueuePicker", { enumerable: true, get: function () { return picker_1.QueuePicker; } });
+		Object.defineProperty(exports, "PickResultType", { enumerable: true, get: function () { return picker_1.PickResultType; } });
 		var call_interface_1 = requireCallInterface();
-		Object.defineProperty(exports$1, "statusOrFromValue", { enumerable: true, get: function () { return call_interface_1.statusOrFromValue; } });
-		Object.defineProperty(exports$1, "statusOrFromError", { enumerable: true, get: function () { return call_interface_1.statusOrFromError; } });
+		Object.defineProperty(exports, "statusOrFromValue", { enumerable: true, get: function () { return call_interface_1.statusOrFromValue; } });
+		Object.defineProperty(exports, "statusOrFromError", { enumerable: true, get: function () { return call_interface_1.statusOrFromError; } });
 		var filter_1 = requireFilter();
-		Object.defineProperty(exports$1, "BaseFilter", { enumerable: true, get: function () { return filter_1.BaseFilter; } });
+		Object.defineProperty(exports, "BaseFilter", { enumerable: true, get: function () { return filter_1.BaseFilter; } });
 		var filter_stack_1 = requireFilterStack();
-		Object.defineProperty(exports$1, "FilterStackFactory", { enumerable: true, get: function () { return filter_stack_1.FilterStackFactory; } });
+		Object.defineProperty(exports, "FilterStackFactory", { enumerable: true, get: function () { return filter_stack_1.FilterStackFactory; } });
 		var admin_1 = requireAdmin();
-		Object.defineProperty(exports$1, "registerAdminService", { enumerable: true, get: function () { return admin_1.registerAdminService; } });
+		Object.defineProperty(exports, "registerAdminService", { enumerable: true, get: function () { return admin_1.registerAdminService; } });
 		var subchannel_interface_1 = requireSubchannelInterface();
-		Object.defineProperty(exports$1, "BaseSubchannelWrapper", { enumerable: true, get: function () { return subchannel_interface_1.BaseSubchannelWrapper; } });
+		Object.defineProperty(exports, "BaseSubchannelWrapper", { enumerable: true, get: function () { return subchannel_interface_1.BaseSubchannelWrapper; } });
 		var server_credentials_1 = requireServerCredentials();
-		Object.defineProperty(exports$1, "createServerCredentialsWithInterceptors", { enumerable: true, get: function () { return server_credentials_1.createServerCredentialsWithInterceptors; } });
-		Object.defineProperty(exports$1, "createCertificateProviderServerCredentials", { enumerable: true, get: function () { return server_credentials_1.createCertificateProviderServerCredentials; } });
+		Object.defineProperty(exports, "createServerCredentialsWithInterceptors", { enumerable: true, get: function () { return server_credentials_1.createServerCredentialsWithInterceptors; } });
+		Object.defineProperty(exports, "createCertificateProviderServerCredentials", { enumerable: true, get: function () { return server_credentials_1.createCertificateProviderServerCredentials; } });
 		var certificate_provider_1 = requireCertificateProvider();
-		Object.defineProperty(exports$1, "FileWatcherCertificateProvider", { enumerable: true, get: function () { return certificate_provider_1.FileWatcherCertificateProvider; } });
+		Object.defineProperty(exports, "FileWatcherCertificateProvider", { enumerable: true, get: function () { return certificate_provider_1.FileWatcherCertificateProvider; } });
 		var channel_credentials_1 = requireChannelCredentials();
-		Object.defineProperty(exports$1, "createCertificateProviderChannelCredentials", { enumerable: true, get: function () { return channel_credentials_1.createCertificateProviderChannelCredentials; } });
+		Object.defineProperty(exports, "createCertificateProviderChannelCredentials", { enumerable: true, get: function () { return channel_credentials_1.createCertificateProviderChannelCredentials; } });
 		var internal_channel_1 = requireInternalChannel();
-		Object.defineProperty(exports$1, "SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX", { enumerable: true, get: function () { return internal_channel_1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX; } });
+		Object.defineProperty(exports, "SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX", { enumerable: true, get: function () { return internal_channel_1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX; } });
 		
 	} (experimental));
 	return experimental;
@@ -79533,7 +82794,7 @@ function requireResolverIp () {
 	 */
 	Object.defineProperty(resolverIp, "__esModule", { value: true });
 	resolverIp.setup = setup;
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	const call_interface_1 = requireCallInterface();
 	const constants_1 = requireConstants();
 	const metadata_1 = requireMetadata();
@@ -80952,7 +84213,7 @@ var hasRequiredSrc$4;
 function requireSrc$4 () {
 	if (hasRequiredSrc$4) return src$6;
 	hasRequiredSrc$4 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2019 gRPC authors.
 		 *
@@ -80969,40 +84230,40 @@ function requireSrc$4 () {
 		 * limitations under the License.
 		 *
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.experimental = exports$1.ServerMetricRecorder = exports$1.ServerInterceptingCall = exports$1.ResponderBuilder = exports$1.ServerListenerBuilder = exports$1.addAdminServicesToServer = exports$1.getChannelzHandlers = exports$1.getChannelzServiceDefinition = exports$1.InterceptorConfigurationError = exports$1.InterceptingCall = exports$1.RequesterBuilder = exports$1.ListenerBuilder = exports$1.StatusBuilder = exports$1.getClientChannel = exports$1.ServerCredentials = exports$1.Server = exports$1.setLogVerbosity = exports$1.setLogger = exports$1.load = exports$1.loadObject = exports$1.CallCredentials = exports$1.ChannelCredentials = exports$1.waitForClientReady = exports$1.closeClient = exports$1.Channel = exports$1.makeGenericClientConstructor = exports$1.makeClientConstructor = exports$1.loadPackageDefinition = exports$1.Client = exports$1.compressionAlgorithms = exports$1.propagate = exports$1.connectivityState = exports$1.status = exports$1.logVerbosity = exports$1.Metadata = exports$1.credentials = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.experimental = exports.ServerMetricRecorder = exports.ServerInterceptingCall = exports.ResponderBuilder = exports.ServerListenerBuilder = exports.addAdminServicesToServer = exports.getChannelzHandlers = exports.getChannelzServiceDefinition = exports.InterceptorConfigurationError = exports.InterceptingCall = exports.RequesterBuilder = exports.ListenerBuilder = exports.StatusBuilder = exports.getClientChannel = exports.ServerCredentials = exports.Server = exports.setLogVerbosity = exports.setLogger = exports.load = exports.loadObject = exports.CallCredentials = exports.ChannelCredentials = exports.waitForClientReady = exports.closeClient = exports.Channel = exports.makeGenericClientConstructor = exports.makeClientConstructor = exports.loadPackageDefinition = exports.Client = exports.compressionAlgorithms = exports.propagate = exports.connectivityState = exports.status = exports.logVerbosity = exports.Metadata = exports.credentials = void 0;
 		const call_credentials_1 = requireCallCredentials();
-		Object.defineProperty(exports$1, "CallCredentials", { enumerable: true, get: function () { return call_credentials_1.CallCredentials; } });
+		Object.defineProperty(exports, "CallCredentials", { enumerable: true, get: function () { return call_credentials_1.CallCredentials; } });
 		const channel_1 = requireChannel();
-		Object.defineProperty(exports$1, "Channel", { enumerable: true, get: function () { return channel_1.ChannelImplementation; } });
+		Object.defineProperty(exports, "Channel", { enumerable: true, get: function () { return channel_1.ChannelImplementation; } });
 		const compression_algorithms_1 = requireCompressionAlgorithms();
-		Object.defineProperty(exports$1, "compressionAlgorithms", { enumerable: true, get: function () { return compression_algorithms_1.CompressionAlgorithms; } });
+		Object.defineProperty(exports, "compressionAlgorithms", { enumerable: true, get: function () { return compression_algorithms_1.CompressionAlgorithms; } });
 		const connectivity_state_1 = requireConnectivityState();
-		Object.defineProperty(exports$1, "connectivityState", { enumerable: true, get: function () { return connectivity_state_1.ConnectivityState; } });
+		Object.defineProperty(exports, "connectivityState", { enumerable: true, get: function () { return connectivity_state_1.ConnectivityState; } });
 		const channel_credentials_1 = requireChannelCredentials();
-		Object.defineProperty(exports$1, "ChannelCredentials", { enumerable: true, get: function () { return channel_credentials_1.ChannelCredentials; } });
+		Object.defineProperty(exports, "ChannelCredentials", { enumerable: true, get: function () { return channel_credentials_1.ChannelCredentials; } });
 		const client_1 = requireClient();
-		Object.defineProperty(exports$1, "Client", { enumerable: true, get: function () { return client_1.Client; } });
+		Object.defineProperty(exports, "Client", { enumerable: true, get: function () { return client_1.Client; } });
 		const constants_1 = requireConstants();
-		Object.defineProperty(exports$1, "logVerbosity", { enumerable: true, get: function () { return constants_1.LogVerbosity; } });
-		Object.defineProperty(exports$1, "status", { enumerable: true, get: function () { return constants_1.Status; } });
-		Object.defineProperty(exports$1, "propagate", { enumerable: true, get: function () { return constants_1.Propagate; } });
+		Object.defineProperty(exports, "logVerbosity", { enumerable: true, get: function () { return constants_1.LogVerbosity; } });
+		Object.defineProperty(exports, "status", { enumerable: true, get: function () { return constants_1.Status; } });
+		Object.defineProperty(exports, "propagate", { enumerable: true, get: function () { return constants_1.Propagate; } });
 		const logging = requireLogging();
 		const make_client_1 = requireMakeClient();
-		Object.defineProperty(exports$1, "loadPackageDefinition", { enumerable: true, get: function () { return make_client_1.loadPackageDefinition; } });
-		Object.defineProperty(exports$1, "makeClientConstructor", { enumerable: true, get: function () { return make_client_1.makeClientConstructor; } });
-		Object.defineProperty(exports$1, "makeGenericClientConstructor", { enumerable: true, get: function () { return make_client_1.makeClientConstructor; } });
+		Object.defineProperty(exports, "loadPackageDefinition", { enumerable: true, get: function () { return make_client_1.loadPackageDefinition; } });
+		Object.defineProperty(exports, "makeClientConstructor", { enumerable: true, get: function () { return make_client_1.makeClientConstructor; } });
+		Object.defineProperty(exports, "makeGenericClientConstructor", { enumerable: true, get: function () { return make_client_1.makeClientConstructor; } });
 		const metadata_1 = requireMetadata();
-		Object.defineProperty(exports$1, "Metadata", { enumerable: true, get: function () { return metadata_1.Metadata; } });
+		Object.defineProperty(exports, "Metadata", { enumerable: true, get: function () { return metadata_1.Metadata; } });
 		const server_1 = requireServer();
-		Object.defineProperty(exports$1, "Server", { enumerable: true, get: function () { return server_1.Server; } });
+		Object.defineProperty(exports, "Server", { enumerable: true, get: function () { return server_1.Server; } });
 		const server_credentials_1 = requireServerCredentials();
-		Object.defineProperty(exports$1, "ServerCredentials", { enumerable: true, get: function () { return server_credentials_1.ServerCredentials; } });
+		Object.defineProperty(exports, "ServerCredentials", { enumerable: true, get: function () { return server_credentials_1.ServerCredentials; } });
 		const status_builder_1 = requireStatusBuilder();
-		Object.defineProperty(exports$1, "StatusBuilder", { enumerable: true, get: function () { return status_builder_1.StatusBuilder; } });
+		Object.defineProperty(exports, "StatusBuilder", { enumerable: true, get: function () { return status_builder_1.StatusBuilder; } });
 		/**** Client Credentials ****/
 		// Using assign only copies enumerable properties, which is what we want
-		exports$1.credentials = {
+		exports.credentials = {
 		    /**
 		     * Combine a ChannelCredentials with any number of CallCredentials into a
 		     * single ChannelCredentials object.
@@ -81037,50 +84298,50 @@ function requireSrc$4 () {
 		 * @param client The client to close.
 		 */
 		const closeClient = (client) => client.close();
-		exports$1.closeClient = closeClient;
+		exports.closeClient = closeClient;
 		const waitForClientReady = (client, deadline, callback) => client.waitForReady(deadline, callback);
-		exports$1.waitForClientReady = waitForClientReady;
+		exports.waitForClientReady = waitForClientReady;
 		/* eslint-enable @typescript-eslint/no-explicit-any */
 		/**** Unimplemented function stubs ****/
 		/* eslint-disable @typescript-eslint/no-explicit-any */
 		const loadObject = (value, options) => {
 		    throw new Error('Not available in this library. Use @grpc/proto-loader and loadPackageDefinition instead');
 		};
-		exports$1.loadObject = loadObject;
+		exports.loadObject = loadObject;
 		const load = (filename, format, options) => {
 		    throw new Error('Not available in this library. Use @grpc/proto-loader and loadPackageDefinition instead');
 		};
-		exports$1.load = load;
+		exports.load = load;
 		const setLogger = (logger) => {
 		    logging.setLogger(logger);
 		};
-		exports$1.setLogger = setLogger;
+		exports.setLogger = setLogger;
 		const setLogVerbosity = (verbosity) => {
 		    logging.setLoggerVerbosity(verbosity);
 		};
-		exports$1.setLogVerbosity = setLogVerbosity;
+		exports.setLogVerbosity = setLogVerbosity;
 		const getClientChannel = (client) => {
 		    return client_1.Client.prototype.getChannel.call(client);
 		};
-		exports$1.getClientChannel = getClientChannel;
+		exports.getClientChannel = getClientChannel;
 		var client_interceptors_1 = requireClientInterceptors();
-		Object.defineProperty(exports$1, "ListenerBuilder", { enumerable: true, get: function () { return client_interceptors_1.ListenerBuilder; } });
-		Object.defineProperty(exports$1, "RequesterBuilder", { enumerable: true, get: function () { return client_interceptors_1.RequesterBuilder; } });
-		Object.defineProperty(exports$1, "InterceptingCall", { enumerable: true, get: function () { return client_interceptors_1.InterceptingCall; } });
-		Object.defineProperty(exports$1, "InterceptorConfigurationError", { enumerable: true, get: function () { return client_interceptors_1.InterceptorConfigurationError; } });
+		Object.defineProperty(exports, "ListenerBuilder", { enumerable: true, get: function () { return client_interceptors_1.ListenerBuilder; } });
+		Object.defineProperty(exports, "RequesterBuilder", { enumerable: true, get: function () { return client_interceptors_1.RequesterBuilder; } });
+		Object.defineProperty(exports, "InterceptingCall", { enumerable: true, get: function () { return client_interceptors_1.InterceptingCall; } });
+		Object.defineProperty(exports, "InterceptorConfigurationError", { enumerable: true, get: function () { return client_interceptors_1.InterceptorConfigurationError; } });
 		var channelz_1 = requireChannelz();
-		Object.defineProperty(exports$1, "getChannelzServiceDefinition", { enumerable: true, get: function () { return channelz_1.getChannelzServiceDefinition; } });
-		Object.defineProperty(exports$1, "getChannelzHandlers", { enumerable: true, get: function () { return channelz_1.getChannelzHandlers; } });
+		Object.defineProperty(exports, "getChannelzServiceDefinition", { enumerable: true, get: function () { return channelz_1.getChannelzServiceDefinition; } });
+		Object.defineProperty(exports, "getChannelzHandlers", { enumerable: true, get: function () { return channelz_1.getChannelzHandlers; } });
 		var admin_1 = requireAdmin();
-		Object.defineProperty(exports$1, "addAdminServicesToServer", { enumerable: true, get: function () { return admin_1.addAdminServicesToServer; } });
+		Object.defineProperty(exports, "addAdminServicesToServer", { enumerable: true, get: function () { return admin_1.addAdminServicesToServer; } });
 		var server_interceptors_1 = requireServerInterceptors();
-		Object.defineProperty(exports$1, "ServerListenerBuilder", { enumerable: true, get: function () { return server_interceptors_1.ServerListenerBuilder; } });
-		Object.defineProperty(exports$1, "ResponderBuilder", { enumerable: true, get: function () { return server_interceptors_1.ResponderBuilder; } });
-		Object.defineProperty(exports$1, "ServerInterceptingCall", { enumerable: true, get: function () { return server_interceptors_1.ServerInterceptingCall; } });
+		Object.defineProperty(exports, "ServerListenerBuilder", { enumerable: true, get: function () { return server_interceptors_1.ServerListenerBuilder; } });
+		Object.defineProperty(exports, "ResponderBuilder", { enumerable: true, get: function () { return server_interceptors_1.ResponderBuilder; } });
+		Object.defineProperty(exports, "ServerInterceptingCall", { enumerable: true, get: function () { return server_interceptors_1.ServerInterceptingCall; } });
 		var orca_1 = requireOrca();
-		Object.defineProperty(exports$1, "ServerMetricRecorder", { enumerable: true, get: function () { return orca_1.ServerMetricRecorder; } });
+		Object.defineProperty(exports, "ServerMetricRecorder", { enumerable: true, get: function () { return orca_1.ServerMetricRecorder; } });
 		const experimental = requireExperimental();
-		exports$1.experimental = experimental;
+		exports.experimental = experimental;
 		const resolver_dns = requireResolverDns();
 		const resolver_uds = requireResolverUds();
 		const resolver_ip = requireResolverIp();
@@ -81125,7 +84386,7 @@ function requireAbstractAsyncHooksContextManager () {
 	 */
 	Object.defineProperty(AbstractAsyncHooksContextManager, "__esModule", { value: true });
 	AbstractAsyncHooksContextManager.AbstractAsyncHooksContextManager = void 0;
-	const events_1 = require$$0$5;
+	const events_1 = require$$0$4;
 	const ADD_LISTENER_METHODS = [
 	    'addListener',
 	    'on',
@@ -81427,6 +84688,29 @@ function requireAsyncLocalStorageContextManager () {
 	const api_1 = require$$0$1;
 	const async_hooks_1 = require$$1$4;
 	const AbstractAsyncHooksContextManager_1 = /*@__PURE__*/ requireAbstractAsyncHooksContextManager();
+	/**
+	 * Wrapper around a token and _asyncLocalStorage to mirror the behavior of
+	 * a Node.js RunScope
+	 *
+	 * @internal not intended for direct public consumption. Will be removed once
+	 * withScope is available on all supported Node.js versions
+	 */
+	class DisposeOnceToken {
+	    _isDisposed = false;
+	    _previousContext;
+	    _asyncLocalStorage;
+	    constructor(previousContext, asyncLocalStorage) {
+	        this._previousContext = previousContext;
+	        this._asyncLocalStorage = asyncLocalStorage;
+	    }
+	    dispose() {
+	        if (this._isDisposed) {
+	            return;
+	        }
+	        this._asyncLocalStorage.enterWith(this._previousContext);
+	        this._isDisposed = true;
+	    }
+	}
 	let AsyncLocalStorageContextManager$1 = class AsyncLocalStorageContextManager extends AbstractAsyncHooksContextManager_1.AbstractAsyncHooksContextManager {
 	    _asyncLocalStorage;
 	    constructor() {
@@ -81447,6 +84731,35 @@ function requireAsyncLocalStorageContextManager () {
 	        this._asyncLocalStorage.disable();
 	        return this;
 	    }
+	    /**
+	     * Imperatively sets `context` as active for the current async execution chain
+	     * and operations spawned from it. Returns a {@link ContextManagementToken} whose `dispose()`
+	     * restores the previous context (see {@link ContextManager.attach}).
+	     *
+	     * On Node.js 25.9+, delegates to `AsyncLocalStorage.withScope()` which returns
+	     * a native `RunScope`. On older Node.js versions, falls back to `enterWith()` with
+	     * a manual token.
+	     *
+	     * **Caveat for async functions:** Both `withScope()` and `enterWith()` affect the
+	     * entire current async execution chain. If `attach()` is called inside an async
+	     * function before the first `await`, the context change will leak into the caller's
+	     * context and remain active there until something else restores it. Prefer `with()`
+	     * for async code.
+	     *
+	     * @experimental This API is experimental and may change in minor releases without prior notice.
+	     */
+	    attach(context) {
+	        // Node.js 25.9+: withScope() returns a RunScope with dispose()
+	        const withScope = this._asyncLocalStorage.withScope;
+	        if (withScope) {
+	            return withScope.call(this._asyncLocalStorage, context);
+	        }
+	        // Fallback for older Node.js - this can be dropped when the minimum supported
+	        // Node.js version of this package is 25.9 or higher.
+	        const previousContext = this.active();
+	        this._asyncLocalStorage.enterWith(context);
+	        return new DisposeOnceToken(previousContext, this._asyncLocalStorage);
+	    }
 	};
 	AsyncLocalStorageContextManager.AsyncLocalStorageContextManager = AsyncLocalStorageContextManager$1;
 	
@@ -81458,17 +84771,17 @@ var hasRequiredSrc$3;
 function requireSrc$3 () {
 	if (hasRequiredSrc$3) return src$3;
 	hasRequiredSrc$3 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright The OpenTelemetry Authors
 		 * SPDX-License-Identifier: Apache-2.0
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.AsyncLocalStorageContextManager = exports$1.AsyncHooksContextManager = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.AsyncLocalStorageContextManager = exports.AsyncHooksContextManager = void 0;
 		var AsyncHooksContextManager_1 = /*@__PURE__*/ requireAsyncHooksContextManager();
-		Object.defineProperty(exports$1, "AsyncHooksContextManager", { enumerable: true, get: function () { return AsyncHooksContextManager_1.AsyncHooksContextManager; } });
+		Object.defineProperty(exports, "AsyncHooksContextManager", { enumerable: true, get: function () { return AsyncHooksContextManager_1.AsyncHooksContextManager; } });
 		var AsyncLocalStorageContextManager_1 = /*@__PURE__*/ requireAsyncLocalStorageContextManager();
-		Object.defineProperty(exports$1, "AsyncLocalStorageContextManager", { enumerable: true, get: function () { return AsyncLocalStorageContextManager_1.AsyncLocalStorageContextManager; } });
+		Object.defineProperty(exports, "AsyncLocalStorageContextManager", { enumerable: true, get: function () { return AsyncLocalStorageContextManager_1.AsyncLocalStorageContextManager; } });
 		
 	} (src$3));
 	return src$3;
@@ -81480,15 +84793,1655 @@ var srcExports$2 = /*@__PURE__*/ requireSrc$3();
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-const SUPPRESS_TRACING_KEY = createContextKey('OpenTelemetry SDK Context Key SUPPRESS_TRACING');
-function suppressTracing(context) {
-    return context.setValue(SUPPRESS_TRACING_KEY, true);
+const SUPPRESS_TRACING_KEY$2 = createContextKey('OpenTelemetry SDK Context Key SUPPRESS_TRACING');
+function suppressTracing$2(context) {
+    return context.setValue(SUPPRESS_TRACING_KEY$2, true);
+}
+function isTracingSuppressed$1(context) {
+    return context.getValue(SUPPRESS_TRACING_KEY$2) === true;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function sanitizeAttributes$1(attributes) {
+    const out = {};
+    if (typeof attributes !== 'object' || attributes == null) {
+        return out;
+    }
+    for (const key in attributes) {
+        if (!Object.prototype.hasOwnProperty.call(attributes, key)) {
+            continue;
+        }
+        if (!isAttributeKey$1(key)) {
+            diag.warn(`Invalid attribute key: ${key}`);
+            continue;
+        }
+        const val = attributes[key];
+        if (!isAttributeValue$1(val)) {
+            diag.warn(`Invalid attribute value set for key: ${key}`);
+            continue;
+        }
+        if (Array.isArray(val)) {
+            out[key] = val.slice();
+        }
+        else {
+            out[key] = val;
+        }
+    }
+    return out;
+}
+function isAttributeKey$1(key) {
+    return typeof key === 'string' && key !== '';
+}
+function isAttributeValue$1(val) {
+    if (val == null) {
+        return true;
+    }
+    if (Array.isArray(val)) {
+        return isHomogeneousAttributeValueArray$1(val);
+    }
+    return isValidPrimitiveAttributeValueType$1(typeof val);
+}
+function isHomogeneousAttributeValueArray$1(arr) {
+    let type;
+    for (const element of arr) {
+        // null/undefined elements are allowed
+        if (element == null)
+            continue;
+        const elementType = typeof element;
+        if (elementType === type) {
+            continue;
+        }
+        if (!type) {
+            if (isValidPrimitiveAttributeValueType$1(elementType)) {
+                type = elementType;
+                continue;
+            }
+            // encountered an invalid primitive
+            return false;
+        }
+        return false;
+    }
+    return true;
+}
+function isValidPrimitiveAttributeValueType$1(valType) {
+    switch (valType) {
+        case 'number':
+        case 'boolean':
+        case 'string':
+            return true;
+    }
+    return false;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Returns a function that logs an error using the provided logger, or a
+ * console logger if one was not provided.
+ */
+function loggingErrorHandler$2() {
+    return (ex) => {
+        diag.error(stringifyException$2(ex));
+    };
+}
+/**
+ * Converts an exception into a string representation
+ * @param {Exception} ex
+ */
+function stringifyException$2(ex) {
+    if (typeof ex === 'string') {
+        return ex;
+    }
+    else {
+        return JSON.stringify(flattenException$2(ex));
+    }
+}
+/**
+ * Flattens an exception into key-value pairs by traversing the prototype chain
+ * and coercing values to strings. Duplicate properties will not be overwritten;
+ * the first insert wins.
+ */
+function flattenException$2(ex) {
+    const result = {};
+    let current = ex;
+    while (current !== null) {
+        Object.getOwnPropertyNames(current).forEach(propertyName => {
+            if (result[propertyName])
+                return;
+            const value = current[propertyName];
+            if (value) {
+                result[propertyName] = String(value);
+            }
+        });
+        current = Object.getPrototypeOf(current);
+    }
+    return result;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** The global error handler delegate */
+let delegateHandler$2 = loggingErrorHandler$2();
+/**
+ * Return the global error handler
+ * @param {Exception} ex
+ */
+function globalErrorHandler$2(ex) {
+    try {
+        delegateHandler$2(ex);
+    }
+    catch { } // eslint-disable-line no-empty
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Retrieves a number from an environment variable.
+ * - Returns `undefined` if the environment variable is empty, unset, contains only whitespace, or is not a number.
+ * - Returns a number in all other cases.
+ *
+ * @param {string} key - The name of the environment variable to retrieve.
+ * @returns {number | undefined} - The number value or `undefined`.
+ */
+function getNumberFromEnv$2(key) {
+    const raw = process.env[key];
+    if (raw == null || raw.trim() === '') {
+        return undefined;
+    }
+    const value = Number(raw);
+    if (isNaN(value)) {
+        diag.warn(`Unknown value ${inspect(raw)} for ${key}, expected a number, using defaults`);
+        return undefined;
+    }
+    return value;
+}
+/**
+ * Retrieves a string from an environment variable.
+ * - Returns `undefined` if the environment variable is empty, unset, or contains only whitespace.
+ *
+ * @param {string} key - The name of the environment variable to retrieve.
+ * @returns {string | undefined} - The string value or `undefined`.
+ */
+function getStringFromEnv$2(key) {
+    const raw = process.env[key];
+    if (raw == null || raw.trim() === '') {
+        return undefined;
+    }
+    return raw;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+// this is autogenerated file, see scripts/version-update.js
+const VERSION$6 = '2.11.0';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
+ * This file contains a copy of unstable semantic convention definitions
+ * used by this package.
+ * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
+ */
+/**
+ * The name of the runtime of this process.
+ *
+ * @example OpenJDK Runtime Environment
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const ATTR_PROCESS_RUNTIME_NAME$2 = 'process.runtime.name';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** Constants describing the SDK in use */
+const SDK_INFO$2 = {
+    [ATTR_TELEMETRY_SDK_NAME]: 'opentelemetry',
+    [ATTR_PROCESS_RUNTIME_NAME$2]: 'node',
+    [ATTR_TELEMETRY_SDK_LANGUAGE]: TELEMETRY_SDK_LANGUAGE_VALUE_NODEJS,
+    [ATTR_TELEMETRY_SDK_VERSION]: VERSION$6,
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @deprecated Use performance directly.
+ */
+const otperformance$2 = performance;
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const NANOSECOND_DIGITS$3 = 9;
+const NANOSECOND_DIGITS_IN_MILLIS$2 = 6;
+const MILLISECONDS_TO_NANOSECONDS$2 = Math.pow(10, NANOSECOND_DIGITS_IN_MILLIS$2);
+const SECOND_TO_NANOSECONDS$3 = Math.pow(10, NANOSECOND_DIGITS$3);
+/**
+ * Converts a number of milliseconds from epoch to HrTime([seconds, remainder in nanoseconds]).
+ * @param epochMillis
+ */
+function millisToHrTime$2(epochMillis) {
+    const epochSeconds = epochMillis / 1000;
+    // Decimals only.
+    const seconds = Math.trunc(epochSeconds);
+    // Round sub-nanosecond accuracy to nanosecond.
+    const nanos = Math.round((epochMillis % 1000) * MILLISECONDS_TO_NANOSECONDS$2);
+    return [seconds, nanos];
+}
+/**
+ * Returns an hrtime calculated via performance component.
+ * @param performanceNow
+ */
+function hrTime$2(performanceNow) {
+    const timeOrigin = millisToHrTime$2(otperformance$2.timeOrigin);
+    const now = millisToHrTime$2(typeof performanceNow === 'number' ? performanceNow : otperformance$2.now());
+    return addHrTimes$2(timeOrigin, now);
+}
+/**
+ * Returns a duration of two hrTime.
+ * @param startTime
+ * @param endTime
+ */
+function hrTimeDuration$1(startTime, endTime) {
+    let seconds = endTime[0] - startTime[0];
+    let nanos = endTime[1] - startTime[1];
+    // overflow
+    if (nanos < 0) {
+        seconds -= 1;
+        // negate
+        nanos += SECOND_TO_NANOSECONDS$3;
+    }
+    return [seconds, nanos];
+}
+/**
+ * Convert hrTime to microseconds.
+ * @param time
+ */
+function hrTimeToMicroseconds$1(time) {
+    return time[0] * 1e6 + time[1] / 1e3;
+}
+/**
+ * check if time is HrTime
+ * @param value
+ */
+function isTimeInputHrTime$2(value) {
+    return (Array.isArray(value) &&
+        value.length === 2 &&
+        typeof value[0] === 'number' &&
+        typeof value[1] === 'number');
+}
+/**
+ * check if input value is a correct types.TimeInput
+ * @param value
+ */
+function isTimeInput$1(value) {
+    return (isTimeInputHrTime$2(value) ||
+        typeof value === 'number' ||
+        value instanceof Date);
+}
+/**
+ * Given 2 HrTime formatted times, return their sum as an HrTime.
+ */
+function addHrTimes$2(time1, time2) {
+    const out = [time1[0] + time2[0], time1[1] + time2[1]];
+    // Nanoseconds
+    if (out[1] >= SECOND_TO_NANOSECONDS$3) {
+        out[1] -= SECOND_TO_NANOSECONDS$3;
+        out[0] += 1;
+    }
+    return out;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var ExportResultCode$3;
+(function (ExportResultCode) {
+    ExportResultCode[ExportResultCode["SUCCESS"] = 0] = "SUCCESS";
+    ExportResultCode[ExportResultCode["FAILED"] = 1] = "FAILED";
+})(ExportResultCode$3 || (ExportResultCode$3 = {}));
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const VALID_KEY_CHAR_RANGE$1 = '[_0-9a-z-*/]';
+const VALID_KEY$1 = `[a-z]${VALID_KEY_CHAR_RANGE$1}{0,255}`;
+const VALID_VENDOR_KEY$1 = `[a-z0-9]${VALID_KEY_CHAR_RANGE$1}{0,240}@[a-z]${VALID_KEY_CHAR_RANGE$1}{0,13}`;
+const VALID_KEY_REGEX$1 = new RegExp(`^(?:${VALID_KEY$1}|${VALID_VENDOR_KEY$1})$`);
+const VALID_VALUE_BASE_REGEX$1 = /^[ -~]{0,255}[!-~]$/;
+const INVALID_VALUE_COMMA_EQUAL_REGEX$1 = /,|=/;
+/**
+ * Key is opaque string up to 256 characters printable. It MUST begin with a
+ * lowercase letter, and can only contain lowercase letters a-z, digits 0-9,
+ * underscores _, dashes -, asterisks *, and forward slashes /.
+ * For multi-tenant vendor scenarios, an at sign (@) can be used to prefix the
+ * vendor name. Vendors SHOULD set the tenant ID at the beginning of the key.
+ * see https://www.w3.org/TR/trace-context/#key
+ */
+function validateKey$1(key) {
+    return VALID_KEY_REGEX$1.test(key);
+}
+/**
+ * Value is opaque string up to 256 characters printable ASCII RFC0020
+ * characters (i.e., the range 0x20 to 0x7E) except comma , and =.
+ */
+function validateValue$1(value) {
+    return (VALID_VALUE_BASE_REGEX$1.test(value) &&
+        !INVALID_VALUE_COMMA_EQUAL_REGEX$1.test(value));
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const MAX_TRACE_STATE_ITEMS$1 = 32;
+const MAX_TRACE_STATE_LEN$1 = 512;
+const LIST_MEMBERS_SEPARATOR$1 = ',';
+const LIST_MEMBER_KEY_VALUE_SPLITTER$1 = '=';
+/**
+ * TraceState must be a class and not a simple object type because of the spec
+ * requirement (https://www.w3.org/TR/trace-context/#tracestate-field).
+ *
+ * Here is the list of allowed mutations:
+ * - New key-value pair should be added into the beginning of the list
+ * - The value of any key can be updated. Modified keys MUST be moved to the
+ * beginning of the list.
+ */
+let TraceState$1 = class TraceState {
+    _length;
+    _rawTraceState;
+    _internalState;
+    constructor(rawTraceState) {
+        this._rawTraceState =
+            typeof rawTraceState === 'string' ? rawTraceState : '';
+        this._length = this._rawTraceState.length;
+    }
+    set(key, value) {
+        if (!validateKey$1(key) || !validateValue$1(value)) {
+            return this;
+        }
+        const currState = this._getState();
+        const currValue = currState.get(key);
+        // Get the new length depending if we already have a value or not
+        // - for existing keys we add the difference between the length of the values
+        // - for new keys is the key & value lenght plus
+        //   - +1 for the key/value splitter
+        //   - +1 for the separator if there are other keys
+        let newLength = this._length;
+        if (typeof currValue === 'string') {
+            newLength += value.length - currValue.length;
+        }
+        else {
+            newLength += key.length + value.length + (currState.size > 0 ? 2 : 1);
+        }
+        if (newLength > MAX_TRACE_STATE_LEN$1) {
+            return this;
+        }
+        const newState = new Map(currState);
+        newState.delete(key);
+        newState.set(key, value);
+        return this._fromState(newState, newLength);
+    }
+    unset(key) {
+        const currState = this._getState();
+        const currValue = currState.get(key);
+        // No need to create a new instance if the key does not exist
+        if (typeof currValue !== 'string') {
+            return this;
+        }
+        // Get the new length depending if we already have a value or not
+        // - for existing keys we substract key and value length plus
+        //   - +1 for the key/value splitter
+        //   - +1 for the separator if there are other keys
+        let newLength = this._length - (key.length + currValue.length + 1);
+        if (currState.size > 1) {
+            // remove separator from length if there's no key or only one.
+            newLength = newLength - 1;
+        }
+        const newState = new Map(currState);
+        newState.delete(key);
+        return this._fromState(newState, newLength);
+    }
+    get(key) {
+        const currState = this._getState();
+        return currState.get(key);
+    }
+    serialize() {
+        // Maps put new entries at the end. We prepend the seralized entry
+        // to get the right order according to the spec (updated members go 1st)
+        let serialized = '';
+        let index = 0;
+        for (const entry of this._getState()) {
+            if (index > 0) {
+                serialized = LIST_MEMBERS_SEPARATOR$1 + serialized;
+            }
+            serialized =
+                `${entry[0]}${LIST_MEMBER_KEY_VALUE_SPLITTER$1}${entry[1]}` + serialized;
+            index++;
+        }
+        return serialized;
+    }
+    _getState() {
+        if (this._internalState) {
+            return this._internalState;
+        }
+        // Not parsed yet, lets do it
+        const vendorMembers = this._rawTraceState.split(LIST_MEMBERS_SEPARATOR$1);
+        // This Map will have the order reversed
+        const vendorEntries = new Map();
+        let currentLength = 0;
+        for (const member of vendorMembers) {
+            const m = member.trim();
+            const idx = m.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER$1);
+            if (idx === -1) {
+                continue;
+            }
+            const key = m.slice(0, idx);
+            const value = m.slice(idx + 1);
+            if (!validateKey$1(key) || !validateValue$1(value)) {
+                continue;
+            }
+            // Skip if adding the new member exceeds the length
+            const futureLength = currentLength + m.length + (vendorEntries.size > 0 ? 1 : 0);
+            if (futureLength > MAX_TRACE_STATE_LEN$1) {
+                continue;
+            }
+            // All good, add it
+            vendorEntries.set(key, value);
+            currentLength = futureLength;
+            // Check if we reached the max items
+            if (vendorEntries.size >= MAX_TRACE_STATE_ITEMS$1) {
+                break;
+            }
+        }
+        // Now we set the length & the Map in the right order
+        this._length = currentLength;
+        this._internalState = new Map(Array.from(vendorEntries.entries()).reverse());
+        return this._internalState;
+    }
+    _fromState(state, length) {
+        const traceState = Object.create(TraceState.prototype);
+        traceState._internalState = state;
+        traceState._length = length;
+        return traceState;
+    }
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const TRACE_PARENT_HEADER$1 = 'traceparent';
+const TRACE_STATE_HEADER$1 = 'tracestate';
+const VERSION$5 = '00';
+const VERSION_PART$1 = '(?!ff)[\\da-f]{2}';
+const TRACE_ID_PART$1 = '(?![0]{32})[\\da-f]{32}';
+const PARENT_ID_PART$1 = '(?![0]{16})[\\da-f]{16}';
+const FLAGS_PART$1 = '[\\da-f]{2}';
+const TRACE_PARENT_REGEX$1 = new RegExp(`^\\s?(${VERSION_PART$1})-(${TRACE_ID_PART$1})-(${PARENT_ID_PART$1})-(${FLAGS_PART$1})(-.*)?\\s?$`);
+/**
+ * Parses information from the [traceparent] span tag and converts it into {@link SpanContext}
+ * @param traceParent - A meta property that comes from server.
+ *     It should be dynamically generated server side to have the server's request trace Id,
+ *     a parent span Id that was set on the server's request span,
+ *     and the trace flags to indicate the server's sampling decision
+ *     (01 = sampled, 00 = not sampled).
+ *     for example: '{version}-{traceId}-{spanId}-{sampleDecision}'
+ *     For more information see {@link https://www.w3.org/TR/trace-context/}
+ */
+function parseTraceParent$1(traceParent) {
+    const match = TRACE_PARENT_REGEX$1.exec(traceParent);
+    if (!match)
+        return null;
+    // According to the specification the implementation should be compatible
+    // with future versions. If there are more parts, we only reject it if it's using version 00
+    // See https://www.w3.org/TR/trace-context/#versioning-of-traceparent
+    if (match[1] === '00' && match[5])
+        return null;
+    return {
+        traceId: match[2],
+        spanId: match[3],
+        traceFlags: parseInt(match[4], 16),
+    };
+}
+/**
+ * Propagates {@link SpanContext} through Trace Context format propagation.
+ *
+ * Based on the Trace Context specification:
+ * https://www.w3.org/TR/trace-context/
+ */
+let W3CTraceContextPropagator$1 = class W3CTraceContextPropagator {
+    inject(context, carrier, setter) {
+        const spanContext = trace.getSpanContext(context);
+        if (!spanContext ||
+            isTracingSuppressed$1(context) ||
+            !isSpanContextValid(spanContext))
+            return;
+        const traceParent = `${VERSION$5}-${spanContext.traceId}-${spanContext.spanId}-0${Number(spanContext.traceFlags || TraceFlags.NONE).toString(16)}`;
+        setter.set(carrier, TRACE_PARENT_HEADER$1, traceParent);
+        if (spanContext.traceState) {
+            setter.set(carrier, TRACE_STATE_HEADER$1, spanContext.traceState.serialize());
+        }
+    }
+    extract(context, carrier, getter) {
+        const traceParentHeader = getter.get(carrier, TRACE_PARENT_HEADER$1);
+        if (!traceParentHeader)
+            return context;
+        const traceParent = Array.isArray(traceParentHeader)
+            ? traceParentHeader[0]
+            : traceParentHeader;
+        if (typeof traceParent !== 'string')
+            return context;
+        const spanContext = parseTraceParent$1(traceParent);
+        if (!spanContext)
+            return context;
+        spanContext.isRemote = true;
+        const traceStateHeader = getter.get(carrier, TRACE_STATE_HEADER$1);
+        if (traceStateHeader) {
+            // If more than one `tracestate` header is found, we merge them into a
+            // single header.
+            const state = Array.isArray(traceStateHeader)
+                ? traceStateHeader.join(',')
+                : traceStateHeader;
+            spanContext.traceState = new TraceState$1(typeof state === 'string' ? state : undefined);
+        }
+        return trace.setSpanContext(context, spanContext);
+    }
+    fields() {
+        return [TRACE_PARENT_HEADER$1, TRACE_STATE_HEADER$1];
+    }
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * based on lodash in order to support esm builds without esModuleInterop.
+ * lodash is using MIT License.
+ **/
+const objectTag$1 = '[object Object]';
+const nullTag$1 = '[object Null]';
+const undefinedTag$1 = '[object Undefined]';
+const funcProto$1 = Function.prototype;
+const funcToString$1 = funcProto$1.toString;
+const objectCtorString$1 = funcToString$1.call(Object);
+const getPrototypeOf$1 = Object.getPrototypeOf;
+const objectProto$1 = Object.prototype;
+const hasOwnProperty$1 = objectProto$1.hasOwnProperty;
+const symToStringTag$1 = Symbol ? Symbol.toStringTag : undefined;
+const nativeObjectToString$1 = objectProto$1.toString;
+/**
+ * Checks if `value` is a plain object, that is, an object created by the
+ * `Object` constructor or one with a `[[Prototype]]` of `null`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.8.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a plain object, else `false`.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ * }
+ *
+ * _.isPlainObject(new Foo);
+ * // => false
+ *
+ * _.isPlainObject([1, 2, 3]);
+ * // => false
+ *
+ * _.isPlainObject({ 'x': 0, 'y': 0 });
+ * // => true
+ *
+ * _.isPlainObject(Object.create(null));
+ * // => true
+ */
+function isPlainObject$1(value) {
+    if (!isObjectLike$1(value) || baseGetTag$1(value) !== objectTag$1) {
+        return false;
+    }
+    const proto = getPrototypeOf$1(value);
+    if (proto === null) {
+        return true;
+    }
+    const Ctor = hasOwnProperty$1.call(proto, 'constructor') && proto.constructor;
+    return (typeof Ctor == 'function' &&
+        Ctor instanceof Ctor &&
+        funcToString$1.call(Ctor) === objectCtorString$1);
+}
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike$1(value) {
+    return value != null && typeof value == 'object';
+}
+/**
+ * The base implementation of `getTag` without fallbacks for buggy environments.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+function baseGetTag$1(value) {
+    if (value == null) {
+        return value === undefined ? undefinedTag$1 : nullTag$1;
+    }
+    return symToStringTag$1 && symToStringTag$1 in Object(value)
+        ? getRawTag$1(value)
+        : objectToString$1(value);
+}
+/**
+ * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the raw `toStringTag`.
+ */
+function getRawTag$1(value) {
+    const isOwn = hasOwnProperty$1.call(value, symToStringTag$1), tag = value[symToStringTag$1];
+    let unmasked = false;
+    try {
+        value[symToStringTag$1] = undefined;
+        unmasked = true;
+    }
+    catch {
+        // silence
+    }
+    const result = nativeObjectToString$1.call(value);
+    if (unmasked) {
+        if (isOwn) {
+            value[symToStringTag$1] = tag;
+        }
+        else {
+            delete value[symToStringTag$1];
+        }
+    }
+    return result;
+}
+/**
+ * Converts `value` to a string using `Object.prototype.toString`.
+ *
+ * @private
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ */
+function objectToString$1(value) {
+    return nativeObjectToString$1.call(value);
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const MAX_LEVEL$1 = 20;
+/**
+ * Merges objects together
+ * @param args - objects / values to be merged
+ */
+function merge$1(...args) {
+    let result = args.shift();
+    const objects = new WeakMap();
+    while (args.length > 0) {
+        result = mergeTwoObjects$1(result, args.shift(), 0, objects);
+    }
+    return result;
+}
+function takeValue$1(value) {
+    if (isArray$1(value)) {
+        return value.slice();
+    }
+    return value;
+}
+/**
+ * Merges two objects
+ * @param one - first object
+ * @param two - second object
+ * @param level - current deep level
+ * @param objects - objects holder that has been already referenced - to prevent
+ * cyclic dependency
+ */
+function mergeTwoObjects$1(one, two, level = 0, objects) {
+    let result;
+    if (level > MAX_LEVEL$1) {
+        return undefined;
+    }
+    level++;
+    if (isPrimitive$1(one) || isPrimitive$1(two) || isFunction$1(two)) {
+        result = takeValue$1(two);
+    }
+    else if (isArray$1(one)) {
+        result = one.slice();
+        if (isArray$1(two)) {
+            for (let i = 0, j = two.length; i < j; i++) {
+                result.push(takeValue$1(two[i]));
+            }
+        }
+        else if (isObject$1(two)) {
+            const keys = Object.keys(two);
+            for (let i = 0, j = keys.length; i < j; i++) {
+                const key = keys[i];
+                if (key === '__proto__' ||
+                    key === 'constructor' ||
+                    key === 'prototype') {
+                    continue;
+                }
+                result[key] = takeValue$1(two[key]);
+            }
+        }
+    }
+    else if (isObject$1(one)) {
+        if (isObject$1(two)) {
+            if (!shouldMerge$1(one, two)) {
+                return two;
+            }
+            result = Object.assign({}, one);
+            const keys = Object.keys(two);
+            for (let i = 0, j = keys.length; i < j; i++) {
+                const key = keys[i];
+                if (key === '__proto__' ||
+                    key === 'constructor' ||
+                    key === 'prototype') {
+                    continue;
+                }
+                const twoValue = two[key];
+                if (isPrimitive$1(twoValue)) {
+                    if (typeof twoValue === 'undefined') {
+                        delete result[key];
+                    }
+                    else {
+                        // result[key] = takeValue(twoValue);
+                        result[key] = twoValue;
+                    }
+                }
+                else {
+                    const obj1 = result[key];
+                    const obj2 = twoValue;
+                    if (wasObjectReferenced$1(one, key, objects) ||
+                        wasObjectReferenced$1(two, key, objects)) {
+                        delete result[key];
+                    }
+                    else {
+                        if (isObject$1(obj1) && isObject$1(obj2)) {
+                            const arr1 = objects.get(obj1) || [];
+                            const arr2 = objects.get(obj2) || [];
+                            arr1.push({ obj: one, key });
+                            arr2.push({ obj: two, key });
+                            objects.set(obj1, arr1);
+                            objects.set(obj2, arr2);
+                        }
+                        result[key] = mergeTwoObjects$1(result[key], twoValue, level, objects);
+                    }
+                }
+            }
+        }
+        else {
+            result = two;
+        }
+    }
+    return result;
+}
+/**
+ * Function to check if object has been already reference
+ * @param obj
+ * @param key
+ * @param objects
+ */
+function wasObjectReferenced$1(obj, key, objects) {
+    const arr = objects.get(obj[key]) || [];
+    for (let i = 0, j = arr.length; i < j; i++) {
+        const info = arr[i];
+        if (info.key === key && info.obj === obj) {
+            return true;
+        }
+    }
+    return false;
+}
+function isArray$1(value) {
+    return Array.isArray(value);
+}
+function isFunction$1(value) {
+    return typeof value === 'function';
+}
+function isObject$1(value) {
+    return (!isPrimitive$1(value) &&
+        !isArray$1(value) &&
+        !isFunction$1(value) &&
+        typeof value === 'object');
+}
+function isPrimitive$1(value) {
+    return (typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'boolean' ||
+        typeof value === 'undefined' ||
+        value instanceof Date ||
+        value instanceof RegExp ||
+        value === null);
+}
+function shouldMerge$1(one, two) {
+    if (!isPlainObject$1(one) || !isPlainObject$1(two)) {
+        return false;
+    }
+    return true;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let Deferred$2 = class Deferred {
+    _promise;
+    _resolve;
+    _reject;
+    constructor() {
+        this._promise = new Promise((resolve, reject) => {
+            this._resolve = resolve;
+            this._reject = reject;
+        });
+    }
+    get promise() {
+        return this._promise;
+    }
+    resolve(val) {
+        this._resolve(val);
+    }
+    reject(err) {
+        this._reject(err);
+    }
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Bind the callback and only invoke the callback once regardless how many times `BindOnceFuture.call` is invoked.
+ */
+let BindOnceFuture$2 = class BindOnceFuture {
+    _isCalled = false;
+    _deferred = new Deferred$2();
+    _callback;
+    _that;
+    constructor(callback, that) {
+        this._callback = callback;
+        this._that = that;
+    }
+    get isCalled() {
+        return this._isCalled;
+    }
+    get promise() {
+        return this._deferred.promise;
+    }
+    call(...args) {
+        if (!this._isCalled) {
+            this._isCalled = true;
+            try {
+                Promise.resolve(this._callback.call(this._that, ...args)).then(val => this._deferred.resolve(val), err => this._deferred.reject(err));
+            }
+            catch (err) {
+                this._deferred.reject(err);
+            }
+        }
+        return this._deferred.promise;
+    }
+};
+
+var src$2 = {};
+
+var OTLPLogExporter$1 = {};
+
+var src$1 = {};
+
+var convertLegacyOtlpGrpcOptions = {};
+
+var otlpGrpcConfiguration = {};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class OTLPExporterBase {
+    _delegate;
+    constructor(delegate) {
+        this._delegate = delegate;
+    }
+    /**
+     * Export items.
+     * @param items
+     * @param resultCallback
+     */
+    export(items, resultCallback) {
+        this._delegate.export(items, resultCallback);
+    }
+    forceFlush() {
+        return this._delegate.forceFlush();
+    }
+    shutdown() {
+        return this._delegate.shutdown();
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Interface for handling error
+ */
+class OTLPExporterError extends Error {
+    code;
+    name = 'OTLPExporterError';
+    data;
+    constructor(message, code, data) {
+        super(message);
+        this.data = data;
+        this.code = code;
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function validateTimeoutMillis(timeoutMillis) {
+    if (Number.isFinite(timeoutMillis) && timeoutMillis > 0) {
+        return timeoutMillis;
+    }
+    throw new Error(`Configuration: timeoutMillis is invalid, expected number greater than 0 (actual: '${timeoutMillis}')`);
+}
+function wrapStaticHeadersInFunction(headers) {
+    if (headers == null) {
+        return undefined;
+    }
+    return async () => headers;
+}
+/**
+ * @param userProvidedConfiguration  Configuration options provided by the user in code.
+ * @param fallbackConfiguration Fallback to use when the {@link userProvidedConfiguration} does not specify an option.
+ * @param defaultConfiguration The defaults as defined by the exporter specification
+ */
+function mergeOtlpSharedConfigurationWithDefaults(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration) {
+    return {
+        timeoutMillis: validateTimeoutMillis(userProvidedConfiguration.timeoutMillis ??
+            fallbackConfiguration.timeoutMillis ??
+            defaultConfiguration.timeoutMillis),
+        concurrencyLimit: userProvidedConfiguration.concurrencyLimit ??
+            fallbackConfiguration.concurrencyLimit ??
+            defaultConfiguration.concurrencyLimit,
+        compression: userProvidedConfiguration.compression ??
+            fallbackConfiguration.compression ??
+            defaultConfiguration.compression,
+    };
+}
+function getSharedConfigurationDefaults() {
+    return {
+        timeoutMillis: 10000,
+        concurrencyLimit: 30,
+        compression: 'none',
+    };
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var CompressionAlgorithm;
+(function (CompressionAlgorithm) {
+    CompressionAlgorithm["NONE"] = "none";
+    CompressionAlgorithm["GZIP"] = "gzip";
+})(CompressionAlgorithm || (CompressionAlgorithm = {}));
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class BoundedQueueExportPromiseHandler {
+    _concurrencyLimit;
+    _sendingPromises = [];
+    /**
+     * @param concurrencyLimit maximum promises allowed in a queue at the same time.
+     */
+    constructor(concurrencyLimit) {
+        this._concurrencyLimit = concurrencyLimit;
+    }
+    pushPromise(promise) {
+        if (this.hasReachedLimit()) {
+            throw new Error('Concurrency Limit reached');
+        }
+        this._sendingPromises.push(promise);
+        const popPromise = () => {
+            const index = this._sendingPromises.indexOf(promise);
+            void this._sendingPromises.splice(index, 1);
+        };
+        promise.then(popPromise, popPromise);
+    }
+    hasReachedLimit() {
+        return this._sendingPromises.length >= this._concurrencyLimit;
+    }
+    async awaitAll() {
+        await Promise.all(this._sendingPromises);
+    }
+}
+/**
+ * Promise queue for keeping track of export promises. Finished promises will be auto-dequeued.
+ * Allows for awaiting all promises in the queue.
+ */
+function createBoundedQueueExportPromiseHandler(options) {
+    return new BoundedQueueExportPromiseHandler(options.concurrencyLimit);
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const BAGGAGE_KEY_PAIR_SEPARATOR$1 = '=';
+const BAGGAGE_PROPERTIES_SEPARATOR$1 = ';';
+const BAGGAGE_ITEMS_SEPARATOR$1 = ',';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function parsePairKeyValue$1(entry) {
+    if (!entry)
+        return;
+    const metadataSeparatorIndex = entry.indexOf(BAGGAGE_PROPERTIES_SEPARATOR$1);
+    const keyPairPart = metadataSeparatorIndex === -1
+        ? entry
+        : entry.substring(0, metadataSeparatorIndex);
+    const separatorIndex = keyPairPart.indexOf(BAGGAGE_KEY_PAIR_SEPARATOR$1);
+    if (separatorIndex <= 0)
+        return;
+    const rawKey = keyPairPart.substring(0, separatorIndex).trim();
+    const rawValue = keyPairPart.substring(separatorIndex + 1).trim();
+    if (!rawKey || !rawValue)
+        return;
+    let key;
+    let value;
+    try {
+        key = decodeURIComponent(rawKey);
+        value = decodeURIComponent(rawValue);
+    }
+    catch {
+        return;
+    }
+    let metadata;
+    if (metadataSeparatorIndex !== -1 &&
+        metadataSeparatorIndex < entry.length - 1) {
+        const metadataString = entry.substring(metadataSeparatorIndex + 1);
+        metadata = baggageEntryMetadataFromString(metadataString);
+    }
+    return { key, value, metadata };
+}
+/**
+ * Parse a string serialized in the baggage HTTP Format (without metadata):
+ * https://github.com/w3c/baggage/blob/master/baggage/HTTP_HEADER_FORMAT.md
+ */
+function parseKeyPairsIntoRecord$1(value) {
+    const result = {};
+    if (typeof value === 'string' && value.length > 0) {
+        value.split(BAGGAGE_ITEMS_SEPARATOR$1).forEach(entry => {
+            const keyPair = parsePairKeyValue$1(entry);
+            if (keyPair !== undefined && keyPair.value.length > 0) {
+                result[keyPair.key] = keyPair.value;
+            }
+        });
+    }
+    return result;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Retrieves a number from an environment variable.
+ * - Returns `undefined` if the environment variable is empty, unset, contains only whitespace, or is not a number.
+ * - Returns a number in all other cases.
+ *
+ * @param {string} key - The name of the environment variable to retrieve.
+ * @returns {number | undefined} - The number value or `undefined`.
+ */
+function getNumberFromEnv$1(key) {
+    const raw = process.env[key];
+    if (raw == null || raw.trim() === '') {
+        return undefined;
+    }
+    const value = Number(raw);
+    if (isNaN(value)) {
+        diag.warn(`Unknown value ${inspect(raw)} for ${key}, expected a number, using defaults`);
+        return undefined;
+    }
+    return value;
+}
+/**
+ * Retrieves a string from an environment variable.
+ * - Returns `undefined` if the environment variable is empty, unset, or contains only whitespace.
+ *
+ * @param {string} key - The name of the environment variable to retrieve.
+ * @returns {string | undefined} - The string value or `undefined`.
+ */
+function getStringFromEnv$1(key) {
+    const raw = process.env[key];
+    if (raw == null || raw.trim() === '') {
+        return undefined;
+    }
+    return raw;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var ExportResultCode$2;
+(function (ExportResultCode) {
+    ExportResultCode[ExportResultCode["SUCCESS"] = 0] = "SUCCESS";
+    ExportResultCode[ExportResultCode["FAILED"] = 1] = "FAILED";
+})(ExportResultCode$2 || (ExportResultCode$2 = {}));
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function isPartialSuccessResponse(response) {
+    return Object.prototype.hasOwnProperty.call(response, 'partialSuccess');
+}
+/**
+ * Default response handler that logs a partial success to the console.
+ */
+function createLoggingPartialSuccessResponseHandler() {
+    return {
+        handleResponse(response) {
+            // Partial success MUST never be an empty object according the specification
+            // see https://opentelemetry.io/docs/specs/otlp/#partial-success
+            if (response == null ||
+                !isPartialSuccessResponse(response) ||
+                response.partialSuccess == null ||
+                Object.keys(response.partialSuccess).length === 0) {
+                return;
+            }
+            diag.warn('Received Partial Success response:', JSON.stringify(response.partialSuccess));
+        },
+    };
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class OTLPExportDelegate {
+    _diagLogger;
+    _transport;
+    _serializer;
+    _responseHandler;
+    _promiseQueue;
+    _timeout;
+    constructor(transport, serializer, responseHandler, promiseQueue, timeout) {
+        this._transport = transport;
+        this._serializer = serializer;
+        this._responseHandler = responseHandler;
+        this._promiseQueue = promiseQueue;
+        this._timeout = timeout;
+        this._diagLogger = diag.createComponentLogger({
+            namespace: 'OTLPExportDelegate',
+        });
+    }
+    export(internalRepresentation, resultCallback) {
+        this._diagLogger.debug('items to be sent', internalRepresentation);
+        // don't do any work if too many exports are in progress.
+        if (this._promiseQueue.hasReachedLimit()) {
+            resultCallback({
+                code: ExportResultCode$2.FAILED,
+                error: new Error('Concurrent export limit reached'),
+            });
+            return;
+        }
+        const serializedRequest = this._serializer.serializeRequest(internalRepresentation);
+        if (serializedRequest == null) {
+            resultCallback({
+                code: ExportResultCode$2.FAILED,
+                error: new Error('Nothing to send'),
+            });
+            return;
+        }
+        this._promiseQueue.pushPromise(this._transport.send(serializedRequest, this._timeout).then(response => {
+            if (response.status === 'success') {
+                if (response.data != null) {
+                    try {
+                        this._responseHandler.handleResponse(this._serializer.deserializeResponse(response.data));
+                    }
+                    catch (e) {
+                        this._diagLogger.warn('Export succeeded but could not deserialize response - is the response specification compliant?', e, response.data);
+                    }
+                }
+                // No matter the response, we can consider the export still successful.
+                resultCallback({
+                    code: ExportResultCode$2.SUCCESS,
+                });
+                return;
+            }
+            else if (response.status === 'failure' && response.error) {
+                resultCallback({
+                    code: ExportResultCode$2.FAILED,
+                    error: response.error,
+                });
+                return;
+            }
+            else if (response.status === 'retryable') {
+                resultCallback({
+                    code: ExportResultCode$2.FAILED,
+                    error: response.error ??
+                        new OTLPExporterError('Export failed with retryable status'),
+                });
+            }
+            else {
+                resultCallback({
+                    code: ExportResultCode$2.FAILED,
+                    error: new OTLPExporterError('Export failed with unknown error'),
+                });
+            }
+        }, reason => resultCallback({
+            code: ExportResultCode$2.FAILED,
+            error: reason,
+        })));
+    }
+    forceFlush() {
+        return this._promiseQueue.awaitAll();
+    }
+    async shutdown() {
+        this._diagLogger.debug('shutdown started');
+        await this.forceFlush();
+        this._transport.shutdown();
+    }
+}
+/**
+ * Creates a generic delegate for OTLP exports which only contains parts of the OTLP export that are shared across all
+ * signals.
+ */
+function createOtlpExportDelegate(components, settings) {
+    return new OTLPExportDelegate(components.transport, components.serializer, createLoggingPartialSuccessResponseHandler(), components.promiseHandler, settings.timeout);
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function createOtlpNetworkExportDelegate(options, serializer, transport) {
+    return createOtlpExportDelegate({
+        transport: transport,
+        serializer,
+        promiseHandler: createBoundedQueueExportPromiseHandler(options),
+    }, { timeout: options.timeoutMillis });
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+var esm$2 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    get CompressionAlgorithm () { return CompressionAlgorithm; },
+    OTLPExporterBase: OTLPExporterBase,
+    OTLPExporterError: OTLPExporterError,
+    createOtlpNetworkExportDelegate: createOtlpNetworkExportDelegate,
+    getSharedConfigurationDefaults: getSharedConfigurationDefaults,
+    mergeOtlpSharedConfigurationWithDefaults: mergeOtlpSharedConfigurationWithDefaults
+});
+
+var require$$2$1 = /*@__PURE__*/getAugmentedNamespace(esm$2);
+
+var grpcExporterTransport = {};
+
+var version$1 = {};
+
+var hasRequiredVersion;
+
+function requireVersion () {
+	if (hasRequiredVersion) return version$1;
+	hasRequiredVersion = 1;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(version$1, "__esModule", { value: true });
+	version$1.VERSION = void 0;
+	// this is autogenerated file, see scripts/version-update.js
+	version$1.VERSION = '0.213.0';
+	
+	return version$1;
+}
+
+var createServiceClientConstructor = {};
+
+var hasRequiredCreateServiceClientConstructor;
+
+function requireCreateServiceClientConstructor () {
+	if (hasRequiredCreateServiceClientConstructor) return createServiceClientConstructor;
+	hasRequiredCreateServiceClientConstructor = 1;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 * SPDX-License-Identifier: Apache-2.0
+	 */
+	Object.defineProperty(createServiceClientConstructor, "__esModule", { value: true });
+	createServiceClientConstructor.createServiceClientConstructor = void 0;
+	const grpc = requireSrc$4();
+	/**
+	 * Creates a unary service client constructor that, when instantiated, does not serialize/deserialize anything.
+	 * Allows for passing in {@link Buffer} directly, serialization can be handled via protobufjs or custom implementations.
+	 *
+	 * @param path service path
+	 * @param name service name
+	 */
+	function createServiceClientConstructor$1(path, name) {
+	    const serviceDefinition = {
+	        export: {
+	            path: path,
+	            requestStream: false,
+	            responseStream: false,
+	            requestSerialize: (arg) => {
+	                return arg;
+	            },
+	            requestDeserialize: (arg) => {
+	                return arg;
+	            },
+	            responseSerialize: (arg) => {
+	                return arg;
+	            },
+	            responseDeserialize: (arg) => {
+	                return arg;
+	            },
+	        },
+	    };
+	    return grpc.makeGenericClientConstructor(serviceDefinition, name);
+	}
+	createServiceClientConstructor.createServiceClientConstructor = createServiceClientConstructor$1;
+	
+	return createServiceClientConstructor;
+}
+
+var hasRequiredGrpcExporterTransport;
+
+function requireGrpcExporterTransport () {
+	if (hasRequiredGrpcExporterTransport) return grpcExporterTransport;
+	hasRequiredGrpcExporterTransport = 1;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 * SPDX-License-Identifier: Apache-2.0
+	 */
+	Object.defineProperty(grpcExporterTransport, "__esModule", { value: true });
+	grpcExporterTransport.createOtlpGrpcExporterTransport = grpcExporterTransport.GrpcExporterTransport = grpcExporterTransport.createEmptyMetadata = grpcExporterTransport.createSslCredentials = grpcExporterTransport.createInsecureCredentials = void 0;
+	const version_1 = /*@__PURE__*/ requireVersion();
+	const DEFAULT_USER_AGENT = `OTel-OTLP-Exporter-JavaScript/${version_1.VERSION}`;
+	function createUserAgent(userAgent) {
+	    if (userAgent) {
+	        return `${userAgent} ${DEFAULT_USER_AGENT}`;
+	    }
+	    return DEFAULT_USER_AGENT;
+	}
+	// values taken from '@grpc/grpc-js` so that we don't need to require/import it.
+	const GRPC_COMPRESSION_NONE = 0;
+	const GRPC_COMPRESSION_GZIP = 2;
+	function toGrpcCompression(compression) {
+	    return compression === 'gzip' ? GRPC_COMPRESSION_GZIP : GRPC_COMPRESSION_NONE;
+	}
+	function createInsecureCredentials() {
+	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
+	    const { credentials,
+	    // eslint-disable-next-line @typescript-eslint/no-require-imports
+	     } = requireSrc$4();
+	    return credentials.createInsecure();
+	}
+	grpcExporterTransport.createInsecureCredentials = createInsecureCredentials;
+	function createSslCredentials(rootCert, privateKey, certChain) {
+	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
+	    const { credentials,
+	    // eslint-disable-next-line @typescript-eslint/no-require-imports
+	     } = requireSrc$4();
+	    return credentials.createSsl(rootCert, privateKey, certChain);
+	}
+	grpcExporterTransport.createSslCredentials = createSslCredentials;
+	function createEmptyMetadata() {
+	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
+	    const { Metadata,
+	    // eslint-disable-next-line @typescript-eslint/no-require-imports
+	     } = requireSrc$4();
+	    return new Metadata();
+	}
+	grpcExporterTransport.createEmptyMetadata = createEmptyMetadata;
+	class GrpcExporterTransport {
+	    _client;
+	    _metadata;
+	    _parameters;
+	    constructor(parameters) {
+	        this._parameters = parameters;
+	    }
+	    shutdown() {
+	        this._client?.close();
+	    }
+	    send(data, timeoutMillis) {
+	        // We need to make a for gRPC
+	        const buffer = Buffer.from(data);
+	        if (this._client == null) {
+	            // Lazy require to ensure that grpc is not loaded before instrumentations can wrap it
+	            const { createServiceClientConstructor,
+	            // eslint-disable-next-line @typescript-eslint/no-require-imports
+	             } = /*@__PURE__*/ requireCreateServiceClientConstructor();
+	            try {
+	                this._metadata = this._parameters.metadata();
+	            }
+	            catch (error) {
+	                return Promise.resolve({
+	                    status: 'failure',
+	                    error: error,
+	                });
+	            }
+	            const clientConstructor = createServiceClientConstructor(this._parameters.grpcPath, this._parameters.grpcName);
+	            try {
+	                this._client = new clientConstructor(this._parameters.address, this._parameters.credentials(), {
+	                    'grpc.default_compression_algorithm': toGrpcCompression(this._parameters.compression),
+	                    'grpc.primary_user_agent': createUserAgent(this._parameters.userAgent),
+	                });
+	            }
+	            catch (error) {
+	                return Promise.resolve({
+	                    status: 'failure',
+	                    error: error,
+	                });
+	            }
+	        }
+	        return new Promise(resolve => {
+	            const deadline = Date.now() + timeoutMillis;
+	            // this should never happen
+	            if (this._metadata == null) {
+	                return resolve({
+	                    error: new Error('metadata was null'),
+	                    status: 'failure',
+	                });
+	            }
+	            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	            // @ts-ignore The gRPC client constructor is created on runtime, so we don't have any types for the resulting client.
+	            this._client.export(buffer, this._metadata, { deadline: deadline }, (err, response) => {
+	                if (err) {
+	                    resolve({
+	                        status: 'failure',
+	                        error: err,
+	                    });
+	                }
+	                else {
+	                    resolve({
+	                        data: response,
+	                        status: 'success',
+	                    });
+	                }
+	            });
+	        });
+	    }
+	}
+	grpcExporterTransport.GrpcExporterTransport = GrpcExporterTransport;
+	function createOtlpGrpcExporterTransport(options) {
+	    return new GrpcExporterTransport(options);
+	}
+	grpcExporterTransport.createOtlpGrpcExporterTransport = createOtlpGrpcExporterTransport;
+	
+	return grpcExporterTransport;
+}
+
+var hasRequiredOtlpGrpcConfiguration;
+
+function requireOtlpGrpcConfiguration () {
+	if (hasRequiredOtlpGrpcConfiguration) return otlpGrpcConfiguration;
+	hasRequiredOtlpGrpcConfiguration = 1;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 * SPDX-License-Identifier: Apache-2.0
+	 */
+	Object.defineProperty(otlpGrpcConfiguration, "__esModule", { value: true });
+	otlpGrpcConfiguration.getOtlpGrpcDefaultConfiguration = otlpGrpcConfiguration.mergeOtlpGrpcConfigurationWithDefaults = otlpGrpcConfiguration.validateAndNormalizeUrl = void 0;
+	const otlp_exporter_base_1 = require$$2$1;
+	const grpc_exporter_transport_1 = /*@__PURE__*/ requireGrpcExporterTransport();
+	const url_1 = require$$6$1;
+	const api_1 = require$$0$1;
+	function validateAndNormalizeUrl(url) {
+	    url = url.trim();
+	    const hasProtocol = url.match(/^([\w]{1,8}):\/\//);
+	    if (!hasProtocol) {
+	        url = `https://${url}`;
+	    }
+	    const target = new url_1.URL(url);
+	    if (target.protocol === 'unix:') {
+	        return url;
+	    }
+	    if (target.pathname && target.pathname !== '/') {
+	        api_1.diag.warn('URL path should not be set when using grpc, the path part of the URL will be ignored.');
+	    }
+	    if (target.protocol !== '' && !target.protocol?.match(/^(http)s?:$/)) {
+	        api_1.diag.warn('URL protocol should be http(s)://. Using http://.');
+	    }
+	    return target.host;
+	}
+	otlpGrpcConfiguration.validateAndNormalizeUrl = validateAndNormalizeUrl;
+	function overrideMetadataEntriesIfNotPresent(metadata, additionalMetadata) {
+	    for (const [key, value] of Object.entries(additionalMetadata.getMap())) {
+	        // only override with env var data if the key has no values.
+	        // not using Metadata.merge() as it will keep both values.
+	        if (metadata.get(key).length < 1) {
+	            metadata.set(key, value);
+	        }
+	    }
+	}
+	function mergeOtlpGrpcConfigurationWithDefaults(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration) {
+	    const rawUrl = userProvidedConfiguration.url ??
+	        fallbackConfiguration.url ??
+	        defaultConfiguration.url;
+	    return {
+	        ...(0, otlp_exporter_base_1.mergeOtlpSharedConfigurationWithDefaults)(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration),
+	        metadata: () => {
+	            const metadata = defaultConfiguration.metadata();
+	            overrideMetadataEntriesIfNotPresent(metadata, 
+	            // clone to ensure we don't modify what the user gave us in case they hold on to the returned reference
+	            userProvidedConfiguration.metadata?.().clone() ?? (0, grpc_exporter_transport_1.createEmptyMetadata)());
+	            overrideMetadataEntriesIfNotPresent(metadata, fallbackConfiguration.metadata?.() ?? (0, grpc_exporter_transport_1.createEmptyMetadata)());
+	            return metadata;
+	        },
+	        url: validateAndNormalizeUrl(rawUrl),
+	        credentials: userProvidedConfiguration.credentials ??
+	            fallbackConfiguration.credentials?.(rawUrl) ??
+	            defaultConfiguration.credentials(rawUrl),
+	        userAgent: userProvidedConfiguration.userAgent,
+	    };
+	}
+	otlpGrpcConfiguration.mergeOtlpGrpcConfigurationWithDefaults = mergeOtlpGrpcConfigurationWithDefaults;
+	function getOtlpGrpcDefaultConfiguration() {
+	    return {
+	        ...(0, otlp_exporter_base_1.getSharedConfigurationDefaults)(),
+	        metadata: () => (0, grpc_exporter_transport_1.createEmptyMetadata)(),
+	        url: 'http://localhost:4317',
+	        credentials: (url) => {
+	            if (url.startsWith('http://')) {
+	                return () => (0, grpc_exporter_transport_1.createInsecureCredentials)();
+	            }
+	            else {
+	                return () => (0, grpc_exporter_transport_1.createSslCredentials)();
+	            }
+	        },
+	    };
+	}
+	otlpGrpcConfiguration.getOtlpGrpcDefaultConfiguration = getOtlpGrpcDefaultConfiguration;
+	
+	return otlpGrpcConfiguration;
+}
+
+var otlpGrpcEnvConfiguration = {};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const SUPPRESS_TRACING_KEY$1 = createContextKey('OpenTelemetry SDK Context Key SUPPRESS_TRACING');
+function suppressTracing$1(context) {
+    return context.setValue(SUPPRESS_TRACING_KEY$1, true);
 }
 function unsuppressTracing(context) {
-    return context.deleteValue(SUPPRESS_TRACING_KEY);
+    return context.deleteValue(SUPPRESS_TRACING_KEY$1);
 }
 function isTracingSuppressed(context) {
-    return context.getValue(SUPPRESS_TRACING_KEY) === true;
+    return context.getValue(SUPPRESS_TRACING_KEY$1) === true;
 }
 
 /*
@@ -81762,21 +86715,21 @@ function isValidPrimitiveAttributeValueType(valType) {
  * Returns a function that logs an error using the provided logger, or a
  * console logger if one was not provided.
  */
-function loggingErrorHandler() {
+function loggingErrorHandler$1() {
     return (ex) => {
-        diag.error(stringifyException(ex));
+        diag.error(stringifyException$1(ex));
     };
 }
 /**
  * Converts an exception into a string representation
  * @param {Exception} ex
  */
-function stringifyException(ex) {
+function stringifyException$1(ex) {
     if (typeof ex === 'string') {
         return ex;
     }
     else {
-        return JSON.stringify(flattenException(ex));
+        return JSON.stringify(flattenException$1(ex));
     }
 }
 /**
@@ -81784,7 +86737,7 @@ function stringifyException(ex) {
  * and coercing values to strings. Duplicate properties will not be overwritten;
  * the first insert wins.
  */
-function flattenException(ex) {
+function flattenException$1(ex) {
     const result = {};
     let current = ex;
     while (current !== null) {
@@ -81806,21 +86759,21 @@ function flattenException(ex) {
  * SPDX-License-Identifier: Apache-2.0
  */
 /** The global error handler delegate */
-let delegateHandler = loggingErrorHandler();
+let delegateHandler$1 = loggingErrorHandler$1();
 /**
  * Set the global error handler
  * @param {ErrorHandler} handler
  */
 function setGlobalErrorHandler(handler) {
-    delegateHandler = handler;
+    delegateHandler$1 = handler;
 }
 /**
  * Return the global error handler
  * @param {Exception} ex
  */
-function globalErrorHandler(ex) {
+function globalErrorHandler$1(ex) {
     try {
-        delegateHandler(ex);
+        delegateHandler$1(ex);
     }
     catch { } // eslint-disable-line no-empty
 }
@@ -81934,7 +86887,7 @@ const _globalThis = globalThis;
  * limitations under the License.
  */
 // this is autogenerated file, see scripts/version-update.js
-const VERSION$3 = '2.6.0';
+const VERSION$4 = '2.6.0';
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -81952,18 +86905,18 @@ const VERSION$3 = '2.6.0';
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-const ATTR_PROCESS_RUNTIME_NAME = 'process.runtime.name';
+const ATTR_PROCESS_RUNTIME_NAME$1 = 'process.runtime.name';
 
 /*
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 /** Constants describing the SDK in use */
-const SDK_INFO = {
+const SDK_INFO$1 = {
     [ATTR_TELEMETRY_SDK_NAME]: 'opentelemetry',
-    [ATTR_PROCESS_RUNTIME_NAME]: 'node',
+    [ATTR_PROCESS_RUNTIME_NAME$1]: 'node',
     [ATTR_TELEMETRY_SDK_LANGUAGE]: TELEMETRY_SDK_LANGUAGE_VALUE_NODEJS,
-    [ATTR_TELEMETRY_SDK_VERSION]: VERSION$3,
+    [ATTR_TELEMETRY_SDK_VERSION]: VERSION$4,
 };
 
 /*
@@ -81973,65 +86926,65 @@ const SDK_INFO = {
 /**
  * @deprecated Use performance directly.
  */
-const otperformance = performance;
+const otperformance$1 = performance;
 
 /*
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-const NANOSECOND_DIGITS = 9;
-const NANOSECOND_DIGITS_IN_MILLIS = 6;
-const MILLISECONDS_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS_IN_MILLIS);
-const SECOND_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS);
+const NANOSECOND_DIGITS$2 = 9;
+const NANOSECOND_DIGITS_IN_MILLIS$1 = 6;
+const MILLISECONDS_TO_NANOSECONDS$1 = Math.pow(10, NANOSECOND_DIGITS_IN_MILLIS$1);
+const SECOND_TO_NANOSECONDS$2 = Math.pow(10, NANOSECOND_DIGITS$2);
 /**
  * Converts a number of milliseconds from epoch to HrTime([seconds, remainder in nanoseconds]).
  * @param epochMillis
  */
-function millisToHrTime(epochMillis) {
+function millisToHrTime$1(epochMillis) {
     const epochSeconds = epochMillis / 1000;
     // Decimals only.
     const seconds = Math.trunc(epochSeconds);
     // Round sub-nanosecond accuracy to nanosecond.
-    const nanos = Math.round((epochMillis % 1000) * MILLISECONDS_TO_NANOSECONDS);
+    const nanos = Math.round((epochMillis % 1000) * MILLISECONDS_TO_NANOSECONDS$1);
     return [seconds, nanos];
 }
 /**
  * @deprecated Use `performance.timeOrigin` directly.
  */
 function getTimeOrigin() {
-    return otperformance.timeOrigin;
+    return otperformance$1.timeOrigin;
 }
 /**
  * Returns an hrtime calculated via performance component.
  * @param performanceNow
  */
-function hrTime(performanceNow) {
-    const timeOrigin = millisToHrTime(otperformance.timeOrigin);
-    const now = millisToHrTime(typeof performanceNow === 'number' ? performanceNow : otperformance.now());
-    return addHrTimes(timeOrigin, now);
+function hrTime$1(performanceNow) {
+    const timeOrigin = millisToHrTime$1(otperformance$1.timeOrigin);
+    const now = millisToHrTime$1(typeof performanceNow === 'number' ? performanceNow : otperformance$1.now());
+    return addHrTimes$1(timeOrigin, now);
 }
 /**
  *
  * Converts a TimeInput to an HrTime, defaults to _hrtime().
  * @param time
  */
-function timeInputToHrTime(time) {
+function timeInputToHrTime$1(time) {
     // process.hrtime
-    if (isTimeInputHrTime(time)) {
+    if (isTimeInputHrTime$1(time)) {
         return time;
     }
     else if (typeof time === 'number') {
         // Must be a performance.now() if it's smaller than process start time.
-        if (time < otperformance.timeOrigin) {
-            return hrTime(time);
+        if (time < otperformance$1.timeOrigin) {
+            return hrTime$1(time);
         }
         else {
             // epoch milliseconds or performance.timeOrigin
-            return millisToHrTime(time);
+            return millisToHrTime$1(time);
         }
     }
     else if (time instanceof Date) {
-        return millisToHrTime(time.getTime());
+        return millisToHrTime$1(time.getTime());
     }
     else {
         throw TypeError('Invalid input type');
@@ -82049,7 +87002,7 @@ function hrTimeDuration(startTime, endTime) {
     if (nanos < 0) {
         seconds -= 1;
         // negate
-        nanos += SECOND_TO_NANOSECONDS;
+        nanos += SECOND_TO_NANOSECONDS$2;
     }
     return [seconds, nanos];
 }
@@ -82058,7 +87011,7 @@ function hrTimeDuration(startTime, endTime) {
  * @param time
  */
 function hrTimeToTimeStamp(time) {
-    const precision = NANOSECOND_DIGITS;
+    const precision = NANOSECOND_DIGITS$2;
     const tmp = `${'0'.repeat(precision)}${time[1]}Z`;
     const nanoString = tmp.substring(tmp.length - precision - 1);
     const date = new Date(time[0] * 1000).toISOString();
@@ -82068,8 +87021,8 @@ function hrTimeToTimeStamp(time) {
  * Convert hrTime to nanoseconds.
  * @param time
  */
-function hrTimeToNanoseconds(time) {
-    return time[0] * SECOND_TO_NANOSECONDS + time[1];
+function hrTimeToNanoseconds$1(time) {
+    return time[0] * SECOND_TO_NANOSECONDS$2 + time[1];
 }
 /**
  * Convert hrTime to milliseconds.
@@ -82089,7 +87042,7 @@ function hrTimeToMicroseconds(time) {
  * check if time is HrTime
  * @param value
  */
-function isTimeInputHrTime(value) {
+function isTimeInputHrTime$1(value) {
     return (Array.isArray(value) &&
         value.length === 2 &&
         typeof value[0] === 'number' &&
@@ -82100,18 +87053,18 @@ function isTimeInputHrTime(value) {
  * @param value
  */
 function isTimeInput(value) {
-    return (isTimeInputHrTime(value) ||
+    return (isTimeInputHrTime$1(value) ||
         typeof value === 'number' ||
         value instanceof Date);
 }
 /**
  * Given 2 HrTime formatted times, return their sum as an HrTime.
  */
-function addHrTimes(time1, time2) {
+function addHrTimes$1(time1, time2) {
     const out = [time1[0] + time2[0], time1[1] + time2[1]];
     // Nanoseconds
-    if (out[1] >= SECOND_TO_NANOSECONDS) {
-        out[1] -= SECOND_TO_NANOSECONDS;
+    if (out[1] >= SECOND_TO_NANOSECONDS$2) {
+        out[1] -= SECOND_TO_NANOSECONDS$2;
         out[0] += 1;
     }
     return out;
@@ -82135,11 +87088,11 @@ function unrefTimer(timer) {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-var ExportResultCode;
+var ExportResultCode$1;
 (function (ExportResultCode) {
     ExportResultCode[ExportResultCode["SUCCESS"] = 0] = "SUCCESS";
     ExportResultCode[ExportResultCode["FAILED"] = 1] = "FAILED";
-})(ExportResultCode || (ExportResultCode = {}));
+})(ExportResultCode$1 || (ExportResultCode$1 = {}));
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -82326,7 +87279,7 @@ class TraceState {
  */
 const TRACE_PARENT_HEADER = 'traceparent';
 const TRACE_STATE_HEADER = 'tracestate';
-const VERSION$2 = '00';
+const VERSION$3 = '00';
 const VERSION_PART = '(?!ff)[\\da-f]{2}';
 const TRACE_ID_PART = '(?![0]{32})[\\da-f]{32}';
 const PARENT_ID_PART = '(?![0]{16})[\\da-f]{16}';
@@ -82370,7 +87323,7 @@ class W3CTraceContextPropagator {
             isTracingSuppressed(context) ||
             !isSpanContextValid(spanContext))
             return;
-        const traceParent = `${VERSION$2}-${spanContext.traceId}-${spanContext.spanId}-0${Number(spanContext.traceFlags || TraceFlags.NONE).toString(16)}`;
+        const traceParent = `${VERSION$3}-${spanContext.traceId}-${spanContext.spanId}-0${Number(spanContext.traceFlags || TraceFlags.NONE).toString(16)}`;
         setter.set(carrier, TRACE_PARENT_HEADER, traceParent);
         if (spanContext.traceState) {
             setter.set(carrier, TRACE_STATE_HEADER, spanContext.traceState.serialize());
@@ -82719,14 +87672,14 @@ function shouldMerge(one, two) {
 /**
  * Error that is thrown on timeouts.
  */
-class TimeoutError extends Error {
+let TimeoutError$1 = class TimeoutError extends Error {
     constructor(message) {
         super(message);
         // manually adjust prototype to retain `instanceof` functionality when targeting ES5, see:
         // https://github.com/Microsoft/TypeScript-wiki/blob/main/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
         Object.setPrototypeOf(this, TimeoutError.prototype);
     }
-}
+};
 /**
  * Adds a timeout to a promise and rejects if the specified timeout has elapsed. Also rejects if the specified promise
  * rejects, and resolves if the specified promise resolves.
@@ -82736,11 +87689,11 @@ class TimeoutError extends Error {
  * @param promise promise to use with timeout.
  * @param timeout the timeout in milliseconds until the returned promise is rejected.
  */
-function callWithTimeout(promise, timeout) {
+function callWithTimeout$1(promise, timeout) {
     let timeoutHandle;
     const timeoutPromise = new Promise(function timeoutFunction(_resolve, reject) {
         timeoutHandle = setTimeout(function timeoutHandler() {
-            reject(new TimeoutError('Operation timed out.'));
+            reject(new TimeoutError$1('Operation timed out.'));
         }, timeout);
     });
     return Promise.race([promise, timeoutPromise]).then(result => {
@@ -82785,7 +87738,7 @@ function isUrlIgnored(url, ignoredUrls) {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-class Deferred {
+let Deferred$1 = class Deferred {
     _promise;
     _resolve;
     _reject;
@@ -82804,7 +87757,7 @@ class Deferred {
     reject(err) {
         this._reject(err);
     }
-}
+};
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -82813,9 +87766,9 @@ class Deferred {
 /**
  * Bind the callback and only invoke the callback once regardless how many times `BindOnceFuture.call` is invoked.
  */
-class BindOnceFuture {
+let BindOnceFuture$1 = class BindOnceFuture {
     _isCalled = false;
-    _deferred = new Deferred();
+    _deferred = new Deferred$1();
     _callback;
     _that;
     constructor(callback, that) {
@@ -82840,7 +87793,7 @@ class BindOnceFuture {
         }
         return this._deferred.promise;
     }
-}
+};
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -82880,10 +87833,10 @@ function diagLogLevelFromString(value) {
  * @internal
  * Shared functionality used by Exporters while exporting data, including suppression of Traces.
  */
-function _export(exporter, arg) {
+function _export$1(exporter, arg) {
     return new Promise(resolve => {
         // prevent downstream exporter calls from generating spans
-        context.with(suppressTracing(context.active()), () => {
+        context.with(suppressTracing$1(context.active()), () => {
             exporter.export(arg, resolve);
         });
     });
@@ -82893,27 +87846,27 @@ function _export(exporter, arg) {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-const internal = {
-    _export,
+const internal$1 = {
+    _export: _export$1,
 };
 
-var esm$2 = /*#__PURE__*/Object.freeze({
+var esm$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
     AnchoredClock: AnchoredClock,
-    BindOnceFuture: BindOnceFuture,
+    BindOnceFuture: BindOnceFuture$1,
     CompositePropagator: CompositePropagator,
-    get ExportResultCode () { return ExportResultCode; },
+    get ExportResultCode () { return ExportResultCode$1; },
     get RPCType () { return RPCType; },
-    SDK_INFO: SDK_INFO,
+    SDK_INFO: SDK_INFO$1,
     TRACE_PARENT_HEADER: TRACE_PARENT_HEADER,
     TRACE_STATE_HEADER: TRACE_STATE_HEADER,
-    TimeoutError: TimeoutError,
+    TimeoutError: TimeoutError$1,
     TraceState: TraceState,
     W3CBaggagePropagator: W3CBaggagePropagator,
     W3CTraceContextPropagator: W3CTraceContextPropagator,
     _globalThis: _globalThis,
-    addHrTimes: addHrTimes,
-    callWithTimeout: callWithTimeout,
+    addHrTimes: addHrTimes$1,
+    callWithTimeout: callWithTimeout$1,
     deleteRPCMetadata: deleteRPCMetadata,
     diagLogLevelFromString: diagLogLevelFromString,
     getBooleanFromEnv: getBooleanFromEnv,
@@ -82922,626 +87875,36 @@ var esm$2 = /*#__PURE__*/Object.freeze({
     getStringFromEnv: getStringFromEnv,
     getStringListFromEnv: getStringListFromEnv,
     getTimeOrigin: getTimeOrigin,
-    globalErrorHandler: globalErrorHandler,
-    hrTime: hrTime,
+    globalErrorHandler: globalErrorHandler$1,
+    hrTime: hrTime$1,
     hrTimeDuration: hrTimeDuration,
     hrTimeToMicroseconds: hrTimeToMicroseconds,
     hrTimeToMilliseconds: hrTimeToMilliseconds,
-    hrTimeToNanoseconds: hrTimeToNanoseconds,
+    hrTimeToNanoseconds: hrTimeToNanoseconds$1,
     hrTimeToTimeStamp: hrTimeToTimeStamp,
-    internal: internal,
+    internal: internal$1,
     isAttributeValue: isAttributeValue,
     isTimeInput: isTimeInput,
-    isTimeInputHrTime: isTimeInputHrTime,
+    isTimeInputHrTime: isTimeInputHrTime$1,
     isTracingSuppressed: isTracingSuppressed,
     isUrlIgnored: isUrlIgnored,
-    loggingErrorHandler: loggingErrorHandler,
+    loggingErrorHandler: loggingErrorHandler$1,
     merge: merge,
-    millisToHrTime: millisToHrTime,
-    otperformance: otperformance,
+    millisToHrTime: millisToHrTime$1,
+    otperformance: otperformance$1,
     parseKeyPairsIntoRecord: parseKeyPairsIntoRecord,
     parseTraceParent: parseTraceParent,
     sanitizeAttributes: sanitizeAttributes,
     setGlobalErrorHandler: setGlobalErrorHandler,
     setRPCMetadata: setRPCMetadata,
-    suppressTracing: suppressTracing,
-    timeInputToHrTime: timeInputToHrTime,
+    suppressTracing: suppressTracing$1,
+    timeInputToHrTime: timeInputToHrTime$1,
     unrefTimer: unrefTimer,
     unsuppressTracing: unsuppressTracing,
     urlMatches: urlMatches
 });
 
-var src$2 = {};
-
-var OTLPLogExporter$1 = {};
-
-var src$1 = {};
-
-var convertLegacyOtlpGrpcOptions = {};
-
-var otlpGrpcConfiguration = {};
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class OTLPExporterBase {
-    _delegate;
-    constructor(delegate) {
-        this._delegate = delegate;
-    }
-    /**
-     * Export items.
-     * @param items
-     * @param resultCallback
-     */
-    export(items, resultCallback) {
-        this._delegate.export(items, resultCallback);
-    }
-    forceFlush() {
-        return this._delegate.forceFlush();
-    }
-    shutdown() {
-        return this._delegate.shutdown();
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/**
- * Interface for handling error
- */
-class OTLPExporterError extends Error {
-    code;
-    name = 'OTLPExporterError';
-    data;
-    constructor(message, code, data) {
-        super(message);
-        this.data = data;
-        this.code = code;
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-function validateTimeoutMillis(timeoutMillis) {
-    if (Number.isFinite(timeoutMillis) && timeoutMillis > 0) {
-        return timeoutMillis;
-    }
-    throw new Error(`Configuration: timeoutMillis is invalid, expected number greater than 0 (actual: '${timeoutMillis}')`);
-}
-function wrapStaticHeadersInFunction(headers) {
-    if (headers == null) {
-        return undefined;
-    }
-    return async () => headers;
-}
-/**
- * @param userProvidedConfiguration  Configuration options provided by the user in code.
- * @param fallbackConfiguration Fallback to use when the {@link userProvidedConfiguration} does not specify an option.
- * @param defaultConfiguration The defaults as defined by the exporter specification
- */
-function mergeOtlpSharedConfigurationWithDefaults(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration) {
-    return {
-        timeoutMillis: validateTimeoutMillis(userProvidedConfiguration.timeoutMillis ??
-            fallbackConfiguration.timeoutMillis ??
-            defaultConfiguration.timeoutMillis),
-        concurrencyLimit: userProvidedConfiguration.concurrencyLimit ??
-            fallbackConfiguration.concurrencyLimit ??
-            defaultConfiguration.concurrencyLimit,
-        compression: userProvidedConfiguration.compression ??
-            fallbackConfiguration.compression ??
-            defaultConfiguration.compression,
-    };
-}
-function getSharedConfigurationDefaults() {
-    return {
-        timeoutMillis: 10000,
-        concurrencyLimit: 30,
-        compression: 'none',
-    };
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-var CompressionAlgorithm;
-(function (CompressionAlgorithm) {
-    CompressionAlgorithm["NONE"] = "none";
-    CompressionAlgorithm["GZIP"] = "gzip";
-})(CompressionAlgorithm || (CompressionAlgorithm = {}));
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class BoundedQueueExportPromiseHandler {
-    _concurrencyLimit;
-    _sendingPromises = [];
-    /**
-     * @param concurrencyLimit maximum promises allowed in a queue at the same time.
-     */
-    constructor(concurrencyLimit) {
-        this._concurrencyLimit = concurrencyLimit;
-    }
-    pushPromise(promise) {
-        if (this.hasReachedLimit()) {
-            throw new Error('Concurrency Limit reached');
-        }
-        this._sendingPromises.push(promise);
-        const popPromise = () => {
-            const index = this._sendingPromises.indexOf(promise);
-            void this._sendingPromises.splice(index, 1);
-        };
-        promise.then(popPromise, popPromise);
-    }
-    hasReachedLimit() {
-        return this._sendingPromises.length >= this._concurrencyLimit;
-    }
-    async awaitAll() {
-        await Promise.all(this._sendingPromises);
-    }
-}
-/**
- * Promise queue for keeping track of export promises. Finished promises will be auto-dequeued.
- * Allows for awaiting all promises in the queue.
- */
-function createBoundedQueueExportPromiseHandler(options) {
-    return new BoundedQueueExportPromiseHandler(options.concurrencyLimit);
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-function isPartialSuccessResponse(response) {
-    return Object.prototype.hasOwnProperty.call(response, 'partialSuccess');
-}
-/**
- * Default response handler that logs a partial success to the console.
- */
-function createLoggingPartialSuccessResponseHandler() {
-    return {
-        handleResponse(response) {
-            // Partial success MUST never be an empty object according the specification
-            // see https://opentelemetry.io/docs/specs/otlp/#partial-success
-            if (response == null ||
-                !isPartialSuccessResponse(response) ||
-                response.partialSuccess == null ||
-                Object.keys(response.partialSuccess).length === 0) {
-                return;
-            }
-            diag.warn('Received Partial Success response:', JSON.stringify(response.partialSuccess));
-        },
-    };
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class OTLPExportDelegate {
-    _diagLogger;
-    _transport;
-    _serializer;
-    _responseHandler;
-    _promiseQueue;
-    _timeout;
-    constructor(transport, serializer, responseHandler, promiseQueue, timeout) {
-        this._transport = transport;
-        this._serializer = serializer;
-        this._responseHandler = responseHandler;
-        this._promiseQueue = promiseQueue;
-        this._timeout = timeout;
-        this._diagLogger = diag.createComponentLogger({
-            namespace: 'OTLPExportDelegate',
-        });
-    }
-    export(internalRepresentation, resultCallback) {
-        this._diagLogger.debug('items to be sent', internalRepresentation);
-        // don't do any work if too many exports are in progress.
-        if (this._promiseQueue.hasReachedLimit()) {
-            resultCallback({
-                code: ExportResultCode.FAILED,
-                error: new Error('Concurrent export limit reached'),
-            });
-            return;
-        }
-        const serializedRequest = this._serializer.serializeRequest(internalRepresentation);
-        if (serializedRequest == null) {
-            resultCallback({
-                code: ExportResultCode.FAILED,
-                error: new Error('Nothing to send'),
-            });
-            return;
-        }
-        this._promiseQueue.pushPromise(this._transport.send(serializedRequest, this._timeout).then(response => {
-            if (response.status === 'success') {
-                if (response.data != null) {
-                    try {
-                        this._responseHandler.handleResponse(this._serializer.deserializeResponse(response.data));
-                    }
-                    catch (e) {
-                        this._diagLogger.warn('Export succeeded but could not deserialize response - is the response specification compliant?', e, response.data);
-                    }
-                }
-                // No matter the response, we can consider the export still successful.
-                resultCallback({
-                    code: ExportResultCode.SUCCESS,
-                });
-                return;
-            }
-            else if (response.status === 'failure' && response.error) {
-                resultCallback({
-                    code: ExportResultCode.FAILED,
-                    error: response.error,
-                });
-                return;
-            }
-            else if (response.status === 'retryable') {
-                resultCallback({
-                    code: ExportResultCode.FAILED,
-                    error: response.error ??
-                        new OTLPExporterError('Export failed with retryable status'),
-                });
-            }
-            else {
-                resultCallback({
-                    code: ExportResultCode.FAILED,
-                    error: new OTLPExporterError('Export failed with unknown error'),
-                });
-            }
-        }, reason => resultCallback({
-            code: ExportResultCode.FAILED,
-            error: reason,
-        })));
-    }
-    forceFlush() {
-        return this._promiseQueue.awaitAll();
-    }
-    async shutdown() {
-        this._diagLogger.debug('shutdown started');
-        await this.forceFlush();
-        this._transport.shutdown();
-    }
-}
-/**
- * Creates a generic delegate for OTLP exports which only contains parts of the OTLP export that are shared across all
- * signals.
- */
-function createOtlpExportDelegate(components, settings) {
-    return new OTLPExportDelegate(components.transport, components.serializer, createLoggingPartialSuccessResponseHandler(), components.promiseHandler, settings.timeout);
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-function createOtlpNetworkExportDelegate(options, serializer, transport) {
-    return createOtlpExportDelegate({
-        transport: transport,
-        serializer,
-        promiseHandler: createBoundedQueueExportPromiseHandler(options),
-    }, { timeout: options.timeoutMillis });
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-
-var esm$1 = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    get CompressionAlgorithm () { return CompressionAlgorithm; },
-    OTLPExporterBase: OTLPExporterBase,
-    OTLPExporterError: OTLPExporterError,
-    createOtlpNetworkExportDelegate: createOtlpNetworkExportDelegate,
-    getSharedConfigurationDefaults: getSharedConfigurationDefaults,
-    mergeOtlpSharedConfigurationWithDefaults: mergeOtlpSharedConfigurationWithDefaults
-});
-
-var require$$2$1 = /*@__PURE__*/getAugmentedNamespace(esm$1);
-
-var grpcExporterTransport = {};
-
-var version$1 = {};
-
-var hasRequiredVersion;
-
-function requireVersion () {
-	if (hasRequiredVersion) return version$1;
-	hasRequiredVersion = 1;
-	/*
-	 * Copyright The OpenTelemetry Authors
-	 *
-	 * Licensed under the Apache License, Version 2.0 (the "License");
-	 * you may not use this file except in compliance with the License.
-	 * You may obtain a copy of the License at
-	 *
-	 *      https://www.apache.org/licenses/LICENSE-2.0
-	 *
-	 * Unless required by applicable law or agreed to in writing, software
-	 * distributed under the License is distributed on an "AS IS" BASIS,
-	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	 * See the License for the specific language governing permissions and
-	 * limitations under the License.
-	 */
-	Object.defineProperty(version$1, "__esModule", { value: true });
-	version$1.VERSION = void 0;
-	// this is autogenerated file, see scripts/version-update.js
-	version$1.VERSION = '0.213.0';
-	
-	return version$1;
-}
-
-var createServiceClientConstructor = {};
-
-var hasRequiredCreateServiceClientConstructor;
-
-function requireCreateServiceClientConstructor () {
-	if (hasRequiredCreateServiceClientConstructor) return createServiceClientConstructor;
-	hasRequiredCreateServiceClientConstructor = 1;
-	/*
-	 * Copyright The OpenTelemetry Authors
-	 * SPDX-License-Identifier: Apache-2.0
-	 */
-	Object.defineProperty(createServiceClientConstructor, "__esModule", { value: true });
-	createServiceClientConstructor.createServiceClientConstructor = void 0;
-	const grpc = requireSrc$4();
-	/**
-	 * Creates a unary service client constructor that, when instantiated, does not serialize/deserialize anything.
-	 * Allows for passing in {@link Buffer} directly, serialization can be handled via protobufjs or custom implementations.
-	 *
-	 * @param path service path
-	 * @param name service name
-	 */
-	function createServiceClientConstructor$1(path, name) {
-	    const serviceDefinition = {
-	        export: {
-	            path: path,
-	            requestStream: false,
-	            responseStream: false,
-	            requestSerialize: (arg) => {
-	                return arg;
-	            },
-	            requestDeserialize: (arg) => {
-	                return arg;
-	            },
-	            responseSerialize: (arg) => {
-	                return arg;
-	            },
-	            responseDeserialize: (arg) => {
-	                return arg;
-	            },
-	        },
-	    };
-	    return grpc.makeGenericClientConstructor(serviceDefinition, name);
-	}
-	createServiceClientConstructor.createServiceClientConstructor = createServiceClientConstructor$1;
-	
-	return createServiceClientConstructor;
-}
-
-var hasRequiredGrpcExporterTransport;
-
-function requireGrpcExporterTransport () {
-	if (hasRequiredGrpcExporterTransport) return grpcExporterTransport;
-	hasRequiredGrpcExporterTransport = 1;
-	/*
-	 * Copyright The OpenTelemetry Authors
-	 * SPDX-License-Identifier: Apache-2.0
-	 */
-	Object.defineProperty(grpcExporterTransport, "__esModule", { value: true });
-	grpcExporterTransport.createOtlpGrpcExporterTransport = grpcExporterTransport.GrpcExporterTransport = grpcExporterTransport.createEmptyMetadata = grpcExporterTransport.createSslCredentials = grpcExporterTransport.createInsecureCredentials = void 0;
-	const version_1 = /*@__PURE__*/ requireVersion();
-	const DEFAULT_USER_AGENT = `OTel-OTLP-Exporter-JavaScript/${version_1.VERSION}`;
-	function createUserAgent(userAgent) {
-	    if (userAgent) {
-	        return `${userAgent} ${DEFAULT_USER_AGENT}`;
-	    }
-	    return DEFAULT_USER_AGENT;
-	}
-	// values taken from '@grpc/grpc-js` so that we don't need to require/import it.
-	const GRPC_COMPRESSION_NONE = 0;
-	const GRPC_COMPRESSION_GZIP = 2;
-	function toGrpcCompression(compression) {
-	    return compression === 'gzip' ? GRPC_COMPRESSION_GZIP : GRPC_COMPRESSION_NONE;
-	}
-	function createInsecureCredentials() {
-	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
-	    const { credentials,
-	    // eslint-disable-next-line @typescript-eslint/no-require-imports
-	     } = requireSrc$4();
-	    return credentials.createInsecure();
-	}
-	grpcExporterTransport.createInsecureCredentials = createInsecureCredentials;
-	function createSslCredentials(rootCert, privateKey, certChain) {
-	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
-	    const { credentials,
-	    // eslint-disable-next-line @typescript-eslint/no-require-imports
-	     } = requireSrc$4();
-	    return credentials.createSsl(rootCert, privateKey, certChain);
-	}
-	grpcExporterTransport.createSslCredentials = createSslCredentials;
-	function createEmptyMetadata() {
-	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
-	    const { Metadata,
-	    // eslint-disable-next-line @typescript-eslint/no-require-imports
-	     } = requireSrc$4();
-	    return new Metadata();
-	}
-	grpcExporterTransport.createEmptyMetadata = createEmptyMetadata;
-	class GrpcExporterTransport {
-	    _client;
-	    _metadata;
-	    _parameters;
-	    constructor(parameters) {
-	        this._parameters = parameters;
-	    }
-	    shutdown() {
-	        this._client?.close();
-	    }
-	    send(data, timeoutMillis) {
-	        // We need to make a for gRPC
-	        const buffer = Buffer.from(data);
-	        if (this._client == null) {
-	            // Lazy require to ensure that grpc is not loaded before instrumentations can wrap it
-	            const { createServiceClientConstructor,
-	            // eslint-disable-next-line @typescript-eslint/no-require-imports
-	             } = /*@__PURE__*/ requireCreateServiceClientConstructor();
-	            try {
-	                this._metadata = this._parameters.metadata();
-	            }
-	            catch (error) {
-	                return Promise.resolve({
-	                    status: 'failure',
-	                    error: error,
-	                });
-	            }
-	            const clientConstructor = createServiceClientConstructor(this._parameters.grpcPath, this._parameters.grpcName);
-	            try {
-	                this._client = new clientConstructor(this._parameters.address, this._parameters.credentials(), {
-	                    'grpc.default_compression_algorithm': toGrpcCompression(this._parameters.compression),
-	                    'grpc.primary_user_agent': createUserAgent(this._parameters.userAgent),
-	                });
-	            }
-	            catch (error) {
-	                return Promise.resolve({
-	                    status: 'failure',
-	                    error: error,
-	                });
-	            }
-	        }
-	        return new Promise(resolve => {
-	            const deadline = Date.now() + timeoutMillis;
-	            // this should never happen
-	            if (this._metadata == null) {
-	                return resolve({
-	                    error: new Error('metadata was null'),
-	                    status: 'failure',
-	                });
-	            }
-	            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	            // @ts-ignore The gRPC client constructor is created on runtime, so we don't have any types for the resulting client.
-	            this._client.export(buffer, this._metadata, { deadline: deadline }, (err, response) => {
-	                if (err) {
-	                    resolve({
-	                        status: 'failure',
-	                        error: err,
-	                    });
-	                }
-	                else {
-	                    resolve({
-	                        data: response,
-	                        status: 'success',
-	                    });
-	                }
-	            });
-	        });
-	    }
-	}
-	grpcExporterTransport.GrpcExporterTransport = GrpcExporterTransport;
-	function createOtlpGrpcExporterTransport(options) {
-	    return new GrpcExporterTransport(options);
-	}
-	grpcExporterTransport.createOtlpGrpcExporterTransport = createOtlpGrpcExporterTransport;
-	
-	return grpcExporterTransport;
-}
-
-var hasRequiredOtlpGrpcConfiguration;
-
-function requireOtlpGrpcConfiguration () {
-	if (hasRequiredOtlpGrpcConfiguration) return otlpGrpcConfiguration;
-	hasRequiredOtlpGrpcConfiguration = 1;
-	/*
-	 * Copyright The OpenTelemetry Authors
-	 * SPDX-License-Identifier: Apache-2.0
-	 */
-	Object.defineProperty(otlpGrpcConfiguration, "__esModule", { value: true });
-	otlpGrpcConfiguration.getOtlpGrpcDefaultConfiguration = otlpGrpcConfiguration.mergeOtlpGrpcConfigurationWithDefaults = otlpGrpcConfiguration.validateAndNormalizeUrl = void 0;
-	const otlp_exporter_base_1 = require$$2$1;
-	const grpc_exporter_transport_1 = /*@__PURE__*/ requireGrpcExporterTransport();
-	const url_1 = require$$6$1;
-	const api_1 = require$$0$1;
-	function validateAndNormalizeUrl(url) {
-	    url = url.trim();
-	    const hasProtocol = url.match(/^([\w]{1,8}):\/\//);
-	    if (!hasProtocol) {
-	        url = `https://${url}`;
-	    }
-	    const target = new url_1.URL(url);
-	    if (target.protocol === 'unix:') {
-	        return url;
-	    }
-	    if (target.pathname && target.pathname !== '/') {
-	        api_1.diag.warn('URL path should not be set when using grpc, the path part of the URL will be ignored.');
-	    }
-	    if (target.protocol !== '' && !target.protocol?.match(/^(http)s?:$/)) {
-	        api_1.diag.warn('URL protocol should be http(s)://. Using http://.');
-	    }
-	    return target.host;
-	}
-	otlpGrpcConfiguration.validateAndNormalizeUrl = validateAndNormalizeUrl;
-	function overrideMetadataEntriesIfNotPresent(metadata, additionalMetadata) {
-	    for (const [key, value] of Object.entries(additionalMetadata.getMap())) {
-	        // only override with env var data if the key has no values.
-	        // not using Metadata.merge() as it will keep both values.
-	        if (metadata.get(key).length < 1) {
-	            metadata.set(key, value);
-	        }
-	    }
-	}
-	function mergeOtlpGrpcConfigurationWithDefaults(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration) {
-	    const rawUrl = userProvidedConfiguration.url ??
-	        fallbackConfiguration.url ??
-	        defaultConfiguration.url;
-	    return {
-	        ...(0, otlp_exporter_base_1.mergeOtlpSharedConfigurationWithDefaults)(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration),
-	        metadata: () => {
-	            const metadata = defaultConfiguration.metadata();
-	            overrideMetadataEntriesIfNotPresent(metadata, 
-	            // clone to ensure we don't modify what the user gave us in case they hold on to the returned reference
-	            userProvidedConfiguration.metadata?.().clone() ?? (0, grpc_exporter_transport_1.createEmptyMetadata)());
-	            overrideMetadataEntriesIfNotPresent(metadata, fallbackConfiguration.metadata?.() ?? (0, grpc_exporter_transport_1.createEmptyMetadata)());
-	            return metadata;
-	        },
-	        url: validateAndNormalizeUrl(rawUrl),
-	        credentials: userProvidedConfiguration.credentials ??
-	            fallbackConfiguration.credentials?.(rawUrl) ??
-	            defaultConfiguration.credentials(rawUrl),
-	        userAgent: userProvidedConfiguration.userAgent,
-	    };
-	}
-	otlpGrpcConfiguration.mergeOtlpGrpcConfigurationWithDefaults = mergeOtlpGrpcConfigurationWithDefaults;
-	function getOtlpGrpcDefaultConfiguration() {
-	    return {
-	        ...(0, otlp_exporter_base_1.getSharedConfigurationDefaults)(),
-	        metadata: () => (0, grpc_exporter_transport_1.createEmptyMetadata)(),
-	        url: 'http://localhost:4317',
-	        credentials: (url) => {
-	            if (url.startsWith('http://')) {
-	                return () => (0, grpc_exporter_transport_1.createInsecureCredentials)();
-	            }
-	            else {
-	                return () => (0, grpc_exporter_transport_1.createSslCredentials)();
-	            }
-	        },
-	    };
-	}
-	otlpGrpcConfiguration.getOtlpGrpcDefaultConfiguration = getOtlpGrpcDefaultConfiguration;
-	
-	return otlpGrpcConfiguration;
-}
-
-var otlpGrpcEnvConfiguration = {};
-
-var require$$0 = /*@__PURE__*/getAugmentedNamespace(esm$2);
+var require$$0 = /*@__PURE__*/getAugmentedNamespace(esm$1);
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -83701,9 +88064,9 @@ function parseRetryAfterToMills(retryAfter) {
  * limitations under the License.
  */
 // this is autogenerated file, see scripts/version-update.js
-const VERSION$1 = '0.213.0';
+const VERSION$2 = '0.213.0';
 
-const DEFAULT_USER_AGENT = `OTel-OTLP-Exporter-JavaScript/${VERSION$1}`;
+const DEFAULT_USER_AGENT = `OTel-OTLP-Exporter-JavaScript/${VERSION$2}`;
 /**
  * Sends data using http
  * @param request
@@ -83976,7 +88339,7 @@ function createOtlpHttpExportDelegate(options, serializer) {
  * SPDX-License-Identifier: Apache-2.0
  */
 function parseAndValidateTimeoutFromEnv(timeoutEnvVar) {
-    const envTimeout = getNumberFromEnv(timeoutEnvVar);
+    const envTimeout = getNumberFromEnv$1(timeoutEnvVar);
     if (envTimeout != null) {
         if (Number.isFinite(envTimeout) && envTimeout > 0) {
             return envTimeout;
@@ -83991,7 +88354,7 @@ function getTimeoutFromEnv(signalIdentifier) {
     return specificTimeout ?? nonSpecificTimeout;
 }
 function parseAndValidateCompressionFromEnv(compressionEnvVar) {
-    const compression = getStringFromEnv(compressionEnvVar)?.trim();
+    const compression = getStringFromEnv$1(compressionEnvVar)?.trim();
     if (compression == null || compression === 'none' || compression === 'gzip') {
         return compression;
     }
@@ -84015,17 +88378,17 @@ function getSharedConfigurationFromEnvironment(signalIdentifier) {
  * SPDX-License-Identifier: Apache-2.0
  */
 function getStaticHeadersFromEnv(signalIdentifier) {
-    const signalSpecificRawHeaders = getStringFromEnv(`OTEL_EXPORTER_OTLP_${signalIdentifier}_HEADERS`);
-    const nonSignalSpecificRawHeaders = getStringFromEnv('OTEL_EXPORTER_OTLP_HEADERS');
-    const signalSpecificHeaders = parseKeyPairsIntoRecord(signalSpecificRawHeaders);
-    const nonSignalSpecificHeaders = parseKeyPairsIntoRecord(nonSignalSpecificRawHeaders);
+    const signalSpecificRawHeaders = getStringFromEnv$1(`OTEL_EXPORTER_OTLP_${signalIdentifier}_HEADERS`);
+    const nonSignalSpecificRawHeaders = getStringFromEnv$1('OTEL_EXPORTER_OTLP_HEADERS');
+    const signalSpecificHeaders = parseKeyPairsIntoRecord$1(signalSpecificRawHeaders);
+    const nonSignalSpecificHeaders = parseKeyPairsIntoRecord$1(nonSignalSpecificRawHeaders);
     if (Object.keys(signalSpecificHeaders).length === 0 &&
         Object.keys(nonSignalSpecificHeaders).length === 0) {
         return undefined;
     }
     // headers are combined instead of overwritten, with the specific headers taking precedence over
     // the non-specific ones.
-    return Object.assign({}, parseKeyPairsIntoRecord(nonSignalSpecificRawHeaders), parseKeyPairsIntoRecord(signalSpecificRawHeaders));
+    return Object.assign({}, parseKeyPairsIntoRecord$1(nonSignalSpecificRawHeaders), parseKeyPairsIntoRecord$1(signalSpecificRawHeaders));
 }
 function appendRootPathToUrlIfNeeded(url) {
     try {
@@ -84062,22 +88425,22 @@ function appendResourcePathToUrl(url, path) {
     return url;
 }
 function getNonSpecificUrlFromEnv(signalResourcePath) {
-    const envUrl = getStringFromEnv('OTEL_EXPORTER_OTLP_ENDPOINT');
+    const envUrl = getStringFromEnv$1('OTEL_EXPORTER_OTLP_ENDPOINT');
     if (envUrl === undefined) {
         return undefined;
     }
     return appendResourcePathToUrl(envUrl, signalResourcePath);
 }
 function getSpecificUrlFromEnv(signalIdentifier) {
-    const envUrl = getStringFromEnv(`OTEL_EXPORTER_OTLP_${signalIdentifier}_ENDPOINT`);
+    const envUrl = getStringFromEnv$1(`OTEL_EXPORTER_OTLP_${signalIdentifier}_ENDPOINT`);
     if (envUrl === undefined) {
         return undefined;
     }
     return appendRootPathToUrlIfNeeded(envUrl);
 }
 function readFileFromEnv(signalSpecificEnvVar, nonSignalSpecificEnvVar, warningMessage) {
-    const signalSpecificPath = getStringFromEnv(signalSpecificEnvVar);
-    const nonSignalSpecificPath = getStringFromEnv(nonSignalSpecificEnvVar);
+    const signalSpecificPath = getStringFromEnv$1(signalSpecificEnvVar);
+    const nonSignalSpecificPath = getStringFromEnv$1(nonSignalSpecificEnvVar);
     const filePath = signalSpecificPath ?? nonSignalSpecificPath;
     if (filePath != null) {
         try {
@@ -84430,17 +88793,17 @@ var hasRequiredSrc$2;
 function requireSrc$2 () {
 	if (hasRequiredSrc$2) return src$1;
 	hasRequiredSrc$2 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright The OpenTelemetry Authors
 		 * SPDX-License-Identifier: Apache-2.0
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.createOtlpGrpcExportDelegate = exports$1.convertLegacyOtlpGrpcOptions = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.createOtlpGrpcExportDelegate = exports.convertLegacyOtlpGrpcOptions = void 0;
 		var convert_legacy_otlp_grpc_options_1 = /*@__PURE__*/ requireConvertLegacyOtlpGrpcOptions();
-		Object.defineProperty(exports$1, "convertLegacyOtlpGrpcOptions", { enumerable: true, get: function () { return convert_legacy_otlp_grpc_options_1.convertLegacyOtlpGrpcOptions; } });
+		Object.defineProperty(exports, "convertLegacyOtlpGrpcOptions", { enumerable: true, get: function () { return convert_legacy_otlp_grpc_options_1.convertLegacyOtlpGrpcOptions; } });
 		var otlp_grpc_export_delegate_1 = /*@__PURE__*/ requireOtlpGrpcExportDelegate();
-		Object.defineProperty(exports$1, "createOtlpGrpcExportDelegate", { enumerable: true, get: function () { return otlp_grpc_export_delegate_1.createOtlpGrpcExportDelegate; } });
+		Object.defineProperty(exports, "createOtlpGrpcExportDelegate", { enumerable: true, get: function () { return otlp_grpc_export_delegate_1.createOtlpGrpcExportDelegate; } });
 		
 	} (src$1));
 	return src$1;
@@ -97857,6 +102220,20 @@ function toLogAttributes(attributes, encoder) {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
+const NANOSECOND_DIGITS$1 = 9;
+const SECOND_TO_NANOSECONDS$1 = Math.pow(10, NANOSECOND_DIGITS$1);
+/**
+ * Convert hrTime to nanoseconds.
+ * @param time
+ */
+function hrTimeToNanoseconds(time) {
+    return time[0] * SECOND_TO_NANOSECONDS$1 + time[1];
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 function intValue(charCode) {
     // 0-9
     if (charCode >= 48 && charCode <= 57) {
@@ -98021,177 +102398,6 @@ var DataPointType;
      */
     DataPointType[DataPointType["SUM"] = 3] = "SUM";
 })(DataPointType || (DataPointType = {}));
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-let serviceName;
-/**
- * Returns the default service name for OpenTelemetry resources.
- * In Node.js environments, returns "unknown_service:<process.argv0>".
- * In browser/edge environments, returns "unknown_service".
- */
-function defaultServiceName() {
-    if (serviceName === undefined) {
-        try {
-            const argv0 = globalThis.process.argv0;
-            serviceName = argv0 ? `unknown_service:${argv0}` : 'unknown_service';
-        }
-        catch {
-            serviceName = 'unknown_service';
-        }
-    }
-    return serviceName;
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-const isPromiseLike = (val) => {
-    return (val !== null &&
-        typeof val === 'object' &&
-        typeof val.then === 'function');
-};
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class ResourceImpl {
-    _rawAttributes;
-    _asyncAttributesPending = false;
-    _schemaUrl;
-    _memoizedAttributes;
-    static FromAttributeList(attributes, options) {
-        const res = new ResourceImpl({}, options);
-        res._rawAttributes = guardedRawAttributes(attributes);
-        res._asyncAttributesPending =
-            attributes.filter(([_, val]) => isPromiseLike(val)).length > 0;
-        return res;
-    }
-    constructor(
-    /**
-     * A dictionary of attributes with string keys and values that provide
-     * information about the entity as numbers, strings or booleans
-     * TODO: Consider to add check/validation on attributes.
-     */
-    resource, options) {
-        const attributes = resource.attributes ?? {};
-        this._rawAttributes = Object.entries(attributes).map(([k, v]) => {
-            if (isPromiseLike(v)) {
-                // side-effect
-                this._asyncAttributesPending = true;
-            }
-            return [k, v];
-        });
-        this._rawAttributes = guardedRawAttributes(this._rawAttributes);
-        this._schemaUrl = validateSchemaUrl(options?.schemaUrl);
-    }
-    get asyncAttributesPending() {
-        return this._asyncAttributesPending;
-    }
-    async waitForAsyncAttributes() {
-        if (!this.asyncAttributesPending) {
-            return;
-        }
-        for (let i = 0; i < this._rawAttributes.length; i++) {
-            const [k, v] = this._rawAttributes[i];
-            this._rawAttributes[i] = [k, isPromiseLike(v) ? await v : v];
-        }
-        this._asyncAttributesPending = false;
-    }
-    get attributes() {
-        if (this.asyncAttributesPending) {
-            diag.error('Accessing resource attributes before async attributes settled');
-        }
-        if (this._memoizedAttributes) {
-            return this._memoizedAttributes;
-        }
-        const attrs = {};
-        for (const [k, v] of this._rawAttributes) {
-            if (isPromiseLike(v)) {
-                diag.debug(`Unsettled resource attribute ${k} skipped`);
-                continue;
-            }
-            if (v != null) {
-                attrs[k] ??= v;
-            }
-        }
-        // only memoize output if all attributes are settled
-        if (!this._asyncAttributesPending) {
-            this._memoizedAttributes = attrs;
-        }
-        return attrs;
-    }
-    getRawAttributes() {
-        return this._rawAttributes;
-    }
-    get schemaUrl() {
-        return this._schemaUrl;
-    }
-    merge(resource) {
-        if (resource == null)
-            return this;
-        // Order is important
-        // Spec states incoming attributes override existing attributes
-        const mergedSchemaUrl = mergeSchemaUrl(this, resource);
-        const mergedOptions = mergedSchemaUrl
-            ? { schemaUrl: mergedSchemaUrl }
-            : undefined;
-        return ResourceImpl.FromAttributeList([...resource.getRawAttributes(), ...this.getRawAttributes()], mergedOptions);
-    }
-}
-function resourceFromAttributes(attributes, options) {
-    return ResourceImpl.FromAttributeList(Object.entries(attributes), options);
-}
-function defaultResource() {
-    return resourceFromAttributes({
-        [ATTR_SERVICE_NAME]: defaultServiceName(),
-        [ATTR_TELEMETRY_SDK_LANGUAGE]: SDK_INFO[ATTR_TELEMETRY_SDK_LANGUAGE],
-        [ATTR_TELEMETRY_SDK_NAME]: SDK_INFO[ATTR_TELEMETRY_SDK_NAME],
-        [ATTR_TELEMETRY_SDK_VERSION]: SDK_INFO[ATTR_TELEMETRY_SDK_VERSION],
-    });
-}
-function guardedRawAttributes(attributes) {
-    return attributes.map(([k, v]) => {
-        if (isPromiseLike(v)) {
-            return [
-                k,
-                v.catch(err => {
-                    diag.debug('promise rejection for resource attribute: %s - %s', k, err);
-                    return undefined;
-                }),
-            ];
-        }
-        return [k, v];
-    });
-}
-function validateSchemaUrl(schemaUrl) {
-    if (typeof schemaUrl === 'string' || schemaUrl === undefined) {
-        return schemaUrl;
-    }
-    diag.warn('Schema URL must be string or undefined, got %s. Schema URL will be ignored.', schemaUrl);
-    return undefined;
-}
-function mergeSchemaUrl(old, updating) {
-    const oldSchemaUrl = old?.schemaUrl;
-    const updatingSchemaUrl = updating?.schemaUrl;
-    const isOldEmpty = oldSchemaUrl === undefined || oldSchemaUrl === '';
-    const isUpdatingEmpty = updatingSchemaUrl === undefined || updatingSchemaUrl === '';
-    if (isOldEmpty) {
-        return updatingSchemaUrl;
-    }
-    if (isUpdatingEmpty) {
-        return oldSchemaUrl;
-    }
-    if (oldSchemaUrl === updatingSchemaUrl) {
-        return oldSchemaUrl;
-    }
-    diag.warn('Schema URL merge conflict: old resource has "%s", updating resource has "%s". Resulting resource will have undefined Schema URL.', oldSchemaUrl, updatingSchemaUrl);
-    return undefined;
-}
 
 /**
  * AggregationTemporality defines how a metric aggregator reports aggregated
@@ -98650,15 +102856,15 @@ var hasRequiredSrc$1;
 function requireSrc$1 () {
 	if (hasRequiredSrc$1) return src$2;
 	hasRequiredSrc$1 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright The OpenTelemetry Authors
 		 * SPDX-License-Identifier: Apache-2.0
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.OTLPLogExporter = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.OTLPLogExporter = void 0;
 		var OTLPLogExporter_1 = /*@__PURE__*/ requireOTLPLogExporter();
-		Object.defineProperty(exports$1, "OTLPLogExporter", { enumerable: true, get: function () { return OTLPLogExporter_1.OTLPLogExporter; } });
+		Object.defineProperty(exports, "OTLPLogExporter", { enumerable: true, get: function () { return OTLPLogExporter_1.OTLPLogExporter; } });
 		
 	} (src$2));
 	return src$2;
@@ -98717,15 +102923,15 @@ var hasRequiredSrc;
 function requireSrc () {
 	if (hasRequiredSrc) return src;
 	hasRequiredSrc = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright The OpenTelemetry Authors
 		 * SPDX-License-Identifier: Apache-2.0
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.OTLPTraceExporter = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.OTLPTraceExporter = void 0;
 		var OTLPTraceExporter_1 = /*@__PURE__*/ requireOTLPTraceExporter();
-		Object.defineProperty(exports$1, "OTLPTraceExporter", { enumerable: true, get: function () { return OTLPTraceExporter_1.OTLPTraceExporter; } });
+		Object.defineProperty(exports, "OTLPTraceExporter", { enumerable: true, get: function () { return OTLPTraceExporter_1.OTLPTraceExporter; } });
 		
 	} (src));
 	return src;
@@ -98746,6 +102952,693 @@ class OTLPTraceExporter extends OTLPExporterBase {
             'Content-Type': 'application/x-protobuf',
         }), ProtobufTraceSerializer));
     }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let serviceName$1;
+/**
+ * Returns the default service name for OpenTelemetry resources.
+ * In Node.js environments, returns "unknown_service:<process.argv0>".
+ * In browser/edge environments, returns "unknown_service".
+ */
+function defaultServiceName$1() {
+    if (serviceName$1 === undefined) {
+        try {
+            const argv0 = globalThis.process.argv0;
+            serviceName$1 = argv0 ? `unknown_service:${argv0}` : 'unknown_service';
+        }
+        catch {
+            serviceName$1 = 'unknown_service';
+        }
+    }
+    return serviceName$1;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const isPromiseLike$1 = (val) => {
+    return (val !== null &&
+        typeof val === 'object' &&
+        typeof val.then === 'function');
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let ResourceImpl$1 = class ResourceImpl {
+    _rawAttributes;
+    _asyncAttributesPending = false;
+    _schemaUrl;
+    _memoizedAttributes;
+    static FromAttributeList(attributes, options) {
+        const res = new ResourceImpl({}, options);
+        res._rawAttributes = guardedRawAttributes$1(attributes);
+        res._asyncAttributesPending =
+            attributes.filter(([_, val]) => isPromiseLike$1(val)).length > 0;
+        return res;
+    }
+    constructor(
+    /**
+     * A dictionary of attributes with string keys and values that provide
+     * information about the entity as numbers, strings or booleans
+     * TODO: Consider to add check/validation on attributes.
+     */
+    resource, options) {
+        const attributes = resource.attributes ?? {};
+        this._rawAttributes = Object.entries(attributes).map(([k, v]) => {
+            if (isPromiseLike$1(v)) {
+                // side-effect
+                this._asyncAttributesPending = true;
+            }
+            return [k, v];
+        });
+        this._rawAttributes = guardedRawAttributes$1(this._rawAttributes);
+        this._schemaUrl = validateSchemaUrl$1(options?.schemaUrl);
+    }
+    get asyncAttributesPending() {
+        return this._asyncAttributesPending;
+    }
+    async waitForAsyncAttributes() {
+        if (!this.asyncAttributesPending) {
+            return;
+        }
+        for (let i = 0; i < this._rawAttributes.length; i++) {
+            const [k, v] = this._rawAttributes[i];
+            this._rawAttributes[i] = [k, isPromiseLike$1(v) ? await v : v];
+        }
+        this._asyncAttributesPending = false;
+    }
+    get attributes() {
+        if (this.asyncAttributesPending) {
+            diag.error('Accessing resource attributes before async attributes settled');
+        }
+        if (this._memoizedAttributes) {
+            return this._memoizedAttributes;
+        }
+        const attrs = {};
+        for (const [k, v] of this._rawAttributes) {
+            if (isPromiseLike$1(v)) {
+                diag.debug(`Unsettled resource attribute ${k} skipped`);
+                continue;
+            }
+            if (v != null) {
+                attrs[k] ??= v;
+            }
+        }
+        // only memoize output if all attributes are settled
+        if (!this._asyncAttributesPending) {
+            this._memoizedAttributes = attrs;
+        }
+        return attrs;
+    }
+    getRawAttributes() {
+        return this._rawAttributes;
+    }
+    get schemaUrl() {
+        return this._schemaUrl;
+    }
+    merge(resource) {
+        if (resource == null)
+            return this;
+        // Order is important
+        // Spec states incoming attributes override existing attributes
+        const mergedSchemaUrl = mergeSchemaUrl$1(this, resource);
+        const mergedOptions = mergedSchemaUrl
+            ? { schemaUrl: mergedSchemaUrl }
+            : undefined;
+        return ResourceImpl.FromAttributeList([...resource.getRawAttributes(), ...this.getRawAttributes()], mergedOptions);
+    }
+};
+function resourceFromAttributes$1(attributes, options) {
+    return ResourceImpl$1.FromAttributeList(Object.entries(attributes), options);
+}
+function defaultResource$1() {
+    return resourceFromAttributes$1({
+        [ATTR_SERVICE_NAME]: defaultServiceName$1(),
+        [ATTR_TELEMETRY_SDK_LANGUAGE]: SDK_INFO$2[ATTR_TELEMETRY_SDK_LANGUAGE],
+        [ATTR_TELEMETRY_SDK_NAME]: SDK_INFO$2[ATTR_TELEMETRY_SDK_NAME],
+        [ATTR_TELEMETRY_SDK_VERSION]: SDK_INFO$2[ATTR_TELEMETRY_SDK_VERSION],
+    });
+}
+function guardedRawAttributes$1(attributes) {
+    return attributes.map(([k, v]) => {
+        if (isPromiseLike$1(v)) {
+            return [
+                k,
+                v.catch(err => {
+                    diag.debug('promise rejection for resource attribute: %s - %s', k, err);
+                    return undefined;
+                }),
+            ];
+        }
+        return [k, v];
+    });
+}
+function validateSchemaUrl$1(schemaUrl) {
+    if (typeof schemaUrl === 'string' || schemaUrl === undefined) {
+        return schemaUrl;
+    }
+    diag.warn('Schema URL must be string or undefined, got %s. Schema URL will be ignored.', schemaUrl);
+    return undefined;
+}
+function mergeSchemaUrl$1(old, updating) {
+    const oldSchemaUrl = old?.schemaUrl;
+    const updatingSchemaUrl = updating?.schemaUrl;
+    const isOldEmpty = oldSchemaUrl === undefined || oldSchemaUrl === '';
+    const isUpdatingEmpty = updatingSchemaUrl === undefined || updatingSchemaUrl === '';
+    if (isOldEmpty) {
+        return updatingSchemaUrl;
+    }
+    if (isUpdatingEmpty) {
+        return oldSchemaUrl;
+    }
+    if (oldSchemaUrl === updatingSchemaUrl) {
+        return oldSchemaUrl;
+    }
+    diag.warn('Schema URL merge conflict: old resource has "%s", updating resource has "%s". Resulting resource will have undefined Schema URL.', oldSchemaUrl, updatingSchemaUrl);
+    return undefined;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const SUPPRESS_TRACING_KEY = createContextKey('OpenTelemetry SDK Context Key SUPPRESS_TRACING');
+function suppressTracing(context) {
+    return context.setValue(SUPPRESS_TRACING_KEY, true);
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Returns a function that logs an error using the provided logger, or a
+ * console logger if one was not provided.
+ */
+function loggingErrorHandler() {
+    return (ex) => {
+        diag.error(stringifyException(ex));
+    };
+}
+/**
+ * Converts an exception into a string representation
+ * @param {Exception} ex
+ */
+function stringifyException(ex) {
+    if (typeof ex === 'string') {
+        return ex;
+    }
+    else {
+        return JSON.stringify(flattenException(ex));
+    }
+}
+/**
+ * Flattens an exception into key-value pairs by traversing the prototype chain
+ * and coercing values to strings. Duplicate properties will not be overwritten;
+ * the first insert wins.
+ */
+function flattenException(ex) {
+    const result = {};
+    let current = ex;
+    while (current !== null) {
+        Object.getOwnPropertyNames(current).forEach(propertyName => {
+            if (result[propertyName])
+                return;
+            const value = current[propertyName];
+            if (value) {
+                result[propertyName] = String(value);
+            }
+        });
+        current = Object.getPrototypeOf(current);
+    }
+    return result;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** The global error handler delegate */
+let delegateHandler = loggingErrorHandler();
+/**
+ * Return the global error handler
+ * @param {Exception} ex
+ */
+function globalErrorHandler(ex) {
+    try {
+        delegateHandler(ex);
+    }
+    catch { } // eslint-disable-line no-empty
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+// this is autogenerated file, see scripts/version-update.js
+const VERSION$1 = '2.6.0';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
+ * This file contains a copy of unstable semantic convention definitions
+ * used by this package.
+ * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
+ */
+/**
+ * The name of the runtime of this process.
+ *
+ * @example OpenJDK Runtime Environment
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const ATTR_PROCESS_RUNTIME_NAME = 'process.runtime.name';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** Constants describing the SDK in use */
+const SDK_INFO = {
+    [ATTR_TELEMETRY_SDK_NAME]: 'opentelemetry',
+    [ATTR_PROCESS_RUNTIME_NAME]: 'node',
+    [ATTR_TELEMETRY_SDK_LANGUAGE]: TELEMETRY_SDK_LANGUAGE_VALUE_NODEJS,
+    [ATTR_TELEMETRY_SDK_VERSION]: VERSION$1,
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @deprecated Use performance directly.
+ */
+const otperformance = performance;
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const NANOSECOND_DIGITS = 9;
+const NANOSECOND_DIGITS_IN_MILLIS = 6;
+const MILLISECONDS_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS_IN_MILLIS);
+const SECOND_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS);
+/**
+ * Converts a number of milliseconds from epoch to HrTime([seconds, remainder in nanoseconds]).
+ * @param epochMillis
+ */
+function millisToHrTime(epochMillis) {
+    const epochSeconds = epochMillis / 1000;
+    // Decimals only.
+    const seconds = Math.trunc(epochSeconds);
+    // Round sub-nanosecond accuracy to nanosecond.
+    const nanos = Math.round((epochMillis % 1000) * MILLISECONDS_TO_NANOSECONDS);
+    return [seconds, nanos];
+}
+/**
+ * Returns an hrtime calculated via performance component.
+ * @param performanceNow
+ */
+function hrTime(performanceNow) {
+    const timeOrigin = millisToHrTime(otperformance.timeOrigin);
+    const now = millisToHrTime(typeof performanceNow === 'number' ? performanceNow : otperformance.now());
+    return addHrTimes(timeOrigin, now);
+}
+/**
+ *
+ * Converts a TimeInput to an HrTime, defaults to _hrtime().
+ * @param time
+ */
+function timeInputToHrTime(time) {
+    // process.hrtime
+    if (isTimeInputHrTime(time)) {
+        return time;
+    }
+    else if (typeof time === 'number') {
+        // Must be a performance.now() if it's smaller than process start time.
+        if (time < otperformance.timeOrigin) {
+            return hrTime(time);
+        }
+        else {
+            // epoch milliseconds or performance.timeOrigin
+            return millisToHrTime(time);
+        }
+    }
+    else if (time instanceof Date) {
+        return millisToHrTime(time.getTime());
+    }
+    else {
+        throw TypeError('Invalid input type');
+    }
+}
+/**
+ * check if time is HrTime
+ * @param value
+ */
+function isTimeInputHrTime(value) {
+    return (Array.isArray(value) &&
+        value.length === 2 &&
+        typeof value[0] === 'number' &&
+        typeof value[1] === 'number');
+}
+/**
+ * Given 2 HrTime formatted times, return their sum as an HrTime.
+ */
+function addHrTimes(time1, time2) {
+    const out = [time1[0] + time2[0], time1[1] + time2[1]];
+    // Nanoseconds
+    if (out[1] >= SECOND_TO_NANOSECONDS) {
+        out[1] -= SECOND_TO_NANOSECONDS;
+        out[0] += 1;
+    }
+    return out;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var ExportResultCode;
+(function (ExportResultCode) {
+    ExportResultCode[ExportResultCode["SUCCESS"] = 0] = "SUCCESS";
+    ExportResultCode[ExportResultCode["FAILED"] = 1] = "FAILED";
+})(ExportResultCode || (ExportResultCode = {}));
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Error that is thrown on timeouts.
+ */
+class TimeoutError extends Error {
+    constructor(message) {
+        super(message);
+        // manually adjust prototype to retain `instanceof` functionality when targeting ES5, see:
+        // https://github.com/Microsoft/TypeScript-wiki/blob/main/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+        Object.setPrototypeOf(this, TimeoutError.prototype);
+    }
+}
+/**
+ * Adds a timeout to a promise and rejects if the specified timeout has elapsed. Also rejects if the specified promise
+ * rejects, and resolves if the specified promise resolves.
+ *
+ * <p> NOTE: this operation will continue even after it throws a {@link TimeoutError}.
+ *
+ * @param promise promise to use with timeout.
+ * @param timeout the timeout in milliseconds until the returned promise is rejected.
+ */
+function callWithTimeout(promise, timeout) {
+    let timeoutHandle;
+    const timeoutPromise = new Promise(function timeoutFunction(_resolve, reject) {
+        timeoutHandle = setTimeout(function timeoutHandler() {
+            reject(new TimeoutError('Operation timed out.'));
+        }, timeout);
+    });
+    return Promise.race([promise, timeoutPromise]).then(result => {
+        clearTimeout(timeoutHandle);
+        return result;
+    }, reason => {
+        clearTimeout(timeoutHandle);
+        throw reason;
+    });
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class Deferred {
+    _promise;
+    _resolve;
+    _reject;
+    constructor() {
+        this._promise = new Promise((resolve, reject) => {
+            this._resolve = resolve;
+            this._reject = reject;
+        });
+    }
+    get promise() {
+        return this._promise;
+    }
+    resolve(val) {
+        this._resolve(val);
+    }
+    reject(err) {
+        this._reject(err);
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Bind the callback and only invoke the callback once regardless how many times `BindOnceFuture.call` is invoked.
+ */
+class BindOnceFuture {
+    _isCalled = false;
+    _deferred = new Deferred();
+    _callback;
+    _that;
+    constructor(callback, that) {
+        this._callback = callback;
+        this._that = that;
+    }
+    get isCalled() {
+        return this._isCalled;
+    }
+    get promise() {
+        return this._deferred.promise;
+    }
+    call(...args) {
+        if (!this._isCalled) {
+            this._isCalled = true;
+            try {
+                Promise.resolve(this._callback.call(this._that, ...args)).then(val => this._deferred.resolve(val), err => this._deferred.reject(err));
+            }
+            catch (err) {
+                this._deferred.reject(err);
+            }
+        }
+        return this._deferred.promise;
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @internal
+ * Shared functionality used by Exporters while exporting data, including suppression of Traces.
+ */
+function _export(exporter, arg) {
+    return new Promise(resolve => {
+        // prevent downstream exporter calls from generating spans
+        context.with(suppressTracing(context.active()), () => {
+            exporter.export(arg, resolve);
+        });
+    });
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const internal = {
+    _export,
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let serviceName;
+/**
+ * Returns the default service name for OpenTelemetry resources.
+ * In Node.js environments, returns "unknown_service:<process.argv0>".
+ * In browser/edge environments, returns "unknown_service".
+ */
+function defaultServiceName() {
+    if (serviceName === undefined) {
+        try {
+            const argv0 = globalThis.process.argv0;
+            serviceName = argv0 ? `unknown_service:${argv0}` : 'unknown_service';
+        }
+        catch {
+            serviceName = 'unknown_service';
+        }
+    }
+    return serviceName;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const isPromiseLike = (val) => {
+    return (val !== null &&
+        typeof val === 'object' &&
+        typeof val.then === 'function');
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class ResourceImpl {
+    _rawAttributes;
+    _asyncAttributesPending = false;
+    _schemaUrl;
+    _memoizedAttributes;
+    static FromAttributeList(attributes, options) {
+        const res = new ResourceImpl({}, options);
+        res._rawAttributes = guardedRawAttributes(attributes);
+        res._asyncAttributesPending =
+            attributes.filter(([_, val]) => isPromiseLike(val)).length > 0;
+        return res;
+    }
+    constructor(
+    /**
+     * A dictionary of attributes with string keys and values that provide
+     * information about the entity as numbers, strings or booleans
+     * TODO: Consider to add check/validation on attributes.
+     */
+    resource, options) {
+        const attributes = resource.attributes ?? {};
+        this._rawAttributes = Object.entries(attributes).map(([k, v]) => {
+            if (isPromiseLike(v)) {
+                // side-effect
+                this._asyncAttributesPending = true;
+            }
+            return [k, v];
+        });
+        this._rawAttributes = guardedRawAttributes(this._rawAttributes);
+        this._schemaUrl = validateSchemaUrl(options?.schemaUrl);
+    }
+    get asyncAttributesPending() {
+        return this._asyncAttributesPending;
+    }
+    async waitForAsyncAttributes() {
+        if (!this.asyncAttributesPending) {
+            return;
+        }
+        for (let i = 0; i < this._rawAttributes.length; i++) {
+            const [k, v] = this._rawAttributes[i];
+            this._rawAttributes[i] = [k, isPromiseLike(v) ? await v : v];
+        }
+        this._asyncAttributesPending = false;
+    }
+    get attributes() {
+        if (this.asyncAttributesPending) {
+            diag.error('Accessing resource attributes before async attributes settled');
+        }
+        if (this._memoizedAttributes) {
+            return this._memoizedAttributes;
+        }
+        const attrs = {};
+        for (const [k, v] of this._rawAttributes) {
+            if (isPromiseLike(v)) {
+                diag.debug(`Unsettled resource attribute ${k} skipped`);
+                continue;
+            }
+            if (v != null) {
+                attrs[k] ??= v;
+            }
+        }
+        // only memoize output if all attributes are settled
+        if (!this._asyncAttributesPending) {
+            this._memoizedAttributes = attrs;
+        }
+        return attrs;
+    }
+    getRawAttributes() {
+        return this._rawAttributes;
+    }
+    get schemaUrl() {
+        return this._schemaUrl;
+    }
+    merge(resource) {
+        if (resource == null)
+            return this;
+        // Order is important
+        // Spec states incoming attributes override existing attributes
+        const mergedSchemaUrl = mergeSchemaUrl(this, resource);
+        const mergedOptions = mergedSchemaUrl
+            ? { schemaUrl: mergedSchemaUrl }
+            : undefined;
+        return ResourceImpl.FromAttributeList([...resource.getRawAttributes(), ...this.getRawAttributes()], mergedOptions);
+    }
+}
+function resourceFromAttributes(attributes, options) {
+    return ResourceImpl.FromAttributeList(Object.entries(attributes), options);
+}
+function defaultResource() {
+    return resourceFromAttributes({
+        [ATTR_SERVICE_NAME]: defaultServiceName(),
+        [ATTR_TELEMETRY_SDK_LANGUAGE]: SDK_INFO[ATTR_TELEMETRY_SDK_LANGUAGE],
+        [ATTR_TELEMETRY_SDK_NAME]: SDK_INFO[ATTR_TELEMETRY_SDK_NAME],
+        [ATTR_TELEMETRY_SDK_VERSION]: SDK_INFO[ATTR_TELEMETRY_SDK_VERSION],
+    });
+}
+function guardedRawAttributes(attributes) {
+    return attributes.map(([k, v]) => {
+        if (isPromiseLike(v)) {
+            return [
+                k,
+                v.catch(err => {
+                    diag.debug('promise rejection for resource attribute: %s - %s', k, err);
+                    return undefined;
+                }),
+            ];
+        }
+        return [k, v];
+    });
+}
+function validateSchemaUrl(schemaUrl) {
+    if (typeof schemaUrl === 'string' || schemaUrl === undefined) {
+        return schemaUrl;
+    }
+    diag.warn('Schema URL must be string or undefined, got %s. Schema URL will be ignored.', schemaUrl);
+    return undefined;
+}
+function mergeSchemaUrl(old, updating) {
+    const oldSchemaUrl = old?.schemaUrl;
+    const updatingSchemaUrl = updating?.schemaUrl;
+    const isOldEmpty = oldSchemaUrl === undefined || oldSchemaUrl === '';
+    const isUpdatingEmpty = updatingSchemaUrl === undefined || updatingSchemaUrl === '';
+    if (isOldEmpty) {
+        return updatingSchemaUrl;
+    }
+    if (isUpdatingEmpty) {
+        return oldSchemaUrl;
+    }
+    if (oldSchemaUrl === updatingSchemaUrl) {
+        return oldSchemaUrl;
+    }
+    diag.warn('Schema URL merge conflict: old resource has "%s", updating resource has "%s". Resulting resource will have undefined Schema URL.', oldSchemaUrl, updatingSchemaUrl);
+    return undefined;
 }
 
 /*
@@ -99448,6 +104341,59 @@ const ExceptionEventName = 'exception';
  * SPDX-License-Identifier: Apache-2.0
  */
 /**
+ * Well-known symbol used by Node.js `util.inspect` (and `console.*`) to
+ * render an object via a custom representation. Defined as a global Symbol
+ * so it works without importing from `node:util`, keeping this module safe
+ * for browser builds (where the symbol is simply never looked up).
+ */
+const inspectCustom = Symbol.for('nodejs.util.inspect.custom');
+/**
+ * Collect a Resource's settled attributes without touching the
+ * `attributes` getter, which emits diag.error/debug entries when async
+ * attribute detectors are still pending. Promise-like (unsettled)
+ * entries are silently skipped so logging a Span/Tracer/Provider during
+ * startup doesn't recurse through the diag pipeline.
+ */
+function settledResourceAttributes(resource) {
+    const attrs = {};
+    for (const [k, v] of resource.getRawAttributes()) {
+        if (typeof v?.then === 'function') {
+            continue;
+        }
+        if (v != null) {
+            attrs[k] ??= v;
+        }
+    }
+    return attrs;
+}
+/**
+ * Build a class-tagged inspect representation. Returns a stub like
+ * `[ClassName]` once the recursion budget is exhausted, otherwise returns
+ * `ClassName <inspected payload>` so nested fields keep proper coloring,
+ * indentation, and depth handling. In environments that don't supply an
+ * `inspect` callback (e.g. browsers), falls back to returning the raw
+ * payload object.
+ */
+function formatInspect(className, payload, depth, options, inspect) {
+    if (typeof depth === 'number' && depth < 0) {
+        const tag = `[${className}]`;
+        return options?.stylize ? options.stylize(tag, 'special') : tag;
+    }
+    if (typeof inspect !== 'function' || !options) {
+        return payload;
+    }
+    const childOptions = {
+        ...options,
+        depth: options.depth == null ? options.depth : options.depth - 1,
+    };
+    return `${className} ${inspect(payload, childOptions)}`;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
  * This class represents a span.
  */
 class SpanImpl {
@@ -99486,18 +104432,22 @@ class SpanImpl {
     constructor(opts) {
         const now = Date.now();
         this._spanContext = opts.spanContext;
-        this._performanceStartTime = otperformance.now();
+        this._performanceStartTime = otperformance$2.now();
         this._performanceOffset =
-            now - (this._performanceStartTime + otperformance.timeOrigin);
+            now - (this._performanceStartTime + otperformance$2.timeOrigin);
         this._startTimeProvided = opts.startTime != null;
         this._spanLimits = opts.spanLimits;
         this._attributeValueLengthLimit =
-            this._spanLimits.attributeValueLengthLimit || 0;
+            this._spanLimits.attributeValueLengthLimit ?? 0;
         this._spanProcessor = opts.spanProcessor;
         this.name = opts.name;
         this.parentSpanContext = opts.parentSpanContext;
         this.kind = opts.kind;
-        this.links = opts.links || [];
+        if (opts.links) {
+            for (const link of opts.links) {
+                this.addLink(link);
+            }
+        }
         this.startTime = this._getTime(opts.startTime ?? now);
         this.resource = opts.resource;
         this.instrumentationScope = opts.scope;
@@ -99517,7 +104467,7 @@ class SpanImpl {
             diag.warn(`Invalid attribute key: ${key}`);
             return this;
         }
-        if (!isAttributeValue(value)) {
+        if (!isAttributeValue$1(value)) {
             diag.warn(`Invalid attribute value set for key: ${key}`);
             return this;
         }
@@ -99536,8 +104486,10 @@ class SpanImpl {
         return this;
     }
     setAttributes(attributes) {
-        for (const [k, v] of Object.entries(attributes)) {
-            this.setAttribute(k, v);
+        for (const key in attributes) {
+            if (Object.prototype.hasOwnProperty.call(attributes, key)) {
+                this.setAttribute(key, attributes[key]);
+            }
         }
         return this;
     }
@@ -99565,41 +104517,108 @@ class SpanImpl {
             this.events.shift();
             this._droppedEventsCount++;
         }
-        if (isTimeInput(attributesOrStartTime)) {
-            if (!isTimeInput(timeStamp)) {
+        if (isTimeInput$1(attributesOrStartTime)) {
+            if (!isTimeInput$1(timeStamp)) {
                 timeStamp = attributesOrStartTime;
             }
             attributesOrStartTime = undefined;
         }
-        const attributes = sanitizeAttributes(attributesOrStartTime);
+        const sanitized = sanitizeAttributes$1(attributesOrStartTime);
+        const { attributePerEventCountLimit } = this._spanLimits;
+        const attributes = {};
+        let droppedAttributesCount = 0;
+        let eventAttributesCount = 0;
+        for (const attr in sanitized) {
+            if (!Object.prototype.hasOwnProperty.call(sanitized, attr)) {
+                continue;
+            }
+            const attrVal = sanitized[attr];
+            if (attributePerEventCountLimit !== undefined &&
+                eventAttributesCount >= attributePerEventCountLimit) {
+                droppedAttributesCount++;
+                continue;
+            }
+            attributes[attr] = this._truncateToSize(attrVal);
+            eventAttributesCount++;
+        }
         this.events.push({
             name,
             attributes,
             time: this._getTime(timeStamp),
-            droppedAttributesCount: 0,
+            droppedAttributesCount,
         });
         return this;
     }
     addLink(link) {
-        this.links.push(link);
+        if (this._isSpanEnded())
+            return this;
+        const { linkCountLimit } = this._spanLimits;
+        if (linkCountLimit === 0) {
+            this._droppedLinksCount++;
+            return this;
+        }
+        if (linkCountLimit !== undefined && this.links.length >= linkCountLimit) {
+            if (this._droppedLinksCount === 0) {
+                diag.debug('Dropping extra links.');
+            }
+            this.links.shift();
+            this._droppedLinksCount++;
+        }
+        const { attributePerLinkCountLimit } = this._spanLimits;
+        const sanitized = sanitizeAttributes$1(link.attributes);
+        const attributes = {};
+        let droppedAttributesCount = 0;
+        let linkAttributesCount = 0;
+        for (const attr in sanitized) {
+            if (!Object.prototype.hasOwnProperty.call(sanitized, attr)) {
+                continue;
+            }
+            const attrVal = sanitized[attr];
+            if (attributePerLinkCountLimit !== undefined &&
+                linkAttributesCount >= attributePerLinkCountLimit) {
+                droppedAttributesCount++;
+                continue;
+            }
+            attributes[attr] = this._truncateToSize(attrVal);
+            linkAttributesCount++;
+        }
+        const processedLink = { context: link.context };
+        if (linkAttributesCount > 0) {
+            processedLink.attributes = attributes;
+        }
+        if (droppedAttributesCount > 0) {
+            processedLink.droppedAttributesCount = droppedAttributesCount;
+        }
+        this.links.push(processedLink);
         return this;
     }
     addLinks(links) {
-        this.links.push(...links);
+        for (const link of links) {
+            this.addLink(link);
+        }
         return this;
     }
     setStatus(status) {
         if (this._isSpanEnded())
             return this;
-        this.status = { ...status };
+        if (status.code === SpanStatusCode.UNSET)
+            return this;
+        if (this.status.code === SpanStatusCode.OK)
+            return this;
+        const newStatus = { code: status.code };
         // When using try-catch, the caught "error" is of type `any`. When then assigning `any` to `status.message`,
         // TypeScript will not error. While this can happen during use of any API, it is more common on Span#setStatus()
         // as it's likely used in a catch-block. Therefore, we validate if `status.message` is actually a string, null, or
         // undefined to avoid an incorrect type causing issues downstream.
-        if (this.status.message != null && typeof status.message !== 'string') {
-            diag.warn(`Dropping invalid status.message of type '${typeof status.message}', expected 'string'`);
-            delete this.status.message;
+        if (status.code === SpanStatusCode.ERROR) {
+            if (typeof status.message === 'string') {
+                newStatus.message = status.message;
+            }
+            else if (status.message != null) {
+                diag.warn(`Dropping invalid status.message of type '${typeof status.message}', expected 'string'`);
+            }
         }
+        this.status = newStatus;
         return this;
     }
     updateName(name) {
@@ -99614,7 +104633,7 @@ class SpanImpl {
             return;
         }
         this.endTime = this._getTime(endTime);
-        this._duration = hrTimeDuration(this.startTime, this.endTime);
+        this._duration = hrTimeDuration$1(this.startTime, this.endTime);
         if (this._duration[0] < 0) {
             diag.warn('Inconsistent start and end time, startTime > endTime. Setting span duration to 0ms.', this.startTime, this.endTime);
             this.endTime = this.startTime.slice();
@@ -99622,6 +104641,9 @@ class SpanImpl {
         }
         if (this._droppedEventsCount > 0) {
             diag.warn(`Dropped ${this._droppedEventsCount} events because eventCountLimit reached`);
+        }
+        if (this._droppedLinksCount > 0) {
+            diag.warn(`Dropped ${this._droppedLinksCount} links because linkCountLimit reached`);
         }
         if (this._spanProcessor.onEnding) {
             this._spanProcessor.onEnding(this);
@@ -99631,27 +104653,27 @@ class SpanImpl {
         this._spanProcessor.onEnd(this);
     }
     _getTime(inp) {
-        if (typeof inp === 'number' && inp <= otperformance.now()) {
+        if (typeof inp === 'number' && inp <= otperformance$2.now()) {
             // must be a performance timestamp
             // apply correction and convert to hrtime
-            return hrTime(inp + this._performanceOffset);
+            return hrTime$2(inp + this._performanceOffset);
         }
         if (typeof inp === 'number') {
-            return millisToHrTime(inp);
+            return millisToHrTime$2(inp);
         }
         if (inp instanceof Date) {
-            return millisToHrTime(inp.getTime());
+            return millisToHrTime$2(inp.getTime());
         }
-        if (isTimeInputHrTime(inp)) {
+        if (isTimeInputHrTime$2(inp)) {
             return inp;
         }
         if (this._startTimeProvided) {
             // if user provided a time for the start manually
             // we can't use duration to calculate event/end times
-            return millisToHrTime(Date.now());
+            return millisToHrTime$2(Date.now());
         }
-        const msDuration = otperformance.now() - this._performanceStartTime;
-        return addHrTimes(this.startTime, millisToHrTime(msDuration));
+        const msDuration = otperformance$2.now() - this._performanceStartTime;
+        return addHrTimes$2(this.startTime, millisToHrTime$2(msDuration));
     }
     isRecording() {
         return this._ended === false;
@@ -99745,6 +104767,28 @@ class SpanImpl {
         // Other types, no need to apply value length limit
         return value;
     }
+    [inspectCustom](depth, options, inspect) {
+        const payload = {
+            name: this.name,
+            kind: this.kind,
+            spanContext: this._spanContext,
+            parentSpanContext: this.parentSpanContext,
+            status: this.status,
+            startTime: this.startTime,
+            endTime: this.endTime,
+            duration: this._duration,
+            ended: this._ended,
+            attributes: this.attributes,
+            events: this.events,
+            links: this.links,
+            droppedAttributesCount: this._droppedAttributesCount,
+            droppedEventsCount: this._droppedEventsCount,
+            droppedLinksCount: this._droppedLinksCount,
+            instrumentationScope: this.instrumentationScope,
+            resource: { attributes: settledResourceAttributes(this.resource) },
+        };
+        return formatInspect('SpanImpl', payload, depth, options, inspect);
+    }
 }
 
 /*
@@ -99778,517 +104822,46 @@ var SamplingDecision;
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-/** Sampler that samples no traces. */
-class AlwaysOffSampler {
-    shouldSample() {
-        return {
-            decision: SamplingDecision.NOT_RECORD,
-        };
-    }
-    toString() {
-        return 'AlwaysOffSampler';
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/** Sampler that samples all traces. */
-class AlwaysOnSampler {
-    shouldSample() {
-        return {
-            decision: SamplingDecision.RECORD_AND_SAMPLED,
-        };
-    }
-    toString() {
-        return 'AlwaysOnSampler';
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/**
- * A composite sampler that either respects the parent span's sampling decision
- * or delegates to `delegateSampler` for root spans.
- */
-class ParentBasedSampler {
-    _root;
-    _remoteParentSampled;
-    _remoteParentNotSampled;
-    _localParentSampled;
-    _localParentNotSampled;
-    constructor(config) {
-        this._root = config.root;
-        if (!this._root) {
-            globalErrorHandler(new Error('ParentBasedSampler must have a root sampler configured'));
-            this._root = new AlwaysOnSampler();
-        }
-        this._remoteParentSampled =
-            config.remoteParentSampled ?? new AlwaysOnSampler();
-        this._remoteParentNotSampled =
-            config.remoteParentNotSampled ?? new AlwaysOffSampler();
-        this._localParentSampled =
-            config.localParentSampled ?? new AlwaysOnSampler();
-        this._localParentNotSampled =
-            config.localParentNotSampled ?? new AlwaysOffSampler();
-    }
-    shouldSample(context, traceId, spanName, spanKind, attributes, links) {
-        const parentContext = trace.getSpanContext(context);
-        if (!parentContext || !isSpanContextValid(parentContext)) {
-            return this._root.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-        }
-        if (parentContext.isRemote) {
-            if (parentContext.traceFlags & TraceFlags.SAMPLED) {
-                return this._remoteParentSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-            }
-            return this._remoteParentNotSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-        }
-        if (parentContext.traceFlags & TraceFlags.SAMPLED) {
-            return this._localParentSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-        }
-        return this._localParentNotSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-    }
-    toString() {
-        return `ParentBased{root=${this._root.toString()}, remoteParentSampled=${this._remoteParentSampled.toString()}, remoteParentNotSampled=${this._remoteParentNotSampled.toString()}, localParentSampled=${this._localParentSampled.toString()}, localParentNotSampled=${this._localParentNotSampled.toString()}}`;
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/** Sampler that samples a given fraction of traces based of trace id deterministically. */
-class TraceIdRatioBasedSampler {
-    _ratio;
-    _upperBound;
-    constructor(ratio = 0) {
-        this._ratio = this._normalize(ratio);
-        this._upperBound = Math.floor(this._ratio * 0xffffffff);
-    }
-    shouldSample(context, traceId) {
-        return {
-            decision: isValidTraceId(traceId) && this._accumulate(traceId) < this._upperBound
-                ? SamplingDecision.RECORD_AND_SAMPLED
-                : SamplingDecision.NOT_RECORD,
-        };
-    }
-    toString() {
-        return `TraceIdRatioBased{${this._ratio}}`;
-    }
-    _normalize(ratio) {
-        if (typeof ratio !== 'number' || isNaN(ratio))
-            return 0;
-        return ratio >= 1 ? 1 : ratio <= 0 ? 0 : ratio;
-    }
-    _accumulate(traceId) {
-        let accumulation = 0;
-        for (let i = 0; i < traceId.length / 8; i++) {
-            const pos = i * 8;
-            const part = parseInt(traceId.slice(pos, pos + 8), 16);
-            accumulation = (accumulation ^ part) >>> 0;
-        }
-        return accumulation;
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-var TracesSamplerValues;
-(function (TracesSamplerValues) {
-    TracesSamplerValues["AlwaysOff"] = "always_off";
-    TracesSamplerValues["AlwaysOn"] = "always_on";
-    TracesSamplerValues["ParentBasedAlwaysOff"] = "parentbased_always_off";
-    TracesSamplerValues["ParentBasedAlwaysOn"] = "parentbased_always_on";
-    TracesSamplerValues["ParentBasedTraceIdRatio"] = "parentbased_traceidratio";
-    TracesSamplerValues["TraceIdRatio"] = "traceidratio";
-})(TracesSamplerValues || (TracesSamplerValues = {}));
-const DEFAULT_RATIO = 1;
-/**
- * Load default configuration. For fields with primitive values, any user-provided
- * value will override the corresponding default value. For fields with
- * non-primitive values (like `spanLimits`), the user-provided value will be
- * used to extend the default value.
- */
-// object needs to be wrapped in this function and called when needed otherwise
-// envs are parsed before tests are ran - causes tests using these envs to fail
-function loadDefaultConfig() {
-    return {
-        sampler: buildSamplerFromEnv(),
-        forceFlushTimeoutMillis: 30000,
-        generalLimits: {
-            attributeValueLengthLimit: getNumberFromEnv('OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT') ?? Infinity,
-            attributeCountLimit: getNumberFromEnv('OTEL_ATTRIBUTE_COUNT_LIMIT') ?? 128,
-        },
-        spanLimits: {
-            attributeValueLengthLimit: getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT') ?? Infinity,
-            attributeCountLimit: getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT') ?? 128,
-            linkCountLimit: getNumberFromEnv('OTEL_SPAN_LINK_COUNT_LIMIT') ?? 128,
-            eventCountLimit: getNumberFromEnv('OTEL_SPAN_EVENT_COUNT_LIMIT') ?? 128,
-            attributePerEventCountLimit: getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_PER_EVENT_COUNT_LIMIT') ?? 128,
-            attributePerLinkCountLimit: getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_PER_LINK_COUNT_LIMIT') ?? 128,
-        },
-    };
-}
-/**
- * Based on environment, builds a sampler, complies with specification.
- */
-function buildSamplerFromEnv() {
-    const sampler = getStringFromEnv('OTEL_TRACES_SAMPLER') ??
-        TracesSamplerValues.ParentBasedAlwaysOn;
-    switch (sampler) {
-        case TracesSamplerValues.AlwaysOn:
-            return new AlwaysOnSampler();
-        case TracesSamplerValues.AlwaysOff:
-            return new AlwaysOffSampler();
-        case TracesSamplerValues.ParentBasedAlwaysOn:
-            return new ParentBasedSampler({
-                root: new AlwaysOnSampler(),
-            });
-        case TracesSamplerValues.ParentBasedAlwaysOff:
-            return new ParentBasedSampler({
-                root: new AlwaysOffSampler(),
-            });
-        case TracesSamplerValues.TraceIdRatio:
-            return new TraceIdRatioBasedSampler(getSamplerProbabilityFromEnv());
-        case TracesSamplerValues.ParentBasedTraceIdRatio:
-            return new ParentBasedSampler({
-                root: new TraceIdRatioBasedSampler(getSamplerProbabilityFromEnv()),
-            });
-        default:
-            diag.error(`OTEL_TRACES_SAMPLER value "${sampler}" invalid, defaulting to "${TracesSamplerValues.ParentBasedAlwaysOn}".`);
-            return new ParentBasedSampler({
-                root: new AlwaysOnSampler(),
-            });
-    }
-}
-function getSamplerProbabilityFromEnv() {
-    const probability = getNumberFromEnv('OTEL_TRACES_SAMPLER_ARG');
-    if (probability == null) {
-        diag.error(`OTEL_TRACES_SAMPLER_ARG is blank, defaulting to ${DEFAULT_RATIO}.`);
-        return DEFAULT_RATIO;
-    }
-    if (probability < 0 || probability > 1) {
-        diag.error(`OTEL_TRACES_SAMPLER_ARG=${probability} was given, but it is out of range ([0..1]), defaulting to ${DEFAULT_RATIO}.`);
-        return DEFAULT_RATIO;
-    }
-    return probability;
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-const DEFAULT_ATTRIBUTE_COUNT_LIMIT = 128;
-const DEFAULT_ATTRIBUTE_VALUE_LENGTH_LIMIT = Infinity;
-/**
- * Function to merge Default configuration (as specified in './config') with
- * user provided configurations.
- */
-function mergeConfig(userConfig) {
-    const perInstanceDefaults = {
-        sampler: buildSamplerFromEnv(),
-    };
-    const DEFAULT_CONFIG = loadDefaultConfig();
-    const target = Object.assign({}, DEFAULT_CONFIG, perInstanceDefaults, userConfig);
-    target.generalLimits = Object.assign({}, DEFAULT_CONFIG.generalLimits, userConfig.generalLimits || {});
-    target.spanLimits = Object.assign({}, DEFAULT_CONFIG.spanLimits, userConfig.spanLimits || {});
-    return target;
-}
-/**
- * When general limits are provided and model specific limits are not,
- * configures the model specific limits by using the values from the general ones.
- * @param userConfig User provided tracer configuration
- */
-function reconfigureLimits(userConfig) {
-    const spanLimits = Object.assign({}, userConfig.spanLimits);
-    /**
-     * Reassign span attribute count limit to use first non null value defined by user or use default value
-     */
-    spanLimits.attributeCountLimit =
-        userConfig.spanLimits?.attributeCountLimit ??
-            userConfig.generalLimits?.attributeCountLimit ??
-            getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT') ??
-            getNumberFromEnv('OTEL_ATTRIBUTE_COUNT_LIMIT') ??
-            DEFAULT_ATTRIBUTE_COUNT_LIMIT;
-    /**
-     * Reassign span attribute value length limit to use first non null value defined by user or use default value
-     */
-    spanLimits.attributeValueLengthLimit =
-        userConfig.spanLimits?.attributeValueLengthLimit ??
-            userConfig.generalLimits?.attributeValueLengthLimit ??
-            getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT') ??
-            getNumberFromEnv('OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT') ??
-            DEFAULT_ATTRIBUTE_VALUE_LENGTH_LIMIT;
-    return Object.assign({}, userConfig, { spanLimits });
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/**
- * Implementation of the {@link SpanProcessor} that batches spans exported by
- * the SDK then pushes them to the exporter pipeline.
- */
-class BatchSpanProcessorBase {
-    _maxExportBatchSize;
-    _maxQueueSize;
-    _scheduledDelayMillis;
-    _exportTimeoutMillis;
-    _exporter;
-    _isExporting = false;
-    _finishedSpans = [];
-    _timer;
-    _shutdownOnce;
-    _droppedSpansCount = 0;
-    constructor(exporter, config) {
-        this._exporter = exporter;
-        this._maxExportBatchSize =
-            typeof config?.maxExportBatchSize === 'number'
-                ? config.maxExportBatchSize
-                : (getNumberFromEnv('OTEL_BSP_MAX_EXPORT_BATCH_SIZE') ?? 512);
-        this._maxQueueSize =
-            typeof config?.maxQueueSize === 'number'
-                ? config.maxQueueSize
-                : (getNumberFromEnv('OTEL_BSP_MAX_QUEUE_SIZE') ?? 2048);
-        this._scheduledDelayMillis =
-            typeof config?.scheduledDelayMillis === 'number'
-                ? config.scheduledDelayMillis
-                : (getNumberFromEnv('OTEL_BSP_SCHEDULE_DELAY') ?? 5000);
-        this._exportTimeoutMillis =
-            typeof config?.exportTimeoutMillis === 'number'
-                ? config.exportTimeoutMillis
-                : (getNumberFromEnv('OTEL_BSP_EXPORT_TIMEOUT') ?? 30000);
-        this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
-        if (this._maxExportBatchSize > this._maxQueueSize) {
-            diag.warn('BatchSpanProcessor: maxExportBatchSize must be smaller or equal to maxQueueSize, setting maxExportBatchSize to match maxQueueSize');
-            this._maxExportBatchSize = this._maxQueueSize;
-        }
-    }
-    forceFlush() {
-        if (this._shutdownOnce.isCalled) {
-            return this._shutdownOnce.promise;
-        }
-        return this._flushAll();
-    }
-    // does nothing.
-    onStart(_span, _parentContext) { }
-    onEnd(span) {
-        if (this._shutdownOnce.isCalled) {
-            return;
-        }
-        if ((span.spanContext().traceFlags & TraceFlags.SAMPLED) === 0) {
-            return;
-        }
-        this._addToBuffer(span);
-    }
-    shutdown() {
-        return this._shutdownOnce.call();
-    }
-    _shutdown() {
-        return Promise.resolve()
-            .then(() => {
-            return this.onShutdown();
-        })
-            .then(() => {
-            return this._flushAll();
-        })
-            .then(() => {
-            return this._exporter.shutdown();
-        });
-    }
-    /** Add a span in the buffer. */
-    _addToBuffer(span) {
-        if (this._finishedSpans.length >= this._maxQueueSize) {
-            // limit reached, drop span
-            if (this._droppedSpansCount === 0) {
-                diag.debug('maxQueueSize reached, dropping spans');
-            }
-            this._droppedSpansCount++;
-            return;
-        }
-        if (this._droppedSpansCount > 0) {
-            // some spans were dropped, log once with count of spans dropped
-            diag.warn(`Dropped ${this._droppedSpansCount} spans because maxQueueSize reached`);
-            this._droppedSpansCount = 0;
-        }
-        this._finishedSpans.push(span);
-        this._maybeStartTimer();
-    }
-    /**
-     * Send all spans to the exporter respecting the batch size limit
-     * This function is used only on forceFlush or shutdown,
-     * for all other cases _flush should be used
-     * */
-    _flushAll() {
-        return new Promise((resolve, reject) => {
-            const promises = [];
-            // calculate number of batches
-            const count = Math.ceil(this._finishedSpans.length / this._maxExportBatchSize);
-            for (let i = 0, j = count; i < j; i++) {
-                promises.push(this._flushOneBatch());
-            }
-            Promise.all(promises)
-                .then(() => {
-                resolve();
-            })
-                .catch(reject);
-        });
-    }
-    _flushOneBatch() {
-        this._clearTimer();
-        if (this._finishedSpans.length === 0) {
-            return Promise.resolve();
-        }
-        return new Promise((resolve, reject) => {
-            const timer = setTimeout(() => {
-                // don't wait anymore for export, this way the next batch can start
-                reject(new Error('Timeout'));
-            }, this._exportTimeoutMillis);
-            // prevent downstream exporter calls from generating spans
-            context.with(suppressTracing(context.active()), () => {
-                // Reset the finished spans buffer here because the next invocations of the _flush method
-                // could pass the same finished spans to the exporter if the buffer is cleared
-                // outside the execution of this callback.
-                let spans;
-                if (this._finishedSpans.length <= this._maxExportBatchSize) {
-                    spans = this._finishedSpans;
-                    this._finishedSpans = [];
-                }
-                else {
-                    spans = this._finishedSpans.splice(0, this._maxExportBatchSize);
-                }
-                const doExport = () => this._exporter.export(spans, result => {
-                    clearTimeout(timer);
-                    if (result.code === ExportResultCode.SUCCESS) {
-                        resolve();
-                    }
-                    else {
-                        reject(result.error ??
-                            new Error('BatchSpanProcessor: span export failed'));
-                    }
-                });
-                let pendingResources = null;
-                for (let i = 0, len = spans.length; i < len; i++) {
-                    const span = spans[i];
-                    if (span.resource.asyncAttributesPending &&
-                        span.resource.waitForAsyncAttributes) {
-                        pendingResources ??= [];
-                        pendingResources.push(span.resource.waitForAsyncAttributes());
-                    }
-                }
-                // Avoid scheduling a promise to make the behavior more predictable and easier to test
-                if (pendingResources === null) {
-                    doExport();
-                }
-                else {
-                    Promise.all(pendingResources).then(doExport, err => {
-                        globalErrorHandler(err);
-                        reject(err);
-                    });
-                }
-            });
-        });
-    }
-    _maybeStartTimer() {
-        if (this._isExporting)
-            return;
-        const flush = () => {
-            this._isExporting = true;
-            this._flushOneBatch()
-                .finally(() => {
-                this._isExporting = false;
-                if (this._finishedSpans.length > 0) {
-                    this._clearTimer();
-                    this._maybeStartTimer();
-                }
-            })
-                .catch(e => {
-                this._isExporting = false;
-                globalErrorHandler(e);
-            });
-        };
-        // we only wait if the queue doesn't have enough elements yet
-        if (this._finishedSpans.length >= this._maxExportBatchSize) {
-            return flush();
-        }
-        if (this._timer !== undefined)
-            return;
-        this._timer = setTimeout(() => flush(), this._scheduledDelayMillis);
-        // depending on runtime, this may be a 'number' or NodeJS.Timeout
-        if (typeof this._timer !== 'number') {
-            this._timer.unref();
-        }
-    }
-    _clearTimer() {
-        if (this._timer !== undefined) {
-            clearTimeout(this._timer);
-            this._timer = undefined;
-        }
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class BatchSpanProcessor extends BatchSpanProcessorBase {
-    onShutdown() { }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-const SPAN_ID_BYTES = 8;
-const TRACE_ID_BYTES = 16;
-class RandomIdGenerator {
-    /**
-     * Returns a random 16-byte trace ID formatted/encoded as a 32 lowercase hex
-     * characters corresponding to 128 bits.
-     */
-    generateTraceId = getIdGenerator(TRACE_ID_BYTES);
-    /**
-     * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
-     * characters corresponding to 64 bits.
-     */
-    generateSpanId = getIdGenerator(SPAN_ID_BYTES);
-}
-const SHARED_BUFFER = Buffer.allocUnsafe(TRACE_ID_BYTES);
-function getIdGenerator(bytes) {
-    return function generateId() {
-        for (let i = 0; i < bytes / 4; i++) {
-            // unsigned right shift drops decimal part of the number
-            // it is required because if a number between 2**32 and 2**32 - 1 is generated, an out of range error is thrown by writeUInt32BE
-            SHARED_BUFFER.writeUInt32BE((Math.random() * 2 ** 32) >>> 0, i * 4);
-        }
-        // If buffer is all 0, set the last byte to 1 to guarantee a valid w3c id is generated
-        for (let i = 0; i < bytes; i++) {
-            if (SHARED_BUFFER[i] > 0) {
-                break;
-            }
-            else if (i === bytes - 1) {
-                SHARED_BUFFER[bytes - 1] = 1;
-            }
-        }
-        return SHARED_BUFFER.toString('hex', 0, bytes);
-    };
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
 /*
  * This file contains a copy of unstable semantic convention definitions
  * used by this package.
  * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
  */
+/**
+ * A name uniquely identifying the instance of the OpenTelemetry component within its containing SDK instance.
+ *
+ * @example otlp_grpc_span_exporter/0
+ * @example custom-name
+ *
+ * @note Implementations **SHOULD** ensure a low cardinality for this attribute, even across application or SDK restarts.
+ * E.g. implementations **MUST NOT** use UUIDs as values for this attribute.
+ *
+ * Implementations **MAY** achieve these goals by following a `<otel.component.type>/<instance-counter>` pattern, e.g. `batching_span_processor/0`.
+ * Hereby `otel.component.type` refers to the corresponding attribute value of the component.
+ *
+ * The value of `instance-counter` **MAY** be automatically assigned by the component and uniqueness within the enclosing SDK instance **MUST** be guaranteed.
+ * For example, `<instance-counter>` **MAY** be implemented by using a monotonically increasing counter (starting with `0`), which is incremented every time an
+ * instance of the given component type is started.
+ *
+ * With this implementation, for example the first Batching Span Processor would have `batching_span_processor/0`
+ * as `otel.component.name`, the second one `batching_span_processor/1` and so on.
+ * These values will therefore be reused in the case of an application restart.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const ATTR_OTEL_COMPONENT_NAME = 'otel.component.name';
+/**
+ * A name identifying the type of the OpenTelemetry component.
+ *
+ * @example batching_span_processor
+ * @example com.example.MySpanExporter
+ *
+ * @note If none of the standardized values apply, implementations **SHOULD** use the language-defined name of the type.
+ * E.g. for Java the fully qualified classname **SHOULD** be used in this case.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const ATTR_OTEL_COMPONENT_TYPE = 'otel.component.type';
 /**
  * Determines whether the span has a parent span, and if so, [whether it is a remote parent](https://opentelemetry.io/docs/specs/otel/trace/api/#isremote)
  *
@@ -100301,6 +104874,31 @@ const ATTR_OTEL_SPAN_PARENT_ORIGIN = 'otel.span.parent.origin';
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 const ATTR_OTEL_SPAN_SAMPLING_RESULT = 'otel.span.sampling_result';
+/**
+ * The number of spans for which the processing has finished, either successful or failed.
+ *
+ * @note For successful processing, `error.type` **MUST NOT** be set. For failed processing, `error.type` **MUST** contain the failure cause.
+ * For the SDK Simple and Batching Span Processor a span is considered to be processed already when it has been submitted to the exporter, not when the corresponding export call has finished.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const METRIC_OTEL_SDK_PROCESSOR_SPAN_PROCESSED = 'otel.sdk.processor.span.processed';
+/**
+ * The maximum number of spans the queue of a given instance of an SDK span processor can hold.
+ *
+ * @note Only applies to span processors which use a queue, e.g. the SDK Batching Span Processor.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const METRIC_OTEL_SDK_PROCESSOR_SPAN_QUEUE_CAPACITY = 'otel.sdk.processor.span.queue.capacity';
+/**
+ * The number of spans in the queue of a given instance of an SDK span processor.
+ *
+ * @note Only applies to span processors which use a queue, e.g. the SDK Batching Span Processor.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const METRIC_OTEL_SDK_PROCESSOR_SPAN_QUEUE_SIZE = 'otel.sdk.processor.span.queue.size';
 /**
  * The number of created spans with `recording=true` for which the end operation has not been called yet.
  *
@@ -100315,6 +104913,14 @@ const METRIC_OTEL_SDK_SPAN_LIVE = 'otel.sdk.span.live';
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 const METRIC_OTEL_SDK_SPAN_STARTED = 'otel.sdk.span.started';
+/**
+ * Enum value "batching_span_processor" for attribute {@link ATTR_OTEL_COMPONENT_TYPE}.
+ *
+ * The builtin SDK batching span processor
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const OTEL_COMPONENT_TYPE_VALUE_BATCHING_SPAN_PROCESSOR = 'batching_span_processor';
 
 /**
  * Generates `otel.sdk.span.*` metrics.
@@ -100373,21 +104979,10 @@ function samplingDecisionToString(decision) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // this is autogenerated file, see scripts/version-update.js
-const VERSION = '2.6.0';
+const VERSION = '2.11.0';
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -100398,7 +104993,6 @@ const VERSION = '2.6.0';
  */
 class Tracer {
     _sampler;
-    _generalLimits;
     _spanLimits;
     _idGenerator;
     instrumentationScope;
@@ -100408,18 +105002,14 @@ class Tracer {
     /**
      * Constructs a new Tracer instance.
      */
-    constructor(instrumentationScope, config, resource, spanProcessor) {
-        const localConfig = mergeConfig(config);
-        this._sampler = localConfig.sampler;
-        this._generalLimits = localConfig.generalLimits;
-        this._spanLimits = localConfig.spanLimits;
-        this._idGenerator = config.idGenerator || new RandomIdGenerator();
-        this._resource = resource;
-        this._spanProcessor = spanProcessor;
+    constructor(instrumentationScope, options) {
         this.instrumentationScope = instrumentationScope;
-        const meter = localConfig.meterProvider
-            ? localConfig.meterProvider.getMeter('@opentelemetry/sdk-trace', VERSION)
-            : createNoopMeter();
+        this._sampler = options.sampler;
+        this._spanLimits = options.spanLimits;
+        this._resource = options.resource;
+        this._idGenerator = options.idGenerator;
+        this._spanProcessor = options.spanProcessor;
+        const meter = options.meterProvider.getMeter('@opentelemetry/sdk-trace', VERSION);
         this._tracerMetrics = new TracerMetrics(meter);
     }
     /**
@@ -100432,7 +105022,7 @@ class Tracer {
             context$1 = trace.deleteSpan(context$1);
         }
         const parentSpan = trace.getSpan(context$1);
-        if (isTracingSuppressed(context$1)) {
+        if (isTracingSuppressed$1(context$1)) {
             diag.debug('Instrumentation suppressed, returning Noop Span');
             const nonRecordingSpan = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
             return nonRecordingSpan;
@@ -100457,10 +105047,10 @@ class Tracer {
         const links = (options.links ?? []).map(link => {
             return {
                 context: link.context,
-                attributes: sanitizeAttributes(link.attributes),
+                attributes: sanitizeAttributes$1(link.attributes),
             };
         });
-        const attributes = sanitizeAttributes(options.attributes);
+        const attributes = sanitizeAttributes$1(options.attributes);
         // make sampling decision
         const samplingResult = this._sampler.shouldSample(context$1, traceId, name, spanKind, attributes, links);
         const recordEndMetrics = this._tracerMetrics.startSpan(parentSpanContext, samplingResult.decision);
@@ -100476,7 +105066,7 @@ class Tracer {
         }
         // Set initial span attributes. The attributes object may have been mutated
         // by the sampler, so we sanitize the merged attributes before setting them.
-        const initAttributes = sanitizeAttributes(Object.assign(attributes, samplingResult.attributes));
+        const initAttributes = sanitizeAttributes$1(Object.assign(attributes, samplingResult.attributes));
         const span = new SpanImpl({
             resource: this._resource,
             scope: this.instrumentationScope,
@@ -100518,13 +105108,13 @@ class Tracer {
         const contextWithSpanSet = trace.setSpan(parentContext, span);
         return context.with(contextWithSpanSet, fn, undefined, span);
     }
-    /** Returns the active {@link GeneralLimits}. */
-    getGeneralLimits() {
-        return this._generalLimits;
-    }
-    /** Returns the active {@link SpanLimits}. */
-    getSpanLimits() {
-        return this._spanLimits;
+    [inspectCustom](depth, options, inspect) {
+        const payload = {
+            instrumentationScope: this.instrumentationScope,
+            resource: { attributes: settledResourceAttributes(this._resource) },
+            spanLimits: this._spanLimits,
+        };
+        return formatInspect('Tracer', payload, depth, options, inspect);
     }
 }
 
@@ -100552,7 +105142,7 @@ class MultiSpanProcessor {
                 resolve();
             })
                 .catch(error => {
-                globalErrorHandler(error || new Error('MultiSpanProcessor: forceFlush failed'));
+                globalErrorHandler$2(error || new Error('MultiSpanProcessor: forceFlush failed'));
                 resolve();
             });
         });
@@ -100591,6 +105181,402 @@ class MultiSpanProcessor {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
+/** Sampler that samples no traces. */
+class AlwaysOffSampler {
+    shouldSample() {
+        return {
+            decision: SamplingDecision.NOT_RECORD,
+        };
+    }
+    toString() {
+        return 'AlwaysOffSampler';
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** Sampler that samples all traces. */
+class AlwaysOnSampler {
+    shouldSample() {
+        return {
+            decision: SamplingDecision.RECORD_AND_SAMPLED,
+        };
+    }
+    toString() {
+        return 'AlwaysOnSampler';
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * A composite sampler that either respects the parent span's sampling decision
+ * or delegates to `delegateSampler` for root spans.
+ */
+class ParentBasedSampler {
+    _root;
+    _remoteParentSampled;
+    _remoteParentNotSampled;
+    _localParentSampled;
+    _localParentNotSampled;
+    constructor(config) {
+        this._root = config.root;
+        if (!this._root) {
+            globalErrorHandler$2(new Error('ParentBasedSampler must have a root sampler configured'));
+            this._root = new AlwaysOnSampler();
+        }
+        this._remoteParentSampled =
+            config.remoteParentSampled ?? new AlwaysOnSampler();
+        this._remoteParentNotSampled =
+            config.remoteParentNotSampled ?? new AlwaysOffSampler();
+        this._localParentSampled =
+            config.localParentSampled ?? new AlwaysOnSampler();
+        this._localParentNotSampled =
+            config.localParentNotSampled ?? new AlwaysOffSampler();
+    }
+    shouldSample(context, traceId, spanName, spanKind, attributes, links) {
+        const parentContext = trace.getSpanContext(context);
+        if (!parentContext || !isSpanContextValid(parentContext)) {
+            return this._root.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+        }
+        if (parentContext.isRemote) {
+            if (parentContext.traceFlags & TraceFlags.SAMPLED) {
+                return this._remoteParentSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+            }
+            return this._remoteParentNotSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+        }
+        if (parentContext.traceFlags & TraceFlags.SAMPLED) {
+            return this._localParentSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+        }
+        return this._localParentNotSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+    }
+    toString() {
+        return `ParentBased{root=${this._root.toString()}, remoteParentSampled=${this._remoteParentSampled.toString()}, remoteParentNotSampled=${this._remoteParentNotSampled.toString()}, localParentSampled=${this._localParentSampled.toString()}, localParentNotSampled=${this._localParentNotSampled.toString()}}`;
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const componentCounter = new Map();
+class SpanProcessorMetrics {
+    processedSpans;
+    queueSize;
+    queueSizeCallback;
+    standardAttrs;
+    droppedAttrs;
+    constructor(componentType, meter, queueConfig) {
+        const counter = componentCounter.get(componentType) ?? 0;
+        componentCounter.set(componentType, counter + 1);
+        this.standardAttrs = {
+            [ATTR_OTEL_COMPONENT_TYPE]: componentType,
+            [ATTR_OTEL_COMPONENT_NAME]: `${componentType}/${counter}`,
+        };
+        this.droppedAttrs = {
+            ...this.standardAttrs,
+            [ATTR_ERROR_TYPE]: 'queue_full',
+        };
+        this.processedSpans = meter.createCounter(METRIC_OTEL_SDK_PROCESSOR_SPAN_PROCESSED, {
+            unit: '{span}',
+            description: 'The number of spans for which the processing has finished, either successful or failed.',
+        });
+        if (queueConfig) {
+            const { capacity, getQueueSize } = queueConfig;
+            const queueCapacity = meter.createUpDownCounter(METRIC_OTEL_SDK_PROCESSOR_SPAN_QUEUE_CAPACITY, {
+                unit: '{span}',
+                description: 'The maximum number of spans the queue of a given instance of an SDK span processor can hold.',
+            });
+            queueCapacity.add(capacity, this.standardAttrs);
+            this.queueSize = meter.createObservableUpDownCounter(METRIC_OTEL_SDK_PROCESSOR_SPAN_QUEUE_SIZE, {
+                unit: '{span}',
+                description: 'The number of spans in the queue of a given instance of an SDK span processor.',
+            });
+            this.queueSizeCallback = result => result.observe(getQueueSize(), this.standardAttrs);
+            this.queueSize.addCallback(this.queueSizeCallback);
+        }
+    }
+    dropSpans(count) {
+        this.processedSpans.add(count, this.droppedAttrs);
+    }
+    finishSpans(count, error) {
+        if (!error) {
+            this.processedSpans.add(count, this.standardAttrs);
+            return;
+        }
+        const attrs = {
+            ...this.standardAttrs,
+            [ATTR_ERROR_TYPE]: error.name,
+        };
+        this.processedSpans.add(count, attrs);
+    }
+    shutdown() {
+        if (this.queueSize && this.queueSizeCallback) {
+            this.queueSize.removeCallback(this.queueSizeCallback);
+        }
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Implementation of the {@link SpanProcessor} that batches spans exported by
+ * the SDK then pushes them to the exporter pipeline.
+ */
+class BatchSpanProcessorBase {
+    _maxExportBatchSize;
+    _maxQueueSize;
+    _scheduledDelayMillis;
+    _exportTimeoutMillis;
+    _exporter;
+    _metrics;
+    _isExporting = false;
+    _finishedSpans = [];
+    _timer;
+    _shutdownOnce;
+    _droppedSpansCount = 0;
+    constructor(options) {
+        this._exporter = options.exporter;
+        this._maxExportBatchSize = options.maxExportBatchSize ?? 512;
+        this._maxQueueSize = options.maxQueueSize ?? 2048;
+        this._scheduledDelayMillis = options.scheduledDelayMillis ?? 5000;
+        this._exportTimeoutMillis = options.exportTimeoutMillis ?? 30000;
+        this._shutdownOnce = new BindOnceFuture$2(this._shutdown, this);
+        if (this._maxExportBatchSize > this._maxQueueSize) {
+            diag.warn('BatchSpanProcessor: maxExportBatchSize must be smaller or equal to maxQueueSize, setting maxExportBatchSize to match maxQueueSize');
+            this._maxExportBatchSize = this._maxQueueSize;
+        }
+        const meter = options.selfObsMeterProvider
+            ? options.selfObsMeterProvider.getMeter('@opentelemetry/sdk-trace')
+            : createNoopMeter();
+        this._metrics = new SpanProcessorMetrics(OTEL_COMPONENT_TYPE_VALUE_BATCHING_SPAN_PROCESSOR, meter, {
+            capacity: this._maxQueueSize,
+            getQueueSize: () => this._finishedSpans.length,
+        });
+    }
+    forceFlush() {
+        if (this._shutdownOnce.isCalled) {
+            return this._shutdownOnce.promise;
+        }
+        return this._flushAll();
+    }
+    // does nothing.
+    onStart(_span, _parentContext) { }
+    onEnd(span) {
+        if (this._shutdownOnce.isCalled) {
+            return;
+        }
+        if ((span.spanContext().traceFlags & TraceFlags.SAMPLED) === 0) {
+            return;
+        }
+        this._addToBuffer(span);
+    }
+    shutdown() {
+        return this._shutdownOnce.call();
+    }
+    _shutdown() {
+        return Promise.resolve()
+            .then(() => {
+            return this.onShutdown();
+        })
+            .then(() => {
+            return this._flushAll();
+        })
+            .then(() => {
+            this._metrics.shutdown();
+            return this._exporter.shutdown();
+        });
+    }
+    /** Add a span in the buffer. */
+    _addToBuffer(span) {
+        if (this._finishedSpans.length >= this._maxQueueSize) {
+            // limit reached, drop span
+            if (this._droppedSpansCount === 0) {
+                diag.debug('maxQueueSize reached, dropping spans');
+            }
+            this._droppedSpansCount++;
+            this._metrics.dropSpans(1);
+            return;
+        }
+        if (this._droppedSpansCount > 0) {
+            // some spans were dropped, log once with count of spans dropped
+            diag.warn(`Dropped ${this._droppedSpansCount} spans because maxQueueSize reached`);
+            this._droppedSpansCount = 0;
+        }
+        this._finishedSpans.push(span);
+        this._maybeStartTimer();
+    }
+    /**
+     * Send all spans to the exporter respecting the batch size limit
+     * This function is used only on forceFlush or shutdown,
+     * for all other cases _flush should be used
+     * */
+    _flushAll() {
+        return new Promise((resolve, reject) => {
+            const promises = [];
+            // calculate number of batches
+            const count = Math.ceil(this._finishedSpans.length / this._maxExportBatchSize);
+            for (let i = 0, j = count; i < j; i++) {
+                promises.push(this._flushOneBatch());
+            }
+            Promise.all(promises)
+                .then(() => {
+                resolve();
+            })
+                .catch(reject);
+        });
+    }
+    _flushOneBatch() {
+        this._clearTimer();
+        if (this._finishedSpans.length === 0) {
+            return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                // don't wait anymore for export, this way the next batch can start
+                reject(new Error('Timeout'));
+            }, this._exportTimeoutMillis);
+            // prevent downstream exporter calls from generating spans
+            context.with(suppressTracing$2(context.active()), () => {
+                // Reset the finished spans buffer here because the next invocations of the _flush method
+                // could pass the same finished spans to the exporter if the buffer is cleared
+                // outside the execution of this callback.
+                let spans;
+                if (this._finishedSpans.length <= this._maxExportBatchSize) {
+                    spans = this._finishedSpans;
+                    this._finishedSpans = [];
+                }
+                else {
+                    spans = this._finishedSpans.splice(0, this._maxExportBatchSize);
+                }
+                const doExport = () => this._exporter.export(spans, result => {
+                    clearTimeout(timer);
+                    this._metrics.finishSpans(spans.length, result.error);
+                    if (result.code === ExportResultCode$3.SUCCESS) {
+                        resolve();
+                    }
+                    else {
+                        reject(result.error ??
+                            new Error('BatchSpanProcessor: span export failed'));
+                    }
+                });
+                let pendingResources = null;
+                for (let i = 0, len = spans.length; i < len; i++) {
+                    const span = spans[i];
+                    if (span.resource.asyncAttributesPending &&
+                        span.resource.waitForAsyncAttributes) {
+                        pendingResources ??= [];
+                        pendingResources.push(span.resource.waitForAsyncAttributes());
+                    }
+                }
+                // Avoid scheduling a promise to make the behavior more predictable and easier to test
+                if (pendingResources === null) {
+                    doExport();
+                }
+                else {
+                    Promise.all(pendingResources).then(doExport, err => {
+                        globalErrorHandler$2(err);
+                        reject(err);
+                    });
+                }
+            });
+        });
+    }
+    _maybeStartTimer() {
+        if (this._isExporting)
+            return;
+        const flush = () => {
+            this._isExporting = true;
+            this._flushOneBatch()
+                .finally(() => {
+                this._isExporting = false;
+                if (this._finishedSpans.length > 0) {
+                    this._clearTimer();
+                    this._maybeStartTimer();
+                }
+            })
+                .catch(e => {
+                this._isExporting = false;
+                globalErrorHandler$2(e);
+            });
+        };
+        // we only wait if the queue doesn't have enough elements yet
+        if (this._finishedSpans.length >= this._maxExportBatchSize) {
+            return flush();
+        }
+        if (this._timer !== undefined)
+            return;
+        this._timer = setTimeout(() => flush(), this._scheduledDelayMillis);
+        // depending on runtime, this may be a 'number' or NodeJS.Timeout
+        if (typeof this._timer !== 'number') {
+            this._timer.unref();
+        }
+    }
+    _clearTimer() {
+        if (this._timer !== undefined) {
+            clearTimeout(this._timer);
+            this._timer = undefined;
+        }
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let BatchSpanProcessor$1 = class BatchSpanProcessor extends BatchSpanProcessorBase {
+    onShutdown() { }
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const SPAN_ID_BYTES = 8;
+const TRACE_ID_BYTES = 16;
+class RandomIdGenerator {
+    /**
+     * Returns a random 16-byte trace ID formatted/encoded as a 32 lowercase hex
+     * characters corresponding to 128 bits.
+     */
+    generateTraceId = getIdGenerator(TRACE_ID_BYTES);
+    /**
+     * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
+     * characters corresponding to 64 bits.
+     */
+    generateSpanId = getIdGenerator(SPAN_ID_BYTES);
+}
+const SHARED_BUFFER = Buffer.allocUnsafe(TRACE_ID_BYTES);
+function getIdGenerator(bytes) {
+    return function generateId() {
+        for (let i = 0; i < bytes / 4; i++) {
+            // unsigned right shift drops decimal part of the number
+            // it is required because if a number between 2**32 and 2**32 - 1 is generated, an out of range error is thrown by writeUInt32BE
+            SHARED_BUFFER.writeUInt32BE((Math.random() * 2 ** 32) >>> 0, i * 4);
+        }
+        // If buffer is all 0, set the last byte to 1 to guarantee a valid w3c id is generated
+        for (let i = 0; i < bytes; i++) {
+            if (SHARED_BUFFER[i] > 0) {
+                break;
+            }
+            else if (i === bytes - 1) {
+                SHARED_BUFFER[bytes - 1] = 1;
+            }
+        }
+        return SHARED_BUFFER.toString('hex', 0, bytes);
+    };
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 var ForceFlushState;
 (function (ForceFlushState) {
     ForceFlushState[ForceFlushState["resolved"] = 0] = "resolved";
@@ -100601,33 +105587,49 @@ var ForceFlushState;
 /**
  * This class represents a basic tracer provider which platform libraries can extend
  */
-class BasicTracerProvider {
-    _config;
-    _tracers = new Map();
+class TracerProvider {
     _resource;
     _activeSpanProcessor;
-    constructor(config = {}) {
-        const mergedConfig = merge({}, loadDefaultConfig(), reconfigureLimits(config));
-        this._resource = mergedConfig.resource ?? defaultResource();
-        this._config = Object.assign({}, mergedConfig, {
-            resource: this._resource,
-        });
-        const spanProcessors = [];
-        if (config.spanProcessors?.length) {
-            spanProcessors.push(...config.spanProcessors);
-        }
+    _forceFlushTimeoutMillis;
+    _tracerOptions;
+    _tracers = new Map();
+    constructor(options = {}) {
+        this._forceFlushTimeoutMillis = options.forceFlushTimeoutMillis ?? 30000;
+        this._resource = options.resource ?? defaultResource$1();
+        const spanProcessors = options.spanProcessors ?? [];
         this._activeSpanProcessor = new MultiSpanProcessor(spanProcessors);
+        this._tracerOptions = {
+            resource: this._resource,
+            sampler: options.sampler ??
+                new ParentBasedSampler({
+                    root: new AlwaysOnSampler(),
+                }),
+            spanLimits: {
+                attributeCountLimit: options.spanLimits?.attributeCountLimit ?? 128,
+                attributeValueLengthLimit: options.spanLimits?.attributeValueLengthLimit ?? Infinity,
+                eventCountLimit: options.spanLimits?.eventCountLimit ?? 128,
+                linkCountLimit: options.spanLimits?.linkCountLimit ?? 128,
+                attributePerEventCountLimit: options.spanLimits?.attributePerEventCountLimit ?? 128,
+                attributePerLinkCountLimit: options.spanLimits?.attributePerLinkCountLimit ?? 128,
+            },
+            idGenerator: options.idGenerator || new RandomIdGenerator(),
+            spanProcessor: this._activeSpanProcessor,
+            meterProvider: options.meterProvider ?? {
+                getMeter() {
+                    return createNoopMeter();
+                },
+            },
+        };
     }
     getTracer(name, version, options) {
         const key = `${name}@${version || ''}:${options?.schemaUrl || ''}`;
         if (!this._tracers.has(key)) {
-            this._tracers.set(key, new Tracer({ name, version, schemaUrl: options?.schemaUrl }, this._config, this._resource, this._activeSpanProcessor));
+            this._tracers.set(key, new Tracer({ name, version, schemaUrl: options?.schemaUrl }, this._tracerOptions));
         }
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this._tracers.get(key);
     }
-    forceFlush() {
-        const timeout = this._config.forceFlushTimeoutMillis;
+    forceFlush(options) {
+        const timeout = options?.timeoutMillis ?? this._forceFlushTimeoutMillis;
         const promises = this._activeSpanProcessor['_spanProcessors'].map((spanProcessor) => {
             return new Promise(resolve => {
                 let state;
@@ -100667,6 +105669,15 @@ class BasicTracerProvider {
     }
     shutdown() {
         return this._activeSpanProcessor.shutdown();
+    }
+    [inspectCustom](depth, options, inspect) {
+        const processors = this._activeSpanProcessor['_spanProcessors'];
+        const payload = {
+            resource: { attributes: settledResourceAttributes(this._resource) },
+            tracers: Array.from(this._tracers.keys()),
+            spanProcessors: processors.map(p => p.constructor?.name ?? 'SpanProcessor'),
+        };
+        return formatInspect('TracerProvider', payload, depth, options, inspect);
     }
 }
 
@@ -100719,8 +105730,8 @@ class ConsoleSpanExporter {
             name: span.name,
             id: span.spanContext().spanId,
             kind: span.kind,
-            timestamp: hrTimeToMicroseconds(span.startTime),
-            duration: hrTimeToMicroseconds(span.duration),
+            timestamp: hrTimeToMicroseconds$1(span.startTime),
+            duration: hrTimeToMicroseconds$1(span.duration),
             attributes: span.attributes,
             status: span.status,
             events: span.events,
@@ -100737,8 +105748,219 @@ class ConsoleSpanExporter {
             console.dir(this._exportInfo(span), { depth: 3 });
         }
         if (done) {
-            return done({ code: ExportResultCode.SUCCESS });
+            return done({ code: ExportResultCode$3.SUCCESS });
         }
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** Sampler that samples a given fraction of traces based of trace id deterministically. */
+class TraceIdRatioBasedSampler {
+    _ratio;
+    _upperBound;
+    constructor(ratio = 0) {
+        this._ratio = this._normalize(ratio);
+        this._upperBound =
+            this._ratio === 1 ? 0x100000000 : Math.floor(this._ratio * 0xffffffff);
+    }
+    shouldSample(context, traceId) {
+        return {
+            decision: isValidTraceId(traceId) && this._accumulate(traceId) < this._upperBound
+                ? SamplingDecision.RECORD_AND_SAMPLED
+                : SamplingDecision.NOT_RECORD,
+        };
+    }
+    toString() {
+        return `TraceIdRatioBased{${this._ratio}}`;
+    }
+    _normalize(ratio) {
+        if (typeof ratio !== 'number' || isNaN(ratio))
+            return 0;
+        return ratio >= 1 ? 1 : ratio <= 0 ? 0 : ratio;
+    }
+    _accumulate(traceId) {
+        let accumulation = 0;
+        for (let i = 0; i < 32; i += 8) {
+            let part = 0;
+            for (let j = 0; j < 8; j++) {
+                const c = traceId.charCodeAt(i + j);
+                // Convert hex char code to value: '0'-'9' -> 0-9, 'a'-'f' -> 10-15, 'A'-'F' -> 10-15
+                const v = c < 58 ? c - 48 : c < 71 ? c - 55 : c - 87;
+                part = (part << 4) | v;
+            }
+            accumulation = (accumulation ^ part) >>> 0;
+        }
+        return accumulation;
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var TracesSamplerValues;
+(function (TracesSamplerValues) {
+    TracesSamplerValues["AlwaysOff"] = "always_off";
+    TracesSamplerValues["AlwaysOn"] = "always_on";
+    TracesSamplerValues["ParentBasedAlwaysOff"] = "parentbased_always_off";
+    TracesSamplerValues["ParentBasedAlwaysOn"] = "parentbased_always_on";
+    TracesSamplerValues["ParentBasedTraceIdRatio"] = "parentbased_traceidratio";
+    TracesSamplerValues["TraceIdRatio"] = "traceidratio";
+})(TracesSamplerValues || (TracesSamplerValues = {}));
+const DEFAULT_RATIO = 1;
+/**
+ * Load default configuration. For fields with primitive values, any user-provided
+ * value will override the corresponding default value. For fields with
+ * non-primitive values (like `spanLimits`), the user-provided value will be
+ * used to extend the default value.
+ */
+// object needs to be wrapped in this function and called when needed otherwise
+// envs are parsed before tests are ran - causes tests using these envs to fail
+function loadDefaultConfig() {
+    return {
+        sampler: buildSamplerFromEnv(),
+        forceFlushTimeoutMillis: 30000,
+        generalLimits: {
+            attributeValueLengthLimit: getNumberFromEnv$2('OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT') ?? Infinity,
+            attributeCountLimit: getNumberFromEnv$2('OTEL_ATTRIBUTE_COUNT_LIMIT') ?? 128,
+        },
+        spanLimits: {
+            attributeValueLengthLimit: getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT') ?? Infinity,
+            attributeCountLimit: getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT') ?? 128,
+            linkCountLimit: getNumberFromEnv$2('OTEL_SPAN_LINK_COUNT_LIMIT') ?? 128,
+            eventCountLimit: getNumberFromEnv$2('OTEL_SPAN_EVENT_COUNT_LIMIT') ?? 128,
+            attributePerEventCountLimit: getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_PER_EVENT_COUNT_LIMIT') ?? 128,
+            attributePerLinkCountLimit: getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_PER_LINK_COUNT_LIMIT') ?? 128,
+        },
+    };
+}
+/**
+ * Based on environment, builds a sampler, complies with specification.
+ */
+function buildSamplerFromEnv() {
+    const sampler = getStringFromEnv$2('OTEL_TRACES_SAMPLER') ??
+        TracesSamplerValues.ParentBasedAlwaysOn;
+    switch (sampler) {
+        case TracesSamplerValues.AlwaysOn:
+            return new AlwaysOnSampler();
+        case TracesSamplerValues.AlwaysOff:
+            return new AlwaysOffSampler();
+        case TracesSamplerValues.ParentBasedAlwaysOn:
+            return new ParentBasedSampler({
+                root: new AlwaysOnSampler(),
+            });
+        case TracesSamplerValues.ParentBasedAlwaysOff:
+            return new ParentBasedSampler({
+                root: new AlwaysOffSampler(),
+            });
+        case TracesSamplerValues.TraceIdRatio:
+            return new TraceIdRatioBasedSampler(getSamplerProbabilityFromEnv());
+        case TracesSamplerValues.ParentBasedTraceIdRatio:
+            return new ParentBasedSampler({
+                root: new TraceIdRatioBasedSampler(getSamplerProbabilityFromEnv()),
+            });
+        default:
+            diag.error(`OTEL_TRACES_SAMPLER value "${sampler}" invalid, defaulting to "${TracesSamplerValues.ParentBasedAlwaysOn}".`);
+            return new ParentBasedSampler({
+                root: new AlwaysOnSampler(),
+            });
+    }
+}
+function getSamplerProbabilityFromEnv() {
+    const probability = getNumberFromEnv$2('OTEL_TRACES_SAMPLER_ARG');
+    if (probability == null) {
+        diag.error(`OTEL_TRACES_SAMPLER_ARG is blank, defaulting to ${DEFAULT_RATIO}.`);
+        return DEFAULT_RATIO;
+    }
+    if (probability < 0 || probability > 1) {
+        diag.error(`OTEL_TRACES_SAMPLER_ARG=${probability} was given, but it is out of range ([0..1]), defaulting to ${DEFAULT_RATIO}.`);
+        return DEFAULT_RATIO;
+    }
+    return probability;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const DEFAULT_ATTRIBUTE_COUNT_LIMIT = 128;
+const DEFAULT_ATTRIBUTE_VALUE_LENGTH_LIMIT = Infinity;
+/**
+ * When general limits are provided and model specific limits are not,
+ * configures the model specific limits by using the values from the general ones.
+ * @param userConfig User provided tracer configuration
+ */
+function reconfigureLimits(userConfig) {
+    const spanLimits = Object.assign({}, userConfig.spanLimits);
+    /**
+     * Reassign span attribute count limit to use first non null value defined by user or use default value
+     */
+    spanLimits.attributeCountLimit =
+        userConfig.spanLimits?.attributeCountLimit ??
+            userConfig.generalLimits?.attributeCountLimit ??
+            getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT') ??
+            getNumberFromEnv$2('OTEL_ATTRIBUTE_COUNT_LIMIT') ??
+            DEFAULT_ATTRIBUTE_COUNT_LIMIT;
+    /**
+     * Reassign span attribute value length limit to use first non null value defined by user or use default value
+     */
+    spanLimits.attributeValueLengthLimit =
+        userConfig.spanLimits?.attributeValueLengthLimit ??
+            userConfig.generalLimits?.attributeValueLengthLimit ??
+            getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT') ??
+            getNumberFromEnv$2('OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT') ??
+            DEFAULT_ATTRIBUTE_VALUE_LENGTH_LIMIT;
+    return Object.assign({}, userConfig, { spanLimits });
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * A TracerProvider implementation that reads configuration defaults from
+ * OTEL_* environment variables per
+ * https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/
+ */
+class BasicTracerProvider extends TracerProvider {
+    constructor(config = {}) {
+        const mergedConfig = merge$1({}, loadDefaultConfig(), reconfigureLimits(config));
+        delete mergedConfig.generalLimits;
+        super(mergedConfig);
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * A BatchSpanProcessor that applies `OTEL_*` environment variable fallbacks per
+ * https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/
+ */
+class BatchSpanProcessor extends BatchSpanProcessor$1 {
+    constructor(exporter, config) {
+        if (!config) {
+            config = {};
+        }
+        const envFallbacks = [
+            ['maxExportBatchSize', 'OTEL_BSP_MAX_EXPORT_BATCH_SIZE'],
+            ['maxQueueSize', 'OTEL_BSP_MAX_QUEUE_SIZE'],
+            ['scheduledDelayMillis', 'OTEL_BSP_SCHEDULE_DELAY'],
+            ['exportTimeoutMillis', 'OTEL_BSP_EXPORT_TIMEOUT'],
+        ];
+        for (const [configName, envName] of envFallbacks) {
+            if (config[configName] === undefined) {
+                const envFallback = getNumberFromEnv$2(envName);
+                if (envFallback !== undefined) {
+                    config[configName] = envFallback;
+                }
+            }
+        }
+        super({ exporter, ...config });
     }
 }
 
@@ -100769,7 +105991,7 @@ function extractParentContext(traceparent) {
         warning(`Invalid traceparent format: "${traceparent}". Creating new root trace.`);
         return ROOT_CONTEXT;
     }
-    const propagator = new W3CTraceContextPropagator();
+    const propagator = new W3CTraceContextPropagator$1();
     const carrier = { traceparent };
     return propagator.extract(ROOT_CONTEXT, carrier, {
         get: (c, key) => c[key],
@@ -100807,7 +106029,7 @@ function createLoggerProvider(endpoint, headers, attributes) {
     }
     // Cast through unknown to bridge the version mismatch between @opentelemetry/resources 1.x
     // (trace SDK) and 2.x (sdk-logs). The runtime shape is identical.
-    const resource = defaultResource().merge(resourceFromAttributes(attributes));
+    const resource = defaultResource$1().merge(resourceFromAttributes$1(attributes));
     const config = { resource };
     if (exporter) {
         config["processors"] = [new BatchLogRecordProcessor(exporter)];
@@ -100816,7 +106038,32 @@ function createLoggerProvider(endpoint, headers, attributes) {
     logs.setGlobalLoggerProvider(provider);
     return provider;
 }
+function formatDiagArg(arg) {
+    if (arg instanceof Error) {
+        return arg.stack ?? arg.message;
+    }
+    if (typeof arg === "string") {
+        return arg;
+    }
+    return JSON.stringify(arg, Object.getOwnPropertyNames(arg ?? {}));
+}
+/** Surface OTEL SDK errors (e.g. dropped export batches) legibly in the action log. */
+function enableDiagLogging() {
+    const log = (message, args) => `OTEL: ${[message, ...args.map(formatDiagArg)].join(" ")}`;
+    diag.setLogger({
+        error: (message, ...args) => {
+            warning(log(message, args));
+        },
+        warn: (message, ...args) => {
+            warning(log(message, args));
+        },
+        info: () => undefined,
+        debug: () => undefined,
+        verbose: () => undefined,
+    }, DiagLogLevel.WARN);
+}
 function createTracerProvider(endpoint, headers, attributes) {
+    enableDiagLogging();
     const contextManager = new srcExports$2.AsyncLocalStorageContextManager();
     contextManager.enable();
     context.setGlobalContextManager(contextManager);
@@ -100826,6 +106073,11 @@ function createTracerProvider(endpoint, headers, attributes) {
             exporter = new OTLPTraceExporter({
                 url: buildSignalUrl(endpoint, "v1/traces"),
                 headers: stringToRecord(headers),
+                // forceFlush fires every pending batch at once, and the exporter
+                // REJECTS (not queues) exports beyond concurrencyLimit — silently.
+                // Keep the ceiling above the worst-case batch count implied by the
+                // span processor config below (65536 / 2048 = 32 batches).
+                concurrencyLimit: 64,
             });
         }
         else {
@@ -100836,10 +106088,14 @@ function createTracerProvider(endpoint, headers, attributes) {
             });
         }
     }
-    const resource = defaultResource().merge(resourceFromAttributes(attributes));
+    const resource = defaultResource$1().merge(resourceFromAttributes$1(attributes));
     const provider = new BasicTracerProvider({
         resource,
-        spanProcessors: [new BatchSpanProcessor(exporter)],
+        // The whole run's spans are created in one synchronous burst before the
+        // final flush; the default queue (2048) silently drops everything past it
+        // on runs with thousands of test-case spans. Bigger batches keep the
+        // flush-time batch count under the exporter's concurrencyLimit above.
+        spanProcessors: [new BatchSpanProcessor(exporter, { maxQueueSize: 65_536, maxExportBatchSize: 2048 })],
         ...(OTEL_ID_SEED ? { idGenerator: new DeterministicIdGenerator(OTEL_ID_SEED) } : {}),
     });
     trace.setGlobalTracerProvider(provider);
@@ -100882,103 +106138,6 @@ class DeterministicIdGenerator {
         }
         return id;
     }
-}
-
-async function getWorkflowRun(context, octokit, runId) {
-    const res = await octokit.rest.actions.getWorkflowRun({
-        ...context.repo,
-        run_id: runId,
-    });
-    return res.data;
-}
-async function listJobsForWorkflowRun(context, octokit, runId) {
-    return await octokit.paginate(octokit.rest.actions.listJobsForWorkflowRun, {
-        ...context.repo,
-        run_id: runId,
-        filter: "latest",
-        per_page: 100,
-    });
-}
-async function getJobsAnnotations(context, octokit, jobIds) {
-    const annotations = {};
-    for (const jobId of jobIds) {
-        annotations[jobId] = await listAnnotations(context, octokit, jobId);
-    }
-    return annotations;
-}
-async function listAnnotations(context, octokit, checkRunId) {
-    return await octokit.paginate(octokit.rest.checks.listAnnotations, {
-        ...context.repo,
-        check_run_id: checkRunId,
-    });
-}
-async function getPRsLabels(context, octokit, prNumbers) {
-    const labels = {};
-    for (const prNumber of prNumbers) {
-        labels[prNumber] = await listLabelsOnIssue(context, octokit, prNumber);
-    }
-    return labels;
-}
-async function listLabelsOnIssue(context, octokit, prNumber) {
-    return await octokit.paginate(octokit.rest.issues.listLabelsOnIssue, {
-        ...context.repo,
-        issue_number: prNumber,
-    }, (response) => response.data.map((issue) => issue.name));
-}
-async function getJobsLogs(context, octokit, jobIds) {
-    const logs = {};
-    for (const jobId of jobIds) {
-        try {
-            logs[jobId] = await downloadJobLog(context, octokit, jobId);
-        }
-        catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            warning(`Skipping logs for job ${jobId}: ${message}`);
-        }
-    }
-    return logs;
-}
-async function downloadJobLog(context, octokit, jobId) {
-    const response = await octokit.rest.actions.downloadJobLogsForWorkflowRun({
-        ...context.repo,
-        job_id: jobId,
-    });
-    // Octokit auto-follows the 302 redirect, so response.data contains the log
-    // content directly. The OpenAPI spec types the 302 as content: never, but at
-    // runtime data is the plain-text log body from the redirect target.
-    const { data } = response;
-    if (typeof data !== "string" || data.length === 0) {
-        throw new Error(`Empty log content for job ${jobId}`);
-    }
-    return data;
-}
-const TRACE_COMMENT_MARKER = "<!-- groundcover-trace-comment -->";
-async function upsertPrTraceComment(context, octokit, input) {
-    const commentBody = `${TRACE_COMMENT_MARKER}\n${input.body}`;
-    const comments = await octokit.paginate(octokit.rest.issues.listComments, {
-        ...context.repo,
-        issue_number: input.prNumber,
-        per_page: 100,
-    });
-    const existingComment = [...comments]
-        .reverse()
-        .find((comment) => typeof comment.body === "string" && comment.body.startsWith(`${TRACE_COMMENT_MARKER}\n`));
-    if (!existingComment) {
-        await octokit.rest.issues.createComment({
-            ...context.repo,
-            issue_number: input.prNumber,
-            body: commentBody,
-        });
-        return;
-    }
-    if (existingComment.body === commentBody) {
-        return;
-    }
-    await octokit.rest.issues.updateComment({
-        ...context.repo,
-        comment_id: existingComment.id,
-        body: commentBody,
-    });
 }
 
 var version = "3.0.0";
@@ -101105,6 +106264,7 @@ async function run() {
         const runId = Number.parseInt(getInput("runId") || `${context$1.runId}`, 10);
         const extraAttributes = stringToRecord(getInput("extraAttributes"));
         const testResultsGlob = getInput("testResultsGlob");
+        const testResultsArtifactPrefix = getInput("testResultsArtifactPrefix");
         const exportLogs = getInput("exportLogs") === "true";
         const env = getInput("env") || undefined;
         const workload = getInput("workload") || undefined;
@@ -101131,7 +106291,17 @@ async function run() {
         }
         info("Use Github API to fetch workflow details");
         const { jobs, jobAnnotations, jobLogs, prLabels } = await fetchGithubDetails(ghToken, runId, workflowRun, exportLogs);
-        const testResults = await findTestResultsSummary(testResultsGlob);
+        let testReportsByJobId = {};
+        if (testResultsArtifactPrefix) {
+            info(`Collect test results from run artifacts prefixed "${testResultsArtifactPrefix}"`);
+            const octokit = getOctokit(ghToken);
+            testReportsByJobId = await collectTestCasesFromArtifacts(context$1, octokit, runId, testResultsArtifactPrefix, jobs);
+        }
+        const allTestCases = Object.values(testReportsByJobId)
+            .flat()
+            .flatMap((report) => report.cases);
+        const testResults = (await findTestResultsSummary(testResultsGlob)) ??
+            (allTestCases.length > 0 ? summarizeTestCases(allTestCases) : undefined);
         info(`Create tracer provider for ${otlpEndpoint}`);
         const attributes = {
             [ATTR_SERVICE_NAME]: otelServiceName || workflowRun.name || `${workflowRun.workflow_id}`,
@@ -101152,10 +106322,13 @@ async function run() {
         };
         const provider = createTracerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes);
         const hasLogs = exportLogs && Object.keys(jobLogs).length > 0;
-        const loggerProvider = hasLogs ? createLoggerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes) : undefined;
+        // Failed test cases ship their output as span-correlated log records even
+        // when job-log export is off, so those also need a logger provider.
+        const hasFailedTestCases = allTestCases.some((testCase) => testCase.status === "failed" || testCase.status === "error");
+        const loggerProvider = hasLogs || hasFailedTestCases ? createLoggerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes) : undefined;
         const parentContext = extractParentContext(traceparent);
         info(`Trace workflow run for ${runId} and export to ${otlpEndpoint}`);
-        const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs);
+        const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs, testReportsByJobId);
         setOutput("traceId", traceId);
         info(`traceId: ${traceId}`);
         info("Flush and shutdown providers");

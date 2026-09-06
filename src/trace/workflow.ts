@@ -29,6 +29,7 @@ import {
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { TestResultsSummary } from "../test-results";
 import { traceJob } from "./job";
+import type { TestReport } from "./test-trace";
 
 function traceWorkflowRun(
   workflowRun: components["schemas"]["workflow-run"],
@@ -38,6 +39,7 @@ function traceWorkflowRun(
   parentContext?: Context,
   testResults?: TestResultsSummary,
   jobLogs?: Record<number, string>,
+  testReportsByJobId?: Record<number, TestReport[]>,
 ): string {
   const tracer = trace.getTracer("otel-cicd-export-action");
 
@@ -81,7 +83,7 @@ function traceWorkflowRun(
     }
 
     for (const job of jobs) {
-      traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id]);
+      traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id], testReportsByJobId?.[job.id]);
     }
 
     rootSpan.end(new Date(workflowRun.updated_at));

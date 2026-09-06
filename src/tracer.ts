@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { credentials, Metadata } from "@grpc/grpc-js";
-import { type Attributes, type Context, context, ROOT_CONTEXT, trace } from "@opentelemetry/api";
+import { type Attributes, type Context, context, diag, DiagLogLevel, ROOT_CONTEXT, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { W3CTraceContextPropagator } from "@opentelemetry/core";
@@ -98,13 +98,43 @@ function createLoggerProvider(endpoint: string, headers: string, attributes: Att
   if (exporter) {
     config["processors"] = [new BatchLogRecordProcessor(exporter)];
   }
-  const provider = new LoggerProvider(config as ConstructorParameters<typeof LoggerProvider>[0]);
+  const provider = new LoggerProvider(config);
 
   logs.setGlobalLoggerProvider(provider);
   return provider;
 }
 
+function formatDiagArg(arg: unknown): string {
+  if (arg instanceof Error) {
+    return arg.stack ?? arg.message;
+  }
+  if (typeof arg === "string") {
+    return arg;
+  }
+  return JSON.stringify(arg, Object.getOwnPropertyNames(arg ?? {}));
+}
+
+/** Surface OTEL SDK errors (e.g. dropped export batches) legibly in the action log. */
+function enableDiagLogging(): void {
+  const log = (message: string, args: unknown[]): string => `OTEL: ${[message, ...args.map(formatDiagArg)].join(" ")}`;
+  diag.setLogger(
+    {
+      error: (message, ...args) => {
+        core.warning(log(message, args));
+      },
+      warn: (message, ...args) => {
+        core.warning(log(message, args));
+      },
+      info: () => undefined,
+      debug: () => undefined,
+      verbose: () => undefined,
+    },
+    DiagLogLevel.WARN,
+  );
+}
+
 function createTracerProvider(endpoint: string, headers: string, attributes: Attributes): BasicTracerProvider {
+  enableDiagLogging();
   const contextManager = new AsyncLocalStorageContextManager();
   contextManager.enable();
   context.setGlobalContextManager(contextManager);
@@ -116,6 +146,11 @@ function createTracerProvider(endpoint: string, headers: string, attributes: Att
       exporter = new ProtoOTLPTraceExporter({
         url: buildSignalUrl(endpoint, "v1/traces"),
         headers: stringToRecord(headers),
+        // forceFlush fires every pending batch at once, and the exporter
+        // REJECTS (not queues) exports beyond concurrencyLimit — silently.
+        // Keep the ceiling above the worst-case batch count implied by the
+        // span processor config below (65536 / 2048 = 32 batches).
+        concurrencyLimit: 64,
       });
     } else {
       exporter = new GrpcOTLPTraceExporter({
@@ -130,7 +165,11 @@ function createTracerProvider(endpoint: string, headers: string, attributes: Att
 
   const provider = new BasicTracerProvider({
     resource,
-    spanProcessors: [new BatchSpanProcessor(exporter)],
+    // The whole run's spans are created in one synchronous burst before the
+    // final flush; the default queue (2048) silently drops everything past it
+    // on runs with thousands of test-case spans. Bigger batches keep the
+    // flush-time batch count under the exporter's concurrencyLimit above.
+    spanProcessors: [new BatchSpanProcessor(exporter, { maxQueueSize: 65_536, maxExportBatchSize: 2048 })],
     ...(OTEL_ID_SEED ? { idGenerator: new DeterministicIdGenerator(OTEL_ID_SEED) } : {}),
   });
 

@@ -13,13 +13,47 @@ interface TestResultsSummary {
   duration: number;
 }
 
+type TestCaseStatus = "passed" | "failed" | "error" | "skipped";
+
+interface TestCase {
+  /** For Go this includes the subtest path. */
+  name: string;
+  classname: string;
+  suite: string;
+  timeSeconds: number;
+  status: TestCaseStatus;
+  message?: string;
+  output?: string;
+  /** False when another case in the same classname extends this name (a Go subtest ancestor). */
+  leaf: boolean;
+  /** Set when the framework aborted before the test ran (e.g. Go -failfast), so it never really failed. */
+  collateral: boolean;
+}
+
+interface XmlFailureNode {
+  message?: string | number;
+  "#text"?: string | number;
+}
+
+interface XmlTestCaseNode {
+  name?: string | number;
+  classname?: string | number;
+  time?: number | string;
+  failure?: XmlFailureNode | XmlFailureNode[] | string | number;
+  error?: XmlFailureNode | XmlFailureNode[] | string | number;
+  skipped?: unknown;
+  "system-out"?: XmlFailureNode | XmlFailureNode[] | string | number;
+}
+
 interface XmlNode {
+  name?: string | number;
   tests?: number;
   failures?: number;
   skipped?: number;
   errors?: number;
   time?: number;
   testsuite?: XmlNode | XmlNode[];
+  testcase?: XmlTestCaseNode | XmlTestCaseNode[];
 }
 
 const parser = new XMLParser({
@@ -111,6 +145,133 @@ function parseJUnitXml(content: string): TestResultsSummary | undefined {
   return extractNodeSummary(parsed.testsuites) ?? extractNodeSummary(parsed.testsuite);
 }
 
+const MAX_MESSAGE_LENGTH = 4096;
+const MAX_OUTPUT_LENGTH = 16_384;
+
+/**
+ * A zero-duration failure that produced no output means the framework aborted
+ * before the test ran (e.g. Go -failfast / suite abort). A zero-duration
+ * failure WITH a body demonstrably ran — an instant assertion failure.
+ */
+function isCollateral(status: TestCaseStatus, timeSeconds: number, hasFailureBody: boolean): boolean {
+  return (status === "failed" || status === "error") && timeSeconds === 0 && !hasFailureBody;
+}
+
+function hasBody(node: XmlFailureNode | XmlFailureNode[] | string | number | undefined): boolean {
+  const first = Array.isArray(node) ? node[0] : node;
+  if (first === undefined) {
+    return false;
+  }
+  if (typeof first === "string" || typeof first === "number") {
+    return String(first) !== "";
+  }
+  return first["#text"] !== undefined && first["#text"] !== "";
+}
+
+function extractMessage(
+  node: XmlFailureNode | XmlFailureNode[] | string | number | undefined,
+  maxLength = MAX_MESSAGE_LENGTH,
+): string | undefined {
+  const first = Array.isArray(node) ? node[0] : node;
+  if (first === undefined) {
+    return undefined;
+  }
+  if (typeof first === "string" || typeof first === "number") {
+    return String(first).slice(0, maxLength) || undefined;
+  }
+
+  const parts = [first.message, first["#text"]].filter((part) => part !== undefined && part !== "").map(String);
+  return parts.length > 0 ? parts.join("\n").slice(0, maxLength) : undefined;
+}
+
+function toCaseStatus(node: XmlTestCaseNode): TestCaseStatus {
+  if (node.error !== undefined) {
+    return "error";
+  }
+  if (node.failure !== undefined) {
+    return "failed";
+  }
+  if (node.skipped !== undefined) {
+    return "skipped";
+  }
+  return "passed";
+}
+
+function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf">[]): void {
+  if (!node) {
+    return;
+  }
+
+  const suiteName = node.name === undefined ? "" : String(node.name);
+  for (const testCase of toArray(node.testcase)) {
+    if (testCase.name === undefined) {
+      continue;
+    }
+    const status = toCaseStatus(testCase);
+    const timeSeconds = Number(testCase.time ?? 0) || 0;
+    const message = extractMessage(testCase.failure ?? testCase.error);
+    const output = extractMessage(testCase["system-out"], MAX_OUTPUT_LENGTH);
+    cases.push({
+      name: String(testCase.name),
+      classname: testCase.classname === undefined ? "" : String(testCase.classname),
+      suite: suiteName,
+      timeSeconds,
+      status,
+      ...(message !== undefined ? { message } : {}),
+      ...(output !== undefined ? { output } : {}),
+      collateral: isCollateral(status, timeSeconds, hasBody(testCase.failure ?? testCase.error)),
+    });
+  }
+
+  for (const child of toArray(node.testsuite)) {
+    collectTestCases(child, cases);
+  }
+}
+
+/** A case is a leaf unless another case in the same classname extends its name (Go subtest ancestry). */
+function markLeaves(cases: Omit<TestCase, "leaf">[]): TestCase[] {
+  const namesByClassname = new Map<string, string[]>();
+  for (const testCase of cases) {
+    const names = namesByClassname.get(testCase.classname) ?? [];
+    names.push(testCase.name);
+    namesByClassname.set(testCase.classname, names);
+  }
+
+  return cases.map((testCase) => {
+    const siblings = namesByClassname.get(testCase.classname) ?? [];
+    const prefix = `${testCase.name}/`;
+    const leaf = !siblings.some((name) => name.startsWith(prefix));
+    return { ...testCase, leaf };
+  });
+}
+
+function summarizeTestCases(cases: TestCase[]): TestResultsSummary {
+  const suites = new Set(cases.map((testCase) => testCase.suite)).size;
+  const failed = cases.filter((testCase) => testCase.status === "failed").length;
+  const errors = cases.filter((testCase) => testCase.status === "error").length;
+  const skipped = cases.filter((testCase) => testCase.status === "skipped").length;
+  const duration = cases.reduce((sum, testCase) => sum + testCase.timeSeconds, 0);
+
+  return {
+    suites,
+    total: cases.length,
+    passed: cases.length - failed - errors - skipped,
+    failed,
+    skipped,
+    errors,
+    duration,
+  };
+}
+
+function parseJUnitTestCases(content: string): TestCase[] | undefined {
+  const parsed = parser.parse(content) as { testsuites?: XmlNode; testsuite?: XmlNode };
+  const cases: Omit<TestCase, "leaf">[] = [];
+  collectTestCases(parsed.testsuites, cases);
+  collectTestCases(parsed.testsuite, cases);
+
+  return cases.length > 0 ? markLeaves(cases) : undefined;
+}
+
 async function findTestResultsSummary(input: string): Promise<TestResultsSummary | undefined> {
   const patterns = parseTestResultsGlobs(input);
   if (patterns.length === 0) {
@@ -150,5 +311,5 @@ async function findTestResultsSummary(input: string): Promise<TestResultsSummary
   return summary;
 }
 
-export { findTestResultsSummary, parseJUnitXml };
-export type { TestResultsSummary };
+export { findTestResultsSummary, parseJUnitXml, parseJUnitTestCases, summarizeTestCases };
+export type { TestResultsSummary, TestCase, TestCaseStatus };

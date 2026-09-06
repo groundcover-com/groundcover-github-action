@@ -111,6 +111,29 @@ async function downloadJobLog(context: Context, octokit: Octokit, jobId: number)
   return data;
 }
 
+async function listWorkflowRunArtifacts(
+  context: Context,
+  octokit: Octokit,
+  runId: number,
+): Promise<components["schemas"]["artifact"][]> {
+  return await octokit.paginate(octokit.rest.actions.listWorkflowRunArtifacts, {
+    ...context.repo,
+    run_id: runId,
+    per_page: 100,
+  });
+}
+
+async function downloadArtifactZip(context: Context, octokit: Octokit, artifactId: number): Promise<Buffer> {
+  const response = await octokit.rest.actions.downloadArtifact({
+    ...context.repo,
+    artifact_id: artifactId,
+    archive_format: "zip",
+  });
+
+  // Octokit follows the 302 redirect; data is the zip body as an ArrayBuffer.
+  return Buffer.from(response.data as ArrayBuffer);
+}
+
 const TRACE_COMMENT_MARKER = "<!-- groundcover-trace-comment -->";
 
 interface UpsertPrTraceCommentInput {
@@ -160,6 +183,8 @@ export {
   getJobsAnnotations,
   getPRsLabels,
   getJobsLogs,
+  listWorkflowRunArtifacts,
+  downloadArtifactZip,
   upsertPrTraceComment,
   type Octokit,
 };
