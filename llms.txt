@@ -17,9 +17,21 @@ This repository contains a GitHub Action that exports GitHub Actions workflow ru
 - See `https://docs.groundcover.com/integrations/data-sources/opentelemetry/sending-from-an-opentelemetry-collector` for endpoint setup.
 - See `https://docs.groundcover.com/use-groundcover/remote-access-and-apis/ingestion-keys` for ingestion key creation.
 
+## Per-test spans from report artifacts
+
+- `testResultsArtifactPrefix` (e.g. `test-reports-`) names the workflow-run artifacts holding JUnit XML. Matching artifacts are downloaded and parsed; without it, no per-test spans are produced.
+- Artifact naming is a contract: `<prefix><sanitized job name>`, where the sanitized job name is the job's display name — the part after the last `" / "` for reusable workflows — with every run of characters outside `[A-Za-z0-9_.-]` replaced by `-`. Upload with `overwrite: true` so a rerun replaces the previous attempt's reports.
+- Span hierarchy: `workflow run` → `job` → `Tests / <suite or file name>` (one wrapper per JUnit file) → one span per test case.
+- The wrapper span is named after the file's single suite, or the file name when the file holds several suites, and carries that file's rollup: `test.report`, `test.suites`, `test.total`, `test.passed`, `test.failed`, `test.skipped`, `test.errors`, `test.duration`. The workflow root keeps the run-wide rollup.
+- Wrapper timing copies the job: `started_at` → `max(started_at, completed_at)`.
+- Test start time is the job start time — JUnit carries durations but no per-test timestamps, so test spans are anchored at the job start and their durations are exact. Overlapping test spans are expected.
+- Test case attributes: `test.name`, `test.classname`, `test.suite`, `test.status`, `test.duration_ms`, `test.leaf` (false for subtest ancestors), `test.collateral` (zero-duration failure with no output, i.e. a framework abort), `test.failure.message`.
+- Failed and errored cases are error spans and additionally emit a log record, correlated with the test's span, carrying the failure message and captured `system-out`. Passing-test output is not exported. These log records are sent even when `exportLogs` is `false`.
+
 ## Supported behavior
 
 - Export workflow runs, jobs, and steps as nested spans.
+- Export per-test spans from JUnit XML report artifacts via `testResultsArtifactPrefix`.
 - By default, export GitHub Actions job logs as OpenTelemetry log records correlated with job and step spans (`exportLogs` defaults to `true`). Set `exportLogs: false` to disable.
 - Support `traceparent` to link CI/CD traces with application traces.
 - Support same-workflow export and separate `workflow_run` export.

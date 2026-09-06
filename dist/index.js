@@ -47999,7 +47999,7 @@ function extractXmlFilesFromZip(zip) {
 }
 async function collectTestCasesFromArtifacts(context, octokit, runId, prefix, jobs) {
     const artifacts = await listWorkflowRunArtifacts(context, octokit, runId);
-    const testCasesByJobId = {};
+    const testReportsByJobId = {};
     for (const artifact of artifacts) {
         if (!artifact.name.startsWith(prefix) || artifact.expired) {
             continue;
@@ -48016,12 +48016,21 @@ async function collectTestCasesFromArtifacts(context, octokit, runId, prefix, jo
                 warning(`No test cases found in ${artifact.name}/${file.name}; skipping it`);
                 continue;
             }
-            testCasesByJobId[job.id] = [...(testCasesByJobId[job.id] ?? []), ...cases];
+            const report = { name: reportName(cases, file.name), cases };
+            testReportsByJobId[job.id] = [...(testReportsByJobId[job.id] ?? []), report];
         }
     }
-    const total = Object.values(testCasesByJobId).reduce((sum, cases) => sum + cases.length, 0);
-    info(`Collected ${total} test case(s) from run artifacts for ${Object.keys(testCasesByJobId).length} job(s)`);
-    return testCasesByJobId;
+    const reports = Object.values(testReportsByJobId).flat();
+    const total = reports.reduce((sum, report) => sum + report.cases.length, 0);
+    info(`Collected ${total} test case(s) in ${reports.length} report(s) from run artifacts for ` +
+        `${Object.keys(testReportsByJobId).length} job(s)`);
+    return testReportsByJobId;
+}
+/** The suite name when a file reports just one, else the file name — so sibling reports stay distinguishable. */
+function reportName(cases, fileName) {
+    const suites = new Set(cases.map((testCase) => testCase.suite).filter(Boolean));
+    const onlySuite = suites.size === 1 ? [...suites][0] : undefined;
+    return onlySuite ?? fileName.replace(/^.*\//, "").replace(/\.xml$/i, "");
 }
 
 /*
@@ -50655,26 +50664,59 @@ function toStepResult(conclusion) {
 }
 
 /**
- * JUnit reports carry durations but no per-test timestamps, so every span is
- * anchored at the job start; durations are exact, overlaps are expected
- * (tests run in parallel anyway).
+ * Each report gets a wrapper span carrying that file's rollup, so a job with
+ * several JUnit files keeps them apart instead of one flat list of tests.
+ *
+ * JUnit reports carry durations but no per-test timestamps, so every test span
+ * is anchored at the job start; durations are exact, overlaps are expected
+ * (tests run in parallel anyway). The wrapper covers the job's own window.
  */
-function traceTestCases(testCases, job) {
+function traceTestReports(reports, job) {
     const tracer = trace.getTracer("otel-cicd-export-action");
     const startTime = new Date(job.started_at);
-    for (const testCase of testCases) {
-        const span = tracer.startSpan(testCase.name, {
-            attributes: testCaseToAttributes(testCase, job),
-            startTime,
-            kind: SpanKind.INTERNAL,
+    // Some skipped and post jobs report completed_at before started_at.
+    const endTime = new Date(Math.max(startTime.getTime(), new Date(job.completed_at).getTime()));
+    for (const report of reports) {
+        tracer.startActiveSpan(`Tests / ${report.name}`, { attributes: reportToAttributes(report, job), startTime, kind: SpanKind.INTERNAL }, (reportSpan) => {
+            for (const testCase of report.cases) {
+                traceTestCase(testCase, job, tracer, startTime);
+            }
+            reportSpan.end(endTime);
         });
-        if (testCase.status === "failed" || testCase.status === "error") {
-            span.setStatus({ code: SpanStatusCode.ERROR, ...(testCase.message ? { message: testCase.message } : {}) });
-            span.setAttribute(ATTR_ERROR_TYPE, testCase.status);
-            emitTestFailureLog(testCase, job, span, startTime);
-        }
-        span.end(new Date(startTime.getTime() + testCase.timeSeconds * 1000));
     }
+}
+function traceTestCase(testCase, job, tracer, startTime) {
+    const span = tracer.startSpan(testCase.name, {
+        attributes: testCaseToAttributes(testCase, job),
+        startTime,
+        kind: SpanKind.INTERNAL,
+    });
+    if (testCase.status === "failed" || testCase.status === "error") {
+        span.setStatus({ code: SpanStatusCode.ERROR, ...(testCase.message ? { message: testCase.message } : {}) });
+        span.setAttribute(ATTR_ERROR_TYPE, testCase.status);
+        emitTestFailureLog(testCase, job, span, startTime);
+    }
+    span.end(new Date(startTime.getTime() + testCase.timeSeconds * 1000));
+}
+function reportToAttributes(report, job) {
+    const summary = summarizeTestCases(report.cases);
+    return {
+        "test.report": report.name,
+        "test.suites": summary.suites,
+        "test.total": summary.total,
+        "test.passed": summary.passed,
+        "test.failed": summary.failed,
+        "test.skipped": summary.skipped,
+        "test.errors": summary.errors,
+        "test.duration": summary.duration,
+        "github.job.id": job.id,
+        "github.job.name": job.name,
+        "github.run_id": job.run_id,
+        "github.run_attempt": job.run_attempt ?? 1,
+        "github.head_sha": job.head_sha,
+        ...(job.head_branch ? { "github.head_branch": job.head_branch } : {}),
+        error: summary.failed + summary.errors > 0,
+    };
 }
 /**
  * Correlating the record with the test's span is what makes a red span show
@@ -50823,7 +50865,7 @@ function emitJobLogs(logLines, jobId, jobName, conclusion, htmlUrl) {
         },
     });
 }
-function traceJob(job, annotations, jobLog, testCases) {
+function traceJob(job, annotations, jobLog, testReports) {
     const tracer = trace.getTracer("otel-cicd-export-action");
     if (!job.completed_at) {
         info(`Job ${job.id} is not completed yet`);
@@ -50854,8 +50896,8 @@ function traceJob(job, annotations, jobLog, testCases) {
         if (correlated && correlated.unmatched.length > 0) {
             emitJobLogs(correlated.unmatched, job.id, job.name, job.conclusion, job.html_url);
         }
-        if (testCases && testCases.length > 0) {
-            traceTestCases(testCases, completedJob);
+        if (testReports && testReports.length > 0) {
+            traceTestReports(testReports, completedJob);
         }
         // Some skipped and post jobs return completed_at dates that are older than started_at
         span.end(new Date(Math.max(startTime.getTime(), completedTime.getTime())));
@@ -50937,7 +50979,7 @@ function annotationsToAttributes(annotations) {
     return attributes;
 }
 
-function traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs, testCasesByJobId) {
+function traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs, testReportsByJobId) {
     const tracer = trace.getTracer("otel-cicd-export-action");
     const startTime = new Date(workflowRun.run_started_at ?? workflowRun.created_at);
     const attributes = {
@@ -50973,7 +51015,7 @@ function traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentCon
             }
         }
         for (const job of jobs) {
-            traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id], testCasesByJobId?.[job.id]);
+            traceJob(job, jobAnnotations[job.id], jobLogs?.[job.id], testReportsByJobId?.[job.id]);
         }
         rootSpan.end(new Date(workflowRun.updated_at));
         return rootSpan.spanContext().traceId;
@@ -104396,13 +104438,15 @@ async function run() {
         }
         info("Use Github API to fetch workflow details");
         const { jobs, jobAnnotations, jobLogs, prLabels } = await fetchGithubDetails(ghToken, runId, workflowRun, exportLogs);
-        let testCasesByJobId = {};
+        let testReportsByJobId = {};
         if (testResultsArtifactPrefix) {
             info(`Collect test results from run artifacts prefixed "${testResultsArtifactPrefix}"`);
             const octokit = getOctokit(ghToken);
-            testCasesByJobId = await collectTestCasesFromArtifacts(context$1, octokit, runId, testResultsArtifactPrefix, jobs);
+            testReportsByJobId = await collectTestCasesFromArtifacts(context$1, octokit, runId, testResultsArtifactPrefix, jobs);
         }
-        const allTestCases = Object.values(testCasesByJobId).flat();
+        const allTestCases = Object.values(testReportsByJobId)
+            .flat()
+            .flatMap((report) => report.cases);
         const testResults = (await findTestResultsSummary(testResultsGlob)) ??
             (allTestCases.length > 0 ? summarizeTestCases(allTestCases) : undefined);
         info(`Create tracer provider for ${otlpEndpoint}`);
@@ -104431,7 +104475,7 @@ async function run() {
         const loggerProvider = hasLogs || hasFailedTestCases ? createLoggerProvider(otlpEndpoint, resolvedOtlpHeaders, attributes) : undefined;
         const parentContext = extractParentContext(traceparent);
         info(`Trace workflow run for ${runId} and export to ${otlpEndpoint}`);
-        const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs, testCasesByJobId);
+        const traceId = traceWorkflowRun(workflowRun, jobs, jobAnnotations, prLabels, parentContext, testResults, jobLogs, testReportsByJobId);
         setOutput("traceId", traceId);
         info(`traceId: ${traceId}`);
         info("Flush and shutdown providers");

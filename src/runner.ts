@@ -4,7 +4,8 @@ import { RequestError } from "@octokit/request-error";
 import type { Attributes } from "@opentelemetry/api";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 import { ATTR_SERVICE_INSTANCE_ID } from "@opentelemetry/semantic-conventions/incubating";
-import { findTestResultsSummary, summarizeTestCases, type TestCase } from "./test-results";
+import { findTestResultsSummary, summarizeTestCases } from "./test-results";
+import type { TestReport } from "./trace/test-trace";
 import { collectTestCasesFromArtifacts } from "./test-artifacts";
 import { traceWorkflowRun } from "./trace/workflow";
 import { createLoggerProvider, createTracerProvider, extractParentContext, stringToRecord } from "./tracer";
@@ -214,14 +215,22 @@ async function run(): Promise<void> {
       exportLogs,
     );
 
-    let testCasesByJobId: Record<number, TestCase[]> = {};
+    let testReportsByJobId: Record<number, TestReport[]> = {};
     if (testResultsArtifactPrefix) {
       core.info(`Collect test results from run artifacts prefixed "${testResultsArtifactPrefix}"`);
       const octokit = getOctokit(ghToken);
-      testCasesByJobId = await collectTestCasesFromArtifacts(context, octokit, runId, testResultsArtifactPrefix, jobs);
+      testReportsByJobId = await collectTestCasesFromArtifacts(
+        context,
+        octokit,
+        runId,
+        testResultsArtifactPrefix,
+        jobs,
+      );
     }
 
-    const allTestCases = Object.values(testCasesByJobId).flat();
+    const allTestCases = Object.values(testReportsByJobId)
+      .flat()
+      .flatMap((report) => report.cases);
     const testResults =
       (await findTestResultsSummary(testResultsGlob)) ??
       (allTestCases.length > 0 ? summarizeTestCases(allTestCases) : undefined);
@@ -266,7 +275,7 @@ async function run(): Promise<void> {
       parentContext,
       testResults,
       jobLogs,
-      testCasesByJobId,
+      testReportsByJobId,
     );
 
     core.setOutput("traceId", traceId);

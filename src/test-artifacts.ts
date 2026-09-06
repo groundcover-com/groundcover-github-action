@@ -4,6 +4,7 @@ import type { components } from "@octokit/openapi-types";
 import { strFromU8, unzipSync } from "fflate";
 import { downloadArtifactZip, listWorkflowRunArtifacts, type Octokit } from "./github";
 import { parseJUnitTestCases, type TestCase } from "./test-results";
+import type { TestReport } from "./trace/test-trace";
 
 type Context = typeof context;
 
@@ -58,9 +59,9 @@ async function collectTestCasesFromArtifacts(
   runId: number,
   prefix: string,
   jobs: components["schemas"]["job"][],
-): Promise<Record<number, TestCase[]>> {
+): Promise<Record<number, TestReport[]>> {
   const artifacts = await listWorkflowRunArtifacts(context, octokit, runId);
-  const testCasesByJobId: Record<number, TestCase[]> = {};
+  const testReportsByJobId: Record<number, TestReport[]> = {};
 
   for (const artifact of artifacts) {
     if (!artifact.name.startsWith(prefix) || artifact.expired) {
@@ -80,13 +81,31 @@ async function collectTestCasesFromArtifacts(
         core.warning(`No test cases found in ${artifact.name}/${file.name}; skipping it`);
         continue;
       }
-      testCasesByJobId[job.id] = [...(testCasesByJobId[job.id] ?? []), ...cases];
+      const report: TestReport = { name: reportName(cases, file.name), cases };
+      testReportsByJobId[job.id] = [...(testReportsByJobId[job.id] ?? []), report];
     }
   }
 
-  const total = Object.values(testCasesByJobId).reduce((sum, cases) => sum + cases.length, 0);
-  core.info(`Collected ${total} test case(s) from run artifacts for ${Object.keys(testCasesByJobId).length} job(s)`);
-  return testCasesByJobId;
+  const reports = Object.values(testReportsByJobId).flat();
+  const total = reports.reduce((sum, report) => sum + report.cases.length, 0);
+  core.info(
+    `Collected ${total} test case(s) in ${reports.length} report(s) from run artifacts for ` +
+      `${Object.keys(testReportsByJobId).length} job(s)`,
+  );
+  return testReportsByJobId;
 }
 
-export { collectTestCasesFromArtifacts, extractXmlFilesFromZip, matchArtifactToJob, sanitizeArtifactNamePart };
+/** The suite name when a file reports just one, else the file name — so sibling reports stay distinguishable. */
+function reportName(cases: TestCase[], fileName: string): string {
+  const suites = new Set(cases.map((testCase) => testCase.suite).filter(Boolean));
+  const onlySuite = suites.size === 1 ? [...suites][0] : undefined;
+  return onlySuite ?? fileName.replace(/^.*\//, "").replace(/\.xml$/i, "");
+}
+
+export {
+  collectTestCasesFromArtifacts,
+  extractXmlFilesFromZip,
+  matchArtifactToJob,
+  reportName,
+  sanitizeArtifactNamePart,
+};

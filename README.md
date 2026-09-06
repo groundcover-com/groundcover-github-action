@@ -393,7 +393,21 @@ Artifacts are matched to jobs by name, `<prefix><sanitized job name>`, where the
     overwrite: true
 ```
 
-Each test case becomes a span under its job span with these attributes:
+Each JUnit file becomes a wrapper span under its job, and each test case in that file becomes a span under the wrapper, so a job that produces several reports keeps them apart:
+
+```
+workflow run
+  job
+    Tests / <suite or file name>     ← rollup for THIS report
+      test case
+      test case
+    Tests / <other suite or file>    ← rollup for THAT report
+      test case
+```
+
+The wrapper is named after the report's suite, or its file name when a file holds several suites, and carries that file's counts — `test.report`, `test.suites`, `test.total`, `test.passed`, `test.failed`, `test.skipped`, `test.errors`, `test.duration` — the same rollup the workflow root carries for the whole run. It spans the job's own window.
+
+Each test case span carries these attributes:
 
 - `test.name`, `test.classname`, `test.suite`
 - `test.status` (`passed` / `failed` / `error` / `skipped`), `test.duration_ms`
@@ -402,7 +416,7 @@ Each test case becomes a span under its job span with these attributes:
 - `test.failure.message` — the failure message and body, capped at 4 KB
 - `github.job.name`, `github.job.id`, `github.run_id`, `github.run_attempt`, `github.head_sha`, `github.head_branch`
 
-Failed and errored cases are marked as error spans. JUnit reports carry durations but no per-test timestamps, so test spans are anchored at the job start time; durations are exact and overlaps are expected. When `testResultsGlob` is not set, the root-span summary attributes above are computed from the artifact-parsed cases instead.
+Failed and errored cases are marked as error spans. JUnit reports carry durations but no per-test timestamps, so **test spans are anchored at the job start time**; durations are exact and overlaps are expected. When `testResultsGlob` is not set, the root-span summary attributes above are computed from the artifact-parsed cases instead.
 
 Each failed case also ships its failure message and captured `<system-out>` as a log record correlated with the test's span, so opening a red test span shows what the test printed. Passing-test output is not exported. These log records are sent even when `exportLogs` is `false`.
 

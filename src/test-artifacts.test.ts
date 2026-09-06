@@ -136,8 +136,10 @@ describe("collectTestCasesFromArtifacts", () => {
     ] as never);
 
     expect(Object.keys(byJobId)).toEqual([String(job.id)]);
-    expect(byJobId[job.id]?.map((testCase) => testCase.name)).toEqual([passingTest, failingTest]);
-    expect(byJobId[job.id]?.[1]).toMatchObject({ status: "failed", message: failureMessage });
+    expect(byJobId[job.id]).toHaveLength(1);
+    const cases = byJobId[job.id]?.[0]?.cases;
+    expect(cases?.map((testCase) => testCase.name)).toEqual([passingTest, failingTest]);
+    expect(cases?.[1]).toMatchObject({ status: "failed", message: failureMessage });
     expect(warning).toHaveBeenCalledWith(expect.stringContaining(orphanArtifactName));
     expect(octokit.rest.actions.downloadArtifact).toHaveBeenCalledTimes(1);
   });

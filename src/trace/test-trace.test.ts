@@ -7,7 +7,8 @@ import {
   type ReadableSpan,
   SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
-import { aJobContext, aJobName, aTestCase, aTestName } from "../__fixtures__/builders";
+import type { TestCase } from "../test-results";
+import { aJobContext, aJobName, aPackageName, aTestCase, aTestName } from "../__fixtures__/builders";
 
 const emit = jest.fn<(record: Record<string, unknown>) => void>();
 const getLogger = jest.fn(() => ({ emit }));
@@ -17,7 +18,11 @@ jest.unstable_mockModule("@opentelemetry/api-logs", () => ({
   SeverityNumber,
 }));
 
-const { traceTestCases } = await import("./test-trace.js");
+const { traceTestReports } = await import("./test-trace.js");
+
+function aTestReport(name: string, cases: TestCase[]): { name: string; cases: TestCase[] } {
+  return { name, cases };
+}
 
 function hrTimeToMs(value: [number, number]): number {
   return value[0] * 1000 + value[1] / 1_000_000;
@@ -49,30 +54,87 @@ describe("traceTestCases", () => {
     return exporter.getFinishedSpans().find((span) => span.name === testCase.name);
   }
 
-  it("emits one span per test case, parented to the active (job) span", () => {
+  it("nests each report's test cases under a per-report wrapper span, itself under the job span", () => {
     const job = aJobContext();
     const jobSpanName = aJobName();
-    const testCases = [aTestCase(), aTestCase()];
+    const report = aTestReport(aPackageName(), [aTestCase(), aTestCase()]);
 
     trace.getTracer("test").startActiveSpan(jobSpanName, (jobSpan) => {
-      traceTestCases(testCases, job);
+      traceTestReports([report], job);
       jobSpan.end();
 
-      const testSpans = exporter.getFinishedSpans().filter((span) => span.name !== jobSpanName);
-      expect(testSpans).toHaveLength(testCases.length);
+      const wrapper = exporter.getFinishedSpans().find((span) => span.name === `Tests / ${report.name}`);
+      expect(wrapper?.parentSpanContext?.spanId).toBe(jobSpan.spanContext().spanId);
+
+      const testSpans = report.cases.map((testCase) => spanFor(testCase));
+      expect(testSpans).toHaveLength(report.cases.length);
       for (const span of testSpans) {
-        expect(span.parentSpanContext?.spanId).toBe(jobSpan.spanContext().spanId);
-        expect(span.spanContext().traceId).toBe(jobSpan.spanContext().traceId);
-        expect(span.kind).toBe(SpanKind.INTERNAL);
+        expect(span?.parentSpanContext?.spanId).toBe(wrapper?.spanContext().spanId);
+        expect(span?.spanContext().traceId).toBe(jobSpan.spanContext().traceId);
+        expect(span?.kind).toBe(SpanKind.INTERNAL);
       }
     });
+  });
+
+  it("gives each report its own wrapper so two reports on one job stay distinct", () => {
+    const first = aTestReport(aPackageName(), [aTestCase()]);
+    const second = aTestReport(aPackageName(), [aTestCase(), aTestCase()]);
+
+    traceTestReports([first, second], aJobContext());
+
+    const wrappers = exporter.getFinishedSpans().filter((span) => span.name.startsWith("Tests / "));
+    expect(wrappers.map((span) => span.name)).toEqual([`Tests / ${first.name}`, `Tests / ${second.name}`]);
+    for (const report of [first, second]) {
+      const wrapperId = wrappers.find((span) => span.name === `Tests / ${report.name}`)?.spanContext().spanId;
+      for (const testCase of report.cases) {
+        expect(spanFor(testCase)?.parentSpanContext?.spanId).toBe(wrapperId);
+      }
+    }
+  });
+
+  it("rolls that report's counts up onto its wrapper span", () => {
+    const report = aTestReport(aPackageName(), [
+      aTestCase({ status: "passed", timeSeconds: 2 }),
+      aTestCase({ status: "failed", timeSeconds: 3 }),
+      aTestCase({ status: "skipped", timeSeconds: 0 }),
+      aTestCase({ status: "error", timeSeconds: 1 }),
+    ]);
+
+    traceTestReports([report], aJobContext());
+
+    expect(
+      exporter.getFinishedSpans().find((span) => span.name === `Tests / ${report.name}`)?.attributes,
+    ).toMatchObject({
+      "test.total": report.cases.length,
+      "test.passed": 1,
+      "test.failed": 1,
+      "test.skipped": 1,
+      "test.errors": 1,
+      "test.duration": 6,
+    });
+  });
+
+  it("spans the wrapper over the job's own window", () => {
+    const job = aJobContext();
+    const report = aTestReport(aPackageName(), [aTestCase()]);
+
+    traceTestReports([report], job);
+
+    const wrapper = exporter.getFinishedSpans().find((span) => span.name === `Tests / ${report.name}`);
+    expect(wrapper).toBeDefined();
+    if (!wrapper) return;
+
+    expect(hrTimeToMs(wrapper.startTime)).toBe(new Date(job.started_at).getTime());
+    expect(hrTimeToMs(wrapper.endTime)).toBe(
+      Math.max(new Date(job.started_at).getTime(), new Date(job.completed_at).getTime()),
+    );
   });
 
   it("sets test and github attributes on each span", () => {
     const testCase = aTestCase();
     const job = aJobContext();
 
-    traceTestCases([testCase], job);
+    traceTestReports([aTestReport(aPackageName(), [testCase])], job);
 
     expect(exporter.getFinishedSpans()[0]?.attributes).toMatchObject({
       "test.name": testCase.name,
@@ -95,7 +157,7 @@ describe("traceTestCases", () => {
     const testCase = aTestCase();
     const job = aJobContext();
 
-    traceTestCases([testCase], job);
+    traceTestReports([aTestReport(aPackageName(), [testCase])], job);
 
     const span = exporter.getFinishedSpans()[0];
     expect(span).toBeDefined();
@@ -110,7 +172,7 @@ describe("traceTestCases", () => {
     const errored = aTestCase({ status: "error" });
     const passed = aTestCase();
 
-    traceTestCases([failed, errored, passed], aJobContext());
+    traceTestReports([aTestReport(aPackageName(), [failed, errored, passed])], aJobContext());
 
     expect(spanFor(failed)).toMatchObject({
       status: { code: SpanStatusCode.ERROR },
@@ -124,7 +186,7 @@ describe("traceTestCases", () => {
   it("emits skipped cases with a skipped status and no error", () => {
     const skipped = aTestCase({ status: "skipped", timeSeconds: 0 });
 
-    traceTestCases([skipped], aJobContext());
+    traceTestReports([aTestReport(aPackageName(), [skipped])], aJobContext());
 
     const span = exporter.getFinishedSpans()[0];
     expect(span?.attributes["test.status"]).toBe("skipped");
@@ -140,7 +202,7 @@ describe("traceTestCases", () => {
     const passed = aTestCase({ output: `stdout ${aTestName()}` });
     const job = aJobContext();
 
-    traceTestCases([failed, passed], job);
+    traceTestReports([aTestReport(aPackageName(), [failed, passed])], job);
 
     expect(emit).toHaveBeenCalledTimes(1);
     const record = emit.mock.calls[0]?.[0];
@@ -160,7 +222,7 @@ describe("traceTestCases", () => {
   });
 
   it("emits no log record for failures without message or output", () => {
-    traceTestCases([aTestCase({ status: "failed" })], aJobContext());
+    traceTestReports([aTestReport(aPackageName(), [aTestCase({ status: "failed" })])], aJobContext());
 
     expect(emit).not.toHaveBeenCalled();
   });
