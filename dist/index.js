@@ -7,21 +7,21 @@ import * as path$2 from 'path';
 import path__default from 'path';
 import http from 'http';
 import https from 'https';
-import require$$0$7 from 'net';
+import require$$0$6 from 'net';
 import require$$1$2 from 'tls';
-import require$$0$5 from 'events';
+import require$$0$4 from 'events';
 import 'assert';
-import require$$0$4, { inspect } from 'util';
+import util$a, { inspect } from 'util';
 import { createRequire } from 'node:module';
 import require$$5$1 from 'string_decoder';
 import 'child_process';
 import 'timers';
-import require$$0$6, { Readable } from 'stream';
+import require$$0$5, { Readable } from 'stream';
 import { readFile } from 'node:fs/promises';
 import process$1 from 'process';
 import * as require$$0$3 from 'zlib';
 import require$$0__default$1 from 'zlib';
-import require$$0$8 from 'http2';
+import require$$0$7 from 'http2';
 import require$$6$1 from 'url';
 import require$$1$3 from 'dns';
 import require$$1$4 from 'async_hooks';
@@ -222,8 +222,8 @@ function requireTunnel$1 () {
 	var tls = require$$1$2;
 	var http$1 = http;
 	var https$1 = https;
-	var events = require$$0$5;
-	var util = require$$0$4;
+	var events = require$$0$4;
+	var util = util$a;
 
 
 	tunnel$1.httpOverHttp = httpOverHttp;
@@ -3672,9 +3672,9 @@ var hasRequiredConstants$7;
 function requireConstants$7 () {
 	if (hasRequiredConstants$7) return constants$7;
 	hasRequiredConstants$7 = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.SPECIAL_HEADERS = exports$1.HEADER_STATE = exports$1.MINOR = exports$1.MAJOR = exports$1.CONNECTION_TOKEN_CHARS = exports$1.HEADER_CHARS = exports$1.TOKEN = exports$1.STRICT_TOKEN = exports$1.HEX = exports$1.URL_CHAR = exports$1.STRICT_URL_CHAR = exports$1.USERINFO_CHARS = exports$1.MARK = exports$1.ALPHANUM = exports$1.NUM = exports$1.HEX_MAP = exports$1.NUM_MAP = exports$1.ALPHA = exports$1.FINISH = exports$1.H_METHOD_MAP = exports$1.METHOD_MAP = exports$1.METHODS_RTSP = exports$1.METHODS_ICE = exports$1.METHODS_HTTP = exports$1.METHODS = exports$1.LENIENT_FLAGS = exports$1.FLAGS = exports$1.TYPE = exports$1.ERROR = void 0;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.SPECIAL_HEADERS = exports.HEADER_STATE = exports.MINOR = exports.MAJOR = exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS = exports.TOKEN = exports.STRICT_TOKEN = exports.HEX = exports.URL_CHAR = exports.STRICT_URL_CHAR = exports.USERINFO_CHARS = exports.MARK = exports.ALPHANUM = exports.NUM = exports.HEX_MAP = exports.NUM_MAP = exports.ALPHA = exports.FINISH = exports.H_METHOD_MAP = exports.METHOD_MAP = exports.METHODS_RTSP = exports.METHODS_ICE = exports.METHODS_HTTP = exports.METHODS = exports.LENIENT_FLAGS = exports.FLAGS = exports.TYPE = exports.ERROR = void 0;
 		const utils_1 = requireUtils$4();
 		(function (ERROR) {
 		    ERROR[ERROR["OK"] = 0] = "OK";
@@ -3702,12 +3702,12 @@ function requireConstants$7 () {
 		    ERROR[ERROR["PAUSED_UPGRADE"] = 22] = "PAUSED_UPGRADE";
 		    ERROR[ERROR["PAUSED_H2_UPGRADE"] = 23] = "PAUSED_H2_UPGRADE";
 		    ERROR[ERROR["USER"] = 24] = "USER";
-		})(exports$1.ERROR || (exports$1.ERROR = {}));
+		})(exports.ERROR || (exports.ERROR = {}));
 		(function (TYPE) {
 		    TYPE[TYPE["BOTH"] = 0] = "BOTH";
 		    TYPE[TYPE["REQUEST"] = 1] = "REQUEST";
 		    TYPE[TYPE["RESPONSE"] = 2] = "RESPONSE";
-		})(exports$1.TYPE || (exports$1.TYPE = {}));
+		})(exports.TYPE || (exports.TYPE = {}));
 		(function (FLAGS) {
 		    FLAGS[FLAGS["CONNECTION_KEEP_ALIVE"] = 1] = "CONNECTION_KEEP_ALIVE";
 		    FLAGS[FLAGS["CONNECTION_CLOSE"] = 2] = "CONNECTION_CLOSE";
@@ -3719,12 +3719,12 @@ function requireConstants$7 () {
 		    FLAGS[FLAGS["TRAILING"] = 128] = "TRAILING";
 		    // 1 << 8 is unused
 		    FLAGS[FLAGS["TRANSFER_ENCODING"] = 512] = "TRANSFER_ENCODING";
-		})(exports$1.FLAGS || (exports$1.FLAGS = {}));
+		})(exports.FLAGS || (exports.FLAGS = {}));
 		(function (LENIENT_FLAGS) {
 		    LENIENT_FLAGS[LENIENT_FLAGS["HEADERS"] = 1] = "HEADERS";
 		    LENIENT_FLAGS[LENIENT_FLAGS["CHUNKED_LENGTH"] = 2] = "CHUNKED_LENGTH";
 		    LENIENT_FLAGS[LENIENT_FLAGS["KEEP_ALIVE"] = 4] = "KEEP_ALIVE";
-		})(exports$1.LENIENT_FLAGS || (exports$1.LENIENT_FLAGS = {}));
+		})(exports.LENIENT_FLAGS || (exports.LENIENT_FLAGS = {}));
 		var METHODS;
 		(function (METHODS) {
 		    METHODS[METHODS["DELETE"] = 0] = "DELETE";
@@ -3784,8 +3784,8 @@ function requireConstants$7 () {
 		    METHODS[METHODS["RECORD"] = 44] = "RECORD";
 		    /* RAOP */
 		    METHODS[METHODS["FLUSH"] = 45] = "FLUSH";
-		})(METHODS = exports$1.METHODS || (exports$1.METHODS = {}));
-		exports$1.METHODS_HTTP = [
+		})(METHODS = exports.METHODS || (exports.METHODS = {}));
+		exports.METHODS_HTTP = [
 		    METHODS.DELETE,
 		    METHODS.GET,
 		    METHODS.HEAD,
@@ -3823,10 +3823,10 @@ function requireConstants$7 () {
 		    // TODO(indutny): should we allow it with HTTP?
 		    METHODS.SOURCE,
 		];
-		exports$1.METHODS_ICE = [
+		exports.METHODS_ICE = [
 		    METHODS.SOURCE,
 		];
-		exports$1.METHODS_RTSP = [
+		exports.METHODS_RTSP = [
 		    METHODS.OPTIONS,
 		    METHODS.DESCRIBE,
 		    METHODS.ANNOUNCE,
@@ -3843,59 +3843,59 @@ function requireConstants$7 () {
 		    METHODS.GET,
 		    METHODS.POST,
 		];
-		exports$1.METHOD_MAP = utils_1.enumToMap(METHODS);
-		exports$1.H_METHOD_MAP = {};
-		Object.keys(exports$1.METHOD_MAP).forEach((key) => {
+		exports.METHOD_MAP = utils_1.enumToMap(METHODS);
+		exports.H_METHOD_MAP = {};
+		Object.keys(exports.METHOD_MAP).forEach((key) => {
 		    if (/^H/.test(key)) {
-		        exports$1.H_METHOD_MAP[key] = exports$1.METHOD_MAP[key];
+		        exports.H_METHOD_MAP[key] = exports.METHOD_MAP[key];
 		    }
 		});
 		(function (FINISH) {
 		    FINISH[FINISH["SAFE"] = 0] = "SAFE";
 		    FINISH[FINISH["SAFE_WITH_CB"] = 1] = "SAFE_WITH_CB";
 		    FINISH[FINISH["UNSAFE"] = 2] = "UNSAFE";
-		})(exports$1.FINISH || (exports$1.FINISH = {}));
-		exports$1.ALPHA = [];
+		})(exports.FINISH || (exports.FINISH = {}));
+		exports.ALPHA = [];
 		for (let i = 'A'.charCodeAt(0); i <= 'Z'.charCodeAt(0); i++) {
 		    // Upper case
-		    exports$1.ALPHA.push(String.fromCharCode(i));
+		    exports.ALPHA.push(String.fromCharCode(i));
 		    // Lower case
-		    exports$1.ALPHA.push(String.fromCharCode(i + 0x20));
+		    exports.ALPHA.push(String.fromCharCode(i + 0x20));
 		}
-		exports$1.NUM_MAP = {
+		exports.NUM_MAP = {
 		    0: 0, 1: 1, 2: 2, 3: 3, 4: 4,
 		    5: 5, 6: 6, 7: 7, 8: 8, 9: 9,
 		};
-		exports$1.HEX_MAP = {
+		exports.HEX_MAP = {
 		    0: 0, 1: 1, 2: 2, 3: 3, 4: 4,
 		    5: 5, 6: 6, 7: 7, 8: 8, 9: 9,
 		    A: 0XA, B: 0XB, C: 0XC, D: 0XD, E: 0XE, F: 0XF,
 		    a: 0xa, b: 0xb, c: 0xc, d: 0xd, e: 0xe, f: 0xf,
 		};
-		exports$1.NUM = [
+		exports.NUM = [
 		    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		];
-		exports$1.ALPHANUM = exports$1.ALPHA.concat(exports$1.NUM);
-		exports$1.MARK = ['-', '_', '.', '!', '~', '*', '\'', '(', ')'];
-		exports$1.USERINFO_CHARS = exports$1.ALPHANUM
-		    .concat(exports$1.MARK)
+		exports.ALPHANUM = exports.ALPHA.concat(exports.NUM);
+		exports.MARK = ['-', '_', '.', '!', '~', '*', '\'', '(', ')'];
+		exports.USERINFO_CHARS = exports.ALPHANUM
+		    .concat(exports.MARK)
 		    .concat(['%', ';', ':', '&', '=', '+', '$', ',']);
 		// TODO(indutny): use RFC
-		exports$1.STRICT_URL_CHAR = [
+		exports.STRICT_URL_CHAR = [
 		    '!', '"', '$', '%', '&', '\'',
 		    '(', ')', '*', '+', ',', '-', '.', '/',
 		    ':', ';', '<', '=', '>',
 		    '@', '[', '\\', ']', '^', '_',
 		    '`',
 		    '{', '|', '}', '~',
-		].concat(exports$1.ALPHANUM);
-		exports$1.URL_CHAR = exports$1.STRICT_URL_CHAR
+		].concat(exports.ALPHANUM);
+		exports.URL_CHAR = exports.STRICT_URL_CHAR
 		    .concat(['\t', '\f']);
 		// All characters with 0x80 bit set to 1
 		for (let i = 0x80; i <= 0xff; i++) {
-		    exports$1.URL_CHAR.push(i);
+		    exports.URL_CHAR.push(i);
 		}
-		exports$1.HEX = exports$1.NUM.concat(['a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F']);
+		exports.HEX = exports.NUM.concat(['a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F']);
 		/* Tokens as defined by rfc 2616. Also lowercases them.
 		 *        token       = 1*<any CHAR except CTLs or separators>
 		 *     separators     = "(" | ")" | "<" | ">" | "@"
@@ -3903,27 +3903,27 @@ function requireConstants$7 () {
 		 *                    | "/" | "[" | "]" | "?" | "="
 		 *                    | "{" | "}" | SP | HT
 		 */
-		exports$1.STRICT_TOKEN = [
+		exports.STRICT_TOKEN = [
 		    '!', '#', '$', '%', '&', '\'',
 		    '*', '+', '-', '.',
 		    '^', '_', '`',
 		    '|', '~',
-		].concat(exports$1.ALPHANUM);
-		exports$1.TOKEN = exports$1.STRICT_TOKEN.concat([' ']);
+		].concat(exports.ALPHANUM);
+		exports.TOKEN = exports.STRICT_TOKEN.concat([' ']);
 		/*
 		 * Verify that a char is a valid visible (printable) US-ASCII
 		 * character or %x80-FF
 		 */
-		exports$1.HEADER_CHARS = ['\t'];
+		exports.HEADER_CHARS = ['\t'];
 		for (let i = 32; i <= 255; i++) {
 		    if (i !== 127) {
-		        exports$1.HEADER_CHARS.push(i);
+		        exports.HEADER_CHARS.push(i);
 		    }
 		}
 		// ',' = \x44
-		exports$1.CONNECTION_TOKEN_CHARS = exports$1.HEADER_CHARS.filter((c) => c !== 44);
-		exports$1.MAJOR = exports$1.NUM_MAP;
-		exports$1.MINOR = exports$1.MAJOR;
+		exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS.filter((c) => c !== 44);
+		exports.MAJOR = exports.NUM_MAP;
+		exports.MINOR = exports.MAJOR;
 		var HEADER_STATE;
 		(function (HEADER_STATE) {
 		    HEADER_STATE[HEADER_STATE["GENERAL"] = 0] = "GENERAL";
@@ -3935,8 +3935,8 @@ function requireConstants$7 () {
 		    HEADER_STATE[HEADER_STATE["CONNECTION_CLOSE"] = 6] = "CONNECTION_CLOSE";
 		    HEADER_STATE[HEADER_STATE["CONNECTION_UPGRADE"] = 7] = "CONNECTION_UPGRADE";
 		    HEADER_STATE[HEADER_STATE["TRANSFER_ENCODING_CHUNKED"] = 8] = "TRANSFER_ENCODING_CHUNKED";
-		})(HEADER_STATE = exports$1.HEADER_STATE || (exports$1.HEADER_STATE = {}));
-		exports$1.SPECIAL_HEADERS = {
+		})(HEADER_STATE = exports.HEADER_STATE || (exports.HEADER_STATE = {}));
+		exports.SPECIAL_HEADERS = {
 		    'connection': HEADER_STATE.CONNECTION,
 		    'content-length': HEADER_STATE.CONTENT_LENGTH,
 		    'proxy-connection': HEADER_STATE.CONNECTION,
@@ -8843,10 +8843,10 @@ function requireClientH1 () {
 	const TIMEOUT_KEEP_ALIVE = 8 | USE_NATIVE_TIMER;
 
 	class Parser {
-	  constructor (client, socket, { exports: exports$1 }) {
+	  constructor (client, socket, { exports }) {
 	    assert(Number.isFinite(client[kMaxHeadersSize]) && client[kMaxHeadersSize] > 0);
 
-	    this.llhttp = exports$1;
+	    this.llhttp = exports;
 	    this.ptr = this.llhttp.llhttp_alloc(constants.TYPE.RESPONSE);
 	    this.client = client;
 	    this.socket = socket;
@@ -9571,7 +9571,7 @@ function requireClientH1 () {
 
 	function clearIdleSocketValidation (socket) {
 	  if (socket[kIdleSocketValidationTimeout]) {
-	    clearTimeout(socket[kIdleSocketValidationTimeout]);
+	    clearImmediate(socket[kIdleSocketValidationTimeout]);
 	    socket[kIdleSocketValidationTimeout] = null;
 	  }
 
@@ -9580,15 +9580,23 @@ function requireClientH1 () {
 
 	function scheduleIdleSocketValidation (client, socket) {
 	  socket[kIdleSocketValidation] = 1;
-	  socket[kIdleSocketValidationTimeout] = setTimeout(() => {
+	  // Yield to the check phase (after poll) so unsolicited bytes / FIN / RST
+	  // already pending on this idle keep-alive socket are processed before the
+	  // next request is written (GHSA-35p6-xmwp-9g52).
+	  //
+	  // setTimeout(0) pays Node's ~1ms timer floor on every sequential reuse
+	  // (#5493). setImmediate avoids that, but an *unref'd* Immediate lets poll
+	  // block for ~500ms when the event loop is otherwise idle (#5600 / #5606).
+	  // A ref'd Immediate both keeps the pending request alive and makes poll
+	  // return immediately — the hybrid those issues asked for.
+	  socket[kIdleSocketValidationTimeout] = setImmediate(() => {
 	    socket[kIdleSocketValidationTimeout] = null;
 	    socket[kIdleSocketValidation] = 2;
 
 	    if (client[kSocket] === socket && !socket.destroyed) {
 	      client[kResume]();
 	    }
-	  }, 0);
-	  socket[kIdleSocketValidationTimeout].unref?.();
+	  });
 	}
 
 	/**
@@ -13211,6 +13219,7 @@ function requireRetryHandler () {
 	    this.end = null;
 	    this.etag = null;
 	    this.resume = null;
+	    this.headersSent = false;
 
 	    // Handle possible onConnect duplication
 	    this.handler.onConnect(reason => {
@@ -13221,6 +13230,20 @@ function requireRetryHandler () {
 	        this.reason = reason;
 	      }
 	    });
+	  }
+
+	  checkpointResponseEnd (headers, resume) {
+	    if (this.end == null && this.opts.method !== 'HEAD') {
+	      const contentLength = headers['content-length'];
+	      this.end = contentLength != null ? Number(contentLength) - 1 : null;
+
+	      assert(
+	        this.end == null || Number.isFinite(this.end),
+	        'invalid content-length'
+	      );
+	    }
+
+	    this.resume = this.end != null ? resume : null;
 	  }
 
 	  onRequestSent () {
@@ -13312,6 +13335,8 @@ function requireRetryHandler () {
 
 	    if (statusCode >= 300) {
 	      if (this.retryOpts.statusCodes.includes(statusCode) === false) {
+	        this.headersSent = true;
+	        this.checkpointResponseEnd(headers, resume);
 	        return this.handler.onHeaders(
 	          statusCode,
 	          rawHeaders,
@@ -13380,8 +13405,15 @@ function requireRetryHandler () {
 
 	      const { start, size, end = size - 1 } = contentRange;
 
-	      assert(this.start === start, 'content-range mismatch');
-	      assert(this.end == null || this.end === end, 'content-range mismatch');
+	      if (this.start !== start || (this.end != null && this.end !== end)) {
+	        this.abort(
+	          new RequestRetryError('Content-Range mismatch', statusCode, {
+	            headers,
+	            data: { count: this.retryCount }
+	          })
+	        );
+	        return false
+	      }
 
 	      this.resume = resume;
 	      return true
@@ -13393,6 +13425,7 @@ function requireRetryHandler () {
 	        const range = parseRangeHeader(headers['content-range']);
 
 	        if (range == null) {
+	          this.headersSent = true;
 	          return this.handler.onHeaders(
 	            statusCode,
 	            rawHeaders,
@@ -13431,6 +13464,7 @@ function requireRetryHandler () {
 	      );
 
 	      this.resume = resume;
+	      this.headersSent = true;
 	      this.etag = headers.etag != null ? headers.etag : null;
 
 	      // Weak etags are not useful for comparison nor cache
@@ -13470,7 +13504,7 @@ function requireRetryHandler () {
 	  }
 
 	  onError (err) {
-	    if (this.aborted || isDisturbed(this.opts.body)) {
+	    if (this.aborted || isDisturbed(this.opts.body) || (this.headersSent && this.resume == null)) {
 	      return this.handler.onError(err)
 	    }
 
@@ -24052,11 +24086,11 @@ function requireUtil$4 () {
 	return util$4;
 }
 
-var parse$1;
+var parse$2;
 var hasRequiredParse$3;
 
 function requireParse$3 () {
-	if (hasRequiredParse$3) return parse$1;
+	if (hasRequiredParse$3) return parse$2;
 	hasRequiredParse$3 = 1;
 
 	const { maxNameValuePairSize, maxAttributeValueSize } = requireConstants$5();
@@ -24363,11 +24397,11 @@ function requireParse$3 () {
 	  return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList)
 	}
 
-	parse$1 = {
+	parse$2 = {
 	  parseSetCookie,
 	  parseUnparsedAttributes
 	};
-	return parse$1;
+	return parse$2;
 }
 
 var cookies;
@@ -25626,7 +25660,7 @@ function requireConnection () {
 	        // is specified, the server needs to include the same field and one of
 	        // the selected subprotocol values in its response for the connection to
 	        // be established.
-	        if (!requestProtocols.includes(secProtocol)) {
+	        if (requestProtocols === null || !requestProtocols.includes(secProtocol)) {
 	          failWebsocketConnection(ws, 'Protocol was not set in the opening handshake.');
 	          return
 	        }
@@ -25873,7 +25907,12 @@ function requirePermessageDeflate () {
 
 	        if (this.#maxPayloadSize > 0 && this.#inflate[kLength] > this.#maxPayloadSize) {
 	          callback(new MessageSizeExceededError());
+	          // The inflater may still hold buffered input that can emit a late
+	          // zlib error. Remove the data listener, then deterministically stop
+	          // the stream so a subsequent 'error' cannot fire without a listener
+	          // (which would terminate the process as an unhandled error event).
 	          this.#inflate.removeAllListeners();
+	          this.#inflate.destroy();
 	          this.#inflate = null;
 	          return
 	        }
@@ -27222,6 +27261,49 @@ function requireEventsourceStream () {
 	 */
 	const SPACE = 0x20;
 
+	const DATA = Buffer.from('data');
+	const EVENT = Buffer.from('event');
+	const ID = Buffer.from('id');
+	const RETRY = Buffer.from('retry');
+
+	function isASCIINumberBytes (buffer, start) {
+	  if (start >= buffer.length) {
+	    return false
+	  }
+
+	  for (let i = start; i < buffer.length; i++) {
+	    if (buffer[i] < 0x30 || buffer[i] > 0x39) {
+	      return false
+	    }
+	  }
+
+	  return true
+	}
+
+	function isValidLastEventIdBytes (buffer, start) {
+	  for (let i = start; i < buffer.length; i++) {
+	    if (buffer[i] === 0x00) {
+	      return false
+	    }
+	  }
+
+	  return true
+	}
+
+	function isFieldName (line, length, field) {
+	  if (length !== field.length) {
+	    return false
+	  }
+
+	  for (let i = 0; i < length; i++) {
+	    if (line[i] !== field[i]) {
+	      return false
+	    }
+	  }
+
+	  return true
+	}
+
 	/**
 	 * @typedef {object} EventSourceStreamEvent
 	 * @type {object}
@@ -27262,11 +27344,14 @@ function requireEventsourceStream () {
 	  eventEndCheck = false
 
 	  /**
-	   * @type {Buffer}
+	   * @type {Buffer[]}
 	   */
-	  buffer = null
+	  chunks = []
 
+	  chunkIndex = 0
 	  pos = 0
+	  lineChunkIndex = 0
+	  linePos = 0
 
 	  event = {
 	    data: undefined,
@@ -27305,92 +27390,20 @@ function requireEventsourceStream () {
 	      return
 	    }
 
-	    // Cache the chunk in the buffer, as the data might not be complete while
-	    // processing it
-	    // TODO: Investigate if there is a more performant way to handle
-	    // incoming chunks
-	    // see: https://github.com/nodejs/undici/issues/2630
-	    if (this.buffer) {
-	      this.buffer = Buffer.concat([this.buffer, chunk]);
-	    } else {
-	      this.buffer = chunk;
-	    }
+	    this.chunks.push(chunk);
 
 	    // Strip leading byte-order-mark if we opened the stream and started
 	    // the processing of the incoming data
 	    if (this.checkBOM) {
-	      switch (this.buffer.length) {
-	        case 1:
-	          // Check if the first byte is the same as the first byte of the BOM
-	          if (this.buffer[0] === BOM[0]) {
-	            // If it is, we need to wait for more data
-	            callback();
-	            return
-	          }
-	          // Set the checkBOM flag to false as we don't need to check for the
-	          // BOM anymore
-	          this.checkBOM = false;
-
-	          // The buffer only contains one byte so we need to wait for more data
-	          callback();
-	          return
-	        case 2:
-	          // Check if the first two bytes are the same as the first two bytes
-	          // of the BOM
-	          if (
-	            this.buffer[0] === BOM[0] &&
-	            this.buffer[1] === BOM[1]
-	          ) {
-	            // If it is, we need to wait for more data, because the third byte
-	            // is needed to determine if it is the BOM or not
-	            callback();
-	            return
-	          }
-
-	          // Set the checkBOM flag to false as we don't need to check for the
-	          // BOM anymore
-	          this.checkBOM = false;
-	          break
-	        case 3:
-	          // Check if the first three bytes are the same as the first three
-	          // bytes of the BOM
-	          if (
-	            this.buffer[0] === BOM[0] &&
-	            this.buffer[1] === BOM[1] &&
-	            this.buffer[2] === BOM[2]
-	          ) {
-	            // If it is, we can drop the buffered data, as it is only the BOM
-	            this.buffer = Buffer.alloc(0);
-	            // Set the checkBOM flag to false as we don't need to check for the
-	            // BOM anymore
-	            this.checkBOM = false;
-
-	            // Await more data
-	            callback();
-	            return
-	          }
-	          // If it is not the BOM, we can start processing the data
-	          this.checkBOM = false;
-	          break
-	        default:
-	          // The buffer is longer than 3 bytes, so we can drop the BOM if it is
-	          // present
-	          if (
-	            this.buffer[0] === BOM[0] &&
-	            this.buffer[1] === BOM[1] &&
-	            this.buffer[2] === BOM[2]
-	          ) {
-	            // Remove the BOM from the buffer
-	            this.buffer = this.buffer.subarray(3);
-	          }
-
-	          // Set the checkBOM flag to false as we don't need to check for the
-	          this.checkBOM = false;
-	          break
+	      if (this.handleBOM()) {
+	        callback();
+	        return
 	      }
 	    }
 
-	    while (this.pos < this.buffer.length) {
+	    while (this.hasCurrentByte()) {
+	      const byte = this.currentByte();
+
 	      // If the previous line ended with an end-of-line, we need to check
 	      // if the next character is also an end-of-line.
 	      if (this.eventEndCheck) {
@@ -27403,10 +27416,9 @@ function requireEventsourceStream () {
 	        if (this.crlfCheck) {
 	          // If the current character is a line feed, we can remove it
 	          // from the buffer and reset the crlfCheck flag
-	          if (this.buffer[this.pos] === LF) {
-	            this.buffer = this.buffer.subarray(this.pos + 1);
-	            this.pos = 0;
+	          if (byte === LF) {
 	            this.crlfCheck = false;
+	            this.consumeCurrentByte();
 
 	            // It is possible that the line feed is not the end of the
 	            // event. We need to check if the next character is an
@@ -27422,19 +27434,17 @@ function requireEventsourceStream () {
 	          this.crlfCheck = false;
 	        }
 
-	        if (this.buffer[this.pos] === LF || this.buffer[this.pos] === CR) {
+	        if (byte === LF || byte === CR) {
 	          // If the current character is a carriage return, we need to
 	          // set the crlfCheck flag to true, as we need to check if the
 	          // next character is a line feed so we can remove it from the
 	          // buffer
-	          if (this.buffer[this.pos] === CR) {
+	          if (byte === CR) {
 	            this.crlfCheck = true;
 	          }
 
-	          this.buffer = this.buffer.subarray(this.pos + 1);
-	          this.pos = 0;
-	          if (
-	            this.event.data !== undefined || this.event.event || this.event.id || this.event.retry) {
+	          this.consumeCurrentByte();
+	          if (this.hasPendingEvent()) {
 	            this.processEvent(this.event);
 	          }
 	          this.clearEvent();
@@ -27448,22 +27458,18 @@ function requireEventsourceStream () {
 
 	      // If the current character is an end-of-line, we can process the
 	      // line
-	      if (this.buffer[this.pos] === LF || this.buffer[this.pos] === CR) {
+	      if (byte === LF || byte === CR) {
 	        // If the current character is a carriage return, we need to
 	        // set the crlfCheck flag to true, as we need to check if the
 	        // next character is a line feed
-	        if (this.buffer[this.pos] === CR) {
+	        if (byte === CR) {
 	          this.crlfCheck = true;
 	        }
 
 	        // In any case, we can process the line as we reached an
 	        // end-of-line character
-	        this.parseLine(this.buffer.subarray(0, this.pos), this.event);
-
-	        // Remove the processed line from the buffer
-	        this.buffer = this.buffer.subarray(this.pos + 1);
-	        // Reset the position as we removed the processed line from the buffer
-	        this.pos = 0;
+	        this.parseLine(this.readLine(), this.event);
+	        this.consumeCurrentByte();
 	        // A line was processed and this could be the end of the event. We need
 	        // to check if the next line is empty to determine if the event is
 	        // finished.
@@ -27471,7 +27477,7 @@ function requireEventsourceStream () {
 	        continue
 	      }
 
-	      this.pos++;
+	      this.advanceCursor();
 	    }
 
 	    callback();
@@ -27496,64 +27502,53 @@ function requireEventsourceStream () {
 	      return
 	    }
 
-	    let field = '';
-	    let value = '';
+	    let fieldLength = line.length;
+	    let valueStart = line.length;
 
 	    // If the line contains a U+003A COLON character (:)
 	    if (colonPosition !== -1) {
-	      // Collect the characters on the line before the first U+003A COLON
-	      // character (:), and let field be that string.
-	      // TODO: Investigate if there is a more performant way to extract the
-	      // field
-	      // see: https://github.com/nodejs/undici/issues/2630
-	      field = line.subarray(0, colonPosition).toString('utf8');
+	      fieldLength = colonPosition;
 
 	      // Collect the characters on the line after the first U+003A COLON
 	      // character (:), and let value be that string.
 	      // If value starts with a U+0020 SPACE character, remove it from value.
-	      let valueStart = colonPosition + 1;
+	      valueStart = colonPosition + 1;
 	      if (line[valueStart] === SPACE) {
 	        ++valueStart;
 	      }
-	      // TODO: Investigate if there is a more performant way to extract the
-	      // value
-	      // see: https://github.com/nodejs/undici/issues/2630
-	      value = line.subarray(valueStart).toString('utf8');
-
-	      // Otherwise, the string is not empty but does not contain a U+003A COLON
-	      // character (:)
-	    } else {
-	      // Process the field using the steps described below, using the whole
-	      // line as the field name, and the empty string as the field value.
-	      field = line.toString('utf8');
-	      value = '';
 	    }
 
-	    // Modify the event with the field name and value. The value is also
-	    // decoded as UTF-8
-	    switch (field) {
-	      case 'data':
-	        if (event[field] === undefined) {
-	          event[field] = value;
-	        } else {
-	          event[field] += `\n${value}`;
-	        }
-	        break
-	      case 'retry':
-	        if (isASCIINumber(value)) {
-	          event[field] = value;
-	        }
-	        break
-	      case 'id':
-	        if (isValidLastEventId(value)) {
-	          event[field] = value;
-	        }
-	        break
-	      case 'event':
-	        if (value.length > 0) {
-	          event[field] = value;
-	        }
-	        break
+	    if (isFieldName(line, fieldLength, DATA)) {
+	      const value = line.toString('utf8', valueStart);
+
+	      if (event.data === undefined) {
+	        event.data = value;
+	      } else {
+	        event.data += `\n${value}`;
+	      }
+	      return
+	    }
+
+	    if (isFieldName(line, fieldLength, RETRY)) {
+	      if (isASCIINumberBytes(line, valueStart)) {
+	        event.retry = line.toString('utf8', valueStart);
+	      }
+	      return
+	    }
+
+	    if (isFieldName(line, fieldLength, ID)) {
+	      if (isValidLastEventIdBytes(line, valueStart)) {
+	        event.id = line.toString('utf8', valueStart);
+	      }
+	      return
+	    }
+
+	    if (isFieldName(line, fieldLength, EVENT)) {
+	      const value = line.toString('utf8', valueStart);
+
+	      if (value.length > 0) {
+	        event.event = value;
+	      }
 	    }
 	  }
 
@@ -27583,12 +27578,151 @@ function requireEventsourceStream () {
 	  }
 
 	  clearEvent () {
-	    this.event = {
-	      data: undefined,
-	      event: undefined,
-	      id: undefined,
-	      retry: undefined
-	    };
+	    this.event.data = undefined;
+	    this.event.event = undefined;
+	    this.event.id = undefined;
+	    this.event.retry = undefined;
+	  }
+
+	  hasPendingEvent () {
+	    return this.event.data !== undefined ||
+	      this.event.event !== undefined ||
+	      this.event.id !== undefined ||
+	      this.event.retry !== undefined
+	  }
+
+	  hasCurrentByte () {
+	    return this.chunkIndex < this.chunks.length &&
+	      this.pos < this.chunks[this.chunkIndex].length
+	  }
+
+	  currentByte () {
+	    return this.chunks[this.chunkIndex][this.pos]
+	  }
+
+	  consumeCurrentByte () {
+	    this.advanceCursor();
+	    this.syncLineStartToCursor();
+	  }
+
+	  advanceCursor () {
+	    this.pos++;
+
+	    while (this.chunkIndex < this.chunks.length && this.pos >= this.chunks[this.chunkIndex].length) {
+	      this.chunkIndex++;
+	      this.pos = 0;
+	    }
+	  }
+
+	  syncLineStartToCursor () {
+	    this.lineChunkIndex = this.chunkIndex;
+	    this.linePos = this.pos;
+	    this.dropConsumedChunks();
+	  }
+
+	  dropConsumedChunks () {
+	    while (this.lineChunkIndex > 0) {
+	      this.chunks.shift();
+	      this.lineChunkIndex--;
+	      this.chunkIndex--;
+	    }
+
+	    if (this.chunkIndex === this.chunks.length) {
+	      this.chunks.length = 0;
+	      this.chunkIndex = 0;
+	      this.pos = 0;
+	      this.lineChunkIndex = 0;
+	      this.linePos = 0;
+	    }
+	  }
+
+	  readLine () {
+	    if (this.lineChunkIndex === this.chunkIndex) {
+	      return this.chunks[this.chunkIndex].subarray(this.linePos, this.pos)
+	    }
+
+	    const chunks = [];
+	    let length = 0;
+
+	    for (let i = this.lineChunkIndex; i <= this.chunkIndex; i++) {
+	      const chunk = this.chunks[i];
+	      const start = i === this.lineChunkIndex ? this.linePos : 0;
+	      const end = i === this.chunkIndex ? this.pos : chunk.length;
+	      const slice = chunk.subarray(start, end);
+	      length += slice.length;
+	      chunks.push(slice);
+	    }
+
+	    return Buffer.concat(chunks, length)
+	  }
+
+	  peekBufferedByte (offset) {
+	    let chunkIndex = this.lineChunkIndex;
+	    let pos = this.linePos;
+
+	    while (chunkIndex < this.chunks.length) {
+	      const chunk = this.chunks[chunkIndex];
+	      const remaining = chunk.length - pos;
+
+	      if (offset < remaining) {
+	        return chunk[pos + offset]
+	      }
+
+	      offset -= remaining;
+	      chunkIndex++;
+	      pos = 0;
+	    }
+	  }
+
+	  discardLeadingBytes (count) {
+	    while (count > 0 && this.lineChunkIndex < this.chunks.length) {
+	      const chunk = this.chunks[this.lineChunkIndex];
+	      const remaining = chunk.length - this.linePos;
+
+	      if (count < remaining) {
+	        this.linePos += count;
+	        count = 0;
+	      } else {
+	        count -= remaining;
+	        this.lineChunkIndex++;
+	        this.linePos = 0;
+	      }
+	    }
+
+	    this.chunkIndex = this.lineChunkIndex;
+	    this.pos = this.linePos;
+	    this.dropConsumedChunks();
+	  }
+
+	  handleBOM () {
+	    const first = this.peekBufferedByte(0);
+	    const second = this.peekBufferedByte(1);
+	    const third = this.peekBufferedByte(2);
+
+	    if (second === undefined) {
+	      if (first === BOM[0]) {
+	        return true
+	      }
+
+	      this.checkBOM = false;
+	      return true
+	    }
+
+	    if (third === undefined) {
+	      if (first === BOM[0] && second === BOM[1]) {
+	        return true
+	      }
+
+	      this.checkBOM = false;
+	      return false
+	    }
+
+	    if (first === BOM[0] && second === BOM[1] && third === BOM[2]) {
+	      this.discardLeadingBytes(3);
+	    }
+
+	    this.checkBOM = false;
+	    return !this.hasCurrentByte()
 	  }
 	}
 
@@ -29471,6 +29605,19 @@ function getProxyFetch(destinationUrl) {
 function getApiBaseUrl() {
     return process.env['GITHUB_API_URL'] || 'https://api.github.com';
 }
+function getUserAgentWithOrchestrationId(baseUserAgent) {
+    var _a;
+    const orchId = (_a = process.env['ACTIONS_ORCHESTRATION_ID']) === null || _a === void 0 ? void 0 : _a.trim();
+    if (orchId) {
+        const sanitizedId = orchId.replace(/[^a-z0-9_.-]/gi, '_');
+        const tag = `actions_orchestration_id/${sanitizedId}`;
+        if (baseUserAgent === null || baseUserAgent === void 0 ? void 0 : baseUserAgent.includes(tag))
+            return baseUserAgent;
+        const ua = baseUserAgent ? `${baseUserAgent} ` : '';
+        return `${ua}${tag}`;
+    }
+    return baseUserAgent;
+}
 
 function getUserAgent() {
   if (typeof navigator === "object" && "userAgent" in navigator) {
@@ -29617,10 +29764,10 @@ var Hook = { Collection };
 // pkg/dist-src/defaults.js
 
 // pkg/dist-src/version.js
-var VERSION$a = "0.0.0-development";
+var VERSION$d = "0.0.0-development";
 
 // pkg/dist-src/defaults.js
-var userAgent = `octokit-endpoint.js/${VERSION$a} ${getUserAgent()}`;
+var userAgent = `octokit-endpoint.js/${VERSION$d} ${getUserAgent()}`;
 var DEFAULTS = {
   method: "GET",
   baseUrl: "https://api.github.com",
@@ -29645,7 +29792,7 @@ function lowercaseKeys(object) {
 }
 
 // pkg/dist-src/util/is-plain-object.js
-function isPlainObject$2(value) {
+function isPlainObject$3(value) {
   if (typeof value !== "object" || value === null) return false;
   if (Object.prototype.toString.call(value) !== "[object Object]") return false;
   const proto = Object.getPrototypeOf(value);
@@ -29658,7 +29805,7 @@ function isPlainObject$2(value) {
 function mergeDeep(defaults, options) {
   const result = Object.assign({}, defaults);
   Object.keys(options).forEach((key) => {
-    if (isPlainObject$2(options[key])) {
+    if (isPlainObject$3(options[key])) {
       if (!(key in defaults)) Object.assign(result, { [key]: options[key] });
       else result[key] = mergeDeep(defaults[key], options[key]);
     } else {
@@ -29679,7 +29826,7 @@ function removeUndefinedProperties(obj) {
 }
 
 // pkg/dist-src/merge.js
-function merge$1(defaults, route, options) {
+function merge$2(defaults, route, options) {
   if (typeof route === "string") {
     let [method, url] = route.split(" ");
     options = Object.assign(url ? { method, url } : { url: method }, options);
@@ -29873,7 +30020,7 @@ function expand(template, context) {
 }
 
 // pkg/dist-src/parse.js
-function parse(options) {
+function parse$1(options) {
   let method = options.method.toUpperCase();
   let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
   let headers = Object.assign({}, options.headers);
@@ -29939,203 +30086,148 @@ function parse(options) {
 
 // pkg/dist-src/endpoint-with-defaults.js
 function endpointWithDefaults(defaults, route, options) {
-  return parse(merge$1(defaults, route, options));
+  return parse$1(merge$2(defaults, route, options));
 }
 
 // pkg/dist-src/with-defaults.js
 function withDefaults$2(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$1(oldDefaults, newDefaults);
+  const DEFAULTS2 = merge$2(oldDefaults, newDefaults);
   const endpoint2 = endpointWithDefaults.bind(null, DEFAULTS2);
   return Object.assign(endpoint2, {
     DEFAULTS: DEFAULTS2,
     defaults: withDefaults$2.bind(null, DEFAULTS2),
-    merge: merge$1.bind(null, DEFAULTS2),
-    parse
+    merge: merge$2.bind(null, DEFAULTS2),
+    parse: parse$1
   });
 }
 
 // pkg/dist-src/index.js
 var endpoint = withDefaults$2(null, DEFAULTS);
 
-var fastContentTypeParse = {};
-
-var hasRequiredFastContentTypeParse;
-
-function requireFastContentTypeParse () {
-	if (hasRequiredFastContentTypeParse) return fastContentTypeParse;
-	hasRequiredFastContentTypeParse = 1;
-
-	const NullObject = function NullObject () { };
-	NullObject.prototype = Object.create(null);
-
-	/**
-	 * RegExp to match *( ";" parameter ) in RFC 7231 sec 3.1.1.1
-	 *
-	 * parameter     = token "=" ( token / quoted-string )
-	 * token         = 1*tchar
-	 * tchar         = "!" / "#" / "$" / "%" / "&" / "'" / "*"
-	 *               / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
-	 *               / DIGIT / ALPHA
-	 *               ; any VCHAR, except delimiters
-	 * quoted-string = DQUOTE *( qdtext / quoted-pair ) DQUOTE
-	 * qdtext        = HTAB / SP / %x21 / %x23-5B / %x5D-7E / obs-text
-	 * obs-text      = %x80-FF
-	 * quoted-pair   = "\" ( HTAB / SP / VCHAR / obs-text )
-	 */
-	const paramRE = /; *([!#$%&'*+.^\w`|~-]+)=("(?:[\v\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\v\u0020-\u00ff])*"|[!#$%&'*+.^\w`|~-]+) */gu;
-
-	/**
-	 * RegExp to match quoted-pair in RFC 7230 sec 3.2.6
-	 *
-	 * quoted-pair = "\" ( HTAB / SP / VCHAR / obs-text )
-	 * obs-text    = %x80-FF
-	 */
-	const quotedPairRE = /\\([\v\u0020-\u00ff])/gu;
-
-	/**
-	 * RegExp to match type in RFC 7231 sec 3.1.1.1
-	 *
-	 * media-type = type "/" subtype
-	 * type       = token
-	 * subtype    = token
-	 */
-	const mediaTypeRE = /^[!#$%&'*+.^\w|~-]+\/[!#$%&'*+.^\w|~-]+$/u;
-
-	// default ContentType to prevent repeated object creation
-	const defaultContentType = { type: '', parameters: new NullObject() };
-	Object.freeze(defaultContentType.parameters);
-	Object.freeze(defaultContentType);
-
-	/**
-	 * Parse media type to object.
-	 *
-	 * @param {string|object} header
-	 * @return {Object}
-	 * @public
-	 */
-
-	function parse (header) {
-	  if (typeof header !== 'string') {
-	    throw new TypeError('argument header is required and must be a string')
-	  }
-
-	  let index = header.indexOf(';');
-	  const type = index !== -1
-	    ? header.slice(0, index).trim()
-	    : header.trim();
-
-	  if (mediaTypeRE.test(type) === false) {
-	    throw new TypeError('invalid media type')
-	  }
-
-	  const result = {
-	    type: type.toLowerCase(),
-	    parameters: new NullObject()
-	  };
-
-	  // parse parameters
-	  if (index === -1) {
-	    return result
-	  }
-
-	  let key;
-	  let match;
-	  let value;
-
-	  paramRE.lastIndex = index;
-
-	  while ((match = paramRE.exec(header))) {
-	    if (match.index !== index) {
-	      throw new TypeError('invalid parameter format')
-	    }
-
-	    index += match[0].length;
-	    key = match[1].toLowerCase();
-	    value = match[2];
-
-	    if (value[0] === '"') {
-	      // remove quotes and escapes
-	      value = value
-	        .slice(1, value.length - 1);
-
-	      quotedPairRE.test(value) && (value = value.replace(quotedPairRE, '$1'));
-	    }
-
-	    result.parameters[key] = value;
-	  }
-
-	  if (index !== header.length) {
-	    throw new TypeError('invalid parameter format')
-	  }
-
-	  return result
-	}
-
-	function safeParse (header) {
-	  if (typeof header !== 'string') {
-	    return defaultContentType
-	  }
-
-	  let index = header.indexOf(';');
-	  const type = index !== -1
-	    ? header.slice(0, index).trim()
-	    : header.trim();
-
-	  if (mediaTypeRE.test(type) === false) {
-	    return defaultContentType
-	  }
-
-	  const result = {
-	    type: type.toLowerCase(),
-	    parameters: new NullObject()
-	  };
-
-	  // parse parameters
-	  if (index === -1) {
-	    return result
-	  }
-
-	  let key;
-	  let match;
-	  let value;
-
-	  paramRE.lastIndex = index;
-
-	  while ((match = paramRE.exec(header))) {
-	    if (match.index !== index) {
-	      return defaultContentType
-	    }
-
-	    index += match[0].length;
-	    key = match[1].toLowerCase();
-	    value = match[2];
-
-	    if (value[0] === '"') {
-	      // remove quotes and escapes
-	      value = value
-	        .slice(1, value.length - 1);
-
-	      quotedPairRE.test(value) && (value = value.replace(quotedPairRE, '$1'));
-	    }
-
-	    result.parameters[key] = value;
-	  }
-
-	  if (index !== header.length) {
-	    return defaultContentType
-	  }
-
-	  return result
-	}
-
-	fastContentTypeParse.default = { parse, safeParse };
-	fastContentTypeParse.parse = parse;
-	fastContentTypeParse.safeParse = safeParse;
-	fastContentTypeParse.defaultContentType = defaultContentType;
-	return fastContentTypeParse;
+/*!
+ * content-type
+ * Copyright(c) 2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+/**
+ * Null object perf optimization. Faster than `Object.create(null)` and `{ __proto__: null }`.
+ */
+const NullObject = /* @__PURE__ */ (() => {
+    const C = function () { };
+    C.prototype = Object.create(null);
+    return C;
+})();
+/**
+ * Parse a `Content-Type` header.
+ */
+function parse(header, options) {
+    const stopChar = 65_536; // Sentinel for "no stop char".
+    const len = header.length;
+    let index = skipOWS(header, 0, len);
+    const valueStart = index;
+    index = skipValue(header, index, len, stopChar);
+    const valueEnd = trailingOWS(header, valueStart, index);
+    const type = header.slice(valueStart, valueEnd).toLowerCase();
+    return parseParameters(header, type, index, len, stopChar);
 }
-
-var fastContentTypeParseExports = requireFastContentTypeParse();
+const SP = 32; // " "
+const HTAB = 9; // "\t"
+const SEMI = 59; // ";"
+const EQ = 61; // "="
+const DQUOTE = 34; // '"'
+const BSLASH = 92; // "\\"
+/**
+ * Parses the parameters of a `Content-Type` header starting at the given index.
+ */
+function parseParameters(header, type, index, len, stopChar) {
+    const parameters = new NullObject();
+    parameter: while (index < len) {
+        if (header.charCodeAt(index) === stopChar)
+            break;
+        index = skipOWS(header, index + 1 /* Skip over ; */, len);
+        const keyStart = index;
+        while (index < len) {
+            const code = header.charCodeAt(index);
+            if (code === stopChar)
+                break parameter;
+            if (code === SEMI)
+                continue parameter;
+            if (code === EQ) {
+                const keyEnd = trailingOWS(header, keyStart, index);
+                const key = header.slice(keyStart, keyEnd).toLowerCase();
+                index = skipOWS(header, index + 1, len);
+                if (index < len && header.charCodeAt(index) === DQUOTE) {
+                    index++;
+                    let value = "";
+                    while (index < len) {
+                        const code = header.charCodeAt(index++);
+                        if (code === DQUOTE) {
+                            index = skipValue(header, index, len, stopChar);
+                            if (parameters[key] === undefined)
+                                parameters[key] = value;
+                            break;
+                        }
+                        if (code === BSLASH && index < len) {
+                            value += header[index++];
+                            continue;
+                        }
+                        value += String.fromCharCode(code);
+                    }
+                    continue parameter;
+                }
+                const valueStart = index;
+                index = skipValue(header, index, len, stopChar);
+                if (parameters[key] === undefined) {
+                    const valueEnd = trailingOWS(header, valueStart, index);
+                    parameters[key] = header.slice(valueStart, valueEnd);
+                }
+                continue parameter;
+            }
+            index++;
+        }
+    }
+    return { type, index, parameters };
+}
+/**
+ * Skip over characters until a semicolon or other exit character.
+ */
+function skipValue(str, index, len, stopChar) {
+    while (index < len) {
+        const code = str.charCodeAt(index);
+        if (code === SEMI || code === stopChar)
+            break;
+        index++;
+    }
+    return index;
+}
+/**
+ * Skip optional whitespace (OWS) in an HTTP header value.
+ *
+ * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
+ */
+function skipOWS(header, index, len) {
+    while (index < len) {
+        const char = header.charCodeAt(index);
+        if (char !== SP && char !== HTAB)
+            break;
+        index++;
+    }
+    return index;
+}
+/**
+ * Trim optional whitespace (OWS) from the end of a substring.
+ *
+ * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
+ */
+function trailingOWS(header, start, end) {
+    while (end > start) {
+        const char = header.charCodeAt(end - 1);
+        if (char !== SP && char !== HTAB)
+            break;
+        end--;
+    }
+    return end;
+}
 
 const intRegex = /^-?\d+$/;
 const noiseValue = /^-?\d+n+$/; // Noise - strings that match the custom format before being converted to it
@@ -30143,94 +30235,416 @@ const originalStringify = JSON.stringify;
 const originalParse = JSON.parse;
 const customFormat = /^-?\d+n$/;
 
-const bigIntsStringify = /([\[:])?"(-?\d+)n"($|([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
-const noiseStringify =
-  /([\[:])?("-?\d+n+)n("$|"([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
-
-/** @typedef {(key: string, value: any, context?: { source: string }) => any} Reviver */
+const bigIntsStringify = /([\[:])?"(-?\d+)n"($|\s*[,\}\]])/g;
+const noiseStringify = /([\[:])?("-?\d+n+)n("$|"\s*[,\}\]])/g;
 
 /**
- * Function to serialize value to a JSON string.
- * Converts BigInt values to a custom format (strings with digits and "n" at the end) and then converts them to proper big integers in a JSON string.
- * @param {*} value - The value to convert to a JSON string.
- * @param {(Function|Array<string>|null)} [replacer] - A function that alters the behavior of the stringification process, or an array of strings to indicate properties to exclude.
- * @param {(string|number)} [space] - A string or number to specify indentation or pretty-printing.
- * @returns {string} The JSON string representation.
+ * @typedef {(this: any, key: string | number | undefined, value: any) => any} Replacer
+ * @typedef {(key: string | number | undefined, value: any, context?: { source: string }) => any} Reviver
  */
-const JSONStringify = (value, replacer, space) => {
-  if ("rawJSON" in JSON) {
-    return originalStringify(
-      value,
-      (key, value) => {
-        if (typeof value === "bigint") return JSON.rawJSON(value.toString());
 
-        if (Array.isArray(replacer) && replacer.includes(key)) return value;
+/**
+ * Checks if a value is unstringifiable according to native JSON.stringify rules.
+ *
+ * @param {any} val The value to check.
+ * @returns {boolean} True if the value is undefined, a function, or a symbol.
+ */
+const isUnstringifiable = (val) =>
+  val === undefined || typeof val === "function" || typeof val === "symbol";
 
-        return value;
-      },
-      space,
-    );
+/**
+ * Checks if a value is a native JSON.rawJSON object (Node.js 22+).
+ *
+ * @param {any} val The value to check.
+ * @returns {boolean} True if the value is a RawJSON instance.
+ */
+const isRawJSON = (val) =>
+  val !== null &&
+  typeof val === "object" &&
+  val.constructor &&
+  val.constructor.name === "RawJSON";
+
+/**
+ * Iteratively converts a JS value to a JSON string.
+ * Used as a fallback when the native JSON.stringify hits the Maximum Call Stack size.
+ * Fully compliant with JSON formatting (space), replacers, and toJSON behaviors.
+ *
+ * @param {any} rootValue The value to stringify.
+ * @param {Replacer | Array<string | number> | null} [replacer] User's custom replacer function.
+ * @param {string | number} [spaceParam] Indentation for pretty-printing.
+ * @returns {string | undefined} The generated JSON string.
+ */
+const stringifyIteratively = (rootValue, replacer, spaceParam) => {
+  let space = "";
+  const propertyList = Array.isArray(replacer)
+    ? new Set(replacer.map(String))
+    : null;
+
+  /**
+   * Prepares a value for stringification by resolving toJSON, handling BigInts,
+   * applying custom replacers, and unwrapping primitive objects.
+   *
+   * @param {object|Array} parent The parent object or array holding the value.
+   * @param {string} key The key associated with the value.
+   * @param {any} val The raw value to process.
+   * @returns {any} The processed value ready for stringification.
+   */
+  const prepareVal = (parent, key, val) => {
+    const isObject = val !== null && typeof val === "object";
+    const hasToJSON = isObject && typeof val.toJSON === "function";
+
+    if (hasToJSON) {
+      val = val.toJSON(key);
+    }
+
+    const isNoise = typeof val === "string" && noiseValue.test(val);
+
+    if (isNoise) return val + "n";
+
+    const isBigInt = typeof val === "bigint";
+
+    if (isBigInt) {
+      const supportsRawJSON = "rawJSON" in JSON;
+
+      if (supportsRawJSON) return JSON.rawJSON(val.toString());
+
+      return val.toString() + "n";
+    }
+
+    const isPostReplacerObject = val !== null && typeof val === "object";
+
+    if (isPostReplacerObject) {
+      const isPrimitiveWrapper =
+        val instanceof Number ||
+        val instanceof String ||
+        val instanceof Boolean;
+
+      if (isPrimitiveWrapper) {
+        val = val.valueOf();
+      }
+    }
+
+    return val;
+  };
+
+  const rootProcessed = prepareVal({ }, "", rootValue);
+
+  if (isUnstringifiable(rootProcessed)) {
+    return undefined;
   }
 
-  if (!value) return originalStringify(value, replacer, space);
+  const isRootPrimitive =
+    rootProcessed === null || typeof rootProcessed !== "object";
+  const isRootNativeRawJSON = isRawJSON(rootProcessed);
 
-  const convertedToCustomJSON = originalStringify(
-    value,
-    (key, value) => {
-      const isNoise =
-        typeof value === "string" && Boolean(value.match(noiseValue));
+  if (isRootPrimitive || isRootNativeRawJSON) {
+    return originalStringify(rootProcessed);
+  }
 
-      if (isNoise) return value.toString() + "n"; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+  const chunks = [];
 
-      if (typeof value === "bigint") return value.toString() + "n";
-
-      if (Array.isArray(replacer) && replacer.includes(key)) return value;
-
-      return value;
+  const stack = [
+    {
+      parent: { "": rootProcessed },
+      key: "",
+      val: rootProcessed,
+      isArray: Array.isArray(rootProcessed),
+      keys: Array.isArray(rootProcessed) ? null : Object.keys(rootProcessed),
+      index: 0,
+      first: true,
     },
-    space,
-  );
-  const processedJSON = convertedToCustomJSON.replace(
-    bigIntsStringify,
-    "$1$2$3",
-  ); // Delete one "n" off the end of every BigInt value
-  const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3"); // Remove one "n" off the end of every noisy string
+  ];
 
-  return denoisedJSON;
+  const visited = new WeakSet([rootProcessed]);
+
+  while (stack.length > 0) {
+    const node = stack[stack.length - 1];
+
+    if (node.index === 0) {
+      chunks.push(node.isArray ? "[" : "{");
+    }
+
+    let isDone = false;
+
+    if (node.isArray) {
+      if (node.index < node.val.length) {
+        if (!node.first) chunks.push(",");
+
+        const childRaw = node.val[node.index];
+        const childVal = prepareVal(node.val, String(node.index), childRaw);
+
+        if (isUnstringifiable(childVal)) {
+          chunks.push("null");
+          node.first = false;
+          node.index++;
+        } else {
+          const isComplexObject =
+            childVal !== null && typeof childVal === "object";
+          const isNativeRaw = isRawJSON(childVal);
+
+          if (isComplexObject && !isNativeRaw) {
+            if (visited.has(childVal)) {
+              throw new TypeError("Converting circular structure to JSON");
+            }
+
+            visited.add(childVal);
+
+            stack.push({
+              parent: node.val,
+              key: String(node.index),
+              val: childVal,
+              isArray: Array.isArray(childVal),
+              keys: Array.isArray(childVal) ? null : Object.keys(childVal),
+              index: 0,
+              first: true,
+            });
+
+            node.first = false;
+            node.index++;
+          } else {
+            chunks.push(originalStringify(childVal));
+            node.first = false;
+            node.index++;
+          }
+        }
+      } else {
+        isDone = true;
+      }
+    } else {
+      while (node.index < node.keys.length) {
+        const k = node.keys[node.index++];
+
+        const isFilteredOutByArray = propertyList && !propertyList.has(k);
+
+        if (isFilteredOutByArray) continue;
+
+        const childRaw = node.val[k];
+        const childVal = prepareVal(node.val, k, childRaw);
+
+        if (isUnstringifiable(childVal)) continue;
+
+        if (!node.first) chunks.push(",");
+
+        {
+          chunks.push(originalStringify(k) + ":");
+        }
+
+        const isComplexObject =
+          childVal !== null && typeof childVal === "object";
+        const isNativeRaw = isRawJSON(childVal);
+
+        if (isComplexObject && !isNativeRaw) {
+          if (visited.has(childVal)) {
+            throw new TypeError("Converting circular structure to JSON");
+          }
+
+          visited.add(childVal);
+
+          stack.push({
+            parent: node.val,
+            key: k,
+            val: childVal,
+            isArray: Array.isArray(childVal),
+            keys: Array.isArray(childVal) ? null : Object.keys(childVal),
+            index: 0,
+            first: true,
+          });
+
+          node.first = false;
+
+          break; // Stop current loop level to process the newly pushed stack node
+        } else {
+          chunks.push(originalStringify(childVal));
+          node.first = false;
+        }
+      }
+
+      const isNodeFullyProcessed =
+        node.index >= node.keys.length && stack[stack.length - 1] === node;
+
+      if (isNodeFullyProcessed) {
+        isDone = true;
+      }
+    }
+
+    if (isDone) {
+
+      if (!node.first && space) ;
+
+      chunks.push(node.isArray ? "]" : "}");
+      visited.delete(node.val);
+      stack.pop();
+    }
+  }
+
+  return chunks.join("");
 };
 
 /**
- * Support for JSON.parse's context.source feature detection.
- * @type {boolean}
+ * Converts a JavaScript value to a JSON string.
+ *
+ * Supports serialization of BigInt values using two strategies:
+ * 1. Custom format "123n" → "123" (universal fallback)
+ * 2. Native JSON.rawJSON() (Node.js 22+, fastest) when available
+ *
+ * All other values are serialized exactly like native JSON.stringify().
+ *
+ * @param {*} value The value to convert to a JSON string.
+ * @param {Replacer | Array<string | number> | null} [replacer]
+ * A function that alters the behavior of the stringification process,
+ * or an array of strings/numbers to indicate properties to exclude.
+ * @param {string | number} [space]
+ * A string or number to specify indentation or pretty-printing.
+ * @returns {string} The JSON string representation.
  */
-const isContextSourceSupported = () =>
-  JSON.parse("1", (_, __, context) => !!context && context.source === "1");
+const JSONStringify = (value, replacer, space) => {
+  try {
+    const supportsRawJSON = "rawJSON" in JSON;
+
+    if (supportsRawJSON) {
+      return originalStringify(
+        value,
+        (key, val) => {
+          if (typeof val === "bigint") return JSON.rawJSON(val.toString());
+
+          const hasFunctionReplacer = typeof replacer === "function";
+
+          if (hasFunctionReplacer) ;
+
+          const isKeyInArrayReplacer =
+            Array.isArray(replacer) && replacer.includes(key);
+
+          if (isKeyInArrayReplacer) return val;
+
+          return val;
+        },
+        space,
+      );
+    }
+
+    if (!value) return originalStringify(value, replacer, space);
+
+    const convertedToCustomJSON = originalStringify(
+      value,
+      (key, val) => {
+        const isNoise = typeof val === "string" && noiseValue.test(val);
+
+        if (isNoise) return val.toString() + "n"; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+
+        if (typeof val === "bigint") return val.toString() + "n";
+
+        const hasFunctionReplacer = typeof replacer === "function";
+
+        if (hasFunctionReplacer) ;
+
+        const isKeyInArrayReplacer =
+          Array.isArray(replacer) && replacer.includes(key);
+
+        if (isKeyInArrayReplacer) return val;
+
+        return val;
+      },
+      space,
+    );
+
+    const processedJSON = convertedToCustomJSON.replace(
+      bigIntsStringify,
+      "$1$2$3",
+    ); // Delete one "n" off the end of every BigInt value
+
+    const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3"); // Remove one "n" off the end of every noisy string
+
+    return denoisedJSON;
+  } catch (error) {
+    if (error instanceof RangeError) {
+      const convertedJSON = stringifyIteratively(value, replacer);
+
+      if (convertedJSON === undefined) return undefined;
+
+      const supportsRawJSON = "rawJSON" in JSON;
+
+      if (supportsRawJSON) return convertedJSON;
+
+      const processedJSON = convertedJSON.replace(bigIntsStringify, "$1$2$3");
+
+      return processedJSON.replace(noiseStringify, "$1$2$3");
+    }
+
+    throw error;
+  }
+};
+
+const featureCache = new Map();
 
 /**
- * Convert marked big numbers to BigInt
- * @type {Reviver}
+ * Detects if the current JSON.parse implementation supports the context.source feature.
+ *
+ * Uses toString() fingerprinting to cache results and automatically detect runtime
+ * replacements of JSON.parse (polyfills, mocks, etc.).
+ *
+ * @returns {boolean} true if context.source is supported, false otherwise.
+ */
+const isContextSourceSupported = () => {
+  const parseFingerprint = JSON.parse.toString();
+
+  if (featureCache.has(parseFingerprint)) {
+    return featureCache.get(parseFingerprint);
+  }
+
+  try {
+    const result = JSON.parse(
+      "1",
+      (_, __, context) => !!context?.source && context.source === "1",
+    );
+    featureCache.set(parseFingerprint, result);
+
+    return result;
+  } catch {
+    featureCache.set(parseFingerprint, false);
+
+    return false;
+  }
+};
+
+/**
+ * Reviver function that converts custom-format BigInt strings back to BigInt values.
+ * Also handles "noise" strings that accidentally match the BigInt format.
+ *
+ * @param {string | number | undefined} key The object key.
+ * @param {*} value The value being parsed.
+ * @param {object} [context] Parse context (if supported by JSON.parse).
+ * @param {Reviver} [userReviver] User's custom reviver function.
+ * @returns {any} The transformed value.
  */
 const convertMarkedBigIntsReviver = (key, value, context, userReviver) => {
   const isCustomFormatBigInt =
-    typeof value === "string" && value.match(customFormat);
+    typeof value === "string" && customFormat.test(value);
+
   if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
 
-  const isNoiseValue = typeof value === "string" && value.match(noiseValue);
+  const isNoiseValue = typeof value === "string" && noiseValue.test(value);
   if (isNoiseValue) return value.slice(0, -1);
 
   return value;
 };
 
 /**
- * Faster (2x) and simpler function to parse JSON.
- * Based on JSON.parse's context.source feature, which is not universally available now.
- * Does not support the legacy custom format, used in the first version of this library.
+ * Fast JSON.parse implementation (~2x faster than classic fallback).
+ * Uses JSON.parse's context.source feature to detect integers and convert
+ * large numbers directly to BigInt without string manipulation.
+ *
+ * Does not support legacy custom format from v1 of this library.
+ *
+ * @param {string} text JSON string to parse.
+ * @param {Reviver} [reviver] Transform function to apply to each value.
+ * @returns {any} Parsed JavaScript value.
  */
 const JSONParseV2 = (text, reviver) => {
   return JSON.parse(text, (key, value, context) => {
-    const isBigNumber =
-      typeof value === "number" &&
-      (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER);
+    const isNumber = typeof value === "number";
+    const isOutOfBounds =
+      value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER;
+    const isBigNumber = isNumber && isOutOfBounds;
     const isInt = context && intRegex.test(context.source);
     const isBigInt = isBigNumber && isInt;
 
@@ -30243,44 +30657,141 @@ const JSONParseV2 = (text, reviver) => {
 const MAX_INT = Number.MAX_SAFE_INTEGER.toString();
 const MAX_DIGITS = MAX_INT.length;
 const stringsOrLargeNumbers =
-  /"(?:\\.|[^"])*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
+  /"(?:[^"\\]|\\.)*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
 const noiseValueWithQuotes = /^"-?\d+n+"$/; // Noise - strings that match the custom format before being converted to it
 
 /**
- * Function to parse JSON.
- * If JSON has number values greater than Number.MAX_SAFE_INTEGER, we convert those values to a custom format, then parse them to BigInt values.
- * Other types of values are not affected and parsed as native JSON.parse() would parse them.
+ * Iteratively traverses the parsed object bottom-up (post-order),
+ * emulating the native JSON.parse reviver behavior.
+ * This avoids Call Stack overflows (RangeError) on deeply nested structures.
+ *
+ * @param {any} parsed The natively parsed JSON object.
+ * @param {Reviver} [userReviver] User's custom reviver function.
+ * @returns {any} The fully processed object.
+ */
+const applyReviverIteratively = (parsed, userReviver) => {
+  const rootHolder = { "": parsed };
+  const stack = [{ parent: rootHolder, key: "", visited: false }];
+
+  while (stack.length > 0) {
+    const node = stack[stack.length - 1];
+
+    if (!node.visited) {
+      node.visited = true;
+
+      const value = node.parent[node.key];
+      const isComplexObject = value !== null && typeof value === "object";
+
+      if (isComplexObject) {
+        const keys = Object.keys(value);
+
+        for (let i = keys.length - 1; i >= 0; i--) {
+          stack.push({ parent: value, key: keys[i], visited: false });
+        }
+      }
+    } else {
+      const { parent, key } = node;
+      let value = parent[key];
+
+      if (typeof value === "string") {
+        const isCustomFormatBigInt = customFormat.test(value);
+
+        if (isCustomFormatBigInt) {
+          value = BigInt(value.slice(0, -1));
+        } else {
+          const isNoise = noiseValue.test(value);
+
+          if (isNoise) value = value.slice(0, -1);
+        }
+      }
+
+      const isDeleted = value === undefined;
+
+      if (isDeleted) {
+        delete parent[key];
+      } else {
+        parent[key] = value;
+      }
+
+      stack.pop();
+    }
+  }
+
+  return rootHolder[""];
+};
+
+/**
+ * Pre-processes the JSON string to mark large numbers with an 'n' suffix.
+ *
+ * @param {string} text The raw JSON string.
+ * @returns {string} The serialized string with marked BigInts.
+ */
+const serializeBigInts = (text) => {
+  return text.replace(
+    stringsOrLargeNumbers,
+    (match, digits, fractional, exponential) => {
+      const isString = match[0] === '"';
+      const isNoise = isString && noiseValueWithQuotes.test(match);
+
+      if (isNoise) return match.substring(0, match.length - 1) + 'n"'; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+
+      const hasFractionalOrExponential = fractional || exponential;
+
+      // With a fixed number of digits, we can correctly use lexicographical comparison to do a numeric comparison
+      const isLessThanMaxSafeInt =
+        digits &&
+        (digits.length < MAX_DIGITS ||
+          (digits.length === MAX_DIGITS && digits <= MAX_INT));
+
+      const isStandardValue =
+        isString || hasFractionalOrExponential || isLessThanMaxSafeInt;
+
+      if (isStandardValue) return match;
+
+      return '"' + match + 'n"';
+    },
+  );
+};
+
+/**
+ * Converts a JSON string into a JavaScript value.
+ *
+ * Supports parsing of large integers using two strategies:
+ * 1. Classic fallback: Marks large numbers with "123n" format, then converts to BigInt
+ * 2. Fast path (JSONParseV2): Uses context.source feature (~2x faster) when available
+ *
+ * All other JSON values are parsed exactly like native JSON.parse().
+ *
+ * @param {string} text A valid JSON string.
+ * @param {Reviver} [reviver]
+ * A function that transforms the results. This function is called for each member
+ * of the object. If a member contains nested objects, the nested objects are
+ * transformed before the parent object is.
+ * @returns {any} The parsed JavaScript value.
+ * @throws {SyntaxError} If text is not valid JSON.
  */
 const JSONParse = (text, reviver) => {
   if (!text) return originalParse(text, reviver);
 
-  if (isContextSourceSupported()) return JSONParseV2(text); // Shortcut to a faster (2x) and simpler version
+  try {
+    if (isContextSourceSupported()) return JSONParseV2(text, reviver); // Shortcut to a faster (2x) and simpler version
 
-  // Find and mark big numbers with "n"
-  const serializedData = text.replace(
-    stringsOrLargeNumbers,
-    (text, digits, fractional, exponential) => {
-      const isString = text[0] === '"';
-      const isNoise = isString && Boolean(text.match(noiseValueWithQuotes));
+    // Find and mark big numbers with "n"
+    const serializedData = serializeBigInts(text);
 
-      if (isNoise) return text.substring(0, text.length - 1) + 'n"'; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+    return originalParse(serializedData, (key, value, context) =>
+      convertMarkedBigIntsReviver(key, value, context, reviver),
+    );
+  } catch (error) {
+    if (error instanceof RangeError) {
+      const serializedData = serializeBigInts(text);
+      const parsed = originalParse(serializedData);
 
-      const isFractionalOrExponential = fractional || exponential;
-      const isLessThanMaxSafeInt =
-        digits &&
-        (digits.length < MAX_DIGITS ||
-          (digits.length === MAX_DIGITS && digits <= MAX_INT)); // With a fixed number of digits, we can correctly use lexicographical comparison to do a numeric comparison
+      return applyReviverIteratively(parsed);
+    }
 
-      if (isString || isFractionalOrExponential || isLessThanMaxSafeInt)
-        return text;
-
-      return '"' + text + 'n"';
-    },
-  );
-
-  return originalParse(serializedData, (key, value, context) =>
-    convertMarkedBigIntsReviver(key, value),
-  );
+    throw error;
+  }
 };
 
 class RequestError extends Error {
@@ -30325,17 +30836,17 @@ class RequestError extends Error {
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$9 = "10.0.8";
+var VERSION$c = "10.0.16";
 
 // pkg/dist-src/defaults.js
 var defaults_default = {
   headers: {
-    "user-agent": `octokit-request.js/${VERSION$9} ${getUserAgent()}`
+    "user-agent": `octokit-request.js/${VERSION$c} ${getUserAgent()}`
   }
 };
 
 // pkg/dist-src/is-plain-object.js
-function isPlainObject$1(value) {
+function isPlainObject$2(value) {
   if (typeof value !== "object" || value === null) return false;
   if (Object.prototype.toString.call(value) !== "[object Object]") return false;
   const proto = Object.getPrototypeOf(value);
@@ -30353,7 +30864,7 @@ async function fetchWrapper(requestOptions) {
   }
   const log = requestOptions.request?.log || console;
   const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  const body = isPlainObject$1(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
+  const body = isPlainObject$2(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
   const requestHeaders = Object.fromEntries(
     Object.entries(requestOptions.headers).map(([name, value]) => [
       name,
@@ -30447,7 +30958,7 @@ async function getResponseData(response) {
   if (!contentType) {
     return response.text().catch(noop$1);
   }
-  const mimetype = fastContentTypeParseExports.safeParse(contentType);
+  const mimetype = parse(contentType);
   if (isJSONResponse(mimetype)) {
     let text = "";
     try {
@@ -30456,7 +30967,10 @@ async function getResponseData(response) {
     } catch (err) {
       return text;
     }
-  } else if (mimetype.type.startsWith("text/") || mimetype.parameters.charset?.toLowerCase() === "utf-8") {
+  } else if (mimetype.type.startsWith("text/") || // `application/octet-stream` is the canonical "arbitrary binary" type
+  // (RFC 2046) and must never be decoded as text, even when the response
+  // carries a (misleading) `charset=utf-8` parameter — see #751.
+  mimetype.parameters.charset?.toLowerCase() === "utf-8" && mimetype.type !== "application/octet-stream") {
     return response.text().catch(noop$1);
   } else {
     return response.arrayBuffer().catch(
@@ -30475,9 +30989,10 @@ function toErrorMessage(data) {
   if (data instanceof ArrayBuffer) {
     return "Unknown error";
   }
-  if ("message" in data) {
-    const suffix = "documentation_url" in data ? ` - ${data.documentation_url}` : "";
-    return Array.isArray(data.errors) ? `${data.message}: ${data.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${data.message}${suffix}`;
+  if (typeof data === "object" && data !== null && "message" in data) {
+    const objectData = data;
+    const suffix = "documentation_url" in objectData ? ` - ${objectData.documentation_url}` : "";
+    return Array.isArray(objectData.errors) ? `${objectData.message}: ${objectData.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${objectData.message}${suffix}`;
   }
   return `Unknown error: ${JSON.stringify(data)}`;
 }
@@ -30515,7 +31030,7 @@ var request = withDefaults$1(endpoint, defaults_default);
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$8 = "0.0.0-development";
+var VERSION$b = "0.0.0-development";
 
 // pkg/dist-src/error.js
 function _buildMessageForResponseErrors(data) {
@@ -30534,6 +31049,9 @@ var GraphqlResponseError = class extends Error {
       Error.captureStackTrace(this, this.constructor);
     }
   }
+  request;
+  headers;
+  response;
   name = "GraphqlResponseError";
   errors;
   data;
@@ -30617,7 +31135,7 @@ function withDefaults(request2, newDefaults) {
 // pkg/dist-src/index.js
 withDefaults(request, {
   headers: {
-    "user-agent": `octokit-graphql.js/${VERSION$8} ${getUserAgent()}`
+    "user-agent": `octokit-graphql.js/${VERSION$b} ${getUserAgent()}`
   },
   method: "POST",
   url: "/graphql"
@@ -30628,6 +31146,7 @@ function withCustomRequest(customRequest) {
     url: "/graphql"
   });
 }
+/* v8 ignore if -- @preserve */
 
 // pkg/dist-src/is-jwt.js
 var b64url = "(?:[a-zA-Z0-9_-]+)";
@@ -30682,7 +31201,7 @@ var createTokenAuth = function createTokenAuth2(token) {
   });
 };
 
-const VERSION$7 = "7.0.6";
+const VERSION$a = "7.0.8";
 
 const noop = () => {
 };
@@ -30703,9 +31222,9 @@ function createLogger(logger = {}) {
   }
   return logger;
 }
-const userAgentTrail = `octokit-core.js/${VERSION$7} ${getUserAgent()}`;
+const userAgentTrail = `octokit-core.js/${VERSION$a} ${getUserAgent()}`;
 class Octokit {
-  static VERSION = VERSION$7;
+  static VERSION = VERSION$a;
   static defaults(defaults) {
     const OctokitWithDefaults = class extends this {
       constructor(...args) {
@@ -30817,7 +31336,7 @@ class Octokit {
   auth;
 }
 
-const VERSION$6 = "17.0.0";
+const VERSION$9 = "17.0.0";
 
 const Endpoints = {
   actions: {
@@ -33238,10 +33757,10 @@ function restEndpointMethods(octokit) {
     rest: api
   };
 }
-restEndpointMethods.VERSION = VERSION$6;
+restEndpointMethods.VERSION = VERSION$9;
 
 // pkg/dist-src/version.js
-var VERSION$5 = "0.0.0-development";
+var VERSION$8 = "0.0.0-development";
 
 // pkg/dist-src/normalize-paginated-list-response.js
 function normalizePaginatedListResponse(response) {
@@ -33364,7 +33883,7 @@ function paginateRest(octokit) {
     })
   };
 }
-paginateRest.VERSION = VERSION$5;
+paginateRest.VERSION = VERSION$8;
 
 new Context();
 const baseUrl = getApiBaseUrl();
@@ -33389,6 +33908,11 @@ function getOctokitOptions(token, options) {
     if (auth) {
         opts.auth = auth;
     }
+    // Orchestration ID
+    const userAgent = getUserAgentWithOrchestrationId(opts.userAgent);
+    if (userAgent) {
+        opts.userAgent = userAgent;
+    }
     return opts;
 }
 
@@ -33406,18 +33930,7 @@ function getOctokit(token, options, ...additionalPlugins) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 //----------------------------------------------------------------------------------------------------------
 // DO NOT EDIT, this is an Auto-generated file from scripts/semconv/templates/registry/stable/attributes.ts.j2
@@ -33440,6 +33953,12 @@ function getOctokit(token, options, ...additionalPlugins) {
  *
  * When `error.type` is set to a type (e.g., an exception type), its
  * canonical class name identifying the type within the artifact **SHOULD** be used.
+ *
+ * If the recorded error type is a wrapper that is not meaningful for
+ * failure classification, instrumentation **MAY** use the type of the inner
+ * error instead. For example, in Go, errors created with `fmt.Errorf`
+ * using `%w` **MAY** be unwrapped when the wrapper type does not help
+ * classify the failure.
  *
  * Instrumentations **SHOULD** document the list of errors they report.
  *
@@ -33479,6 +33998,12 @@ const ATTR_EXCEPTION_STACKTRACE = 'exception.stacktrace';
  *
  * @example java.net.ConnectException
  * @example OSError
+ *
+ * @note If the recorded exception type is a wrapper that is not meaningful for
+ * failure classification, instrumentation **MAY** use the type of the inner
+ * exception instead. For example, in Go, errors created with `fmt.Errorf`
+ * using `%w` **MAY** be unwrapped when the wrapper type does not help
+ * classify the failure.
  */
 const ATTR_EXCEPTION_TYPE = 'exception.type';
 /**
@@ -33519,7 +34044,8 @@ const ATTR_SERVICE_INSTANCE_ID = 'service.instance.id';
  *
  * @example shoppingcart
  *
- * @note **MUST** be the same for all instances of horizontally scaled services. If the value was not specified, SDKs **MUST** fallback to `unknown_service:` concatenated with [`process.executable.name`](process.md), e.g. `unknown_service:bash`. If `process.executable.name` is not available, the value **MUST** be set to `unknown_service`.
+ * @note **MUST** be the same for all instances of horizontally scaled services. If the value was not specified, SDKs **MUST** fallback to `unknown_service:` concatenated with the process executable name, e.g. `unknown_service:bash`. If the process executable name is not available, the value **MUST** be set to `unknown_service`.
+ * The process executable name is the name of the process executable, the same value as described by the [`process.executable.name`](process.md) resource attribute.
  */
 const ATTR_SERVICE_NAME = 'service.name';
 /**
@@ -33559,18 +34085,7 @@ const ATTR_TELEMETRY_SDK_VERSION = 'telemetry.sdk.version';
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 //----------------------------------------------------------------------------------------------------------
 // DO NOT EDIT, this is an Auto-generated file from scripts/semconv/templates/registry/stable/attributes.ts.j2
@@ -33580,7 +34095,7 @@ const ATTR_TELEMETRY_SDK_VERSION = 'telemetry.sdk.version';
  *
  * @example created
  *
- * @note The Android lifecycle states are defined in [Activity lifecycle callbacks](https://developer.android.com/guide/components/activities/activity-lifecycle#lc), and from which the `OS identifiers` are derived.
+ * @note The Android lifecycle states are defined in [Activity lifecycle callbacks](https://developer.android.com/guide/components/activities/activity-lifecycle#lifecycle-callbacks), and from which the `OS identifiers` are derived.
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
@@ -33619,7 +34134,7 @@ const ATTR_CICD_PIPELINE_NAME = 'cicd.pipeline.name';
  * @example success
  * @example failure
  * @example timeout
- * @example skipped
+ * @example skip
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
@@ -33635,7 +34150,7 @@ const CICD_PIPELINE_RESULT_VALUE_CANCELLATION = "cancellation";
 /**
  * Enum value "error" for attribute {@link ATTR_CICD_PIPELINE_RESULT}.
  *
- * The pipeline run failed due to an error in the CICD system, eg. due to the worker being killed.
+ * The pipeline run failed due to an error in the CI/CD system, eg. due to the worker being killed.
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
@@ -33738,6 +34253,8 @@ const ATTR_CICD_PIPELINE_TASK_NAME = 'cicd.pipeline.task.name';
  *
  * @example 12097
  *
+ * @note For a given pipeline run and task, the `cicd.pipeline.task.run.id` **MUST** be unique within that run. For the same task across different runs of the same pipeline, the `cicd.pipeline.task.run.id` **MAY** remain the same, enabling correlation of `cicd.pipeline.task.run.result` values across multiple pipeline runs.
+ *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 const ATTR_CICD_PIPELINE_TASK_RUN_ID = 'cicd.pipeline.task.run.id';
@@ -33747,7 +34264,7 @@ const ATTR_CICD_PIPELINE_TASK_RUN_ID = 'cicd.pipeline.task.run.id';
  * @example success
  * @example failure
  * @example timeout
- * @example skipped
+ * @example skip
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
@@ -33835,7 +34352,7 @@ const CICD_PIPELINE_TASK_TYPE_VALUE_DEPLOY = "deploy";
  */
 const CICD_PIPELINE_TASK_TYPE_VALUE_TEST = "test";
 /**
- * The unique identifier of a worker within a CICD system.
+ * The unique identifier of a worker within a CI/CD system.
  *
  * @example abc123
  * @example 10.0.1.2
@@ -33845,7 +34362,7 @@ const CICD_PIPELINE_TASK_TYPE_VALUE_TEST = "test";
  */
 const ATTR_CICD_WORKER_ID = 'cicd.worker.id';
 /**
- * The name of a worker within a CICD system.
+ * The name of a worker within a CI/CD system.
  *
  * @example agent-abc
  * @example controller
@@ -34258,9 +34775,9 @@ var hasRequiredUtils$3;
 function requireUtils$3 () {
 	if (hasRequiredUtils$3) return utils$2;
 	hasRequiredUtils$3 = 1;
-	(function (exports$1) {
+	(function (exports) {
 
-		exports$1.isInteger = num => {
+		exports.isInteger = num => {
 		  if (typeof num === 'number') {
 		    return Number.isInteger(num);
 		  }
@@ -34274,15 +34791,15 @@ function requireUtils$3 () {
 		 * Find a node of the given type
 		 */
 
-		exports$1.find = (node, type) => node.nodes.find(node => node.type === type);
+		exports.find = (node, type) => node.nodes.find(node => node.type === type);
 
 		/**
 		 * Find a node of the given type
 		 */
 
-		exports$1.exceedsLimit = (min, max, step = 1, limit) => {
+		exports.exceedsLimit = (min, max, step = 1, limit) => {
 		  if (limit === false) return false;
-		  if (!exports$1.isInteger(min) || !exports$1.isInteger(max)) return false;
+		  if (!exports.isInteger(min) || !exports.isInteger(max)) return false;
 		  return ((Number(max) - Number(min)) / Number(step)) >= limit;
 		};
 
@@ -34290,7 +34807,7 @@ function requireUtils$3 () {
 		 * Escape the given node with '\\' before node.value
 		 */
 
-		exports$1.escapeNode = (block, n = 0, type) => {
+		exports.escapeNode = (block, n = 0, type) => {
 		  const node = block.nodes[n];
 		  if (!node) return;
 
@@ -34306,7 +34823,7 @@ function requireUtils$3 () {
 		 * Returns true if the given brace node should be enclosed in literal braces
 		 */
 
-		exports$1.encloseBrace = node => {
+		exports.encloseBrace = node => {
 		  if (node.type !== 'brace') return false;
 		  if ((node.commas >> 0 + node.ranges >> 0) === 0) {
 		    node.invalid = true;
@@ -34319,7 +34836,7 @@ function requireUtils$3 () {
 		 * Returns true if a brace node is invalid.
 		 */
 
-		exports$1.isInvalidBrace = block => {
+		exports.isInvalidBrace = block => {
 		  if (block.type !== 'brace') return false;
 		  if (block.invalid === true || block.dollar) return true;
 		  if ((block.commas >> 0 + block.ranges >> 0) === 0) {
@@ -34337,7 +34854,7 @@ function requireUtils$3 () {
 		 * Returns true if a node is an open or close node
 		 */
 
-		exports$1.isOpenOrClose = node => {
+		exports.isOpenOrClose = node => {
 		  if (node.type === 'open' || node.type === 'close') {
 		    return true;
 		  }
@@ -34348,7 +34865,7 @@ function requireUtils$3 () {
 		 * Reduce an array of text nodes.
 		 */
 
-		exports$1.reduce = nodes => nodes.reduce((acc, node) => {
+		exports.reduce = nodes => nodes.reduce((acc, node) => {
 		  if (node.type === 'text') acc.push(node.value);
 		  if (node.type === 'range') node.type = 'text';
 		  return acc;
@@ -34358,7 +34875,7 @@ function requireUtils$3 () {
 		 * Flatten an array
 		 */
 
-		exports$1.flatten = (...args) => {
+		exports.flatten = (...args) => {
 		  const result = [];
 
 		  const flat = arr => {
@@ -34759,7 +35276,7 @@ function requireFillRange () {
 	if (hasRequiredFillRange) return fillRange;
 	hasRequiredFillRange = 1;
 
-	const util = require$$0$4;
+	const util = util$a;
 	const toRegexRange = requireToRegexRange();
 
 	const isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
@@ -35971,7 +36488,7 @@ var hasRequiredUtils$2;
 function requireUtils$2 () {
 	if (hasRequiredUtils$2) return utils$1;
 	hasRequiredUtils$2 = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		const path = path__default;
 		const win32 = process.platform === 'win32';
@@ -35982,19 +36499,19 @@ function requireUtils$2 () {
 		  REGEX_SPECIAL_CHARS_GLOBAL
 		} = requireConstants$2();
 
-		exports$1.isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
-		exports$1.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str);
-		exports$1.isRegexChar = str => str.length === 1 && exports$1.hasRegexChars(str);
-		exports$1.escapeRegex = str => str.replace(REGEX_SPECIAL_CHARS_GLOBAL, '\\$1');
-		exports$1.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/');
+		exports.isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
+		exports.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str);
+		exports.isRegexChar = str => str.length === 1 && exports.hasRegexChars(str);
+		exports.escapeRegex = str => str.replace(REGEX_SPECIAL_CHARS_GLOBAL, '\\$1');
+		exports.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/');
 
-		exports$1.removeBackslashes = str => {
+		exports.removeBackslashes = str => {
 		  return str.replace(REGEX_REMOVE_BACKSLASH, match => {
 		    return match === '\\' ? '' : match;
 		  });
 		};
 
-		exports$1.supportsLookbehinds = () => {
+		exports.supportsLookbehinds = () => {
 		  const segs = process.version.slice(1).split('.').map(Number);
 		  if (segs.length === 3 && segs[0] >= 9 || (segs[0] === 8 && segs[1] >= 10)) {
 		    return true;
@@ -36002,21 +36519,21 @@ function requireUtils$2 () {
 		  return false;
 		};
 
-		exports$1.isWindows = options => {
+		exports.isWindows = options => {
 		  if (options && typeof options.windows === 'boolean') {
 		    return options.windows;
 		  }
 		  return win32 === true || path.sep === '\\';
 		};
 
-		exports$1.escapeLast = (input, char, lastIdx) => {
+		exports.escapeLast = (input, char, lastIdx) => {
 		  const idx = input.lastIndexOf(char, lastIdx);
 		  if (idx === -1) return input;
-		  if (input[idx - 1] === '\\') return exports$1.escapeLast(input, char, idx - 1);
+		  if (input[idx - 1] === '\\') return exports.escapeLast(input, char, idx - 1);
 		  return `${input.slice(0, idx)}\\${input.slice(idx)}`;
 		};
 
-		exports$1.removePrefix = (input, state = {}) => {
+		exports.removePrefix = (input, state = {}) => {
 		  let output = input;
 		  if (output.startsWith('./')) {
 		    output = output.slice(2);
@@ -36025,7 +36542,7 @@ function requireUtils$2 () {
 		  return output;
 		};
 
-		exports$1.wrapOutput = (input, state = {}, options = {}) => {
+		exports.wrapOutput = (input, state = {}, options = {}) => {
 		  const prepend = options.contains ? '' : '^';
 		  const append = options.contains ? '' : '$';
 
@@ -38206,7 +38723,7 @@ function requireMicromatch () {
 	if (hasRequiredMicromatch) return micromatch_1;
 	hasRequiredMicromatch = 1;
 
-	const util = require$$0$4;
+	const util = util$a;
 	const braces = requireBraces();
 	const picomatch = requirePicomatch();
 	const utils = requireUtils$2();
@@ -38909,7 +39426,7 @@ function requireMerge2 () {
 	 * Copyright (c) 2014-2020 Teambition
 	 * Licensed under the MIT license.
 	 */
-	const Stream = require$$0$6;
+	const Stream = require$$0$5;
 	const PassThrough = Stream.PassThrough;
 	const slice = Array.prototype.slice;
 
@@ -39335,11 +39852,11 @@ var hasRequiredFs$4;
 function requireFs$4 () {
 	if (hasRequiredFs$4) return fs$2;
 	hasRequiredFs$4 = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.createFileSystemAdapter = exports$1.FILE_SYSTEM_ADAPTER = void 0;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.createFileSystemAdapter = exports.FILE_SYSTEM_ADAPTER = void 0;
 		const fs = require$$0__default;
-		exports$1.FILE_SYSTEM_ADAPTER = {
+		exports.FILE_SYSTEM_ADAPTER = {
 		    lstat: fs.lstat,
 		    stat: fs.stat,
 		    lstatSync: fs.lstatSync,
@@ -39347,11 +39864,11 @@ function requireFs$4 () {
 		};
 		function createFileSystemAdapter(fsMethods) {
 		    if (fsMethods === undefined) {
-		        return exports$1.FILE_SYSTEM_ADAPTER;
+		        return exports.FILE_SYSTEM_ADAPTER;
 		    }
-		    return Object.assign(Object.assign({}, exports$1.FILE_SYSTEM_ADAPTER), fsMethods);
+		    return Object.assign(Object.assign({}, exports.FILE_SYSTEM_ADAPTER), fsMethods);
 		}
-		exports$1.createFileSystemAdapter = createFileSystemAdapter; 
+		exports.createFileSystemAdapter = createFileSystemAdapter; 
 	} (fs$2));
 	return fs$2;
 }
@@ -39765,11 +40282,11 @@ var hasRequiredFs$2;
 function requireFs$2 () {
 	if (hasRequiredFs$2) return fs;
 	hasRequiredFs$2 = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.createFileSystemAdapter = exports$1.FILE_SYSTEM_ADAPTER = void 0;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.createFileSystemAdapter = exports.FILE_SYSTEM_ADAPTER = void 0;
 		const fs = require$$0__default;
-		exports$1.FILE_SYSTEM_ADAPTER = {
+		exports.FILE_SYSTEM_ADAPTER = {
 		    lstat: fs.lstat,
 		    stat: fs.stat,
 		    lstatSync: fs.lstatSync,
@@ -39779,11 +40296,11 @@ function requireFs$2 () {
 		};
 		function createFileSystemAdapter(fsMethods) {
 		    if (fsMethods === undefined) {
-		        return exports$1.FILE_SYSTEM_ADAPTER;
+		        return exports.FILE_SYSTEM_ADAPTER;
 		    }
-		    return Object.assign(Object.assign({}, exports$1.FILE_SYSTEM_ADAPTER), fsMethods);
+		    return Object.assign(Object.assign({}, exports.FILE_SYSTEM_ADAPTER), fsMethods);
 		}
-		exports$1.createFileSystemAdapter = createFileSystemAdapter; 
+		exports.createFileSystemAdapter = createFileSystemAdapter; 
 	} (fs));
 	return fs;
 }
@@ -40111,6 +40628,7 @@ function requireQueue () {
 	      current.value = null;
 	      current.callback = noop;
 	      current.errorHandler = null;
+	      current.next = null;
 
 	      // Call error handler if present
 	      if (errorHandler) {
@@ -40120,8 +40638,9 @@ function requireQueue () {
 	      // Call callback with error
 	      callback.call(context, new Error('abort'));
 
-	      // Release the task back to the pool
-	      current.release(current);
+	      // This task was queued, so return it to the pool without updating
+	      // the running worker count.
+	      cache.release(current);
 
 	      current = next;
 	    }
@@ -40314,7 +40833,7 @@ function requireAsync$3 () {
 	if (hasRequiredAsync$3) return async$2;
 	hasRequiredAsync$3 = 1;
 	Object.defineProperty(async$2, "__esModule", { value: true });
-	const events_1 = require$$0$5;
+	const events_1 = require$$0$4;
 	const fsScandir = requireOut$2();
 	const fastq = requireQueue();
 	const common = requireCommon$1();
@@ -40457,7 +40976,7 @@ function requireStream$2 () {
 	if (hasRequiredStream$2) return stream$2;
 	hasRequiredStream$2 = 1;
 	Object.defineProperty(stream$2, "__esModule", { value: true });
-	const stream_1 = require$$0$6;
+	const stream_1 = require$$0$5;
 	const async_1 = requireAsync$3();
 	class StreamProvider {
 	    constructor(_root, _settings) {
@@ -40709,7 +41228,7 @@ function requireStream$1 () {
 	if (hasRequiredStream$1) return stream$1;
 	hasRequiredStream$1 = 1;
 	Object.defineProperty(stream$1, "__esModule", { value: true });
-	const stream_1 = require$$0$6;
+	const stream_1 = require$$0$5;
 	const fsStat = requireOut$3();
 	const fsWalk = requireOut$1();
 	const reader_1 = requireReader$1();
@@ -41227,7 +41746,7 @@ function requireStream () {
 	if (hasRequiredStream) return stream;
 	hasRequiredStream = 1;
 	Object.defineProperty(stream, "__esModule", { value: true });
-	const stream_1 = require$$0$6;
+	const stream_1 = require$$0$5;
 	const stream_2 = requireStream$1();
 	const provider_1 = requireProvider();
 	class ProviderStream extends provider_1.default {
@@ -41350,9 +41869,9 @@ var hasRequiredSettings;
 function requireSettings () {
 	if (hasRequiredSettings) return settings;
 	hasRequiredSettings = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.DEFAULT_FILE_SYSTEM_ADAPTER = void 0;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.DEFAULT_FILE_SYSTEM_ADAPTER = void 0;
 		const fs = require$$0__default;
 		const os = os__default;
 		/**
@@ -41360,7 +41879,7 @@ function requireSettings () {
 		 * https://github.com/nodejs/node/blob/7faeddf23a98c53896f8b574a6e66589e8fb1eb8/lib/os.js#L106-L107
 		 */
 		const CPU_COUNT = Math.max(os.cpus().length, 1);
-		exports$1.DEFAULT_FILE_SYSTEM_ADAPTER = {
+		exports.DEFAULT_FILE_SYSTEM_ADAPTER = {
 		    lstat: fs.lstat,
 		    lstatSync: fs.lstatSync,
 		    stat: fs.stat,
@@ -41405,10 +41924,10 @@ function requireSettings () {
 		        return option === undefined ? value : option;
 		    }
 		    _getFileSystemMethods(methods = {}) {
-		        return Object.assign(Object.assign({}, exports$1.DEFAULT_FILE_SYSTEM_ADAPTER), methods);
+		        return Object.assign(Object.assign({}, exports.DEFAULT_FILE_SYSTEM_ADAPTER), methods);
 		    }
 		}
-		exports$1.default = Settings; 
+		exports.default = Settings; 
 	} (settings));
 	return settings;
 }
@@ -48035,57 +48554,16 @@ function reportName(cases, fileName) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/** only globals that common to node and browsers are allowed */
-// eslint-disable-next-line node/no-unsupported-features/es-builtins
-var _globalThis$1 = typeof globalThis === 'object' ? globalThis : global;
-
-/*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // this is autogenerated file, see scripts/version-update.js
-var VERSION$4 = '1.9.0';
+const VERSION$7 = '1.9.1';
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var re = /^(\d+)\.(\d+)\.(\d+)(-(.+))?$/;
+const re = /^(\d+)\.(\d+)\.(\d+)(-(.+))?$/;
 /**
  * Create a function to test an API version to see if it is compatible with the provided ownVersion.
  *
@@ -48103,14 +48581,14 @@ var re = /^(\d+)\.(\d+)\.(\d+)(-(.+))?$/;
  * @param ownVersion version which should be checked against
  */
 function _makeCompatibilityCheck(ownVersion) {
-    var acceptedVersions = new Set([ownVersion]);
-    var rejectedVersions = new Set();
-    var myVersionMatch = ownVersion.match(re);
+    const acceptedVersions = new Set([ownVersion]);
+    const rejectedVersions = new Set();
+    const myVersionMatch = ownVersion.match(re);
     if (!myVersionMatch) {
         // we cannot guarantee compatibility so we always return noop
-        return function () { return false; };
+        return () => false;
     }
-    var ownVersionParsed = {
+    const ownVersionParsed = {
         major: +myVersionMatch[1],
         minor: +myVersionMatch[2],
         patch: +myVersionMatch[3],
@@ -48137,13 +48615,13 @@ function _makeCompatibilityCheck(ownVersion) {
         if (rejectedVersions.has(globalVersion)) {
             return false;
         }
-        var globalVersionMatch = globalVersion.match(re);
+        const globalVersionMatch = globalVersion.match(re);
         if (!globalVersionMatch) {
             // cannot parse other version
             // we cannot guarantee compatibility so we always noop
             return _reject(globalVersion);
         }
-        var globalVersionParsed = {
+        const globalVersionParsed = {
             major: +globalVersionMatch[1],
             minor: +globalVersionMatch[2],
             patch: +globalVersionMatch[3],
@@ -48185,59 +48663,55 @@ function _makeCompatibilityCheck(ownVersion) {
  *
  * @param version version of the API requesting an instance of the global API
  */
-var isCompatible = _makeCompatibilityCheck(VERSION$4);
+const isCompatible = _makeCompatibilityCheck(VERSION$7);
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var major = VERSION$4.split('.')[0];
-var GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for("opentelemetry.js.api." + major);
-var _global$1 = _globalThis$1;
-function registerGlobal(type, instance, diag, allowOverride) {
+const major = VERSION$7.split('.')[0];
+const GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for(`opentelemetry.js.api.${major}`);
+const _global$1 = (typeof globalThis === 'object'
+    ? globalThis
+    : typeof self === 'object'
+        ? self
+        : typeof window === 'object'
+            ? window
+            : typeof global === 'object'
+                ? global
+                : {});
+function registerGlobal(type, instance, diag, allowOverride = false) {
     var _a;
-    if (allowOverride === void 0) { allowOverride = false; }
-    var api = (_global$1[GLOBAL_OPENTELEMETRY_API_KEY] = (_a = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) !== null && _a !== void 0 ? _a : {
-        version: VERSION$4,
+    const api = (_global$1[GLOBAL_OPENTELEMETRY_API_KEY] = (_a = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) !== null && _a !== void 0 ? _a : {
+        version: VERSION$7,
     });
     if (!allowOverride && api[type]) {
         // already registered an API of this type
-        var err = new Error("@opentelemetry/api: Attempted duplicate registration of API: " + type);
+        const err = new Error(`@opentelemetry/api: Attempted duplicate registration of API: ${type}`);
         diag.error(err.stack || err.message);
         return false;
     }
-    if (api.version !== VERSION$4) {
+    if (api.version !== VERSION$7) {
         // All registered APIs must be of the same version exactly
-        var err = new Error("@opentelemetry/api: Registration of version v" + api.version + " for " + type + " does not match previously registered API v" + VERSION$4);
+        const err = new Error(`@opentelemetry/api: Registration of version v${api.version} for ${type} does not match previously registered API v${VERSION$7}`);
         diag.error(err.stack || err.message);
         return false;
     }
     api[type] = instance;
-    diag.debug("@opentelemetry/api: Registered a global for " + type + " v" + VERSION$4 + ".");
+    diag.debug(`@opentelemetry/api: Registered a global for ${type} v${VERSION$7}.`);
     return true;
 }
 function getGlobal(type) {
     var _a, _b;
-    var globalVersion = (_a = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _a === void 0 ? void 0 : _a.version;
+    const globalVersion = (_a = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _a === void 0 ? void 0 : _a.version;
     if (!globalVersion || !isCompatible(globalVersion)) {
         return;
     }
     return (_b = _global$1[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _b === void 0 ? void 0 : _b[type];
 }
 function unregisterGlobal(type, diag) {
-    diag.debug("@opentelemetry/api: Unregistering a global for " + type + " v" + VERSION$4 + ".");
-    var api = _global$1[GLOBAL_OPENTELEMETRY_API_KEY];
+    diag.debug(`@opentelemetry/api: Unregistering a global for ${type} v${VERSION$7}.`);
+    const api = _global$1[GLOBAL_OPENTELEMETRY_API_KEY];
     if (api) {
         delete api[type];
     }
@@ -48245,44 +48719,8 @@ function unregisterGlobal(type, diag) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read$4 = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __spreadArray$3 = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 /**
  * Component Logger which is meant to be used as part of any component which
  * will add automatically additional namespace in front of the log message.
@@ -48292,71 +48730,38 @@ var __spreadArray$3 = (undefined && undefined.__spreadArray) || function (to, fr
  * cLogger.debug('test');
  * // @opentelemetry/instrumentation-http test
  */
-var DiagComponentLogger = /** @class */ (function () {
-    function DiagComponentLogger(props) {
+class DiagComponentLogger {
+    constructor(props) {
         this._namespace = props.namespace || 'DiagComponentLogger';
     }
-    DiagComponentLogger.prototype.debug = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    debug(...args) {
         return logProxy('debug', this._namespace, args);
-    };
-    DiagComponentLogger.prototype.error = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    }
+    error(...args) {
         return logProxy('error', this._namespace, args);
-    };
-    DiagComponentLogger.prototype.info = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    }
+    info(...args) {
         return logProxy('info', this._namespace, args);
-    };
-    DiagComponentLogger.prototype.warn = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    }
+    warn(...args) {
         return logProxy('warn', this._namespace, args);
-    };
-    DiagComponentLogger.prototype.verbose = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
+    }
+    verbose(...args) {
         return logProxy('verbose', this._namespace, args);
-    };
-    return DiagComponentLogger;
-}());
+    }
+}
 function logProxy(funcName, namespace, args) {
-    var logger = getGlobal('diag');
+    const logger = getGlobal('diag');
     // shortcut if logger not set
     if (!logger) {
         return;
     }
-    args.unshift(namespace);
-    return logger[funcName].apply(logger, __spreadArray$3([], __read$4(args), false));
+    return logger[funcName](namespace, ...args);
 }
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * Defines the available internal logging levels for the diagnostic logger, the numeric values
@@ -48386,18 +48791,7 @@ var DiagLogLevel;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 function createLogLevelDiagLogger(maxLevel, logger) {
     if (maxLevel < DiagLogLevel.NONE) {
@@ -48409,7 +48803,7 @@ function createLogLevelDiagLogger(maxLevel, logger) {
     // In case the logger is null or undefined
     logger = logger || {};
     function _filterFunc(funcName, theLevel) {
-        var theFunc = logger[funcName];
+        const theFunc = logger[funcName];
         if (typeof theFunc === 'function' && maxLevel >= theLevel) {
             return theFunc.bind(logger);
         }
@@ -48426,79 +48820,47 @@ function createLogLevelDiagLogger(maxLevel, logger) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read$3 = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __spreadArray$2 = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-var API_NAME$4 = 'diag';
+const API_NAME$4 = 'diag';
 /**
  * Singleton object which represents the entry point to the OpenTelemetry internal
  * diagnostic API
+ *
+ * @since 1.0.0
  */
-var DiagAPI = /** @class */ (function () {
+class DiagAPI {
+    /** Get the singleton instance of the DiagAPI API */
+    static instance() {
+        if (!this._instance) {
+            this._instance = new DiagAPI();
+        }
+        return this._instance;
+    }
     /**
      * Private internal constructor
      * @private
      */
-    function DiagAPI() {
+    constructor() {
         function _logProxy(funcName) {
-            return function () {
-                var args = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i] = arguments[_i];
-                }
-                var logger = getGlobal('diag');
+            return function (...args) {
+                const logger = getGlobal('diag');
                 // shortcut if logger not set
                 if (!logger)
                     return;
-                return logger[funcName].apply(logger, __spreadArray$2([], __read$3(args), false));
+                return logger[funcName](...args);
             };
         }
         // Using self local variable for minification purposes as 'this' cannot be minified
-        var self = this;
+        const self = this;
         // DiagAPI specific functions
-        var setLogger = function (logger, optionsOrLogLevel) {
+        const setLogger = (logger, optionsOrLogLevel = { logLevel: DiagLogLevel.INFO }) => {
             var _a, _b, _c;
-            if (optionsOrLogLevel === void 0) { optionsOrLogLevel = { logLevel: DiagLogLevel.INFO }; }
             if (logger === self) {
                 // There isn't much we can do here.
                 // Logging to the console might break the user application.
                 // Try to log to self. If a logger was previously registered it will receive the log.
-                var err = new Error('Cannot use diag as the logger for itself. Please use a DiagLogger implementation like ConsoleDiagLogger or a custom implementation');
+                const err = new Error('Cannot use diag as the logger for itself. Please use a DiagLogger implementation like ConsoleDiagLogger or a custom implementation');
                 self.error((_a = err.stack) !== null && _a !== void 0 ? _a : err.message);
                 return false;
             }
@@ -48507,21 +48869,21 @@ var DiagAPI = /** @class */ (function () {
                     logLevel: optionsOrLogLevel,
                 };
             }
-            var oldLogger = getGlobal('diag');
-            var newLogger = createLogLevelDiagLogger((_b = optionsOrLogLevel.logLevel) !== null && _b !== void 0 ? _b : DiagLogLevel.INFO, logger);
+            const oldLogger = getGlobal('diag');
+            const newLogger = createLogLevelDiagLogger((_b = optionsOrLogLevel.logLevel) !== null && _b !== void 0 ? _b : DiagLogLevel.INFO, logger);
             // There already is an logger registered. We'll let it know before overwriting it.
             if (oldLogger && !optionsOrLogLevel.suppressOverrideMessage) {
-                var stack = (_c = new Error().stack) !== null && _c !== void 0 ? _c : '<failed to generate stacktrace>';
-                oldLogger.warn("Current logger will be overwritten from " + stack);
-                newLogger.warn("Current logger will overwrite one already registered from " + stack);
+                const stack = (_c = new Error().stack) !== null && _c !== void 0 ? _c : '<failed to generate stacktrace>';
+                oldLogger.warn(`Current logger will be overwritten from ${stack}`);
+                newLogger.warn(`Current logger will overwrite one already registered from ${stack}`);
             }
             return registerGlobal('diag', newLogger, self, true);
         };
         self.setLogger = setLogger;
-        self.disable = function () {
+        self.disable = () => {
             unregisterGlobal(API_NAME$4, self);
         };
-        self.createComponentLogger = function (options) {
+        self.createComponentLogger = (options) => {
             return new DiagComponentLogger(options);
         };
         self.verbose = _logProxy('verbose');
@@ -48530,156 +48892,68 @@ var DiagAPI = /** @class */ (function () {
         self.warn = _logProxy('warn');
         self.error = _logProxy('error');
     }
-    /** Get the singleton instance of the DiagAPI API */
-    DiagAPI.instance = function () {
-        if (!this._instance) {
-            this._instance = new DiagAPI();
-        }
-        return this._instance;
-    };
-    return DiagAPI;
-}());
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read$2 = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __values = (undefined && undefined.__values) || function(o) {
-    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-    if (m) return m.call(o);
-    if (o && typeof o.length === "number") return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-};
-var BaggageImpl = /** @class */ (function () {
-    function BaggageImpl(entries) {
+class BaggageImpl {
+    constructor(entries) {
         this._entries = entries ? new Map(entries) : new Map();
     }
-    BaggageImpl.prototype.getEntry = function (key) {
-        var entry = this._entries.get(key);
+    getEntry(key) {
+        const entry = this._entries.get(key);
         if (!entry) {
             return undefined;
         }
         return Object.assign({}, entry);
-    };
-    BaggageImpl.prototype.getAllEntries = function () {
-        return Array.from(this._entries.entries()).map(function (_a) {
-            var _b = __read$2(_a, 2), k = _b[0], v = _b[1];
-            return [k, v];
-        });
-    };
-    BaggageImpl.prototype.setEntry = function (key, entry) {
-        var newBaggage = new BaggageImpl(this._entries);
+    }
+    getAllEntries() {
+        return Array.from(this._entries.entries());
+    }
+    setEntry(key, entry) {
+        const newBaggage = new BaggageImpl(this._entries);
         newBaggage._entries.set(key, entry);
         return newBaggage;
-    };
-    BaggageImpl.prototype.removeEntry = function (key) {
-        var newBaggage = new BaggageImpl(this._entries);
+    }
+    removeEntry(key) {
+        const newBaggage = new BaggageImpl(this._entries);
         newBaggage._entries.delete(key);
         return newBaggage;
-    };
-    BaggageImpl.prototype.removeEntries = function () {
-        var e_1, _a;
-        var keys = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            keys[_i] = arguments[_i];
-        }
-        var newBaggage = new BaggageImpl(this._entries);
-        try {
-            for (var keys_1 = __values(keys), keys_1_1 = keys_1.next(); !keys_1_1.done; keys_1_1 = keys_1.next()) {
-                var key = keys_1_1.value;
-                newBaggage._entries.delete(key);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (keys_1_1 && !keys_1_1.done && (_a = keys_1.return)) _a.call(keys_1);
-            }
-            finally { if (e_1) throw e_1.error; }
+    }
+    removeEntries(...keys) {
+        const newBaggage = new BaggageImpl(this._entries);
+        for (const key of keys) {
+            newBaggage._entries.delete(key);
         }
         return newBaggage;
-    };
-    BaggageImpl.prototype.clear = function () {
+    }
+    clear() {
         return new BaggageImpl();
-    };
-    return BaggageImpl;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * Symbol used to make BaggageEntryMetadata an opaque type
  */
-var baggageEntryMetadataSymbol = Symbol('BaggageEntryMetadata');
+const baggageEntryMetadataSymbol = Symbol('BaggageEntryMetadata');
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var diag$1 = DiagAPI.instance();
+const diag$1 = DiagAPI.instance();
 /**
  * Create a new Baggage with optional entries
  *
  * @param entries An array of baggage entries the new baggage should contain
  */
-function createBaggage(entries) {
-    if (entries === void 0) { entries = {}; }
+function createBaggage(entries = {}) {
     return new BaggageImpl(new Map(Object.entries(entries)));
 }
 /**
@@ -48687,15 +48961,16 @@ function createBaggage(entries) {
  *
  * @param str string metadata. Format is currently not defined by the spec and has no special meaning.
  *
+ * @since 1.0.0
  */
 function baggageEntryMetadataFromString(str) {
     if (typeof str !== 'string') {
-        diag$1.error("Cannot create baggage metadata from unknown type: " + typeof str);
+        diag$1.error(`Cannot create baggage metadata from unknown type: ${typeof str}`);
         str = '';
     }
     return {
         __TYPE__: baggageEntryMetadataSymbol,
-        toString: function () {
+        toString() {
             return str;
         },
     };
@@ -48703,20 +48978,13 @@ function baggageEntryMetadataFromString(str) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-/** Get a key to uniquely identify a context value */
+/**
+ * Get a key to uniquely identify a context value
+ *
+ * @since 1.0.0
+ */
 function createContextKey(description) {
     // The specification states that for the same input, multiple calls should
     // return different keys. Due to the nature of the JS dependency management
@@ -48726,257 +48994,204 @@ function createContextKey(description) {
     // Therefore, we use Symbol.for which returns the same key for the same input.
     return Symbol.for(description);
 }
-var BaseContext = /** @class */ (function () {
+class BaseContext {
     /**
      * Construct a new context which inherits values from an optional parent context.
      *
      * @param parentContext a context from which to inherit values
      */
-    function BaseContext(parentContext) {
+    constructor(parentContext) {
         // for minification
-        var self = this;
+        const self = this;
         self._currentContext = parentContext ? new Map(parentContext) : new Map();
-        self.getValue = function (key) { return self._currentContext.get(key); };
-        self.setValue = function (key, value) {
-            var context = new BaseContext(self._currentContext);
+        self.getValue = (key) => self._currentContext.get(key);
+        self.setValue = (key, value) => {
+            const context = new BaseContext(self._currentContext);
             context._currentContext.set(key, value);
             return context;
         };
-        self.deleteValue = function (key) {
-            var context = new BaseContext(self._currentContext);
+        self.deleteValue = (key) => {
+            const context = new BaseContext(self._currentContext);
             context._currentContext.delete(key);
             return context;
         };
     }
-    return BaseContext;
-}());
-/** The root context is used as the default parent context when there is no active context */
-var ROOT_CONTEXT = new BaseContext();
+}
+/**
+ * The root context is used as the default parent context when there is no active context
+ *
+ * @since 1.0.0
+ */
+const ROOT_CONTEXT = new BaseContext();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var consoleMap = [
+const consoleMap = [
     { n: 'error', c: 'error' },
     { n: 'warn', c: 'warn' },
     { n: 'info', c: 'info' },
     { n: 'debug', c: 'debug' },
     { n: 'verbose', c: 'trace' },
 ];
+// Save original console methods at module load time, before any instrumentation
+// can wrap them. This ensures DiagConsoleLogger calls the unwrapped originals.
+// Exported for testing only — not part of the public API.
+const _originalConsoleMethods = {};
+if (typeof console !== 'undefined') {
+    const keys = [
+        'error',
+        'warn',
+        'info',
+        'debug',
+        'trace',
+        'log',
+    ];
+    for (const key of keys) {
+        // eslint-disable-next-line no-console
+        if (typeof console[key] === 'function') {
+            // eslint-disable-next-line no-console
+            _originalConsoleMethods[key] = console[key];
+        }
+    }
+}
 /**
  * A simple Immutable Console based diagnostic logger which will output any messages to the Console.
  * If you want to limit the amount of logging to a specific level or lower use the
  * {@link createLogLevelDiagLogger}
+ *
+ * @since 1.0.0
  */
-var DiagConsoleLogger = /** @class */ (function () {
-    function DiagConsoleLogger() {
+class DiagConsoleLogger {
+    constructor() {
         function _consoleFunc(funcName) {
-            return function () {
-                var args = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i] = arguments[_i];
+            return function (...args) {
+                // Prefer original (pre-instrumentation) methods saved at module load time.
+                let theFunc = _originalConsoleMethods[funcName];
+                // Some environments only expose the console when the F12 developer console is open
+                if (typeof theFunc !== 'function') {
+                    theFunc = _originalConsoleMethods['log'];
                 }
-                if (console) {
-                    // Some environments only expose the console when the F12 developer console is open
+                // Fall back in case console was not available at module load time but became available later.
+                if (typeof theFunc !== 'function' && console) {
                     // eslint-disable-next-line no-console
-                    var theFunc = console[funcName];
+                    theFunc = console[funcName];
                     if (typeof theFunc !== 'function') {
-                        // Not all environments support all functions
                         // eslint-disable-next-line no-console
                         theFunc = console.log;
                     }
-                    // One last final check
-                    if (typeof theFunc === 'function') {
-                        return theFunc.apply(console, args);
-                    }
+                }
+                if (typeof theFunc === 'function') {
+                    return theFunc.apply(console, args);
                 }
             };
         }
-        for (var i = 0; i < consoleMap.length; i++) {
+        for (let i = 0; i < consoleMap.length; i++) {
             this[consoleMap[i].n] = _consoleFunc(consoleMap[i].c);
         }
     }
-    return DiagConsoleLogger;
-}());
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __extends$1 = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 /**
  * NoopMeter is a noop implementation of the {@link Meter} interface. It reuses
  * constant NoopMetrics for all of its methods.
  */
-var NoopMeter = /** @class */ (function () {
-    function NoopMeter() {
-    }
+class NoopMeter {
+    constructor() { }
     /**
      * @see {@link Meter.createGauge}
      */
-    NoopMeter.prototype.createGauge = function (_name, _options) {
+    createGauge(_name, _options) {
         return NOOP_GAUGE_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createHistogram}
      */
-    NoopMeter.prototype.createHistogram = function (_name, _options) {
+    createHistogram(_name, _options) {
         return NOOP_HISTOGRAM_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createCounter}
      */
-    NoopMeter.prototype.createCounter = function (_name, _options) {
+    createCounter(_name, _options) {
         return NOOP_COUNTER_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createUpDownCounter}
      */
-    NoopMeter.prototype.createUpDownCounter = function (_name, _options) {
+    createUpDownCounter(_name, _options) {
         return NOOP_UP_DOWN_COUNTER_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createObservableGauge}
      */
-    NoopMeter.prototype.createObservableGauge = function (_name, _options) {
+    createObservableGauge(_name, _options) {
         return NOOP_OBSERVABLE_GAUGE_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createObservableCounter}
      */
-    NoopMeter.prototype.createObservableCounter = function (_name, _options) {
+    createObservableCounter(_name, _options) {
         return NOOP_OBSERVABLE_COUNTER_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.createObservableUpDownCounter}
      */
-    NoopMeter.prototype.createObservableUpDownCounter = function (_name, _options) {
+    createObservableUpDownCounter(_name, _options) {
         return NOOP_OBSERVABLE_UP_DOWN_COUNTER_METRIC;
-    };
+    }
     /**
      * @see {@link Meter.addBatchObservableCallback}
      */
-    NoopMeter.prototype.addBatchObservableCallback = function (_callback, _observables) { };
+    addBatchObservableCallback(_callback, _observables) { }
     /**
      * @see {@link Meter.removeBatchObservableCallback}
      */
-    NoopMeter.prototype.removeBatchObservableCallback = function (_callback) { };
-    return NoopMeter;
-}());
-var NoopMetric = /** @class */ (function () {
-    function NoopMetric() {
-    }
-    return NoopMetric;
-}());
-var NoopCounterMetric = /** @class */ (function (_super) {
-    __extends$1(NoopCounterMetric, _super);
-    function NoopCounterMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    NoopCounterMetric.prototype.add = function (_value, _attributes) { };
-    return NoopCounterMetric;
-}(NoopMetric));
-var NoopUpDownCounterMetric = /** @class */ (function (_super) {
-    __extends$1(NoopUpDownCounterMetric, _super);
-    function NoopUpDownCounterMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    NoopUpDownCounterMetric.prototype.add = function (_value, _attributes) { };
-    return NoopUpDownCounterMetric;
-}(NoopMetric));
-var NoopGaugeMetric = /** @class */ (function (_super) {
-    __extends$1(NoopGaugeMetric, _super);
-    function NoopGaugeMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    NoopGaugeMetric.prototype.record = function (_value, _attributes) { };
-    return NoopGaugeMetric;
-}(NoopMetric));
-var NoopHistogramMetric = /** @class */ (function (_super) {
-    __extends$1(NoopHistogramMetric, _super);
-    function NoopHistogramMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    NoopHistogramMetric.prototype.record = function (_value, _attributes) { };
-    return NoopHistogramMetric;
-}(NoopMetric));
-var NoopObservableMetric = /** @class */ (function () {
-    function NoopObservableMetric() {
-    }
-    NoopObservableMetric.prototype.addCallback = function (_callback) { };
-    NoopObservableMetric.prototype.removeCallback = function (_callback) { };
-    return NoopObservableMetric;
-}());
-var NoopObservableCounterMetric = /** @class */ (function (_super) {
-    __extends$1(NoopObservableCounterMetric, _super);
-    function NoopObservableCounterMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return NoopObservableCounterMetric;
-}(NoopObservableMetric));
-var NoopObservableGaugeMetric = /** @class */ (function (_super) {
-    __extends$1(NoopObservableGaugeMetric, _super);
-    function NoopObservableGaugeMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return NoopObservableGaugeMetric;
-}(NoopObservableMetric));
-var NoopObservableUpDownCounterMetric = /** @class */ (function (_super) {
-    __extends$1(NoopObservableUpDownCounterMetric, _super);
-    function NoopObservableUpDownCounterMetric() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return NoopObservableUpDownCounterMetric;
-}(NoopObservableMetric));
-var NOOP_METER = new NoopMeter();
+    removeBatchObservableCallback(_callback) { }
+}
+class NoopMetric {
+}
+class NoopCounterMetric extends NoopMetric {
+    add(_value, _attributes) { }
+}
+class NoopUpDownCounterMetric extends NoopMetric {
+    add(_value, _attributes) { }
+}
+class NoopGaugeMetric extends NoopMetric {
+    record(_value, _attributes) { }
+}
+class NoopHistogramMetric extends NoopMetric {
+    record(_value, _attributes) { }
+}
+class NoopObservableMetric {
+    addCallback(_callback) { }
+    removeCallback(_callback) { }
+}
+class NoopObservableCounterMetric extends NoopObservableMetric {
+}
+class NoopObservableGaugeMetric extends NoopObservableMetric {
+}
+class NoopObservableUpDownCounterMetric extends NoopObservableMetric {
+}
+const NOOP_METER = new NoopMeter();
 // Synchronous instruments
-var NOOP_COUNTER_METRIC = new NoopCounterMetric();
-var NOOP_GAUGE_METRIC = new NoopGaugeMetric();
-var NOOP_HISTOGRAM_METRIC = new NoopHistogramMetric();
-var NOOP_UP_DOWN_COUNTER_METRIC = new NoopUpDownCounterMetric();
+const NOOP_COUNTER_METRIC = new NoopCounterMetric();
+const NOOP_GAUGE_METRIC = new NoopGaugeMetric();
+const NOOP_HISTOGRAM_METRIC = new NoopHistogramMetric();
+const NOOP_UP_DOWN_COUNTER_METRIC = new NoopUpDownCounterMetric();
 // Asynchronous instruments
-var NOOP_OBSERVABLE_COUNTER_METRIC = new NoopObservableCounterMetric();
-var NOOP_OBSERVABLE_GAUGE_METRIC = new NoopObservableGaugeMetric();
-var NOOP_OBSERVABLE_UP_DOWN_COUNTER_METRIC = new NoopObservableUpDownCounterMetric();
+const NOOP_OBSERVABLE_COUNTER_METRIC = new NoopObservableCounterMetric();
+const NOOP_OBSERVABLE_GAUGE_METRIC = new NoopObservableGaugeMetric();
+const NOOP_OBSERVABLE_UP_DOWN_COUNTER_METRIC = new NoopObservableUpDownCounterMetric();
 /**
  * Create a no-op Meter
+ *
+ * @since 1.3.0
  */
 function createNoopMeter() {
     return NOOP_METER;
@@ -48984,20 +49199,13 @@ function createNoopMeter() {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-/** The Type of value. It describes how the data is reported. */
+/**
+ * The Type of value. It describes how the data is reported.
+ *
+ * @since 1.3.0
+ */
 var ValueType;
 (function (ValueType) {
     ValueType[ValueType["INT"] = 0] = "INT";
@@ -49006,35 +49214,30 @@ var ValueType;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var defaultTextMapGetter = {
-    get: function (carrier, key) {
+/**
+ * @since 1.0.0
+ */
+const defaultTextMapGetter = {
+    get(carrier, key) {
         if (carrier == null) {
             return undefined;
         }
         return carrier[key];
     },
-    keys: function (carrier) {
+    keys(carrier) {
         if (carrier == null) {
             return [];
         }
         return Object.keys(carrier);
     },
 };
-var defaultTextMapSetter = {
-    set: function (carrier, key, value) {
+/**
+ * @since 1.0.0
+ */
+const defaultTextMapSetter = {
+    set(carrier, key, value) {
         if (carrier == null) {
             return;
         }
@@ -49044,139 +49247,61 @@ var defaultTextMapSetter = {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read$1 = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __spreadArray$1 = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-var NoopContextManager = /** @class */ (function () {
-    function NoopContextManager() {
-    }
-    NoopContextManager.prototype.active = function () {
+class NoopContextManager {
+    active() {
         return ROOT_CONTEXT;
-    };
-    NoopContextManager.prototype.with = function (_context, fn, thisArg) {
-        var args = [];
-        for (var _i = 3; _i < arguments.length; _i++) {
-            args[_i - 3] = arguments[_i];
-        }
-        return fn.call.apply(fn, __spreadArray$1([thisArg], __read$1(args), false));
-    };
-    NoopContextManager.prototype.bind = function (_context, target) {
+    }
+    with(_context, fn, thisArg, ...args) {
+        return fn.call(thisArg, ...args);
+    }
+    bind(_context, target) {
         return target;
-    };
-    NoopContextManager.prototype.enable = function () {
+    }
+    enable() {
         return this;
-    };
-    NoopContextManager.prototype.disable = function () {
+    }
+    disable() {
         return this;
-    };
-    return NoopContextManager;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var __read = (undefined && undefined.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
-var __spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-var API_NAME$3 = 'context';
-var NOOP_CONTEXT_MANAGER = new NoopContextManager();
+const API_NAME$3 = 'context';
+const NOOP_CONTEXT_MANAGER = new NoopContextManager();
 /**
  * Singleton object which represents the entry point to the OpenTelemetry Context API
+ *
+ * @since 1.0.0
  */
-var ContextAPI = /** @class */ (function () {
+class ContextAPI {
     /** Empty private constructor prevents end users from constructing a new instance of the API */
-    function ContextAPI() {
-    }
+    constructor() { }
     /** Get the singleton instance of the Context API */
-    ContextAPI.getInstance = function () {
+    static getInstance() {
         if (!this._instance) {
             this._instance = new ContextAPI();
         }
         return this._instance;
-    };
+    }
     /**
      * Set the current context manager.
      *
      * @returns true if the context manager was successfully registered, else false
      */
-    ContextAPI.prototype.setGlobalContextManager = function (contextManager) {
+    setGlobalContextManager(contextManager) {
         return registerGlobal(API_NAME$3, contextManager, DiagAPI.instance());
-    };
+    }
     /**
      * Get the currently active context
      */
-    ContextAPI.prototype.active = function () {
+    active() {
         return this._getContextManager().active();
-    };
+    }
     /**
      * Execute a function with an active context
      *
@@ -49185,48 +49310,34 @@ var ContextAPI = /** @class */ (function () {
      * @param thisArg optional receiver to be used for calling fn
      * @param args optional arguments forwarded to fn
      */
-    ContextAPI.prototype.with = function (context, fn, thisArg) {
-        var _a;
-        var args = [];
-        for (var _i = 3; _i < arguments.length; _i++) {
-            args[_i - 3] = arguments[_i];
-        }
-        return (_a = this._getContextManager()).with.apply(_a, __spreadArray([context, fn, thisArg], __read(args), false));
-    };
+    with(context, fn, thisArg, ...args) {
+        return this._getContextManager().with(context, fn, thisArg, ...args);
+    }
     /**
      * Bind a context to a target function or event emitter
      *
      * @param context context to bind to the event emitter or function. Defaults to the currently active context
      * @param target function or event emitter to bind
      */
-    ContextAPI.prototype.bind = function (context, target) {
+    bind(context, target) {
         return this._getContextManager().bind(context, target);
-    };
-    ContextAPI.prototype._getContextManager = function () {
+    }
+    _getContextManager() {
         return getGlobal(API_NAME$3) || NOOP_CONTEXT_MANAGER;
-    };
+    }
     /** Disable and remove the global context manager */
-    ContextAPI.prototype.disable = function () {
+    disable() {
         this._getContextManager().disable();
         unregisterGlobal(API_NAME$3, DiagAPI.instance());
-    };
-    return ContextAPI;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @since 1.0.0
  */
 var TraceFlags;
 (function (TraceFlags) {
@@ -49238,22 +49349,20 @@ var TraceFlags;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var INVALID_SPANID = '0000000000000000';
-var INVALID_TRACEID = '00000000000000000000000000000000';
-var INVALID_SPAN_CONTEXT = {
+/**
+ * @since 1.0.0
+ */
+const INVALID_SPANID = '0000000000000000';
+/**
+ * @since 1.0.0
+ */
+const INVALID_TRACEID = '00000000000000000000000000000000';
+/**
+ * @since 1.0.0
+ */
+const INVALID_SPAN_CONTEXT = {
     traceId: INVALID_TRACEID,
     spanId: INVALID_SPANID,
     traceFlags: TraceFlags.NONE,
@@ -49261,89 +49370,65 @@ var INVALID_SPAN_CONTEXT = {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * The NonRecordingSpan is the default {@link Span} that is used when no Span
  * implementation is available. All operations are no-op including context
  * propagation.
  */
-var NonRecordingSpan = /** @class */ (function () {
-    function NonRecordingSpan(_spanContext) {
-        if (_spanContext === void 0) { _spanContext = INVALID_SPAN_CONTEXT; }
-        this._spanContext = _spanContext;
+class NonRecordingSpan {
+    constructor(spanContext = INVALID_SPAN_CONTEXT) {
+        this._spanContext = spanContext;
     }
     // Returns a SpanContext.
-    NonRecordingSpan.prototype.spanContext = function () {
+    spanContext() {
         return this._spanContext;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.setAttribute = function (_key, _value) {
+    setAttribute(_key, _value) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.setAttributes = function (_attributes) {
+    setAttributes(_attributes) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.addEvent = function (_name, _attributes) {
+    addEvent(_name, _attributes) {
         return this;
-    };
-    NonRecordingSpan.prototype.addLink = function (_link) {
+    }
+    addLink(_link) {
         return this;
-    };
-    NonRecordingSpan.prototype.addLinks = function (_links) {
+    }
+    addLinks(_links) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.setStatus = function (_status) {
+    setStatus(_status) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.updateName = function (_name) {
+    updateName(_name) {
         return this;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.end = function (_endTime) { };
+    end(_endTime) { }
     // isRecording always returns false for NonRecordingSpan.
-    NonRecordingSpan.prototype.isRecording = function () {
+    isRecording() {
         return false;
-    };
+    }
     // By default does nothing
-    NonRecordingSpan.prototype.recordException = function (_exception, _time) { };
-    return NonRecordingSpan;
-}());
+    recordException(_exception, _time) { }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * span key
  */
-var SPAN_KEY = createContextKey('OpenTelemetry Context Key SPAN');
+const SPAN_KEY = createContextKey('OpenTelemetry Context Key SPAN');
 /**
  * Return the span if one exists
  *
@@ -49397,30 +49482,47 @@ function getSpanContext(context) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var VALID_TRACEID_REGEX = /^([0-9a-f]{32})$/i;
-var VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i;
-function isValidTraceId(traceId) {
-    return VALID_TRACEID_REGEX.test(traceId) && traceId !== INVALID_TRACEID;
+// Valid characters (0-9, a-f, A-F) are marked as 1.
+const isHex = new Uint8Array([
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+]);
+function isValidHex(id, length) {
+    // As of 1.9.0 the id was allowed to be a non-string value,
+    // even though it was not possible in the types.
+    if (typeof id !== 'string' || id.length !== length)
+        return false;
+    let r = 0;
+    for (let i = 0; i < id.length; i += 4) {
+        r +=
+            (isHex[id.charCodeAt(i)] | 0) +
+                (isHex[id.charCodeAt(i + 1)] | 0) +
+                (isHex[id.charCodeAt(i + 2)] | 0) +
+                (isHex[id.charCodeAt(i + 3)] | 0);
+    }
+    return r === length;
 }
+/**
+ * @since 1.0.0
+ */
+function isValidTraceId(traceId) {
+    return isValidHex(traceId, 32) && traceId !== INVALID_TRACEID;
+}
+/**
+ * @since 1.0.0
+ */
 function isValidSpanId(spanId) {
-    return VALID_SPANID_REGEX.test(spanId) && spanId !== INVALID_SPANID;
+    return isValidHex(spanId, 16) && spanId !== INVALID_SPANID;
 }
 /**
  * Returns true if this {@link SpanContext} is valid.
  * @return true if this {@link SpanContext} is valid.
+ *
+ * @since 1.0.0
  */
 function isSpanContextValid(spanContext) {
     return (isValidTraceId(spanContext.traceId) && isValidSpanId(spanContext.spanId));
@@ -49437,34 +49539,20 @@ function wrapSpanContext(spanContext) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var contextApi = ContextAPI.getInstance();
+const contextApi = ContextAPI.getInstance();
 /**
  * No-op implementations of {@link Tracer}.
  */
-var NoopTracer = /** @class */ (function () {
-    function NoopTracer() {
-    }
+class NoopTracer {
     // startSpan starts a noop span.
-    NoopTracer.prototype.startSpan = function (name, options, context) {
-        if (context === void 0) { context = contextApi.active(); }
-        var root = Boolean(options === null || options === void 0 ? void 0 : options.root);
+    startSpan(name, options, context = contextApi.active()) {
+        const root = Boolean(options === null || options === void 0 ? void 0 : options.root);
         if (root) {
             return new NonRecordingSpan();
         }
-        var parentFromContext = context && getSpanContext(context);
+        const parentFromContext = context && getSpanContext(context);
         if (isSpanContext(parentFromContext) &&
             isSpanContextValid(parentFromContext)) {
             return new NonRecordingSpan(parentFromContext);
@@ -49472,11 +49560,11 @@ var NoopTracer = /** @class */ (function () {
         else {
             return new NonRecordingSpan();
         }
-    };
-    NoopTracer.prototype.startActiveSpan = function (name, arg2, arg3, arg4) {
-        var opts;
-        var ctx;
-        var fn;
+    }
+    startActiveSpan(name, arg2, arg3, arg4) {
+        let opts;
+        let ctx;
+        let fn;
         if (arguments.length < 2) {
             return;
         }
@@ -49492,85 +49580,67 @@ var NoopTracer = /** @class */ (function () {
             ctx = arg3;
             fn = arg4;
         }
-        var parentContext = ctx !== null && ctx !== void 0 ? ctx : contextApi.active();
-        var span = this.startSpan(name, opts, parentContext);
-        var contextWithSpanSet = setSpan(parentContext, span);
+        const parentContext = ctx !== null && ctx !== void 0 ? ctx : contextApi.active();
+        const span = this.startSpan(name, opts, parentContext);
+        const contextWithSpanSet = setSpan(parentContext, span);
         return contextApi.with(contextWithSpanSet, fn, undefined, span);
-    };
-    return NoopTracer;
-}());
+    }
+}
 function isSpanContext(spanContext) {
-    return (typeof spanContext === 'object' &&
+    return (spanContext !== null &&
+        typeof spanContext === 'object' &&
+        'spanId' in spanContext &&
         typeof spanContext['spanId'] === 'string' &&
+        'traceId' in spanContext &&
         typeof spanContext['traceId'] === 'string' &&
+        'traceFlags' in spanContext &&
         typeof spanContext['traceFlags'] === 'number');
 }
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var NOOP_TRACER = new NoopTracer();
+const NOOP_TRACER = new NoopTracer();
 /**
  * Proxy tracer provided by the proxy tracer provider
+ *
+ * @since 1.0.0
  */
-var ProxyTracer = /** @class */ (function () {
-    function ProxyTracer(_provider, name, version, options) {
-        this._provider = _provider;
+class ProxyTracer {
+    constructor(provider, name, version, options) {
+        this._provider = provider;
         this.name = name;
         this.version = version;
         this.options = options;
     }
-    ProxyTracer.prototype.startSpan = function (name, options, context) {
+    startSpan(name, options, context) {
         return this._getTracer().startSpan(name, options, context);
-    };
-    ProxyTracer.prototype.startActiveSpan = function (_name, _options, _context, _fn) {
-        var tracer = this._getTracer();
+    }
+    startActiveSpan(_name, _options, _context, _fn) {
+        const tracer = this._getTracer();
         return Reflect.apply(tracer.startActiveSpan, tracer, arguments);
-    };
+    }
     /**
      * Try to get a tracer from the proxy tracer provider.
      * If the proxy tracer provider has no delegate, return a noop tracer.
      */
-    ProxyTracer.prototype._getTracer = function () {
+    _getTracer() {
         if (this._delegate) {
             return this._delegate;
         }
-        var tracer = this._provider.getDelegateTracer(this.name, this.version, this.options);
+        const tracer = this._provider.getDelegateTracer(this.name, this.version, this.options);
         if (!tracer) {
             return NOOP_TRACER;
         }
         this._delegate = tracer;
         return this._delegate;
-    };
-    return ProxyTracer;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * An implementation of the {@link TracerProvider} which returns an impotent
@@ -49578,31 +49648,17 @@ var ProxyTracer = /** @class */ (function () {
  *
  * All operations are no-op.
  */
-var NoopTracerProvider = /** @class */ (function () {
-    function NoopTracerProvider() {
-    }
-    NoopTracerProvider.prototype.getTracer = function (_name, _version, _options) {
+class NoopTracerProvider {
+    getTracer(_name, _version, _options) {
         return new NoopTracer();
-    };
-    return NoopTracerProvider;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var NOOP_TRACER_PROVIDER = new NoopTracerProvider();
+const NOOP_TRACER_PROVIDER = new NoopTracerProvider();
 /**
  * Tracer provider which provides {@link ProxyTracer}s.
  *
@@ -49610,53 +49666,44 @@ var NOOP_TRACER_PROVIDER = new NoopTracerProvider();
  *   When a delegate is set, traces are provided from the delegate.
  *   When a delegate is set after tracers have already been provided,
  *   all tracers already provided will use the provided delegate implementation.
+ *
+ * @deprecated This will be removed in the next major version.
+ * @since 1.0.0
  */
-var ProxyTracerProvider = /** @class */ (function () {
-    function ProxyTracerProvider() {
-    }
+class ProxyTracerProvider {
     /**
      * Get a {@link ProxyTracer}
      */
-    ProxyTracerProvider.prototype.getTracer = function (name, version, options) {
+    getTracer(name, version, options) {
         var _a;
         return ((_a = this.getDelegateTracer(name, version, options)) !== null && _a !== void 0 ? _a : new ProxyTracer(this, name, version, options));
-    };
-    ProxyTracerProvider.prototype.getDelegate = function () {
+    }
+    getDelegate() {
         var _a;
         return (_a = this._delegate) !== null && _a !== void 0 ? _a : NOOP_TRACER_PROVIDER;
-    };
+    }
     /**
      * Set the delegate tracer provider
      */
-    ProxyTracerProvider.prototype.setDelegate = function (delegate) {
+    setDelegate(delegate) {
         this._delegate = delegate;
-    };
-    ProxyTracerProvider.prototype.getDelegateTracer = function (name, version, options) {
+    }
+    getDelegateTracer(name, version, options) {
         var _a;
         return (_a = this._delegate) === null || _a === void 0 ? void 0 : _a.getTracer(name, version, options);
-    };
-    return ProxyTracerProvider;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * @deprecated use the one declared in @opentelemetry/sdk-trace-base instead.
  * A sampling decision that determines how a {@link Span} will be recorded
  * and collected.
+ *
+ * @since 1.0.0
  */
 var SamplingDecision$1;
 (function (SamplingDecision) {
@@ -49679,18 +49726,10 @@ var SamplingDecision$1;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @since 1.0.0
  */
 var SpanKind;
 (function (SpanKind) {
@@ -49720,8 +49759,14 @@ var SpanKind;
     SpanKind[SpanKind["CONSUMER"] = 4] = "CONSUMER";
 })(SpanKind || (SpanKind = {}));
 
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /**
  * An enumeration of status codes.
+ *
+ * @since 1.0.0
  */
 var SpanStatusCode;
 (function (SpanStatusCode) {
@@ -49742,25 +49787,14 @@ var SpanStatusCode;
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var VALID_KEY_CHAR_RANGE$1 = '[_0-9a-z-*/]';
-var VALID_KEY$1 = "[a-z]" + VALID_KEY_CHAR_RANGE$1 + "{0,255}";
-var VALID_VENDOR_KEY$1 = "[a-z0-9]" + VALID_KEY_CHAR_RANGE$1 + "{0,240}@[a-z]" + VALID_KEY_CHAR_RANGE$1 + "{0,13}";
-var VALID_KEY_REGEX$1 = new RegExp("^(?:" + VALID_KEY$1 + "|" + VALID_VENDOR_KEY$1 + ")$");
-var VALID_VALUE_BASE_REGEX$1 = /^[ -~]{0,255}[!-~]$/;
-var INVALID_VALUE_COMMA_EQUAL_REGEX$1 = /,|=/;
+const VALID_KEY_CHAR_RANGE$2 = '[_0-9a-z-*/]';
+const VALID_KEY$2 = `[a-z]${VALID_KEY_CHAR_RANGE$2}{0,255}`;
+const VALID_VENDOR_KEY$2 = `[a-z0-9]${VALID_KEY_CHAR_RANGE$2}{0,240}@[a-z]${VALID_KEY_CHAR_RANGE$2}{0,13}`;
+const VALID_KEY_REGEX$2 = new RegExp(`^(?:${VALID_KEY$2}|${VALID_VENDOR_KEY$2})$`);
+const VALID_VALUE_BASE_REGEX$2 = /^[ -~]{0,255}[!-~]$/;
+const INVALID_VALUE_COMMA_EQUAL_REGEX$2 = /,|=/;
 /**
  * Key is opaque string up to 256 characters printable. It MUST begin with a
  * lowercase letter, and can only contain lowercase letters a-z, digits 0-9,
@@ -49769,37 +49803,26 @@ var INVALID_VALUE_COMMA_EQUAL_REGEX$1 = /,|=/;
  * vendor name. Vendors SHOULD set the tenant ID at the beginning of the key.
  * see https://www.w3.org/TR/trace-context/#key
  */
-function validateKey$1(key) {
-    return VALID_KEY_REGEX$1.test(key);
+function validateKey$2(key) {
+    return VALID_KEY_REGEX$2.test(key);
 }
 /**
  * Value is opaque string up to 256 characters printable ASCII RFC0020
  * characters (i.e., the range 0x20 to 0x7E) except comma , and =.
  */
-function validateValue$1(value) {
-    return (VALID_VALUE_BASE_REGEX$1.test(value) &&
-        !INVALID_VALUE_COMMA_EQUAL_REGEX$1.test(value));
+function validateValue$2(value) {
+    return (VALID_VALUE_BASE_REGEX$2.test(value) &&
+        !INVALID_VALUE_COMMA_EQUAL_REGEX$2.test(value));
 }
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var MAX_TRACE_STATE_ITEMS$1 = 32;
-var MAX_TRACE_STATE_LEN$1 = 512;
-var LIST_MEMBERS_SEPARATOR$1 = ',';
-var LIST_MEMBER_KEY_VALUE_SPLITTER$1 = '=';
+const MAX_TRACE_STATE_ITEMS$2 = 32;
+const MAX_TRACE_STATE_LEN$2 = 512;
+const LIST_MEMBERS_SEPARATOR$2 = ',';
+const LIST_MEMBER_KEY_VALUE_SPLITTER$2 = '=';
 /**
  * TraceState must be a class and not a simple object type because of the spec
  * requirement (https://www.w3.org/TR/trace-context/#tracestate-field).
@@ -49809,89 +49832,81 @@ var LIST_MEMBER_KEY_VALUE_SPLITTER$1 = '=';
  * - The value of any key can be updated. Modified keys MUST be moved to the
  * beginning of the list.
  */
-var TraceStateImpl = /** @class */ (function () {
-    function TraceStateImpl(rawTraceState) {
+class TraceStateImpl {
+    constructor(rawTraceState) {
         this._internalState = new Map();
         if (rawTraceState)
             this._parse(rawTraceState);
     }
-    TraceStateImpl.prototype.set = function (key, value) {
+    set(key, value) {
         // TODO: Benchmark the different approaches(map vs list) and
         // use the faster one.
-        var traceState = this._clone();
+        const traceState = this._clone();
         if (traceState._internalState.has(key)) {
             traceState._internalState.delete(key);
         }
         traceState._internalState.set(key, value);
         return traceState;
-    };
-    TraceStateImpl.prototype.unset = function (key) {
-        var traceState = this._clone();
+    }
+    unset(key) {
+        const traceState = this._clone();
         traceState._internalState.delete(key);
         return traceState;
-    };
-    TraceStateImpl.prototype.get = function (key) {
+    }
+    get(key) {
         return this._internalState.get(key);
-    };
-    TraceStateImpl.prototype.serialize = function () {
-        var _this = this;
-        return this._keys()
-            .reduce(function (agg, key) {
-            agg.push(key + LIST_MEMBER_KEY_VALUE_SPLITTER$1 + _this.get(key));
+    }
+    serialize() {
+        return (Array.from(this._internalState.keys())
+            // Use reduceRight() because keys are stored in reverse insertion order.
+            .reduceRight((agg, key) => {
+            agg.push(key + LIST_MEMBER_KEY_VALUE_SPLITTER$2 + this.get(key));
             return agg;
         }, [])
-            .join(LIST_MEMBERS_SEPARATOR$1);
-    };
-    TraceStateImpl.prototype._parse = function (rawTraceState) {
-        if (rawTraceState.length > MAX_TRACE_STATE_LEN$1)
+            .join(LIST_MEMBERS_SEPARATOR$2));
+    }
+    _parse(rawTraceState) {
+        if (rawTraceState.length > MAX_TRACE_STATE_LEN$2)
             return;
         this._internalState = rawTraceState
-            .split(LIST_MEMBERS_SEPARATOR$1)
-            .reverse() // Store in reverse so new keys (.set(...)) will be placed at the beginning
-            .reduce(function (agg, part) {
-            var listMember = part.trim(); // Optional Whitespace (OWS) handling
-            var i = listMember.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER$1);
+            .split(LIST_MEMBERS_SEPARATOR$2)
+            // Use reduceRight() so new keys (.set(...)) will be placed at the beginning
+            .reduceRight((agg, part) => {
+            const listMember = part.trim(); // Optional Whitespace (OWS) handling
+            const i = listMember.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER$2);
             if (i !== -1) {
-                var key = listMember.slice(0, i);
-                var value = listMember.slice(i + 1, part.length);
-                if (validateKey$1(key) && validateValue$1(value)) {
+                const key = listMember.slice(0, i);
+                const value = listMember.slice(i + 1, part.length);
+                if (validateKey$2(key) && validateValue$2(value)) {
                     agg.set(key, value);
                 }
             }
             return agg;
         }, new Map());
         // Because of the reverse() requirement, trunc must be done after map is created
-        if (this._internalState.size > MAX_TRACE_STATE_ITEMS$1) {
+        if (this._internalState.size > MAX_TRACE_STATE_ITEMS$2) {
             this._internalState = new Map(Array.from(this._internalState.entries())
                 .reverse() // Use reverse same as original tracestate parse chain
-                .slice(0, MAX_TRACE_STATE_ITEMS$1));
+                .slice(0, MAX_TRACE_STATE_ITEMS$2));
         }
-    };
-    TraceStateImpl.prototype._keys = function () {
+    }
+    // @ts-expect-error TS6133 Accessed in tests only.
+    _keys() {
         return Array.from(this._internalState.keys()).reverse();
-    };
-    TraceStateImpl.prototype._clone = function () {
-        var traceState = new TraceStateImpl();
+    }
+    _clone() {
+        const traceState = new TraceStateImpl();
         traceState._internalState = new Map(this._internalState);
         return traceState;
-    };
-    return TraceStateImpl;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @since 1.1.0
  */
 function createTraceState(rawTraceState) {
     return new TraceStateImpl(rawTraceState);
@@ -49899,38 +49914,19 @@ function createTraceState(rawTraceState) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
-/** Entrypoint for context API */
-var context = ContextAPI.getInstance();
+/**
+ * Entrypoint for context API
+ * @since 1.0.0
+ */
+const context = ContextAPI.getInstance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
@@ -49939,166 +49935,109 @@ var context = ContextAPI.getInstance();
  * Defines Diagnostic handler used for internal diagnostic logging operations.
  * The default provides a Noop DiagLogger implementation which may be changed via the
  * diag.setLogger(logger: DiagLogger) function.
+ *
+ * @since 1.0.0
  */
-var diag = DiagAPI.instance();
+const diag = DiagAPI.instance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * An implementation of the {@link MeterProvider} which returns an impotent Meter
  * for all calls to `getMeter`
  */
-var NoopMeterProvider = /** @class */ (function () {
-    function NoopMeterProvider() {
-    }
-    NoopMeterProvider.prototype.getMeter = function (_name, _version, _options) {
+class NoopMeterProvider {
+    getMeter(_name, _version, _options) {
         return NOOP_METER;
-    };
-    return NoopMeterProvider;
-}());
-var NOOP_METER_PROVIDER = new NoopMeterProvider();
+    }
+}
+const NOOP_METER_PROVIDER = new NoopMeterProvider();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var API_NAME$2 = 'metrics';
+const API_NAME$2 = 'metrics';
 /**
  * Singleton object which represents the entry point to the OpenTelemetry Metrics API
  */
-var MetricsAPI = /** @class */ (function () {
+class MetricsAPI {
     /** Empty private constructor prevents end users from constructing a new instance of the API */
-    function MetricsAPI() {
-    }
+    constructor() { }
     /** Get the singleton instance of the Metrics API */
-    MetricsAPI.getInstance = function () {
+    static getInstance() {
         if (!this._instance) {
             this._instance = new MetricsAPI();
         }
         return this._instance;
-    };
+    }
     /**
      * Set the current global meter provider.
      * Returns true if the meter provider was successfully registered, else false.
      */
-    MetricsAPI.prototype.setGlobalMeterProvider = function (provider) {
+    setGlobalMeterProvider(provider) {
         return registerGlobal(API_NAME$2, provider, DiagAPI.instance());
-    };
+    }
     /**
      * Returns the global meter provider.
      */
-    MetricsAPI.prototype.getMeterProvider = function () {
+    getMeterProvider() {
         return getGlobal(API_NAME$2) || NOOP_METER_PROVIDER;
-    };
+    }
     /**
      * Returns a meter from the global meter provider.
      */
-    MetricsAPI.prototype.getMeter = function (name, version, options) {
+    getMeter(name, version, options) {
         return this.getMeterProvider().getMeter(name, version, options);
-    };
+    }
     /** Remove the global meter provider */
-    MetricsAPI.prototype.disable = function () {
+    disable() {
         unregisterGlobal(API_NAME$2, DiagAPI.instance());
-    };
-    return MetricsAPI;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
-/** Entrypoint for metrics API */
-var metrics = MetricsAPI.getInstance();
+/**
+ * Entrypoint for metrics API
+ *
+ * @since 1.3.0
+ */
+const metrics = MetricsAPI.getInstance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * No-op implementations of {@link TextMapPropagator}.
  */
-var NoopTextMapPropagator = /** @class */ (function () {
-    function NoopTextMapPropagator() {
-    }
+class NoopTextMapPropagator {
     /** Noop inject function does nothing */
-    NoopTextMapPropagator.prototype.inject = function (_context, _carrier) { };
+    inject(_context, _carrier) { }
     /** Noop extract function does nothing and returns the input context */
-    NoopTextMapPropagator.prototype.extract = function (context, _carrier) {
+    extract(context, _carrier) {
         return context;
-    };
-    NoopTextMapPropagator.prototype.fields = function () {
+    }
+    fields() {
         return [];
-    };
-    return NoopTextMapPropagator;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /**
  * Baggage key
  */
-var BAGGAGE_KEY = createContextKey('OpenTelemetry Baggage Key');
+const BAGGAGE_KEY = createContextKey('OpenTelemetry Baggage Key');
 /**
  * Retrieve the current baggage from the given context
  *
@@ -50136,27 +50075,18 @@ function deleteBaggage(context) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var API_NAME$1 = 'propagation';
-var NOOP_TEXT_MAP_PROPAGATOR = new NoopTextMapPropagator();
+const API_NAME$1 = 'propagation';
+const NOOP_TEXT_MAP_PROPAGATOR = new NoopTextMapPropagator();
 /**
  * Singleton object which represents the entry point to the OpenTelemetry Propagation API
+ *
+ * @since 1.0.0
  */
-var PropagationAPI = /** @class */ (function () {
+class PropagationAPI {
     /** Empty private constructor prevents end users from constructing a new instance of the API */
-    function PropagationAPI() {
+    constructor() {
         this.createBaggage = createBaggage;
         this.getBaggage = getBaggage;
         this.getActiveBaggage = getActiveBaggage;
@@ -50164,20 +50094,20 @@ var PropagationAPI = /** @class */ (function () {
         this.deleteBaggage = deleteBaggage;
     }
     /** Get the singleton instance of the Propagator API */
-    PropagationAPI.getInstance = function () {
+    static getInstance() {
         if (!this._instance) {
             this._instance = new PropagationAPI();
         }
         return this._instance;
-    };
+    }
     /**
      * Set the current propagator.
      *
      * @returns true if the propagator was successfully registered, else false
      */
-    PropagationAPI.prototype.setGlobalPropagator = function (propagator) {
+    setGlobalPropagator(propagator) {
         return registerGlobal(API_NAME$1, propagator, DiagAPI.instance());
-    };
+    }
     /**
      * Inject context into a carrier to be propagated inter-process
      *
@@ -50185,10 +50115,9 @@ var PropagationAPI = /** @class */ (function () {
      * @param carrier carrier to inject context into
      * @param setter Function used to set values on the carrier
      */
-    PropagationAPI.prototype.inject = function (context, carrier, setter) {
-        if (setter === void 0) { setter = defaultTextMapSetter; }
+    inject(context, carrier, setter = defaultTextMapSetter) {
         return this._getGlobalPropagator().inject(context, carrier, setter);
-    };
+    }
     /**
      * Extract context from a carrier
      *
@@ -50196,68 +50125,50 @@ var PropagationAPI = /** @class */ (function () {
      * @param carrier Carrier to extract context from
      * @param getter Function used to extract keys from a carrier
      */
-    PropagationAPI.prototype.extract = function (context, carrier, getter) {
-        if (getter === void 0) { getter = defaultTextMapGetter; }
+    extract(context, carrier, getter = defaultTextMapGetter) {
         return this._getGlobalPropagator().extract(context, carrier, getter);
-    };
+    }
     /**
      * Return a list of all fields which may be used by the propagator.
      */
-    PropagationAPI.prototype.fields = function () {
+    fields() {
         return this._getGlobalPropagator().fields();
-    };
+    }
     /** Remove the global propagator */
-    PropagationAPI.prototype.disable = function () {
+    disable() {
         unregisterGlobal(API_NAME$1, DiagAPI.instance());
-    };
-    PropagationAPI.prototype._getGlobalPropagator = function () {
+    }
+    _getGlobalPropagator() {
         return getGlobal(API_NAME$1) || NOOP_TEXT_MAP_PROPAGATOR;
-    };
-    return PropagationAPI;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
-/** Entrypoint for propagation API */
-var propagation = PropagationAPI.getInstance();
+/**
+ * Entrypoint for propagation API
+ *
+ * @since 1.0.0
+ */
+const propagation = PropagationAPI.getInstance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-var API_NAME = 'trace';
+const API_NAME = 'trace';
 /**
  * Singleton object which represents the entry point to the OpenTelemetry Tracing API
+ *
+ * @since 1.0.0
  */
-var TraceAPI = /** @class */ (function () {
+class TraceAPI {
     /** Empty private constructor prevents end users from constructing a new instance of the API */
-    function TraceAPI() {
+    constructor() {
         this._proxyTracerProvider = new ProxyTracerProvider();
         this.wrapSpanContext = wrapSpanContext;
         this.isSpanContextValid = isSpanContextValid;
@@ -50269,86 +50180,67 @@ var TraceAPI = /** @class */ (function () {
         this.setSpanContext = setSpanContext;
     }
     /** Get the singleton instance of the Trace API */
-    TraceAPI.getInstance = function () {
+    static getInstance() {
         if (!this._instance) {
             this._instance = new TraceAPI();
         }
         return this._instance;
-    };
+    }
     /**
      * Set the current global tracer.
      *
      * @returns true if the tracer provider was successfully registered, else false
      */
-    TraceAPI.prototype.setGlobalTracerProvider = function (provider) {
-        var success = registerGlobal(API_NAME, this._proxyTracerProvider, DiagAPI.instance());
+    setGlobalTracerProvider(provider) {
+        const success = registerGlobal(API_NAME, this._proxyTracerProvider, DiagAPI.instance());
         if (success) {
             this._proxyTracerProvider.setDelegate(provider);
         }
         return success;
-    };
+    }
     /**
      * Returns the global tracer provider.
      */
-    TraceAPI.prototype.getTracerProvider = function () {
+    getTracerProvider() {
         return getGlobal(API_NAME) || this._proxyTracerProvider;
-    };
+    }
     /**
      * Returns a tracer from the global tracer provider.
      */
-    TraceAPI.prototype.getTracer = function (name, version) {
+    getTracer(name, version) {
         return this.getTracerProvider().getTracer(name, version);
-    };
+    }
     /** Remove the global tracer provider */
-    TraceAPI.prototype.disable = function () {
+    disable() {
         unregisterGlobal(API_NAME, DiagAPI.instance());
         this._proxyTracerProvider = new ProxyTracerProvider();
-    };
-    return TraceAPI;
-}());
+    }
+}
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Split module-level variable definition into separate files to allow
 // tree-shaking on each api instance.
-/** Entrypoint for trace API */
-var trace = TraceAPI.getInstance();
+/**
+ * Entrypoint for trace API
+ *
+ * @since 1.0.0
+ */
+const trace = TraceAPI.getInstance();
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // Default export.
 var index = {
-    context: context,
-    diag: diag,
-    metrics: metrics,
-    propagation: propagation,
-    trace: trace,
+    context,
+    diag,
+    metrics,
+    propagation,
+    trace,
 };
 
 var esm$4 = /*#__PURE__*/Object.freeze({
@@ -51266,7 +51158,7 @@ var hasRequiredLogging;
 function requireLogging () {
 	if (hasRequiredLogging) return logging;
 	hasRequiredLogging = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2019 gRPC authors.
 		 *
@@ -51284,10 +51176,10 @@ function requireLogging () {
 		 *
 		 */
 		var _a, _b, _c, _d;
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.log = exports$1.setLoggerVerbosity = exports$1.setLogger = exports$1.getLogger = void 0;
-		exports$1.trace = trace;
-		exports$1.isTracerEnabled = isTracerEnabled;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.log = exports.setLoggerVerbosity = exports.setLogger = exports.getLogger = void 0;
+		exports.trace = trace;
+		exports.isTracerEnabled = isTracerEnabled;
 		const constants_1 = requireConstants();
 		const process_1 = process$1;
 		const clientVersion = require$$12.version;
@@ -51323,15 +51215,15 @@ function requireLogging () {
 		const getLogger = () => {
 		    return _logger;
 		};
-		exports$1.getLogger = getLogger;
+		exports.getLogger = getLogger;
 		const setLogger = (logger) => {
 		    _logger = logger;
 		};
-		exports$1.setLogger = setLogger;
+		exports.setLogger = setLogger;
 		const setLoggerVerbosity = (verbosity) => {
 		    _logVerbosity = verbosity;
 		};
-		exports$1.setLoggerVerbosity = setLoggerVerbosity;
+		exports.setLoggerVerbosity = setLoggerVerbosity;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const log = (severity, ...args) => {
 		    let logFunction;
@@ -51357,7 +51249,7 @@ function requireLogging () {
 		        }
 		    }
 		};
-		exports$1.log = log;
+		exports.log = log;
 		const tracersString = (_d = (_c = process.env.GRPC_NODE_TRACE) !== null && _c !== void 0 ? _c : process.env.GRPC_TRACE) !== null && _d !== void 0 ? _d : '';
 		const enabledTracers = new Set();
 		const disabledTracers = new Set();
@@ -51372,7 +51264,7 @@ function requireLogging () {
 		const allEnabled = enabledTracers.has('all');
 		function trace(severity, tracer, text) {
 		    if (isTracerEnabled(tracer)) {
-		        (0, exports$1.log)(severity, new Date().toISOString() +
+		        (0, exports.log)(severity, new Date().toISOString() +
 		            ' | v' +
 		            clientVersion +
 		            ' ' +
@@ -54084,7 +53976,7 @@ function requireSubchannelAddress () {
 	subchannelAddress.endpointEqual = endpointEqual;
 	subchannelAddress.endpointToString = endpointToString;
 	subchannelAddress.endpointHasAddress = endpointHasAddress;
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	function isTcpSubchannelAddress(address) {
 	    return 'port' in address;
 	}
@@ -55314,8 +55206,8 @@ function requireCall () {
 	Object.defineProperty(call, "__esModule", { value: true });
 	call.ClientDuplexStreamImpl = call.ClientWritableStreamImpl = call.ClientReadableStreamImpl = call.ClientUnaryCallImpl = void 0;
 	call.callErrorFromStatus = callErrorFromStatus;
-	const events_1 = require$$0$5;
-	const stream_1 = require$$0$6;
+	const events_1 = require$$0$4;
+	const stream_1 = require$$0$5;
 	const constants_1 = requireConstants();
 	/**
 	 * Construct a ServiceError from a StatusObject. This function exists primarily
@@ -57267,14 +57159,14 @@ var hasRequiredBase64;
 function requireBase64 () {
 	if (hasRequiredBase64) return base64;
 	hasRequiredBase64 = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * A minimal base64 implementation for number arrays.
 		 * @memberof util
 		 * @namespace
 		 */
-		var base64 = exports$1;
+		var base64 = exports;
 
 		/**
 		 * Calculates the byte length of a base64 encoded string.
@@ -57596,7 +57488,7 @@ function requireFloat () {
 	 */
 
 	// Factory function for the purpose of node-based testing in modified global environments
-	function factory(exports$1) {
+	function factory(exports) {
 
 	    // float: typed array
 	    if (typeof Float32Array !== "undefined") (function() {
@@ -57622,9 +57514,9 @@ function requireFloat () {
 	        }
 
 	        /* istanbul ignore next */
-	        exports$1.writeFloatLE = le ? writeFloat_f32_cpy : writeFloat_f32_rev;
+	        exports.writeFloatLE = le ? writeFloat_f32_cpy : writeFloat_f32_rev;
 	        /* istanbul ignore next */
-	        exports$1.writeFloatBE = le ? writeFloat_f32_rev : writeFloat_f32_cpy;
+	        exports.writeFloatBE = le ? writeFloat_f32_rev : writeFloat_f32_cpy;
 
 	        function readFloat_f32_cpy(buf, pos) {
 	            f8b[0] = buf[pos    ];
@@ -57643,9 +57535,9 @@ function requireFloat () {
 	        }
 
 	        /* istanbul ignore next */
-	        exports$1.readFloatLE = le ? readFloat_f32_cpy : readFloat_f32_rev;
+	        exports.readFloatLE = le ? readFloat_f32_cpy : readFloat_f32_rev;
 	        /* istanbul ignore next */
-	        exports$1.readFloatBE = le ? readFloat_f32_rev : readFloat_f32_cpy;
+	        exports.readFloatBE = le ? readFloat_f32_rev : readFloat_f32_cpy;
 
 	    // float: ieee754
 	    })(); else (function() {
@@ -57669,8 +57561,8 @@ function requireFloat () {
 	            }
 	        }
 
-	        exports$1.writeFloatLE = writeFloat_ieee754.bind(null, writeUintLE);
-	        exports$1.writeFloatBE = writeFloat_ieee754.bind(null, writeUintBE);
+	        exports.writeFloatLE = writeFloat_ieee754.bind(null, writeUintLE);
+	        exports.writeFloatBE = writeFloat_ieee754.bind(null, writeUintBE);
 
 	        function readFloat_ieee754(readUint, buf, pos) {
 	            var uint = readUint(buf, pos),
@@ -57686,8 +57578,8 @@ function requireFloat () {
 	                : sign * Math.pow(2, exponent - 150) * (mantissa + 8388608);
 	        }
 
-	        exports$1.readFloatLE = readFloat_ieee754.bind(null, readUintLE);
-	        exports$1.readFloatBE = readFloat_ieee754.bind(null, readUintBE);
+	        exports.readFloatLE = readFloat_ieee754.bind(null, readUintLE);
+	        exports.readFloatBE = readFloat_ieee754.bind(null, readUintBE);
 
 	    })();
 
@@ -57723,9 +57615,9 @@ function requireFloat () {
 	        }
 
 	        /* istanbul ignore next */
-	        exports$1.writeDoubleLE = le ? writeDouble_f64_cpy : writeDouble_f64_rev;
+	        exports.writeDoubleLE = le ? writeDouble_f64_cpy : writeDouble_f64_rev;
 	        /* istanbul ignore next */
-	        exports$1.writeDoubleBE = le ? writeDouble_f64_rev : writeDouble_f64_cpy;
+	        exports.writeDoubleBE = le ? writeDouble_f64_rev : writeDouble_f64_cpy;
 
 	        function readDouble_f64_cpy(buf, pos) {
 	            f8b[0] = buf[pos    ];
@@ -57752,9 +57644,9 @@ function requireFloat () {
 	        }
 
 	        /* istanbul ignore next */
-	        exports$1.readDoubleLE = le ? readDouble_f64_cpy : readDouble_f64_rev;
+	        exports.readDoubleLE = le ? readDouble_f64_cpy : readDouble_f64_rev;
 	        /* istanbul ignore next */
-	        exports$1.readDoubleBE = le ? readDouble_f64_rev : readDouble_f64_cpy;
+	        exports.readDoubleBE = le ? readDouble_f64_rev : readDouble_f64_cpy;
 
 	    // double: ieee754
 	    })(); else (function() {
@@ -57789,8 +57681,8 @@ function requireFloat () {
 	            }
 	        }
 
-	        exports$1.writeDoubleLE = writeDouble_ieee754.bind(null, writeUintLE, 0, 4);
-	        exports$1.writeDoubleBE = writeDouble_ieee754.bind(null, writeUintBE, 4, 0);
+	        exports.writeDoubleLE = writeDouble_ieee754.bind(null, writeUintLE, 0, 4);
+	        exports.writeDoubleBE = writeDouble_ieee754.bind(null, writeUintBE, 4, 0);
 
 	        function readDouble_ieee754(readUint, off0, off1, buf, pos) {
 	            var lo = readUint(buf, pos + off0),
@@ -57807,12 +57699,12 @@ function requireFloat () {
 	                : sign * Math.pow(2, exponent - 1075) * (mantissa + 4503599627370496);
 	        }
 
-	        exports$1.readDoubleLE = readDouble_ieee754.bind(null, readUintLE, 0, 4);
-	        exports$1.readDoubleBE = readDouble_ieee754.bind(null, readUintBE, 4, 0);
+	        exports.readDoubleLE = readDouble_ieee754.bind(null, readUintLE, 0, 4);
+	        exports.readDoubleBE = readDouble_ieee754.bind(null, readUintBE, 4, 0);
 
 	    })();
 
-	    return exports$1;
+	    return exports;
 	}
 
 	// uint helpers
@@ -57854,14 +57746,14 @@ var hasRequiredUtf8;
 function requireUtf8 () {
 	if (hasRequiredUtf8) return utf8;
 	hasRequiredUtf8 = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * A minimal UTF8 implementation for number arrays.
 		 * @memberof util
 		 * @namespace
 		 */
-		var utf8 = exports$1,
+		var utf8 = exports,
 		    replacementCharCode = 0xFFFD; // U+FFFD REPLACEMENT CHARACTER
 
 		/**
@@ -58246,15 +58138,15 @@ var hasRequiredUmd;
 function requireUmd () {
 	if (hasRequiredUmd) return umd$1.exports;
 	hasRequiredUmd = 1;
-	(function (module, exports$1) {
+	(function (module, exports) {
 		// GENERATED FILE. DO NOT EDIT.
 		(function (global, factory) {
-		  function preferDefault(exports$1) {
-		    return exports$1.default || exports$1;
+		  function preferDefault(exports) {
+		    return exports.default || exports;
 		  }
 		  {
-		    factory(exports$1);
-		    module.exports = preferDefault(exports$1);
+		    factory(exports);
+		    module.exports = preferDefault(exports);
 		  }
 		})(
 		  typeof globalThis !== "undefined"
@@ -59865,8 +59757,8 @@ var hasRequiredMinimal$1;
 function requireMinimal$1 () {
 	if (hasRequiredMinimal$1) return minimal$1;
 	hasRequiredMinimal$1 = 1;
-	(function (exports$1) {
-		var util = exports$1;
+	(function (exports) {
+		var util = exports;
 
 		// used to return a Promise where callback is omitted
 		util.asPromise = requireAspromise();
@@ -61598,13 +61490,13 @@ var hasRequiredRpc;
 function requireRpc () {
 	if (hasRequiredRpc) return rpc;
 	hasRequiredRpc = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * Streaming RPC helpers.
 		 * @namespace
 		 */
-		var rpc = exports$1;
+		var rpc = exports;
 
 		/**
 		 * RPC implementation passed to {@link Service#create} performing a service request on network level, i.e. by utilizing http requests or websockets.
@@ -61669,8 +61561,8 @@ var hasRequiredIndexMinimal;
 function requireIndexMinimal () {
 	if (hasRequiredIndexMinimal) return indexMinimal;
 	hasRequiredIndexMinimal = 1;
-	(function (exports$1) {
-		var protobuf = exports$1;
+	(function (exports) {
+		var protobuf = exports;
 
 		/**
 		 * Build type, one of `"full"`, `"light"` or `"minimal"`.
@@ -61979,14 +61871,14 @@ var hasRequiredPath;
 function requirePath () {
 	if (hasRequiredPath) return path;
 	hasRequiredPath = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * A minimal path module to resolve Unix, Windows and URL paths alike.
 		 * @memberof util
 		 * @namespace
 		 */
-		var path = exports$1;
+		var path = exports;
 
 		var isAbsolute =
 		/**
@@ -62055,9 +61947,9 @@ var hasRequiredPatterns;
 function requirePatterns () {
 	if (hasRequiredPatterns) return patterns;
 	hasRequiredPatterns = 1;
-	(function (exports$1) {
+	(function (exports) {
 
-		var patterns = exports$1;
+		var patterns = exports;
 
 		patterns.numberRe    = /^(?![eE])[0-9]*(?:\.[0-9]*)?(?:[eE][+-]?[0-9]+)?$/;
 		patterns.typeRefRe   = /^(?:\.?[a-zA-Z_][a-zA-Z_0-9]*)(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*$/;
@@ -63672,12 +63564,12 @@ var hasRequiredConverter;
 function requireConverter () {
 	if (hasRequiredConverter) return converter;
 	hasRequiredConverter = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/**
 		 * Runtime message from/to plain object converters.
 		 * @namespace
 		 */
-		var converter = exports$1;
+		var converter = exports;
 
 		var Enum = require_enum(),
 		    util = requireUtil$1();
@@ -64001,14 +63893,14 @@ var hasRequiredWrappers;
 function requireWrappers () {
 	if (hasRequiredWrappers) return wrappers;
 	hasRequiredWrappers = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * Wrappers for common types.
 		 * @type {Object.<string,IWrapper>}
 		 * @const
 		 */
-		var wrappers = exports$1;
+		var wrappers = exports;
 
 		var Message = requireMessage(),
 		    util    = requireMinimal$1();
@@ -65418,13 +65310,13 @@ var hasRequiredTypes;
 function requireTypes () {
 	if (hasRequiredTypes) return types;
 	hasRequiredTypes = 1;
-	(function (exports$1) {
+	(function (exports) {
 
 		/**
 		 * Common type constants.
 		 * @namespace
 		 */
-		var types = exports$1;
+		var types = exports;
 
 		var util = requireUtil$1();
 
@@ -70405,9 +70297,9 @@ var hasRequiredDescriptor;
 function requireDescriptor () {
 	if (hasRequiredDescriptor) return descriptor.exports;
 	hasRequiredDescriptor = 1;
-	(function (module, exports$1) {
+	(function (module, exports) {
 		var $protobuf = requireProtobufjs();
-		module.exports = exports$1 = $protobuf.descriptor = $protobuf.Root.fromJSON(require$$4).lookup(".google.protobuf");
+		module.exports = exports = $protobuf.descriptor = $protobuf.Root.fromJSON(require$$4).lookup(".google.protobuf");
 
 		var Namespace = $protobuf.Namespace,
 		    Root      = $protobuf.Root,
@@ -70504,7 +70396,7 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.FileDescriptorSet.decode(descriptor);
+		        descriptor = exports.FileDescriptorSet.decode(descriptor);
 
 		    var root = new Root();
 
@@ -70530,7 +70422,7 @@ function requireDescriptor () {
 		            if (fileDescriptor.service)
 		                for (i = 0; i < fileDescriptor.service.length; ++i)
 		                    filePackage.add(Service.fromDescriptor(fileDescriptor.service[i], edition));
-		            var opts = fromDescriptorOptions(fileDescriptor.options, exports$1.FileOptions);
+		            var opts = fromDescriptorOptions(fileDescriptor.options, exports.FileOptions);
 		            if (opts) {
 		                var ks = Object.keys(opts);
 		                for (i = 0; i < ks.length; ++i)
@@ -70548,7 +70440,7 @@ function requireDescriptor () {
 		 * @param {string} [edition="proto2"] The syntax or edition to use
 		 */
 		Root.prototype.toDescriptor = function toDescriptor(edition) {
-		    var set = exports$1.FileDescriptorSet.create();
+		    var set = exports.FileDescriptorSet.create();
 		    Root_toDescriptorRecursive(this, set.file, edition);
 		    return set;
 		};
@@ -70557,7 +70449,7 @@ function requireDescriptor () {
 		function Root_toDescriptorRecursive(ns, files, edition) {
 
 		    // Create a new file
-		    var file = exports$1.FileDescriptorProto.create({ name: ns.filename || (ns.fullName.substring(1).replace(/\./g, "_") || "root") + ".proto" });
+		    var file = exports.FileDescriptorProto.create({ name: ns.filename || (ns.fullName.substring(1).replace(/\./g, "_") || "root") + ".proto" });
 		    editionToDescriptor(edition, file);
 		    if (!(ns instanceof Root))
 		        file["package"] = ns.fullName.substring(1);
@@ -70576,7 +70468,7 @@ function requireDescriptor () {
 		            Root_toDescriptorRecursive(nested, files, edition); // requires new file
 
 		    // Keep package-level options
-		    file.options = toDescriptorOptions(ns.options, exports$1.FileOptions);
+		    file.options = toDescriptorOptions(ns.options, exports.FileOptions);
 
 		    // And keep the file only if there is at least one nested object
 		    if (file.messageType.length + file.enumType.length + file.extension.length + file.service.length)
@@ -70640,10 +70532,10 @@ function requireDescriptor () {
 		        throw Error("max depth exceeded");
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.DescriptorProto.decode(descriptor);
+		        descriptor = exports.DescriptorProto.decode(descriptor);
 
 		    // Create the message type
-		    var type = new Type(descriptor.name.length ? descriptor.name : "Type" + unnamedMessageIndex++, fromDescriptorOptions(descriptor.options, exports$1.MessageOptions)),
+		    var type = new Type(descriptor.name.length ? descriptor.name : "Type" + unnamedMessageIndex++, fromDescriptorOptions(descriptor.options, exports.MessageOptions)),
 		        i;
 
 		    if (!nested)
@@ -70695,7 +70587,7 @@ function requireDescriptor () {
 		 * @param {string} [edition="proto2"] The syntax or edition to use
 		 */
 		Type.prototype.toDescriptor = function toDescriptor(edition) {
-		    var descriptor = exports$1.DescriptorProto.create({ name: this.name }),
+		    var descriptor = exports.DescriptorProto.create({ name: this.name }),
 		        i;
 
 		    /* Fields */ for (i = 0; i < this.fieldsArray.length; ++i) {
@@ -70707,13 +70599,13 @@ function requireDescriptor () {
 		                valueTypeName = valueType === /* type */ 11 || valueType === /* enum */ 14
 		                    ? this._fieldsArray[i].resolvedType && shortname(this.parent, this._fieldsArray[i].resolvedType) || this._fieldsArray[i].type
 		                    : undefined;
-		            descriptor.nestedType.push(exports$1.DescriptorProto.create({
+		            descriptor.nestedType.push(exports.DescriptorProto.create({
 		                name: fieldDescriptor.typeName,
 		                field: [
-		                    exports$1.FieldDescriptorProto.create({ name: "key", number: 1, label: 1, type: keyType }), // can't reference a type or enum
-		                    exports$1.FieldDescriptorProto.create({ name: "value", number: 2, label: 1, type: valueType, typeName: valueTypeName })
+		                    exports.FieldDescriptorProto.create({ name: "key", number: 1, label: 1, type: keyType }), // can't reference a type or enum
+		                    exports.FieldDescriptorProto.create({ name: "value", number: 2, label: 1, type: valueType, typeName: valueTypeName })
 		                ],
-		                options: exports$1.MessageOptions.create({ mapEntry: true })
+		                options: exports.MessageOptions.create({ mapEntry: true })
 		            }));
 		        }
 		    }
@@ -70730,15 +70622,15 @@ function requireDescriptor () {
 		    }
 		    /* Extension ranges */ if (this.extensions)
 		        for (i = 0; i < this.extensions.length; ++i)
-		            descriptor.extensionRange.push(exports$1.DescriptorProto.ExtensionRange.create({ start: this.extensions[i][0], end: this.extensions[i][1] }));
+		            descriptor.extensionRange.push(exports.DescriptorProto.ExtensionRange.create({ start: this.extensions[i][0], end: this.extensions[i][1] }));
 		    /* Reserved... */ if (this.reserved)
 		        for (i = 0; i < this.reserved.length; ++i)
 		            /* Names */ if (typeof this.reserved[i] === "string")
 		                descriptor.reservedName.push(this.reserved[i]);
 		            /* Ranges */ else
-		                descriptor.reservedRange.push(exports$1.DescriptorProto.ReservedRange.create({ start: this.reserved[i][0], end: this.reserved[i][1] }));
+		                descriptor.reservedRange.push(exports.DescriptorProto.ReservedRange.create({ start: this.reserved[i][0], end: this.reserved[i][1] }));
 
-		    descriptor.options = toDescriptorOptions(this.options, exports$1.MessageOptions);
+		    descriptor.options = toDescriptorOptions(this.options, exports.MessageOptions);
 
 		    return descriptor;
 		};
@@ -70823,7 +70715,7 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.DescriptorProto.decode(descriptor);
+		        descriptor = exports.DescriptorProto.decode(descriptor);
 
 		    if (typeof descriptor.number !== "number")
 		        throw Error("missing field id");
@@ -70865,7 +70757,7 @@ function requireDescriptor () {
 		    if (!nested)
 		        field._edition = edition;
 
-		    field.options = fromDescriptorOptions(descriptor.options, exports$1.FieldOptions);
+		    field.options = fromDescriptorOptions(descriptor.options, exports.FieldOptions);
 		    if (descriptor.proto3_optional)
 		        field.options.proto3_optional = true;
 
@@ -70904,7 +70796,7 @@ function requireDescriptor () {
 		 * @param {string} [edition="proto2"] The syntax or edition to use
 		 */
 		Field.prototype.toDescriptor = function toDescriptor(edition) {
-		    var descriptor = exports$1.FieldDescriptorProto.create({ name: this.name, number: this.id });
+		    var descriptor = exports.FieldDescriptorProto.create({ name: this.name, number: this.id });
 
 		    if (this.map) {
 
@@ -70943,7 +70835,7 @@ function requireDescriptor () {
 		    }
 
 		    if (this.options) {
-		        descriptor.options = toDescriptorOptions(this.options, exports$1.FieldOptions);
+		        descriptor.options = toDescriptorOptions(this.options, exports.FieldOptions);
 		        if (this.options["default"] != null)
 		            descriptor.defaultValue = String(this.options["default"]);
 		        if (this.options.proto3_optional)
@@ -70952,9 +70844,9 @@ function requireDescriptor () {
 
 		    if (edition === "proto3") { // defaults to packed=true
 		        if (!this.packed)
-		            (descriptor.options || (descriptor.options = exports$1.FieldOptions.create())).packed = false;
+		            (descriptor.options || (descriptor.options = exports.FieldOptions.create())).packed = false;
 		    } else if ((!edition || edition === "proto2") && this.packed) // defaults to packed=false
-		        (descriptor.options || (descriptor.options = exports$1.FieldOptions.create())).packed = true;
+		        (descriptor.options || (descriptor.options = exports.FieldOptions.create())).packed = true;
 
 		    return descriptor;
 		};
@@ -71000,7 +70892,7 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.EnumDescriptorProto.decode(descriptor);
+		        descriptor = exports.EnumDescriptorProto.decode(descriptor);
 
 		    // Construct values object
 		    var values = {};
@@ -71014,7 +70906,7 @@ function requireDescriptor () {
 		    var enm = new Enum(
 		        descriptor.name && descriptor.name.length ? descriptor.name : "Enum" + unnamedEnumIndex++,
 		        values,
-		        fromDescriptorOptions(descriptor.options, exports$1.EnumOptions)
+		        fromDescriptorOptions(descriptor.options, exports.EnumOptions)
 		    );
 
 		    if (!nested)
@@ -71032,12 +70924,12 @@ function requireDescriptor () {
 		    // Values
 		    var values = [];
 		    for (var i = 0, ks = Object.keys(this.values); i < ks.length; ++i)
-		        values.push(exports$1.EnumValueDescriptorProto.create({ name: ks[i], number: this.values[ks[i]] }));
+		        values.push(exports.EnumValueDescriptorProto.create({ name: ks[i], number: this.values[ks[i]] }));
 
-		    return exports$1.EnumDescriptorProto.create({
+		    return exports.EnumDescriptorProto.create({
 		        name: this.name,
 		        value: values,
-		        options: toDescriptorOptions(this.options, exports$1.EnumOptions)
+		        options: toDescriptorOptions(this.options, exports.EnumOptions)
 		    });
 		};
 
@@ -71064,7 +70956,7 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.OneofDescriptorProto.decode(descriptor);
+		        descriptor = exports.OneofDescriptorProto.decode(descriptor);
 
 		    return new OneOf(
 		        // unnamedOneOfIndex is global, not per type, because we have no ref to a type here
@@ -71078,7 +70970,7 @@ function requireDescriptor () {
 		 * @returns {Message<IOneofDescriptorProto>} Descriptor
 		 */
 		OneOf.prototype.toDescriptor = function toDescriptor() {
-		    return exports$1.OneofDescriptorProto.create({
+		    return exports.OneofDescriptorProto.create({
 		        name: this.name
 		        // options: toDescriptorOptions(this.options, exports.OneofOptions) - only uninterpreted_option
 		    });
@@ -71116,9 +71008,9 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.ServiceDescriptorProto.decode(descriptor);
+		        descriptor = exports.ServiceDescriptorProto.decode(descriptor);
 
-		    var service = new Service(descriptor.name && descriptor.name.length ? descriptor.name : "Service" + unnamedServiceIndex++, fromDescriptorOptions(descriptor.options, exports$1.ServiceOptions));
+		    var service = new Service(descriptor.name && descriptor.name.length ? descriptor.name : "Service" + unnamedServiceIndex++, fromDescriptorOptions(descriptor.options, exports.ServiceOptions));
 		    if (!nested)
 		        service._edition = edition;
 		    if (descriptor.method)
@@ -71139,10 +71031,10 @@ function requireDescriptor () {
 		    for (var i = 0; i < this.methodsArray.length; ++i)
 		        methods.push(this._methodsArray[i].toDescriptor());
 
-		    return exports$1.ServiceDescriptorProto.create({
+		    return exports.ServiceDescriptorProto.create({
 		        name: this.name,
 		        method: methods,
-		        options: toDescriptorOptions(this.options, exports$1.ServiceOptions)
+		        options: toDescriptorOptions(this.options, exports.ServiceOptions)
 		    });
 		};
 
@@ -71179,7 +71071,7 @@ function requireDescriptor () {
 
 		    // Decode the descriptor message if specified as a buffer:
 		    if (typeof descriptor.length === "number")
-		        descriptor = exports$1.MethodDescriptorProto.decode(descriptor);
+		        descriptor = exports.MethodDescriptorProto.decode(descriptor);
 
 		    var inputType = descriptor.inputType,
 		        outputType = descriptor.outputType;
@@ -71201,7 +71093,7 @@ function requireDescriptor () {
 		        outputType,
 		        Boolean(descriptor.clientStreaming),
 		        Boolean(descriptor.serverStreaming),
-		        fromDescriptorOptions(descriptor.options, exports$1.MethodOptions)
+		        fromDescriptorOptions(descriptor.options, exports.MethodOptions)
 		    );
 		};
 
@@ -71210,13 +71102,13 @@ function requireDescriptor () {
 		 * @returns {Message<IMethodDescriptorProto>} Descriptor
 		 */
 		Method.prototype.toDescriptor = function toDescriptor() {
-		    return exports$1.MethodDescriptorProto.create({
+		    return exports.MethodDescriptorProto.create({
 		        name: this.name,
 		        inputType: this.resolvedRequestType ? this.resolvedRequestType.fullName : this.requestType,
 		        outputType: this.resolvedResponseType ? this.resolvedResponseType.fullName : this.responseType,
 		        clientStreaming: this.requestStream,
 		        serverStreaming: this.responseStream,
-		        options: toDescriptorOptions(this.options, exports$1.MethodOptions)
+		        options: toDescriptorOptions(this.options, exports.MethodOptions)
 		    });
 		};
 
@@ -71375,7 +71267,7 @@ function requireDescriptor () {
 		function editionFromDescriptor(fileDescriptor) {
 		    if (fileDescriptor.syntax === "editions") {
 		        switch(fileDescriptor.edition) {
-		            case exports$1.Edition.EDITION_2023:
+		            case exports.Edition.EDITION_2023:
 		                return "2023";
 		            default:
 		                throw new Error("Unsupported edition " + fileDescriptor.edition);
@@ -71395,7 +71287,7 @@ function requireDescriptor () {
 		        fileDescriptor.syntax = "editions";
 		        switch(edition) {
 		            case "2023":
-		                fileDescriptor.edition = exports$1.Edition.EDITION_2023;
+		                fileDescriptor.edition = exports.Edition.EDITION_2023;
 		                break;
 		            default:
 		                throw new Error("Unsupported edition " + edition);
@@ -72044,7 +71936,7 @@ var hasRequiredSrc$5;
 function requireSrc$5 () {
 	if (hasRequiredSrc$5) return src$5;
 	hasRequiredSrc$5 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/**
 		 * @license
 		 * Copyright 2018 gRPC authors.
@@ -72062,24 +71954,24 @@ function requireSrc$5 () {
 		 * limitations under the License.
 		 *
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.loadFileDescriptorSetFromObject = exports$1.loadFileDescriptorSetFromBuffer = exports$1.fromJSON = exports$1.loadSync = exports$1.load = exports$1.IdempotencyLevel = exports$1.isAnyExtension = exports$1.Long = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.loadFileDescriptorSetFromObject = exports.loadFileDescriptorSetFromBuffer = exports.fromJSON = exports.loadSync = exports.load = exports.IdempotencyLevel = exports.isAnyExtension = exports.Long = void 0;
 		const camelCase = requireLodash_camelcase();
 		const Protobuf = requireProtobufjs();
 		const descriptor = requireDescriptor();
 		const util_1 = requireUtil();
 		const Long = requireUmd();
-		exports$1.Long = Long;
+		exports.Long = Long;
 		function isAnyExtension(obj) {
 		    return ('@type' in obj) && (typeof obj['@type'] === 'string');
 		}
-		exports$1.isAnyExtension = isAnyExtension;
+		exports.isAnyExtension = isAnyExtension;
 		var IdempotencyLevel;
 		(function (IdempotencyLevel) {
 		    IdempotencyLevel["IDEMPOTENCY_UNKNOWN"] = "IDEMPOTENCY_UNKNOWN";
 		    IdempotencyLevel["NO_SIDE_EFFECTS"] = "NO_SIDE_EFFECTS";
 		    IdempotencyLevel["IDEMPOTENT"] = "IDEMPOTENT";
-		})(IdempotencyLevel = exports$1.IdempotencyLevel || (exports$1.IdempotencyLevel = {}));
+		})(IdempotencyLevel = exports.IdempotencyLevel || (exports.IdempotencyLevel = {}));
 		const descriptorOptions = {
 		    longs: String,
 		    enums: String,
@@ -72265,29 +72157,29 @@ function requireSrc$5 () {
 		        return createPackageDefinition(loadedRoot, options);
 		    });
 		}
-		exports$1.load = load;
+		exports.load = load;
 		function loadSync(filename, options) {
 		    const loadedRoot = (0, util_1.loadProtosWithOptionsSync)(filename, options);
 		    return createPackageDefinition(loadedRoot, options);
 		}
-		exports$1.loadSync = loadSync;
+		exports.loadSync = loadSync;
 		function fromJSON(json, options) {
 		    options = options || {};
 		    const loadedRoot = Protobuf.Root.fromJSON(json);
 		    loadedRoot.resolveAll();
 		    return createPackageDefinition(loadedRoot, options);
 		}
-		exports$1.fromJSON = fromJSON;
+		exports.fromJSON = fromJSON;
 		function loadFileDescriptorSetFromBuffer(descriptorSet, options) {
 		    const decodedDescriptorSet = descriptor.FileDescriptorSet.decode(descriptorSet);
 		    return createPackageDefinitionFromDescriptorSet(decodedDescriptorSet, options);
 		}
-		exports$1.loadFileDescriptorSetFromBuffer = loadFileDescriptorSetFromBuffer;
+		exports.loadFileDescriptorSetFromBuffer = loadFileDescriptorSetFromBuffer;
 		function loadFileDescriptorSetFromObject(descriptorSet, options) {
 		    const decodedDescriptorSet = descriptor.FileDescriptorSet.fromObject(descriptorSet);
 		    return createPackageDefinitionFromDescriptorSet(decodedDescriptorSet, options);
 		}
-		exports$1.loadFileDescriptorSetFromObject = loadFileDescriptorSetFromObject;
+		exports.loadFileDescriptorSetFromObject = loadFileDescriptorSetFromObject;
 		(0, util_1.addCommonProtos)();
 		
 	} (src$5));
@@ -72321,7 +72213,7 @@ function requireChannelz () {
 	channelz.getChannelzHandlers = getChannelzHandlers;
 	channelz.getChannelzServiceDefinition = getChannelzServiceDefinition;
 	channelz.setup = setup;
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	const ordered_map_1 = require$$1$1;
 	const connectivity_state_1 = requireConnectivityState();
 	const constants_1 = requireConstants();
@@ -74289,7 +74181,7 @@ var hasRequiredResolverDns;
 function requireResolverDns () {
 	if (hasRequiredResolverDns) return resolverDns;
 	hasRequiredResolverDns = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2019 gRPC authors.
 		 *
@@ -74305,9 +74197,9 @@ function requireResolverDns () {
 		 * See the License for the specific language governing permissions and
 		 * limitations under the License.
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.DEFAULT_PORT = void 0;
-		exports$1.setup = setup;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.DEFAULT_PORT = void 0;
+		exports.setup = setup;
 		const resolver_1 = requireResolver();
 		const dns_1 = require$$1$3;
 		const service_config_1 = requireServiceConfig();
@@ -74317,7 +74209,7 @@ function requireResolverDns () {
 		const logging = requireLogging();
 		const constants_2 = requireConstants();
 		const uri_parser_1 = requireUriParser();
-		const net_1 = require$$0$7;
+		const net_1 = require$$0$6;
 		const backoff_timeout_1 = requireBackoffTimeout();
 		const environment_1 = requireEnvironment();
 		const TRACER_NAME = 'dns_resolver';
@@ -74327,7 +74219,7 @@ function requireResolverDns () {
 		/**
 		 * The default TCP port to connect to if not explicitly specified in the target.
 		 */
-		exports$1.DEFAULT_PORT = 443;
+		exports.DEFAULT_PORT = 443;
 		const DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS = 30000;
 		/**
 		 * Resolver implementation that handles DNS names and IP addresses.
@@ -74363,7 +74255,7 @@ function requireResolverDns () {
 		                        addresses: [
 		                            {
 		                                host: hostPort.host,
-		                                port: (_a = hostPort.port) !== null && _a !== void 0 ? _a : exports$1.DEFAULT_PORT,
+		                                port: (_a = hostPort.port) !== null && _a !== void 0 ? _a : exports.DEFAULT_PORT,
 		                            },
 		                        ],
 		                    },
@@ -74374,7 +74266,7 @@ function requireResolverDns () {
 		            else {
 		                this.ipResult = null;
 		                this.dnsHostname = hostPort.host;
-		                this.port = (_b = hostPort.port) !== null && _b !== void 0 ? _b : exports$1.DEFAULT_PORT;
+		                this.port = (_b = hostPort.port) !== null && _b !== void 0 ? _b : exports.DEFAULT_PORT;
 		            }
 		        }
 		        this.percentage = Math.random() * 100;
@@ -74683,7 +74575,7 @@ function requireHttp_proxy () {
 	http_proxy.getProxiedConnection = getProxiedConnection;
 	const logging_1 = requireLogging();
 	const constants_1 = requireConstants();
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	const http$1 = http;
 	const logging = requireLogging();
 	const subchannel_address_1 = requireSubchannelAddress();
@@ -75071,7 +74963,7 @@ function requireSubchannelCall () {
 	 */
 	Object.defineProperty(subchannelCall, "__esModule", { value: true });
 	subchannelCall.Http2SubchannelCall = void 0;
-	const http2 = require$$0$8;
+	const http2 = require$$0$7;
 	const os = os__default;
 	const constants_1 = requireConstants();
 	const metadata_1 = requireMetadata();
@@ -75623,7 +75515,7 @@ function requireTransport () {
 	 */
 	Object.defineProperty(transport, "__esModule", { value: true });
 	transport.Http2SubchannelConnector = void 0;
-	const http2 = require$$0$8;
+	const http2 = require$$0$7;
 	const tls_1 = require$$1$2;
 	const channelz_1 = requireChannelz();
 	const constants_1 = requireConstants();
@@ -75632,7 +75524,7 @@ function requireTransport () {
 	const resolver_1 = requireResolver();
 	const subchannel_address_1 = requireSubchannelAddress();
 	const uri_parser_1 = requireUriParser();
-	const net = require$$0$7;
+	const net = require$$0$6;
 	const subchannel_call_1 = requireSubchannelCall();
 	const call_number_1 = requireCallNumber();
 	const TRACER_NAME = 'transport';
@@ -76424,7 +76316,7 @@ function requireLoadBalancingCall () {
 	const uri_parser_1 = requireUriParser();
 	const logging = requireLogging();
 	const control_plane_status_1 = requireControlPlaneStatus();
-	const http2 = require$$0$8;
+	const http2 = require$$0$7;
 	const TRACER_NAME = 'load_balancing_call';
 	class LoadBalancingCall {
 	    constructor(channel, callConfig, methodName, host, credentials, deadline, callNumber) {
@@ -77888,7 +77780,7 @@ var hasRequiredInternalChannel;
 function requireInternalChannel () {
 	if (hasRequiredInternalChannel) return internalChannel;
 	hasRequiredInternalChannel = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2019 gRPC authors.
 		 *
@@ -77905,8 +77797,8 @@ function requireInternalChannel () {
 		 * limitations under the License.
 		 *
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.InternalChannel = exports$1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.InternalChannel = exports.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = void 0;
 		const channel_credentials_1 = requireChannelCredentials();
 		const resolving_load_balancer_1 = requireResolvingLoadBalancer();
 		const subchannel_pool_1 = requireSubchannelPool();
@@ -77979,7 +77871,7 @@ function requireInternalChannel () {
 		        };
 		    }
 		}
-		exports$1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = 'grpc.internal.no_subchannel';
+		exports.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = 'grpc.internal.no_subchannel';
 		class ChannelzInfoTracker {
 		    constructor(target) {
 		        this.target = target;
@@ -78091,7 +77983,7 @@ function requireInternalChannel () {
 		            createSubchannel: (subchannelAddress, subchannelArgs) => {
 		                const finalSubchannelArgs = {};
 		                for (const [key, value] of Object.entries(subchannelArgs)) {
-		                    if (!key.startsWith(exports$1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX)) {
+		                    if (!key.startsWith(exports.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX)) {
 		                        finalSubchannelArgs[key] = value;
 		                    }
 		                }
@@ -78491,7 +78383,7 @@ function requireInternalChannel () {
 		        return this.options;
 		    }
 		}
-		exports$1.InternalChannel = InternalChannel;
+		exports.InternalChannel = InternalChannel;
 		
 	} (internalChannel));
 	return internalChannel;
@@ -78600,8 +78492,8 @@ function requireServerCall () {
 	Object.defineProperty(serverCall, "__esModule", { value: true });
 	serverCall.ServerDuplexStreamImpl = serverCall.ServerWritableStreamImpl = serverCall.ServerReadableStreamImpl = serverCall.ServerUnaryCallImpl = void 0;
 	serverCall.serverErrorToStatus = serverErrorToStatus;
-	const events_1 = require$$0$5;
-	const stream_1 = require$$0$6;
+	const events_1 = require$$0$4;
+	const stream_1 = require$$0$5;
 	const constants_1 = requireConstants();
 	const metadata_1 = requireMetadata();
 	function serverErrorToStatus(error, overrideTrailers) {
@@ -79224,7 +79116,7 @@ var hasRequiredOrca;
 function requireOrca () {
 	if (hasRequiredOrca) return orca;
 	hasRequiredOrca = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2025 gRPC authors.
 		 *
@@ -79241,10 +79133,10 @@ function requireOrca () {
 		 * limitations under the License.
 		 *
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.OrcaOobMetricsSubchannelWrapper = exports$1.GRPC_METRICS_HEADER = exports$1.ServerMetricRecorder = exports$1.PerRequestMetricRecorder = void 0;
-		exports$1.createOrcaClient = createOrcaClient;
-		exports$1.createMetricsReader = createMetricsReader;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.OrcaOobMetricsSubchannelWrapper = exports.GRPC_METRICS_HEADER = exports.ServerMetricRecorder = exports.PerRequestMetricRecorder = void 0;
+		exports.createOrcaClient = createOrcaClient;
+		exports.createMetricsReader = createMetricsReader;
 		const make_client_1 = requireMakeClient();
 		const duration_1 = requireDuration();
 		const channel_credentials_1 = requireChannelCredentials();
@@ -79350,7 +79242,7 @@ function requireOrca () {
 		        return orcaProto.xds.data.orca.v3.OrcaLoadReport.serialize(this.message);
 		    }
 		}
-		exports$1.PerRequestMetricRecorder = PerRequestMetricRecorder;
+		exports.PerRequestMetricRecorder = PerRequestMetricRecorder;
 		const DEFAULT_REPORT_INTERVAL_MS = 30000;
 		class ServerMetricRecorder {
 		    constructor() {
@@ -79411,12 +79303,12 @@ function requireOrca () {
 		        server.addService(serviceDefinition, this.serviceImplementation);
 		    }
 		}
-		exports$1.ServerMetricRecorder = ServerMetricRecorder;
+		exports.ServerMetricRecorder = ServerMetricRecorder;
 		function createOrcaClient(channel) {
 		    const ClientClass = loadOrcaProto().xds.service.orca.v3.OpenRcaService;
 		    return new ClientClass('unused', channel_credentials_1.ChannelCredentials.createInsecure(), { channelOverride: channel });
 		}
-		exports$1.GRPC_METRICS_HEADER = 'endpoint-load-metrics-bin';
+		exports.GRPC_METRICS_HEADER = 'endpoint-load-metrics-bin';
 		const PARSED_LOAD_REPORT_KEY = 'grpc_orca_load_report';
 		/**
 		 * Create an onCallEnded callback for use in a picker.
@@ -79432,7 +79324,7 @@ function requireOrca () {
 		            listener(parsedLoadReport);
 		        }
 		        else {
-		            const serializedLoadReport = metadata.get(exports$1.GRPC_METRICS_HEADER);
+		            const serializedLoadReport = metadata.get(exports.GRPC_METRICS_HEADER);
 		            if (serializedLoadReport.length > 0) {
 		                const orcaProto = loadOrcaProto();
 		                parsedLoadReport = orcaProto.xds.data.orca.v3.OrcaLoadReport.deserialize(serializedLoadReport[0]);
@@ -79538,7 +79430,7 @@ function requireOrca () {
 		        return this.child;
 		    }
 		}
-		exports$1.OrcaOobMetricsSubchannelWrapper = OrcaOobMetricsSubchannelWrapper;
+		exports.OrcaOobMetricsSubchannelWrapper = OrcaOobMetricsSubchannelWrapper;
 		function createOobMetricsDataProducer(subchannel) {
 		    return new OobMetricsDataProducer(subchannel);
 		}
@@ -79574,7 +79466,7 @@ function requireServerInterceptors () {
 	serverInterceptors.getServerInterceptingCall = getServerInterceptingCall;
 	const metadata_1 = requireMetadata();
 	const constants_1 = requireConstants();
-	const http2 = require$$0$8;
+	const http2 = require$$0$7;
 	const error_1 = requireError();
 	const zlib = require$$0__default$1;
 	const stream_decoder_1 = requireStreamDecoder();
@@ -80427,8 +80319,8 @@ function requireServer () {
 	};
 	Object.defineProperty(server, "__esModule", { value: true });
 	server.Server = void 0;
-	const http2 = require$$0$8;
-	const util = require$$0$4;
+	const http2 = require$$0$7;
+	const util = util$a;
 	const constants_1 = requireConstants();
 	const server_call_1 = requireServerCall();
 	const server_credentials_1 = requireServerCredentials();
@@ -82112,7 +82004,7 @@ function requireLoadBalancerPickFirst () {
 	const logging = requireLogging();
 	const constants_1 = requireConstants();
 	const subchannel_address_2 = requireSubchannelAddress();
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	const call_interface_1 = requireCallInterface();
 	const TRACER_NAME = 'pick_first';
 	function trace(text) {
@@ -82629,7 +82521,7 @@ function requireCertificateProvider () {
 	const fs = require$$0__default;
 	const logging = requireLogging();
 	const constants_1 = requireConstants();
-	const util_1 = require$$0$4;
+	const util_1 = util$a;
 	const TRACER_NAME = 'certificate_provider';
 	function trace(text) {
 	    logging.trace(constants_1.LogVerbosity.DEBUG, TRACER_NAME, text);
@@ -82756,63 +82648,63 @@ var hasRequiredExperimental;
 function requireExperimental () {
 	if (hasRequiredExperimental) return experimental;
 	hasRequiredExperimental = 1;
-	(function (exports$1) {
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = exports$1.createCertificateProviderChannelCredentials = exports$1.FileWatcherCertificateProvider = exports$1.createCertificateProviderServerCredentials = exports$1.createServerCredentialsWithInterceptors = exports$1.BaseSubchannelWrapper = exports$1.registerAdminService = exports$1.FilterStackFactory = exports$1.BaseFilter = exports$1.statusOrFromError = exports$1.statusOrFromValue = exports$1.PickResultType = exports$1.QueuePicker = exports$1.UnavailablePicker = exports$1.ChildLoadBalancerHandler = exports$1.EndpointMap = exports$1.endpointHasAddress = exports$1.endpointToString = exports$1.subchannelAddressToString = exports$1.LeafLoadBalancer = exports$1.isLoadBalancerNameRegistered = exports$1.parseLoadBalancingConfig = exports$1.selectLbConfigFromList = exports$1.registerLoadBalancerType = exports$1.createChildChannelControlHelper = exports$1.BackoffTimeout = exports$1.parseDuration = exports$1.durationToMs = exports$1.splitHostPort = exports$1.uriToString = exports$1.CHANNEL_ARGS_CONFIG_SELECTOR_KEY = exports$1.createResolver = exports$1.registerResolver = exports$1.log = exports$1.trace = void 0;
+	(function (exports) {
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = exports.createCertificateProviderChannelCredentials = exports.FileWatcherCertificateProvider = exports.createCertificateProviderServerCredentials = exports.createServerCredentialsWithInterceptors = exports.BaseSubchannelWrapper = exports.registerAdminService = exports.FilterStackFactory = exports.BaseFilter = exports.statusOrFromError = exports.statusOrFromValue = exports.PickResultType = exports.QueuePicker = exports.UnavailablePicker = exports.ChildLoadBalancerHandler = exports.EndpointMap = exports.endpointHasAddress = exports.endpointToString = exports.subchannelAddressToString = exports.LeafLoadBalancer = exports.isLoadBalancerNameRegistered = exports.parseLoadBalancingConfig = exports.selectLbConfigFromList = exports.registerLoadBalancerType = exports.createChildChannelControlHelper = exports.BackoffTimeout = exports.parseDuration = exports.durationToMs = exports.splitHostPort = exports.uriToString = exports.CHANNEL_ARGS_CONFIG_SELECTOR_KEY = exports.createResolver = exports.registerResolver = exports.log = exports.trace = void 0;
 		var logging_1 = requireLogging();
-		Object.defineProperty(exports$1, "trace", { enumerable: true, get: function () { return logging_1.trace; } });
-		Object.defineProperty(exports$1, "log", { enumerable: true, get: function () { return logging_1.log; } });
+		Object.defineProperty(exports, "trace", { enumerable: true, get: function () { return logging_1.trace; } });
+		Object.defineProperty(exports, "log", { enumerable: true, get: function () { return logging_1.log; } });
 		var resolver_1 = requireResolver();
-		Object.defineProperty(exports$1, "registerResolver", { enumerable: true, get: function () { return resolver_1.registerResolver; } });
-		Object.defineProperty(exports$1, "createResolver", { enumerable: true, get: function () { return resolver_1.createResolver; } });
-		Object.defineProperty(exports$1, "CHANNEL_ARGS_CONFIG_SELECTOR_KEY", { enumerable: true, get: function () { return resolver_1.CHANNEL_ARGS_CONFIG_SELECTOR_KEY; } });
+		Object.defineProperty(exports, "registerResolver", { enumerable: true, get: function () { return resolver_1.registerResolver; } });
+		Object.defineProperty(exports, "createResolver", { enumerable: true, get: function () { return resolver_1.createResolver; } });
+		Object.defineProperty(exports, "CHANNEL_ARGS_CONFIG_SELECTOR_KEY", { enumerable: true, get: function () { return resolver_1.CHANNEL_ARGS_CONFIG_SELECTOR_KEY; } });
 		var uri_parser_1 = requireUriParser();
-		Object.defineProperty(exports$1, "uriToString", { enumerable: true, get: function () { return uri_parser_1.uriToString; } });
-		Object.defineProperty(exports$1, "splitHostPort", { enumerable: true, get: function () { return uri_parser_1.splitHostPort; } });
+		Object.defineProperty(exports, "uriToString", { enumerable: true, get: function () { return uri_parser_1.uriToString; } });
+		Object.defineProperty(exports, "splitHostPort", { enumerable: true, get: function () { return uri_parser_1.splitHostPort; } });
 		var duration_1 = requireDuration();
-		Object.defineProperty(exports$1, "durationToMs", { enumerable: true, get: function () { return duration_1.durationToMs; } });
-		Object.defineProperty(exports$1, "parseDuration", { enumerable: true, get: function () { return duration_1.parseDuration; } });
+		Object.defineProperty(exports, "durationToMs", { enumerable: true, get: function () { return duration_1.durationToMs; } });
+		Object.defineProperty(exports, "parseDuration", { enumerable: true, get: function () { return duration_1.parseDuration; } });
 		var backoff_timeout_1 = requireBackoffTimeout();
-		Object.defineProperty(exports$1, "BackoffTimeout", { enumerable: true, get: function () { return backoff_timeout_1.BackoffTimeout; } });
+		Object.defineProperty(exports, "BackoffTimeout", { enumerable: true, get: function () { return backoff_timeout_1.BackoffTimeout; } });
 		var load_balancer_1 = requireLoadBalancer();
-		Object.defineProperty(exports$1, "createChildChannelControlHelper", { enumerable: true, get: function () { return load_balancer_1.createChildChannelControlHelper; } });
-		Object.defineProperty(exports$1, "registerLoadBalancerType", { enumerable: true, get: function () { return load_balancer_1.registerLoadBalancerType; } });
-		Object.defineProperty(exports$1, "selectLbConfigFromList", { enumerable: true, get: function () { return load_balancer_1.selectLbConfigFromList; } });
-		Object.defineProperty(exports$1, "parseLoadBalancingConfig", { enumerable: true, get: function () { return load_balancer_1.parseLoadBalancingConfig; } });
-		Object.defineProperty(exports$1, "isLoadBalancerNameRegistered", { enumerable: true, get: function () { return load_balancer_1.isLoadBalancerNameRegistered; } });
+		Object.defineProperty(exports, "createChildChannelControlHelper", { enumerable: true, get: function () { return load_balancer_1.createChildChannelControlHelper; } });
+		Object.defineProperty(exports, "registerLoadBalancerType", { enumerable: true, get: function () { return load_balancer_1.registerLoadBalancerType; } });
+		Object.defineProperty(exports, "selectLbConfigFromList", { enumerable: true, get: function () { return load_balancer_1.selectLbConfigFromList; } });
+		Object.defineProperty(exports, "parseLoadBalancingConfig", { enumerable: true, get: function () { return load_balancer_1.parseLoadBalancingConfig; } });
+		Object.defineProperty(exports, "isLoadBalancerNameRegistered", { enumerable: true, get: function () { return load_balancer_1.isLoadBalancerNameRegistered; } });
 		var load_balancer_pick_first_1 = requireLoadBalancerPickFirst();
-		Object.defineProperty(exports$1, "LeafLoadBalancer", { enumerable: true, get: function () { return load_balancer_pick_first_1.LeafLoadBalancer; } });
+		Object.defineProperty(exports, "LeafLoadBalancer", { enumerable: true, get: function () { return load_balancer_pick_first_1.LeafLoadBalancer; } });
 		var subchannel_address_1 = requireSubchannelAddress();
-		Object.defineProperty(exports$1, "subchannelAddressToString", { enumerable: true, get: function () { return subchannel_address_1.subchannelAddressToString; } });
-		Object.defineProperty(exports$1, "endpointToString", { enumerable: true, get: function () { return subchannel_address_1.endpointToString; } });
-		Object.defineProperty(exports$1, "endpointHasAddress", { enumerable: true, get: function () { return subchannel_address_1.endpointHasAddress; } });
-		Object.defineProperty(exports$1, "EndpointMap", { enumerable: true, get: function () { return subchannel_address_1.EndpointMap; } });
+		Object.defineProperty(exports, "subchannelAddressToString", { enumerable: true, get: function () { return subchannel_address_1.subchannelAddressToString; } });
+		Object.defineProperty(exports, "endpointToString", { enumerable: true, get: function () { return subchannel_address_1.endpointToString; } });
+		Object.defineProperty(exports, "endpointHasAddress", { enumerable: true, get: function () { return subchannel_address_1.endpointHasAddress; } });
+		Object.defineProperty(exports, "EndpointMap", { enumerable: true, get: function () { return subchannel_address_1.EndpointMap; } });
 		var load_balancer_child_handler_1 = requireLoadBalancerChildHandler();
-		Object.defineProperty(exports$1, "ChildLoadBalancerHandler", { enumerable: true, get: function () { return load_balancer_child_handler_1.ChildLoadBalancerHandler; } });
+		Object.defineProperty(exports, "ChildLoadBalancerHandler", { enumerable: true, get: function () { return load_balancer_child_handler_1.ChildLoadBalancerHandler; } });
 		var picker_1 = requirePicker();
-		Object.defineProperty(exports$1, "UnavailablePicker", { enumerable: true, get: function () { return picker_1.UnavailablePicker; } });
-		Object.defineProperty(exports$1, "QueuePicker", { enumerable: true, get: function () { return picker_1.QueuePicker; } });
-		Object.defineProperty(exports$1, "PickResultType", { enumerable: true, get: function () { return picker_1.PickResultType; } });
+		Object.defineProperty(exports, "UnavailablePicker", { enumerable: true, get: function () { return picker_1.UnavailablePicker; } });
+		Object.defineProperty(exports, "QueuePicker", { enumerable: true, get: function () { return picker_1.QueuePicker; } });
+		Object.defineProperty(exports, "PickResultType", { enumerable: true, get: function () { return picker_1.PickResultType; } });
 		var call_interface_1 = requireCallInterface();
-		Object.defineProperty(exports$1, "statusOrFromValue", { enumerable: true, get: function () { return call_interface_1.statusOrFromValue; } });
-		Object.defineProperty(exports$1, "statusOrFromError", { enumerable: true, get: function () { return call_interface_1.statusOrFromError; } });
+		Object.defineProperty(exports, "statusOrFromValue", { enumerable: true, get: function () { return call_interface_1.statusOrFromValue; } });
+		Object.defineProperty(exports, "statusOrFromError", { enumerable: true, get: function () { return call_interface_1.statusOrFromError; } });
 		var filter_1 = requireFilter();
-		Object.defineProperty(exports$1, "BaseFilter", { enumerable: true, get: function () { return filter_1.BaseFilter; } });
+		Object.defineProperty(exports, "BaseFilter", { enumerable: true, get: function () { return filter_1.BaseFilter; } });
 		var filter_stack_1 = requireFilterStack();
-		Object.defineProperty(exports$1, "FilterStackFactory", { enumerable: true, get: function () { return filter_stack_1.FilterStackFactory; } });
+		Object.defineProperty(exports, "FilterStackFactory", { enumerable: true, get: function () { return filter_stack_1.FilterStackFactory; } });
 		var admin_1 = requireAdmin();
-		Object.defineProperty(exports$1, "registerAdminService", { enumerable: true, get: function () { return admin_1.registerAdminService; } });
+		Object.defineProperty(exports, "registerAdminService", { enumerable: true, get: function () { return admin_1.registerAdminService; } });
 		var subchannel_interface_1 = requireSubchannelInterface();
-		Object.defineProperty(exports$1, "BaseSubchannelWrapper", { enumerable: true, get: function () { return subchannel_interface_1.BaseSubchannelWrapper; } });
+		Object.defineProperty(exports, "BaseSubchannelWrapper", { enumerable: true, get: function () { return subchannel_interface_1.BaseSubchannelWrapper; } });
 		var server_credentials_1 = requireServerCredentials();
-		Object.defineProperty(exports$1, "createServerCredentialsWithInterceptors", { enumerable: true, get: function () { return server_credentials_1.createServerCredentialsWithInterceptors; } });
-		Object.defineProperty(exports$1, "createCertificateProviderServerCredentials", { enumerable: true, get: function () { return server_credentials_1.createCertificateProviderServerCredentials; } });
+		Object.defineProperty(exports, "createServerCredentialsWithInterceptors", { enumerable: true, get: function () { return server_credentials_1.createServerCredentialsWithInterceptors; } });
+		Object.defineProperty(exports, "createCertificateProviderServerCredentials", { enumerable: true, get: function () { return server_credentials_1.createCertificateProviderServerCredentials; } });
 		var certificate_provider_1 = requireCertificateProvider();
-		Object.defineProperty(exports$1, "FileWatcherCertificateProvider", { enumerable: true, get: function () { return certificate_provider_1.FileWatcherCertificateProvider; } });
+		Object.defineProperty(exports, "FileWatcherCertificateProvider", { enumerable: true, get: function () { return certificate_provider_1.FileWatcherCertificateProvider; } });
 		var channel_credentials_1 = requireChannelCredentials();
-		Object.defineProperty(exports$1, "createCertificateProviderChannelCredentials", { enumerable: true, get: function () { return channel_credentials_1.createCertificateProviderChannelCredentials; } });
+		Object.defineProperty(exports, "createCertificateProviderChannelCredentials", { enumerable: true, get: function () { return channel_credentials_1.createCertificateProviderChannelCredentials; } });
 		var internal_channel_1 = requireInternalChannel();
-		Object.defineProperty(exports$1, "SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX", { enumerable: true, get: function () { return internal_channel_1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX; } });
+		Object.defineProperty(exports, "SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX", { enumerable: true, get: function () { return internal_channel_1.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX; } });
 		
 	} (experimental));
 	return experimental;
@@ -82902,7 +82794,7 @@ function requireResolverIp () {
 	 */
 	Object.defineProperty(resolverIp, "__esModule", { value: true });
 	resolverIp.setup = setup;
-	const net_1 = require$$0$7;
+	const net_1 = require$$0$6;
 	const call_interface_1 = requireCallInterface();
 	const constants_1 = requireConstants();
 	const metadata_1 = requireMetadata();
@@ -84321,7 +84213,7 @@ var hasRequiredSrc$4;
 function requireSrc$4 () {
 	if (hasRequiredSrc$4) return src$6;
 	hasRequiredSrc$4 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright 2019 gRPC authors.
 		 *
@@ -84338,40 +84230,40 @@ function requireSrc$4 () {
 		 * limitations under the License.
 		 *
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.experimental = exports$1.ServerMetricRecorder = exports$1.ServerInterceptingCall = exports$1.ResponderBuilder = exports$1.ServerListenerBuilder = exports$1.addAdminServicesToServer = exports$1.getChannelzHandlers = exports$1.getChannelzServiceDefinition = exports$1.InterceptorConfigurationError = exports$1.InterceptingCall = exports$1.RequesterBuilder = exports$1.ListenerBuilder = exports$1.StatusBuilder = exports$1.getClientChannel = exports$1.ServerCredentials = exports$1.Server = exports$1.setLogVerbosity = exports$1.setLogger = exports$1.load = exports$1.loadObject = exports$1.CallCredentials = exports$1.ChannelCredentials = exports$1.waitForClientReady = exports$1.closeClient = exports$1.Channel = exports$1.makeGenericClientConstructor = exports$1.makeClientConstructor = exports$1.loadPackageDefinition = exports$1.Client = exports$1.compressionAlgorithms = exports$1.propagate = exports$1.connectivityState = exports$1.status = exports$1.logVerbosity = exports$1.Metadata = exports$1.credentials = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.experimental = exports.ServerMetricRecorder = exports.ServerInterceptingCall = exports.ResponderBuilder = exports.ServerListenerBuilder = exports.addAdminServicesToServer = exports.getChannelzHandlers = exports.getChannelzServiceDefinition = exports.InterceptorConfigurationError = exports.InterceptingCall = exports.RequesterBuilder = exports.ListenerBuilder = exports.StatusBuilder = exports.getClientChannel = exports.ServerCredentials = exports.Server = exports.setLogVerbosity = exports.setLogger = exports.load = exports.loadObject = exports.CallCredentials = exports.ChannelCredentials = exports.waitForClientReady = exports.closeClient = exports.Channel = exports.makeGenericClientConstructor = exports.makeClientConstructor = exports.loadPackageDefinition = exports.Client = exports.compressionAlgorithms = exports.propagate = exports.connectivityState = exports.status = exports.logVerbosity = exports.Metadata = exports.credentials = void 0;
 		const call_credentials_1 = requireCallCredentials();
-		Object.defineProperty(exports$1, "CallCredentials", { enumerable: true, get: function () { return call_credentials_1.CallCredentials; } });
+		Object.defineProperty(exports, "CallCredentials", { enumerable: true, get: function () { return call_credentials_1.CallCredentials; } });
 		const channel_1 = requireChannel();
-		Object.defineProperty(exports$1, "Channel", { enumerable: true, get: function () { return channel_1.ChannelImplementation; } });
+		Object.defineProperty(exports, "Channel", { enumerable: true, get: function () { return channel_1.ChannelImplementation; } });
 		const compression_algorithms_1 = requireCompressionAlgorithms();
-		Object.defineProperty(exports$1, "compressionAlgorithms", { enumerable: true, get: function () { return compression_algorithms_1.CompressionAlgorithms; } });
+		Object.defineProperty(exports, "compressionAlgorithms", { enumerable: true, get: function () { return compression_algorithms_1.CompressionAlgorithms; } });
 		const connectivity_state_1 = requireConnectivityState();
-		Object.defineProperty(exports$1, "connectivityState", { enumerable: true, get: function () { return connectivity_state_1.ConnectivityState; } });
+		Object.defineProperty(exports, "connectivityState", { enumerable: true, get: function () { return connectivity_state_1.ConnectivityState; } });
 		const channel_credentials_1 = requireChannelCredentials();
-		Object.defineProperty(exports$1, "ChannelCredentials", { enumerable: true, get: function () { return channel_credentials_1.ChannelCredentials; } });
+		Object.defineProperty(exports, "ChannelCredentials", { enumerable: true, get: function () { return channel_credentials_1.ChannelCredentials; } });
 		const client_1 = requireClient();
-		Object.defineProperty(exports$1, "Client", { enumerable: true, get: function () { return client_1.Client; } });
+		Object.defineProperty(exports, "Client", { enumerable: true, get: function () { return client_1.Client; } });
 		const constants_1 = requireConstants();
-		Object.defineProperty(exports$1, "logVerbosity", { enumerable: true, get: function () { return constants_1.LogVerbosity; } });
-		Object.defineProperty(exports$1, "status", { enumerable: true, get: function () { return constants_1.Status; } });
-		Object.defineProperty(exports$1, "propagate", { enumerable: true, get: function () { return constants_1.Propagate; } });
+		Object.defineProperty(exports, "logVerbosity", { enumerable: true, get: function () { return constants_1.LogVerbosity; } });
+		Object.defineProperty(exports, "status", { enumerable: true, get: function () { return constants_1.Status; } });
+		Object.defineProperty(exports, "propagate", { enumerable: true, get: function () { return constants_1.Propagate; } });
 		const logging = requireLogging();
 		const make_client_1 = requireMakeClient();
-		Object.defineProperty(exports$1, "loadPackageDefinition", { enumerable: true, get: function () { return make_client_1.loadPackageDefinition; } });
-		Object.defineProperty(exports$1, "makeClientConstructor", { enumerable: true, get: function () { return make_client_1.makeClientConstructor; } });
-		Object.defineProperty(exports$1, "makeGenericClientConstructor", { enumerable: true, get: function () { return make_client_1.makeClientConstructor; } });
+		Object.defineProperty(exports, "loadPackageDefinition", { enumerable: true, get: function () { return make_client_1.loadPackageDefinition; } });
+		Object.defineProperty(exports, "makeClientConstructor", { enumerable: true, get: function () { return make_client_1.makeClientConstructor; } });
+		Object.defineProperty(exports, "makeGenericClientConstructor", { enumerable: true, get: function () { return make_client_1.makeClientConstructor; } });
 		const metadata_1 = requireMetadata();
-		Object.defineProperty(exports$1, "Metadata", { enumerable: true, get: function () { return metadata_1.Metadata; } });
+		Object.defineProperty(exports, "Metadata", { enumerable: true, get: function () { return metadata_1.Metadata; } });
 		const server_1 = requireServer();
-		Object.defineProperty(exports$1, "Server", { enumerable: true, get: function () { return server_1.Server; } });
+		Object.defineProperty(exports, "Server", { enumerable: true, get: function () { return server_1.Server; } });
 		const server_credentials_1 = requireServerCredentials();
-		Object.defineProperty(exports$1, "ServerCredentials", { enumerable: true, get: function () { return server_credentials_1.ServerCredentials; } });
+		Object.defineProperty(exports, "ServerCredentials", { enumerable: true, get: function () { return server_credentials_1.ServerCredentials; } });
 		const status_builder_1 = requireStatusBuilder();
-		Object.defineProperty(exports$1, "StatusBuilder", { enumerable: true, get: function () { return status_builder_1.StatusBuilder; } });
+		Object.defineProperty(exports, "StatusBuilder", { enumerable: true, get: function () { return status_builder_1.StatusBuilder; } });
 		/**** Client Credentials ****/
 		// Using assign only copies enumerable properties, which is what we want
-		exports$1.credentials = {
+		exports.credentials = {
 		    /**
 		     * Combine a ChannelCredentials with any number of CallCredentials into a
 		     * single ChannelCredentials object.
@@ -84406,50 +84298,50 @@ function requireSrc$4 () {
 		 * @param client The client to close.
 		 */
 		const closeClient = (client) => client.close();
-		exports$1.closeClient = closeClient;
+		exports.closeClient = closeClient;
 		const waitForClientReady = (client, deadline, callback) => client.waitForReady(deadline, callback);
-		exports$1.waitForClientReady = waitForClientReady;
+		exports.waitForClientReady = waitForClientReady;
 		/* eslint-enable @typescript-eslint/no-explicit-any */
 		/**** Unimplemented function stubs ****/
 		/* eslint-disable @typescript-eslint/no-explicit-any */
 		const loadObject = (value, options) => {
 		    throw new Error('Not available in this library. Use @grpc/proto-loader and loadPackageDefinition instead');
 		};
-		exports$1.loadObject = loadObject;
+		exports.loadObject = loadObject;
 		const load = (filename, format, options) => {
 		    throw new Error('Not available in this library. Use @grpc/proto-loader and loadPackageDefinition instead');
 		};
-		exports$1.load = load;
+		exports.load = load;
 		const setLogger = (logger) => {
 		    logging.setLogger(logger);
 		};
-		exports$1.setLogger = setLogger;
+		exports.setLogger = setLogger;
 		const setLogVerbosity = (verbosity) => {
 		    logging.setLoggerVerbosity(verbosity);
 		};
-		exports$1.setLogVerbosity = setLogVerbosity;
+		exports.setLogVerbosity = setLogVerbosity;
 		const getClientChannel = (client) => {
 		    return client_1.Client.prototype.getChannel.call(client);
 		};
-		exports$1.getClientChannel = getClientChannel;
+		exports.getClientChannel = getClientChannel;
 		var client_interceptors_1 = requireClientInterceptors();
-		Object.defineProperty(exports$1, "ListenerBuilder", { enumerable: true, get: function () { return client_interceptors_1.ListenerBuilder; } });
-		Object.defineProperty(exports$1, "RequesterBuilder", { enumerable: true, get: function () { return client_interceptors_1.RequesterBuilder; } });
-		Object.defineProperty(exports$1, "InterceptingCall", { enumerable: true, get: function () { return client_interceptors_1.InterceptingCall; } });
-		Object.defineProperty(exports$1, "InterceptorConfigurationError", { enumerable: true, get: function () { return client_interceptors_1.InterceptorConfigurationError; } });
+		Object.defineProperty(exports, "ListenerBuilder", { enumerable: true, get: function () { return client_interceptors_1.ListenerBuilder; } });
+		Object.defineProperty(exports, "RequesterBuilder", { enumerable: true, get: function () { return client_interceptors_1.RequesterBuilder; } });
+		Object.defineProperty(exports, "InterceptingCall", { enumerable: true, get: function () { return client_interceptors_1.InterceptingCall; } });
+		Object.defineProperty(exports, "InterceptorConfigurationError", { enumerable: true, get: function () { return client_interceptors_1.InterceptorConfigurationError; } });
 		var channelz_1 = requireChannelz();
-		Object.defineProperty(exports$1, "getChannelzServiceDefinition", { enumerable: true, get: function () { return channelz_1.getChannelzServiceDefinition; } });
-		Object.defineProperty(exports$1, "getChannelzHandlers", { enumerable: true, get: function () { return channelz_1.getChannelzHandlers; } });
+		Object.defineProperty(exports, "getChannelzServiceDefinition", { enumerable: true, get: function () { return channelz_1.getChannelzServiceDefinition; } });
+		Object.defineProperty(exports, "getChannelzHandlers", { enumerable: true, get: function () { return channelz_1.getChannelzHandlers; } });
 		var admin_1 = requireAdmin();
-		Object.defineProperty(exports$1, "addAdminServicesToServer", { enumerable: true, get: function () { return admin_1.addAdminServicesToServer; } });
+		Object.defineProperty(exports, "addAdminServicesToServer", { enumerable: true, get: function () { return admin_1.addAdminServicesToServer; } });
 		var server_interceptors_1 = requireServerInterceptors();
-		Object.defineProperty(exports$1, "ServerListenerBuilder", { enumerable: true, get: function () { return server_interceptors_1.ServerListenerBuilder; } });
-		Object.defineProperty(exports$1, "ResponderBuilder", { enumerable: true, get: function () { return server_interceptors_1.ResponderBuilder; } });
-		Object.defineProperty(exports$1, "ServerInterceptingCall", { enumerable: true, get: function () { return server_interceptors_1.ServerInterceptingCall; } });
+		Object.defineProperty(exports, "ServerListenerBuilder", { enumerable: true, get: function () { return server_interceptors_1.ServerListenerBuilder; } });
+		Object.defineProperty(exports, "ResponderBuilder", { enumerable: true, get: function () { return server_interceptors_1.ResponderBuilder; } });
+		Object.defineProperty(exports, "ServerInterceptingCall", { enumerable: true, get: function () { return server_interceptors_1.ServerInterceptingCall; } });
 		var orca_1 = requireOrca();
-		Object.defineProperty(exports$1, "ServerMetricRecorder", { enumerable: true, get: function () { return orca_1.ServerMetricRecorder; } });
+		Object.defineProperty(exports, "ServerMetricRecorder", { enumerable: true, get: function () { return orca_1.ServerMetricRecorder; } });
 		const experimental = requireExperimental();
-		exports$1.experimental = experimental;
+		exports.experimental = experimental;
 		const resolver_dns = requireResolverDns();
 		const resolver_uds = requireResolverUds();
 		const resolver_ip = requireResolverIp();
@@ -84494,7 +84386,7 @@ function requireAbstractAsyncHooksContextManager () {
 	 */
 	Object.defineProperty(AbstractAsyncHooksContextManager, "__esModule", { value: true });
 	AbstractAsyncHooksContextManager.AbstractAsyncHooksContextManager = void 0;
-	const events_1 = require$$0$5;
+	const events_1 = require$$0$4;
 	const ADD_LISTENER_METHODS = [
 	    'addListener',
 	    'on',
@@ -84796,6 +84688,29 @@ function requireAsyncLocalStorageContextManager () {
 	const api_1 = require$$0$1;
 	const async_hooks_1 = require$$1$4;
 	const AbstractAsyncHooksContextManager_1 = /*@__PURE__*/ requireAbstractAsyncHooksContextManager();
+	/**
+	 * Wrapper around a token and _asyncLocalStorage to mirror the behavior of
+	 * a Node.js RunScope
+	 *
+	 * @internal not intended for direct public consumption. Will be removed once
+	 * withScope is available on all supported Node.js versions
+	 */
+	class DisposeOnceToken {
+	    _isDisposed = false;
+	    _previousContext;
+	    _asyncLocalStorage;
+	    constructor(previousContext, asyncLocalStorage) {
+	        this._previousContext = previousContext;
+	        this._asyncLocalStorage = asyncLocalStorage;
+	    }
+	    dispose() {
+	        if (this._isDisposed) {
+	            return;
+	        }
+	        this._asyncLocalStorage.enterWith(this._previousContext);
+	        this._isDisposed = true;
+	    }
+	}
 	let AsyncLocalStorageContextManager$1 = class AsyncLocalStorageContextManager extends AbstractAsyncHooksContextManager_1.AbstractAsyncHooksContextManager {
 	    _asyncLocalStorage;
 	    constructor() {
@@ -84816,6 +84731,35 @@ function requireAsyncLocalStorageContextManager () {
 	        this._asyncLocalStorage.disable();
 	        return this;
 	    }
+	    /**
+	     * Imperatively sets `context` as active for the current async execution chain
+	     * and operations spawned from it. Returns a {@link ContextManagementToken} whose `dispose()`
+	     * restores the previous context (see {@link ContextManager.attach}).
+	     *
+	     * On Node.js 25.9+, delegates to `AsyncLocalStorage.withScope()` which returns
+	     * a native `RunScope`. On older Node.js versions, falls back to `enterWith()` with
+	     * a manual token.
+	     *
+	     * **Caveat for async functions:** Both `withScope()` and `enterWith()` affect the
+	     * entire current async execution chain. If `attach()` is called inside an async
+	     * function before the first `await`, the context change will leak into the caller's
+	     * context and remain active there until something else restores it. Prefer `with()`
+	     * for async code.
+	     *
+	     * @experimental This API is experimental and may change in minor releases without prior notice.
+	     */
+	    attach(context) {
+	        // Node.js 25.9+: withScope() returns a RunScope with dispose()
+	        const withScope = this._asyncLocalStorage.withScope;
+	        if (withScope) {
+	            return withScope.call(this._asyncLocalStorage, context);
+	        }
+	        // Fallback for older Node.js - this can be dropped when the minimum supported
+	        // Node.js version of this package is 25.9 or higher.
+	        const previousContext = this.active();
+	        this._asyncLocalStorage.enterWith(context);
+	        return new DisposeOnceToken(previousContext, this._asyncLocalStorage);
+	    }
 	};
 	AsyncLocalStorageContextManager.AsyncLocalStorageContextManager = AsyncLocalStorageContextManager$1;
 	
@@ -84827,17 +84771,17 @@ var hasRequiredSrc$3;
 function requireSrc$3 () {
 	if (hasRequiredSrc$3) return src$3;
 	hasRequiredSrc$3 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright The OpenTelemetry Authors
 		 * SPDX-License-Identifier: Apache-2.0
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.AsyncLocalStorageContextManager = exports$1.AsyncHooksContextManager = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.AsyncLocalStorageContextManager = exports.AsyncHooksContextManager = void 0;
 		var AsyncHooksContextManager_1 = /*@__PURE__*/ requireAsyncHooksContextManager();
-		Object.defineProperty(exports$1, "AsyncHooksContextManager", { enumerable: true, get: function () { return AsyncHooksContextManager_1.AsyncHooksContextManager; } });
+		Object.defineProperty(exports, "AsyncHooksContextManager", { enumerable: true, get: function () { return AsyncHooksContextManager_1.AsyncHooksContextManager; } });
 		var AsyncLocalStorageContextManager_1 = /*@__PURE__*/ requireAsyncLocalStorageContextManager();
-		Object.defineProperty(exports$1, "AsyncLocalStorageContextManager", { enumerable: true, get: function () { return AsyncLocalStorageContextManager_1.AsyncLocalStorageContextManager; } });
+		Object.defineProperty(exports, "AsyncLocalStorageContextManager", { enumerable: true, get: function () { return AsyncLocalStorageContextManager_1.AsyncLocalStorageContextManager; } });
 		
 	} (src$3));
 	return src$3;
@@ -84849,15 +84793,1655 @@ var srcExports$2 = /*@__PURE__*/ requireSrc$3();
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-const SUPPRESS_TRACING_KEY = createContextKey('OpenTelemetry SDK Context Key SUPPRESS_TRACING');
-function suppressTracing(context) {
-    return context.setValue(SUPPRESS_TRACING_KEY, true);
+const SUPPRESS_TRACING_KEY$2 = createContextKey('OpenTelemetry SDK Context Key SUPPRESS_TRACING');
+function suppressTracing$2(context) {
+    return context.setValue(SUPPRESS_TRACING_KEY$2, true);
+}
+function isTracingSuppressed$1(context) {
+    return context.getValue(SUPPRESS_TRACING_KEY$2) === true;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function sanitizeAttributes$1(attributes) {
+    const out = {};
+    if (typeof attributes !== 'object' || attributes == null) {
+        return out;
+    }
+    for (const key in attributes) {
+        if (!Object.prototype.hasOwnProperty.call(attributes, key)) {
+            continue;
+        }
+        if (!isAttributeKey$1(key)) {
+            diag.warn(`Invalid attribute key: ${key}`);
+            continue;
+        }
+        const val = attributes[key];
+        if (!isAttributeValue$1(val)) {
+            diag.warn(`Invalid attribute value set for key: ${key}`);
+            continue;
+        }
+        if (Array.isArray(val)) {
+            out[key] = val.slice();
+        }
+        else {
+            out[key] = val;
+        }
+    }
+    return out;
+}
+function isAttributeKey$1(key) {
+    return typeof key === 'string' && key !== '';
+}
+function isAttributeValue$1(val) {
+    if (val == null) {
+        return true;
+    }
+    if (Array.isArray(val)) {
+        return isHomogeneousAttributeValueArray$1(val);
+    }
+    return isValidPrimitiveAttributeValueType$1(typeof val);
+}
+function isHomogeneousAttributeValueArray$1(arr) {
+    let type;
+    for (const element of arr) {
+        // null/undefined elements are allowed
+        if (element == null)
+            continue;
+        const elementType = typeof element;
+        if (elementType === type) {
+            continue;
+        }
+        if (!type) {
+            if (isValidPrimitiveAttributeValueType$1(elementType)) {
+                type = elementType;
+                continue;
+            }
+            // encountered an invalid primitive
+            return false;
+        }
+        return false;
+    }
+    return true;
+}
+function isValidPrimitiveAttributeValueType$1(valType) {
+    switch (valType) {
+        case 'number':
+        case 'boolean':
+        case 'string':
+            return true;
+    }
+    return false;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Returns a function that logs an error using the provided logger, or a
+ * console logger if one was not provided.
+ */
+function loggingErrorHandler$2() {
+    return (ex) => {
+        diag.error(stringifyException$2(ex));
+    };
+}
+/**
+ * Converts an exception into a string representation
+ * @param {Exception} ex
+ */
+function stringifyException$2(ex) {
+    if (typeof ex === 'string') {
+        return ex;
+    }
+    else {
+        return JSON.stringify(flattenException$2(ex));
+    }
+}
+/**
+ * Flattens an exception into key-value pairs by traversing the prototype chain
+ * and coercing values to strings. Duplicate properties will not be overwritten;
+ * the first insert wins.
+ */
+function flattenException$2(ex) {
+    const result = {};
+    let current = ex;
+    while (current !== null) {
+        Object.getOwnPropertyNames(current).forEach(propertyName => {
+            if (result[propertyName])
+                return;
+            const value = current[propertyName];
+            if (value) {
+                result[propertyName] = String(value);
+            }
+        });
+        current = Object.getPrototypeOf(current);
+    }
+    return result;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** The global error handler delegate */
+let delegateHandler$2 = loggingErrorHandler$2();
+/**
+ * Return the global error handler
+ * @param {Exception} ex
+ */
+function globalErrorHandler$2(ex) {
+    try {
+        delegateHandler$2(ex);
+    }
+    catch { } // eslint-disable-line no-empty
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Retrieves a number from an environment variable.
+ * - Returns `undefined` if the environment variable is empty, unset, contains only whitespace, or is not a number.
+ * - Returns a number in all other cases.
+ *
+ * @param {string} key - The name of the environment variable to retrieve.
+ * @returns {number | undefined} - The number value or `undefined`.
+ */
+function getNumberFromEnv$2(key) {
+    const raw = process.env[key];
+    if (raw == null || raw.trim() === '') {
+        return undefined;
+    }
+    const value = Number(raw);
+    if (isNaN(value)) {
+        diag.warn(`Unknown value ${inspect(raw)} for ${key}, expected a number, using defaults`);
+        return undefined;
+    }
+    return value;
+}
+/**
+ * Retrieves a string from an environment variable.
+ * - Returns `undefined` if the environment variable is empty, unset, or contains only whitespace.
+ *
+ * @param {string} key - The name of the environment variable to retrieve.
+ * @returns {string | undefined} - The string value or `undefined`.
+ */
+function getStringFromEnv$2(key) {
+    const raw = process.env[key];
+    if (raw == null || raw.trim() === '') {
+        return undefined;
+    }
+    return raw;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+// this is autogenerated file, see scripts/version-update.js
+const VERSION$6 = '2.11.0';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
+ * This file contains a copy of unstable semantic convention definitions
+ * used by this package.
+ * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
+ */
+/**
+ * The name of the runtime of this process.
+ *
+ * @example OpenJDK Runtime Environment
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const ATTR_PROCESS_RUNTIME_NAME$2 = 'process.runtime.name';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** Constants describing the SDK in use */
+const SDK_INFO$2 = {
+    [ATTR_TELEMETRY_SDK_NAME]: 'opentelemetry',
+    [ATTR_PROCESS_RUNTIME_NAME$2]: 'node',
+    [ATTR_TELEMETRY_SDK_LANGUAGE]: TELEMETRY_SDK_LANGUAGE_VALUE_NODEJS,
+    [ATTR_TELEMETRY_SDK_VERSION]: VERSION$6,
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @deprecated Use performance directly.
+ */
+const otperformance$2 = performance;
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const NANOSECOND_DIGITS$3 = 9;
+const NANOSECOND_DIGITS_IN_MILLIS$2 = 6;
+const MILLISECONDS_TO_NANOSECONDS$2 = Math.pow(10, NANOSECOND_DIGITS_IN_MILLIS$2);
+const SECOND_TO_NANOSECONDS$3 = Math.pow(10, NANOSECOND_DIGITS$3);
+/**
+ * Converts a number of milliseconds from epoch to HrTime([seconds, remainder in nanoseconds]).
+ * @param epochMillis
+ */
+function millisToHrTime$2(epochMillis) {
+    const epochSeconds = epochMillis / 1000;
+    // Decimals only.
+    const seconds = Math.trunc(epochSeconds);
+    // Round sub-nanosecond accuracy to nanosecond.
+    const nanos = Math.round((epochMillis % 1000) * MILLISECONDS_TO_NANOSECONDS$2);
+    return [seconds, nanos];
+}
+/**
+ * Returns an hrtime calculated via performance component.
+ * @param performanceNow
+ */
+function hrTime$2(performanceNow) {
+    const timeOrigin = millisToHrTime$2(otperformance$2.timeOrigin);
+    const now = millisToHrTime$2(typeof performanceNow === 'number' ? performanceNow : otperformance$2.now());
+    return addHrTimes$2(timeOrigin, now);
+}
+/**
+ * Returns a duration of two hrTime.
+ * @param startTime
+ * @param endTime
+ */
+function hrTimeDuration$1(startTime, endTime) {
+    let seconds = endTime[0] - startTime[0];
+    let nanos = endTime[1] - startTime[1];
+    // overflow
+    if (nanos < 0) {
+        seconds -= 1;
+        // negate
+        nanos += SECOND_TO_NANOSECONDS$3;
+    }
+    return [seconds, nanos];
+}
+/**
+ * Convert hrTime to microseconds.
+ * @param time
+ */
+function hrTimeToMicroseconds$1(time) {
+    return time[0] * 1e6 + time[1] / 1e3;
+}
+/**
+ * check if time is HrTime
+ * @param value
+ */
+function isTimeInputHrTime$2(value) {
+    return (Array.isArray(value) &&
+        value.length === 2 &&
+        typeof value[0] === 'number' &&
+        typeof value[1] === 'number');
+}
+/**
+ * check if input value is a correct types.TimeInput
+ * @param value
+ */
+function isTimeInput$1(value) {
+    return (isTimeInputHrTime$2(value) ||
+        typeof value === 'number' ||
+        value instanceof Date);
+}
+/**
+ * Given 2 HrTime formatted times, return their sum as an HrTime.
+ */
+function addHrTimes$2(time1, time2) {
+    const out = [time1[0] + time2[0], time1[1] + time2[1]];
+    // Nanoseconds
+    if (out[1] >= SECOND_TO_NANOSECONDS$3) {
+        out[1] -= SECOND_TO_NANOSECONDS$3;
+        out[0] += 1;
+    }
+    return out;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var ExportResultCode$3;
+(function (ExportResultCode) {
+    ExportResultCode[ExportResultCode["SUCCESS"] = 0] = "SUCCESS";
+    ExportResultCode[ExportResultCode["FAILED"] = 1] = "FAILED";
+})(ExportResultCode$3 || (ExportResultCode$3 = {}));
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const VALID_KEY_CHAR_RANGE$1 = '[_0-9a-z-*/]';
+const VALID_KEY$1 = `[a-z]${VALID_KEY_CHAR_RANGE$1}{0,255}`;
+const VALID_VENDOR_KEY$1 = `[a-z0-9]${VALID_KEY_CHAR_RANGE$1}{0,240}@[a-z]${VALID_KEY_CHAR_RANGE$1}{0,13}`;
+const VALID_KEY_REGEX$1 = new RegExp(`^(?:${VALID_KEY$1}|${VALID_VENDOR_KEY$1})$`);
+const VALID_VALUE_BASE_REGEX$1 = /^[ -~]{0,255}[!-~]$/;
+const INVALID_VALUE_COMMA_EQUAL_REGEX$1 = /,|=/;
+/**
+ * Key is opaque string up to 256 characters printable. It MUST begin with a
+ * lowercase letter, and can only contain lowercase letters a-z, digits 0-9,
+ * underscores _, dashes -, asterisks *, and forward slashes /.
+ * For multi-tenant vendor scenarios, an at sign (@) can be used to prefix the
+ * vendor name. Vendors SHOULD set the tenant ID at the beginning of the key.
+ * see https://www.w3.org/TR/trace-context/#key
+ */
+function validateKey$1(key) {
+    return VALID_KEY_REGEX$1.test(key);
+}
+/**
+ * Value is opaque string up to 256 characters printable ASCII RFC0020
+ * characters (i.e., the range 0x20 to 0x7E) except comma , and =.
+ */
+function validateValue$1(value) {
+    return (VALID_VALUE_BASE_REGEX$1.test(value) &&
+        !INVALID_VALUE_COMMA_EQUAL_REGEX$1.test(value));
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const MAX_TRACE_STATE_ITEMS$1 = 32;
+const MAX_TRACE_STATE_LEN$1 = 512;
+const LIST_MEMBERS_SEPARATOR$1 = ',';
+const LIST_MEMBER_KEY_VALUE_SPLITTER$1 = '=';
+/**
+ * TraceState must be a class and not a simple object type because of the spec
+ * requirement (https://www.w3.org/TR/trace-context/#tracestate-field).
+ *
+ * Here is the list of allowed mutations:
+ * - New key-value pair should be added into the beginning of the list
+ * - The value of any key can be updated. Modified keys MUST be moved to the
+ * beginning of the list.
+ */
+let TraceState$1 = class TraceState {
+    _length;
+    _rawTraceState;
+    _internalState;
+    constructor(rawTraceState) {
+        this._rawTraceState =
+            typeof rawTraceState === 'string' ? rawTraceState : '';
+        this._length = this._rawTraceState.length;
+    }
+    set(key, value) {
+        if (!validateKey$1(key) || !validateValue$1(value)) {
+            return this;
+        }
+        const currState = this._getState();
+        const currValue = currState.get(key);
+        // Get the new length depending if we already have a value or not
+        // - for existing keys we add the difference between the length of the values
+        // - for new keys is the key & value lenght plus
+        //   - +1 for the key/value splitter
+        //   - +1 for the separator if there are other keys
+        let newLength = this._length;
+        if (typeof currValue === 'string') {
+            newLength += value.length - currValue.length;
+        }
+        else {
+            newLength += key.length + value.length + (currState.size > 0 ? 2 : 1);
+        }
+        if (newLength > MAX_TRACE_STATE_LEN$1) {
+            return this;
+        }
+        const newState = new Map(currState);
+        newState.delete(key);
+        newState.set(key, value);
+        return this._fromState(newState, newLength);
+    }
+    unset(key) {
+        const currState = this._getState();
+        const currValue = currState.get(key);
+        // No need to create a new instance if the key does not exist
+        if (typeof currValue !== 'string') {
+            return this;
+        }
+        // Get the new length depending if we already have a value or not
+        // - for existing keys we substract key and value length plus
+        //   - +1 for the key/value splitter
+        //   - +1 for the separator if there are other keys
+        let newLength = this._length - (key.length + currValue.length + 1);
+        if (currState.size > 1) {
+            // remove separator from length if there's no key or only one.
+            newLength = newLength - 1;
+        }
+        const newState = new Map(currState);
+        newState.delete(key);
+        return this._fromState(newState, newLength);
+    }
+    get(key) {
+        const currState = this._getState();
+        return currState.get(key);
+    }
+    serialize() {
+        // Maps put new entries at the end. We prepend the seralized entry
+        // to get the right order according to the spec (updated members go 1st)
+        let serialized = '';
+        let index = 0;
+        for (const entry of this._getState()) {
+            if (index > 0) {
+                serialized = LIST_MEMBERS_SEPARATOR$1 + serialized;
+            }
+            serialized =
+                `${entry[0]}${LIST_MEMBER_KEY_VALUE_SPLITTER$1}${entry[1]}` + serialized;
+            index++;
+        }
+        return serialized;
+    }
+    _getState() {
+        if (this._internalState) {
+            return this._internalState;
+        }
+        // Not parsed yet, lets do it
+        const vendorMembers = this._rawTraceState.split(LIST_MEMBERS_SEPARATOR$1);
+        // This Map will have the order reversed
+        const vendorEntries = new Map();
+        let currentLength = 0;
+        for (const member of vendorMembers) {
+            const m = member.trim();
+            const idx = m.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER$1);
+            if (idx === -1) {
+                continue;
+            }
+            const key = m.slice(0, idx);
+            const value = m.slice(idx + 1);
+            if (!validateKey$1(key) || !validateValue$1(value)) {
+                continue;
+            }
+            // Skip if adding the new member exceeds the length
+            const futureLength = currentLength + m.length + (vendorEntries.size > 0 ? 1 : 0);
+            if (futureLength > MAX_TRACE_STATE_LEN$1) {
+                continue;
+            }
+            // All good, add it
+            vendorEntries.set(key, value);
+            currentLength = futureLength;
+            // Check if we reached the max items
+            if (vendorEntries.size >= MAX_TRACE_STATE_ITEMS$1) {
+                break;
+            }
+        }
+        // Now we set the length & the Map in the right order
+        this._length = currentLength;
+        this._internalState = new Map(Array.from(vendorEntries.entries()).reverse());
+        return this._internalState;
+    }
+    _fromState(state, length) {
+        const traceState = Object.create(TraceState.prototype);
+        traceState._internalState = state;
+        traceState._length = length;
+        return traceState;
+    }
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const TRACE_PARENT_HEADER$1 = 'traceparent';
+const TRACE_STATE_HEADER$1 = 'tracestate';
+const VERSION$5 = '00';
+const VERSION_PART$1 = '(?!ff)[\\da-f]{2}';
+const TRACE_ID_PART$1 = '(?![0]{32})[\\da-f]{32}';
+const PARENT_ID_PART$1 = '(?![0]{16})[\\da-f]{16}';
+const FLAGS_PART$1 = '[\\da-f]{2}';
+const TRACE_PARENT_REGEX$1 = new RegExp(`^\\s?(${VERSION_PART$1})-(${TRACE_ID_PART$1})-(${PARENT_ID_PART$1})-(${FLAGS_PART$1})(-.*)?\\s?$`);
+/**
+ * Parses information from the [traceparent] span tag and converts it into {@link SpanContext}
+ * @param traceParent - A meta property that comes from server.
+ *     It should be dynamically generated server side to have the server's request trace Id,
+ *     a parent span Id that was set on the server's request span,
+ *     and the trace flags to indicate the server's sampling decision
+ *     (01 = sampled, 00 = not sampled).
+ *     for example: '{version}-{traceId}-{spanId}-{sampleDecision}'
+ *     For more information see {@link https://www.w3.org/TR/trace-context/}
+ */
+function parseTraceParent$1(traceParent) {
+    const match = TRACE_PARENT_REGEX$1.exec(traceParent);
+    if (!match)
+        return null;
+    // According to the specification the implementation should be compatible
+    // with future versions. If there are more parts, we only reject it if it's using version 00
+    // See https://www.w3.org/TR/trace-context/#versioning-of-traceparent
+    if (match[1] === '00' && match[5])
+        return null;
+    return {
+        traceId: match[2],
+        spanId: match[3],
+        traceFlags: parseInt(match[4], 16),
+    };
+}
+/**
+ * Propagates {@link SpanContext} through Trace Context format propagation.
+ *
+ * Based on the Trace Context specification:
+ * https://www.w3.org/TR/trace-context/
+ */
+let W3CTraceContextPropagator$1 = class W3CTraceContextPropagator {
+    inject(context, carrier, setter) {
+        const spanContext = trace.getSpanContext(context);
+        if (!spanContext ||
+            isTracingSuppressed$1(context) ||
+            !isSpanContextValid(spanContext))
+            return;
+        const traceParent = `${VERSION$5}-${spanContext.traceId}-${spanContext.spanId}-0${Number(spanContext.traceFlags || TraceFlags.NONE).toString(16)}`;
+        setter.set(carrier, TRACE_PARENT_HEADER$1, traceParent);
+        if (spanContext.traceState) {
+            setter.set(carrier, TRACE_STATE_HEADER$1, spanContext.traceState.serialize());
+        }
+    }
+    extract(context, carrier, getter) {
+        const traceParentHeader = getter.get(carrier, TRACE_PARENT_HEADER$1);
+        if (!traceParentHeader)
+            return context;
+        const traceParent = Array.isArray(traceParentHeader)
+            ? traceParentHeader[0]
+            : traceParentHeader;
+        if (typeof traceParent !== 'string')
+            return context;
+        const spanContext = parseTraceParent$1(traceParent);
+        if (!spanContext)
+            return context;
+        spanContext.isRemote = true;
+        const traceStateHeader = getter.get(carrier, TRACE_STATE_HEADER$1);
+        if (traceStateHeader) {
+            // If more than one `tracestate` header is found, we merge them into a
+            // single header.
+            const state = Array.isArray(traceStateHeader)
+                ? traceStateHeader.join(',')
+                : traceStateHeader;
+            spanContext.traceState = new TraceState$1(typeof state === 'string' ? state : undefined);
+        }
+        return trace.setSpanContext(context, spanContext);
+    }
+    fields() {
+        return [TRACE_PARENT_HEADER$1, TRACE_STATE_HEADER$1];
+    }
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * based on lodash in order to support esm builds without esModuleInterop.
+ * lodash is using MIT License.
+ **/
+const objectTag$1 = '[object Object]';
+const nullTag$1 = '[object Null]';
+const undefinedTag$1 = '[object Undefined]';
+const funcProto$1 = Function.prototype;
+const funcToString$1 = funcProto$1.toString;
+const objectCtorString$1 = funcToString$1.call(Object);
+const getPrototypeOf$1 = Object.getPrototypeOf;
+const objectProto$1 = Object.prototype;
+const hasOwnProperty$1 = objectProto$1.hasOwnProperty;
+const symToStringTag$1 = Symbol ? Symbol.toStringTag : undefined;
+const nativeObjectToString$1 = objectProto$1.toString;
+/**
+ * Checks if `value` is a plain object, that is, an object created by the
+ * `Object` constructor or one with a `[[Prototype]]` of `null`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.8.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a plain object, else `false`.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ * }
+ *
+ * _.isPlainObject(new Foo);
+ * // => false
+ *
+ * _.isPlainObject([1, 2, 3]);
+ * // => false
+ *
+ * _.isPlainObject({ 'x': 0, 'y': 0 });
+ * // => true
+ *
+ * _.isPlainObject(Object.create(null));
+ * // => true
+ */
+function isPlainObject$1(value) {
+    if (!isObjectLike$1(value) || baseGetTag$1(value) !== objectTag$1) {
+        return false;
+    }
+    const proto = getPrototypeOf$1(value);
+    if (proto === null) {
+        return true;
+    }
+    const Ctor = hasOwnProperty$1.call(proto, 'constructor') && proto.constructor;
+    return (typeof Ctor == 'function' &&
+        Ctor instanceof Ctor &&
+        funcToString$1.call(Ctor) === objectCtorString$1);
+}
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike$1(value) {
+    return value != null && typeof value == 'object';
+}
+/**
+ * The base implementation of `getTag` without fallbacks for buggy environments.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+function baseGetTag$1(value) {
+    if (value == null) {
+        return value === undefined ? undefinedTag$1 : nullTag$1;
+    }
+    return symToStringTag$1 && symToStringTag$1 in Object(value)
+        ? getRawTag$1(value)
+        : objectToString$1(value);
+}
+/**
+ * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the raw `toStringTag`.
+ */
+function getRawTag$1(value) {
+    const isOwn = hasOwnProperty$1.call(value, symToStringTag$1), tag = value[symToStringTag$1];
+    let unmasked = false;
+    try {
+        value[symToStringTag$1] = undefined;
+        unmasked = true;
+    }
+    catch {
+        // silence
+    }
+    const result = nativeObjectToString$1.call(value);
+    if (unmasked) {
+        if (isOwn) {
+            value[symToStringTag$1] = tag;
+        }
+        else {
+            delete value[symToStringTag$1];
+        }
+    }
+    return result;
+}
+/**
+ * Converts `value` to a string using `Object.prototype.toString`.
+ *
+ * @private
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ */
+function objectToString$1(value) {
+    return nativeObjectToString$1.call(value);
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const MAX_LEVEL$1 = 20;
+/**
+ * Merges objects together
+ * @param args - objects / values to be merged
+ */
+function merge$1(...args) {
+    let result = args.shift();
+    const objects = new WeakMap();
+    while (args.length > 0) {
+        result = mergeTwoObjects$1(result, args.shift(), 0, objects);
+    }
+    return result;
+}
+function takeValue$1(value) {
+    if (isArray$1(value)) {
+        return value.slice();
+    }
+    return value;
+}
+/**
+ * Merges two objects
+ * @param one - first object
+ * @param two - second object
+ * @param level - current deep level
+ * @param objects - objects holder that has been already referenced - to prevent
+ * cyclic dependency
+ */
+function mergeTwoObjects$1(one, two, level = 0, objects) {
+    let result;
+    if (level > MAX_LEVEL$1) {
+        return undefined;
+    }
+    level++;
+    if (isPrimitive$1(one) || isPrimitive$1(two) || isFunction$1(two)) {
+        result = takeValue$1(two);
+    }
+    else if (isArray$1(one)) {
+        result = one.slice();
+        if (isArray$1(two)) {
+            for (let i = 0, j = two.length; i < j; i++) {
+                result.push(takeValue$1(two[i]));
+            }
+        }
+        else if (isObject$1(two)) {
+            const keys = Object.keys(two);
+            for (let i = 0, j = keys.length; i < j; i++) {
+                const key = keys[i];
+                if (key === '__proto__' ||
+                    key === 'constructor' ||
+                    key === 'prototype') {
+                    continue;
+                }
+                result[key] = takeValue$1(two[key]);
+            }
+        }
+    }
+    else if (isObject$1(one)) {
+        if (isObject$1(two)) {
+            if (!shouldMerge$1(one, two)) {
+                return two;
+            }
+            result = Object.assign({}, one);
+            const keys = Object.keys(two);
+            for (let i = 0, j = keys.length; i < j; i++) {
+                const key = keys[i];
+                if (key === '__proto__' ||
+                    key === 'constructor' ||
+                    key === 'prototype') {
+                    continue;
+                }
+                const twoValue = two[key];
+                if (isPrimitive$1(twoValue)) {
+                    if (typeof twoValue === 'undefined') {
+                        delete result[key];
+                    }
+                    else {
+                        // result[key] = takeValue(twoValue);
+                        result[key] = twoValue;
+                    }
+                }
+                else {
+                    const obj1 = result[key];
+                    const obj2 = twoValue;
+                    if (wasObjectReferenced$1(one, key, objects) ||
+                        wasObjectReferenced$1(two, key, objects)) {
+                        delete result[key];
+                    }
+                    else {
+                        if (isObject$1(obj1) && isObject$1(obj2)) {
+                            const arr1 = objects.get(obj1) || [];
+                            const arr2 = objects.get(obj2) || [];
+                            arr1.push({ obj: one, key });
+                            arr2.push({ obj: two, key });
+                            objects.set(obj1, arr1);
+                            objects.set(obj2, arr2);
+                        }
+                        result[key] = mergeTwoObjects$1(result[key], twoValue, level, objects);
+                    }
+                }
+            }
+        }
+        else {
+            result = two;
+        }
+    }
+    return result;
+}
+/**
+ * Function to check if object has been already reference
+ * @param obj
+ * @param key
+ * @param objects
+ */
+function wasObjectReferenced$1(obj, key, objects) {
+    const arr = objects.get(obj[key]) || [];
+    for (let i = 0, j = arr.length; i < j; i++) {
+        const info = arr[i];
+        if (info.key === key && info.obj === obj) {
+            return true;
+        }
+    }
+    return false;
+}
+function isArray$1(value) {
+    return Array.isArray(value);
+}
+function isFunction$1(value) {
+    return typeof value === 'function';
+}
+function isObject$1(value) {
+    return (!isPrimitive$1(value) &&
+        !isArray$1(value) &&
+        !isFunction$1(value) &&
+        typeof value === 'object');
+}
+function isPrimitive$1(value) {
+    return (typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'boolean' ||
+        typeof value === 'undefined' ||
+        value instanceof Date ||
+        value instanceof RegExp ||
+        value === null);
+}
+function shouldMerge$1(one, two) {
+    if (!isPlainObject$1(one) || !isPlainObject$1(two)) {
+        return false;
+    }
+    return true;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let Deferred$2 = class Deferred {
+    _promise;
+    _resolve;
+    _reject;
+    constructor() {
+        this._promise = new Promise((resolve, reject) => {
+            this._resolve = resolve;
+            this._reject = reject;
+        });
+    }
+    get promise() {
+        return this._promise;
+    }
+    resolve(val) {
+        this._resolve(val);
+    }
+    reject(err) {
+        this._reject(err);
+    }
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Bind the callback and only invoke the callback once regardless how many times `BindOnceFuture.call` is invoked.
+ */
+let BindOnceFuture$2 = class BindOnceFuture {
+    _isCalled = false;
+    _deferred = new Deferred$2();
+    _callback;
+    _that;
+    constructor(callback, that) {
+        this._callback = callback;
+        this._that = that;
+    }
+    get isCalled() {
+        return this._isCalled;
+    }
+    get promise() {
+        return this._deferred.promise;
+    }
+    call(...args) {
+        if (!this._isCalled) {
+            this._isCalled = true;
+            try {
+                Promise.resolve(this._callback.call(this._that, ...args)).then(val => this._deferred.resolve(val), err => this._deferred.reject(err));
+            }
+            catch (err) {
+                this._deferred.reject(err);
+            }
+        }
+        return this._deferred.promise;
+    }
+};
+
+var src$2 = {};
+
+var OTLPLogExporter$1 = {};
+
+var src$1 = {};
+
+var convertLegacyOtlpGrpcOptions = {};
+
+var otlpGrpcConfiguration = {};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class OTLPExporterBase {
+    _delegate;
+    constructor(delegate) {
+        this._delegate = delegate;
+    }
+    /**
+     * Export items.
+     * @param items
+     * @param resultCallback
+     */
+    export(items, resultCallback) {
+        this._delegate.export(items, resultCallback);
+    }
+    forceFlush() {
+        return this._delegate.forceFlush();
+    }
+    shutdown() {
+        return this._delegate.shutdown();
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Interface for handling error
+ */
+class OTLPExporterError extends Error {
+    code;
+    name = 'OTLPExporterError';
+    data;
+    constructor(message, code, data) {
+        super(message);
+        this.data = data;
+        this.code = code;
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function validateTimeoutMillis(timeoutMillis) {
+    if (Number.isFinite(timeoutMillis) && timeoutMillis > 0) {
+        return timeoutMillis;
+    }
+    throw new Error(`Configuration: timeoutMillis is invalid, expected number greater than 0 (actual: '${timeoutMillis}')`);
+}
+function wrapStaticHeadersInFunction(headers) {
+    if (headers == null) {
+        return undefined;
+    }
+    return async () => headers;
+}
+/**
+ * @param userProvidedConfiguration  Configuration options provided by the user in code.
+ * @param fallbackConfiguration Fallback to use when the {@link userProvidedConfiguration} does not specify an option.
+ * @param defaultConfiguration The defaults as defined by the exporter specification
+ */
+function mergeOtlpSharedConfigurationWithDefaults(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration) {
+    return {
+        timeoutMillis: validateTimeoutMillis(userProvidedConfiguration.timeoutMillis ??
+            fallbackConfiguration.timeoutMillis ??
+            defaultConfiguration.timeoutMillis),
+        concurrencyLimit: userProvidedConfiguration.concurrencyLimit ??
+            fallbackConfiguration.concurrencyLimit ??
+            defaultConfiguration.concurrencyLimit,
+        compression: userProvidedConfiguration.compression ??
+            fallbackConfiguration.compression ??
+            defaultConfiguration.compression,
+    };
+}
+function getSharedConfigurationDefaults() {
+    return {
+        timeoutMillis: 10000,
+        concurrencyLimit: 30,
+        compression: 'none',
+    };
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var CompressionAlgorithm;
+(function (CompressionAlgorithm) {
+    CompressionAlgorithm["NONE"] = "none";
+    CompressionAlgorithm["GZIP"] = "gzip";
+})(CompressionAlgorithm || (CompressionAlgorithm = {}));
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class BoundedQueueExportPromiseHandler {
+    _concurrencyLimit;
+    _sendingPromises = [];
+    /**
+     * @param concurrencyLimit maximum promises allowed in a queue at the same time.
+     */
+    constructor(concurrencyLimit) {
+        this._concurrencyLimit = concurrencyLimit;
+    }
+    pushPromise(promise) {
+        if (this.hasReachedLimit()) {
+            throw new Error('Concurrency Limit reached');
+        }
+        this._sendingPromises.push(promise);
+        const popPromise = () => {
+            const index = this._sendingPromises.indexOf(promise);
+            void this._sendingPromises.splice(index, 1);
+        };
+        promise.then(popPromise, popPromise);
+    }
+    hasReachedLimit() {
+        return this._sendingPromises.length >= this._concurrencyLimit;
+    }
+    async awaitAll() {
+        await Promise.all(this._sendingPromises);
+    }
+}
+/**
+ * Promise queue for keeping track of export promises. Finished promises will be auto-dequeued.
+ * Allows for awaiting all promises in the queue.
+ */
+function createBoundedQueueExportPromiseHandler(options) {
+    return new BoundedQueueExportPromiseHandler(options.concurrencyLimit);
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const BAGGAGE_KEY_PAIR_SEPARATOR$1 = '=';
+const BAGGAGE_PROPERTIES_SEPARATOR$1 = ';';
+const BAGGAGE_ITEMS_SEPARATOR$1 = ',';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function parsePairKeyValue$1(entry) {
+    if (!entry)
+        return;
+    const metadataSeparatorIndex = entry.indexOf(BAGGAGE_PROPERTIES_SEPARATOR$1);
+    const keyPairPart = metadataSeparatorIndex === -1
+        ? entry
+        : entry.substring(0, metadataSeparatorIndex);
+    const separatorIndex = keyPairPart.indexOf(BAGGAGE_KEY_PAIR_SEPARATOR$1);
+    if (separatorIndex <= 0)
+        return;
+    const rawKey = keyPairPart.substring(0, separatorIndex).trim();
+    const rawValue = keyPairPart.substring(separatorIndex + 1).trim();
+    if (!rawKey || !rawValue)
+        return;
+    let key;
+    let value;
+    try {
+        key = decodeURIComponent(rawKey);
+        value = decodeURIComponent(rawValue);
+    }
+    catch {
+        return;
+    }
+    let metadata;
+    if (metadataSeparatorIndex !== -1 &&
+        metadataSeparatorIndex < entry.length - 1) {
+        const metadataString = entry.substring(metadataSeparatorIndex + 1);
+        metadata = baggageEntryMetadataFromString(metadataString);
+    }
+    return { key, value, metadata };
+}
+/**
+ * Parse a string serialized in the baggage HTTP Format (without metadata):
+ * https://github.com/w3c/baggage/blob/master/baggage/HTTP_HEADER_FORMAT.md
+ */
+function parseKeyPairsIntoRecord$1(value) {
+    const result = {};
+    if (typeof value === 'string' && value.length > 0) {
+        value.split(BAGGAGE_ITEMS_SEPARATOR$1).forEach(entry => {
+            const keyPair = parsePairKeyValue$1(entry);
+            if (keyPair !== undefined && keyPair.value.length > 0) {
+                result[keyPair.key] = keyPair.value;
+            }
+        });
+    }
+    return result;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Retrieves a number from an environment variable.
+ * - Returns `undefined` if the environment variable is empty, unset, contains only whitespace, or is not a number.
+ * - Returns a number in all other cases.
+ *
+ * @param {string} key - The name of the environment variable to retrieve.
+ * @returns {number | undefined} - The number value or `undefined`.
+ */
+function getNumberFromEnv$1(key) {
+    const raw = process.env[key];
+    if (raw == null || raw.trim() === '') {
+        return undefined;
+    }
+    const value = Number(raw);
+    if (isNaN(value)) {
+        diag.warn(`Unknown value ${inspect(raw)} for ${key}, expected a number, using defaults`);
+        return undefined;
+    }
+    return value;
+}
+/**
+ * Retrieves a string from an environment variable.
+ * - Returns `undefined` if the environment variable is empty, unset, or contains only whitespace.
+ *
+ * @param {string} key - The name of the environment variable to retrieve.
+ * @returns {string | undefined} - The string value or `undefined`.
+ */
+function getStringFromEnv$1(key) {
+    const raw = process.env[key];
+    if (raw == null || raw.trim() === '') {
+        return undefined;
+    }
+    return raw;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var ExportResultCode$2;
+(function (ExportResultCode) {
+    ExportResultCode[ExportResultCode["SUCCESS"] = 0] = "SUCCESS";
+    ExportResultCode[ExportResultCode["FAILED"] = 1] = "FAILED";
+})(ExportResultCode$2 || (ExportResultCode$2 = {}));
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function isPartialSuccessResponse(response) {
+    return Object.prototype.hasOwnProperty.call(response, 'partialSuccess');
+}
+/**
+ * Default response handler that logs a partial success to the console.
+ */
+function createLoggingPartialSuccessResponseHandler() {
+    return {
+        handleResponse(response) {
+            // Partial success MUST never be an empty object according the specification
+            // see https://opentelemetry.io/docs/specs/otlp/#partial-success
+            if (response == null ||
+                !isPartialSuccessResponse(response) ||
+                response.partialSuccess == null ||
+                Object.keys(response.partialSuccess).length === 0) {
+                return;
+            }
+            diag.warn('Received Partial Success response:', JSON.stringify(response.partialSuccess));
+        },
+    };
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class OTLPExportDelegate {
+    _diagLogger;
+    _transport;
+    _serializer;
+    _responseHandler;
+    _promiseQueue;
+    _timeout;
+    constructor(transport, serializer, responseHandler, promiseQueue, timeout) {
+        this._transport = transport;
+        this._serializer = serializer;
+        this._responseHandler = responseHandler;
+        this._promiseQueue = promiseQueue;
+        this._timeout = timeout;
+        this._diagLogger = diag.createComponentLogger({
+            namespace: 'OTLPExportDelegate',
+        });
+    }
+    export(internalRepresentation, resultCallback) {
+        this._diagLogger.debug('items to be sent', internalRepresentation);
+        // don't do any work if too many exports are in progress.
+        if (this._promiseQueue.hasReachedLimit()) {
+            resultCallback({
+                code: ExportResultCode$2.FAILED,
+                error: new Error('Concurrent export limit reached'),
+            });
+            return;
+        }
+        const serializedRequest = this._serializer.serializeRequest(internalRepresentation);
+        if (serializedRequest == null) {
+            resultCallback({
+                code: ExportResultCode$2.FAILED,
+                error: new Error('Nothing to send'),
+            });
+            return;
+        }
+        this._promiseQueue.pushPromise(this._transport.send(serializedRequest, this._timeout).then(response => {
+            if (response.status === 'success') {
+                if (response.data != null) {
+                    try {
+                        this._responseHandler.handleResponse(this._serializer.deserializeResponse(response.data));
+                    }
+                    catch (e) {
+                        this._diagLogger.warn('Export succeeded but could not deserialize response - is the response specification compliant?', e, response.data);
+                    }
+                }
+                // No matter the response, we can consider the export still successful.
+                resultCallback({
+                    code: ExportResultCode$2.SUCCESS,
+                });
+                return;
+            }
+            else if (response.status === 'failure' && response.error) {
+                resultCallback({
+                    code: ExportResultCode$2.FAILED,
+                    error: response.error,
+                });
+                return;
+            }
+            else if (response.status === 'retryable') {
+                resultCallback({
+                    code: ExportResultCode$2.FAILED,
+                    error: response.error ??
+                        new OTLPExporterError('Export failed with retryable status'),
+                });
+            }
+            else {
+                resultCallback({
+                    code: ExportResultCode$2.FAILED,
+                    error: new OTLPExporterError('Export failed with unknown error'),
+                });
+            }
+        }, reason => resultCallback({
+            code: ExportResultCode$2.FAILED,
+            error: reason,
+        })));
+    }
+    forceFlush() {
+        return this._promiseQueue.awaitAll();
+    }
+    async shutdown() {
+        this._diagLogger.debug('shutdown started');
+        await this.forceFlush();
+        this._transport.shutdown();
+    }
+}
+/**
+ * Creates a generic delegate for OTLP exports which only contains parts of the OTLP export that are shared across all
+ * signals.
+ */
+function createOtlpExportDelegate(components, settings) {
+    return new OTLPExportDelegate(components.transport, components.serializer, createLoggingPartialSuccessResponseHandler(), components.promiseHandler, settings.timeout);
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+function createOtlpNetworkExportDelegate(options, serializer, transport) {
+    return createOtlpExportDelegate({
+        transport: transport,
+        serializer,
+        promiseHandler: createBoundedQueueExportPromiseHandler(options),
+    }, { timeout: options.timeoutMillis });
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+var esm$2 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    get CompressionAlgorithm () { return CompressionAlgorithm; },
+    OTLPExporterBase: OTLPExporterBase,
+    OTLPExporterError: OTLPExporterError,
+    createOtlpNetworkExportDelegate: createOtlpNetworkExportDelegate,
+    getSharedConfigurationDefaults: getSharedConfigurationDefaults,
+    mergeOtlpSharedConfigurationWithDefaults: mergeOtlpSharedConfigurationWithDefaults
+});
+
+var require$$2$1 = /*@__PURE__*/getAugmentedNamespace(esm$2);
+
+var grpcExporterTransport = {};
+
+var version$1 = {};
+
+var hasRequiredVersion;
+
+function requireVersion () {
+	if (hasRequiredVersion) return version$1;
+	hasRequiredVersion = 1;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(version$1, "__esModule", { value: true });
+	version$1.VERSION = void 0;
+	// this is autogenerated file, see scripts/version-update.js
+	version$1.VERSION = '0.213.0';
+	
+	return version$1;
+}
+
+var createServiceClientConstructor = {};
+
+var hasRequiredCreateServiceClientConstructor;
+
+function requireCreateServiceClientConstructor () {
+	if (hasRequiredCreateServiceClientConstructor) return createServiceClientConstructor;
+	hasRequiredCreateServiceClientConstructor = 1;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 * SPDX-License-Identifier: Apache-2.0
+	 */
+	Object.defineProperty(createServiceClientConstructor, "__esModule", { value: true });
+	createServiceClientConstructor.createServiceClientConstructor = void 0;
+	const grpc = requireSrc$4();
+	/**
+	 * Creates a unary service client constructor that, when instantiated, does not serialize/deserialize anything.
+	 * Allows for passing in {@link Buffer} directly, serialization can be handled via protobufjs or custom implementations.
+	 *
+	 * @param path service path
+	 * @param name service name
+	 */
+	function createServiceClientConstructor$1(path, name) {
+	    const serviceDefinition = {
+	        export: {
+	            path: path,
+	            requestStream: false,
+	            responseStream: false,
+	            requestSerialize: (arg) => {
+	                return arg;
+	            },
+	            requestDeserialize: (arg) => {
+	                return arg;
+	            },
+	            responseSerialize: (arg) => {
+	                return arg;
+	            },
+	            responseDeserialize: (arg) => {
+	                return arg;
+	            },
+	        },
+	    };
+	    return grpc.makeGenericClientConstructor(serviceDefinition, name);
+	}
+	createServiceClientConstructor.createServiceClientConstructor = createServiceClientConstructor$1;
+	
+	return createServiceClientConstructor;
+}
+
+var hasRequiredGrpcExporterTransport;
+
+function requireGrpcExporterTransport () {
+	if (hasRequiredGrpcExporterTransport) return grpcExporterTransport;
+	hasRequiredGrpcExporterTransport = 1;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 * SPDX-License-Identifier: Apache-2.0
+	 */
+	Object.defineProperty(grpcExporterTransport, "__esModule", { value: true });
+	grpcExporterTransport.createOtlpGrpcExporterTransport = grpcExporterTransport.GrpcExporterTransport = grpcExporterTransport.createEmptyMetadata = grpcExporterTransport.createSslCredentials = grpcExporterTransport.createInsecureCredentials = void 0;
+	const version_1 = /*@__PURE__*/ requireVersion();
+	const DEFAULT_USER_AGENT = `OTel-OTLP-Exporter-JavaScript/${version_1.VERSION}`;
+	function createUserAgent(userAgent) {
+	    if (userAgent) {
+	        return `${userAgent} ${DEFAULT_USER_AGENT}`;
+	    }
+	    return DEFAULT_USER_AGENT;
+	}
+	// values taken from '@grpc/grpc-js` so that we don't need to require/import it.
+	const GRPC_COMPRESSION_NONE = 0;
+	const GRPC_COMPRESSION_GZIP = 2;
+	function toGrpcCompression(compression) {
+	    return compression === 'gzip' ? GRPC_COMPRESSION_GZIP : GRPC_COMPRESSION_NONE;
+	}
+	function createInsecureCredentials() {
+	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
+	    const { credentials,
+	    // eslint-disable-next-line @typescript-eslint/no-require-imports
+	     } = requireSrc$4();
+	    return credentials.createInsecure();
+	}
+	grpcExporterTransport.createInsecureCredentials = createInsecureCredentials;
+	function createSslCredentials(rootCert, privateKey, certChain) {
+	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
+	    const { credentials,
+	    // eslint-disable-next-line @typescript-eslint/no-require-imports
+	     } = requireSrc$4();
+	    return credentials.createSsl(rootCert, privateKey, certChain);
+	}
+	grpcExporterTransport.createSslCredentials = createSslCredentials;
+	function createEmptyMetadata() {
+	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
+	    const { Metadata,
+	    // eslint-disable-next-line @typescript-eslint/no-require-imports
+	     } = requireSrc$4();
+	    return new Metadata();
+	}
+	grpcExporterTransport.createEmptyMetadata = createEmptyMetadata;
+	class GrpcExporterTransport {
+	    _client;
+	    _metadata;
+	    _parameters;
+	    constructor(parameters) {
+	        this._parameters = parameters;
+	    }
+	    shutdown() {
+	        this._client?.close();
+	    }
+	    send(data, timeoutMillis) {
+	        // We need to make a for gRPC
+	        const buffer = Buffer.from(data);
+	        if (this._client == null) {
+	            // Lazy require to ensure that grpc is not loaded before instrumentations can wrap it
+	            const { createServiceClientConstructor,
+	            // eslint-disable-next-line @typescript-eslint/no-require-imports
+	             } = /*@__PURE__*/ requireCreateServiceClientConstructor();
+	            try {
+	                this._metadata = this._parameters.metadata();
+	            }
+	            catch (error) {
+	                return Promise.resolve({
+	                    status: 'failure',
+	                    error: error,
+	                });
+	            }
+	            const clientConstructor = createServiceClientConstructor(this._parameters.grpcPath, this._parameters.grpcName);
+	            try {
+	                this._client = new clientConstructor(this._parameters.address, this._parameters.credentials(), {
+	                    'grpc.default_compression_algorithm': toGrpcCompression(this._parameters.compression),
+	                    'grpc.primary_user_agent': createUserAgent(this._parameters.userAgent),
+	                });
+	            }
+	            catch (error) {
+	                return Promise.resolve({
+	                    status: 'failure',
+	                    error: error,
+	                });
+	            }
+	        }
+	        return new Promise(resolve => {
+	            const deadline = Date.now() + timeoutMillis;
+	            // this should never happen
+	            if (this._metadata == null) {
+	                return resolve({
+	                    error: new Error('metadata was null'),
+	                    status: 'failure',
+	                });
+	            }
+	            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	            // @ts-ignore The gRPC client constructor is created on runtime, so we don't have any types for the resulting client.
+	            this._client.export(buffer, this._metadata, { deadline: deadline }, (err, response) => {
+	                if (err) {
+	                    resolve({
+	                        status: 'failure',
+	                        error: err,
+	                    });
+	                }
+	                else {
+	                    resolve({
+	                        data: response,
+	                        status: 'success',
+	                    });
+	                }
+	            });
+	        });
+	    }
+	}
+	grpcExporterTransport.GrpcExporterTransport = GrpcExporterTransport;
+	function createOtlpGrpcExporterTransport(options) {
+	    return new GrpcExporterTransport(options);
+	}
+	grpcExporterTransport.createOtlpGrpcExporterTransport = createOtlpGrpcExporterTransport;
+	
+	return grpcExporterTransport;
+}
+
+var hasRequiredOtlpGrpcConfiguration;
+
+function requireOtlpGrpcConfiguration () {
+	if (hasRequiredOtlpGrpcConfiguration) return otlpGrpcConfiguration;
+	hasRequiredOtlpGrpcConfiguration = 1;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 * SPDX-License-Identifier: Apache-2.0
+	 */
+	Object.defineProperty(otlpGrpcConfiguration, "__esModule", { value: true });
+	otlpGrpcConfiguration.getOtlpGrpcDefaultConfiguration = otlpGrpcConfiguration.mergeOtlpGrpcConfigurationWithDefaults = otlpGrpcConfiguration.validateAndNormalizeUrl = void 0;
+	const otlp_exporter_base_1 = require$$2$1;
+	const grpc_exporter_transport_1 = /*@__PURE__*/ requireGrpcExporterTransport();
+	const url_1 = require$$6$1;
+	const api_1 = require$$0$1;
+	function validateAndNormalizeUrl(url) {
+	    url = url.trim();
+	    const hasProtocol = url.match(/^([\w]{1,8}):\/\//);
+	    if (!hasProtocol) {
+	        url = `https://${url}`;
+	    }
+	    const target = new url_1.URL(url);
+	    if (target.protocol === 'unix:') {
+	        return url;
+	    }
+	    if (target.pathname && target.pathname !== '/') {
+	        api_1.diag.warn('URL path should not be set when using grpc, the path part of the URL will be ignored.');
+	    }
+	    if (target.protocol !== '' && !target.protocol?.match(/^(http)s?:$/)) {
+	        api_1.diag.warn('URL protocol should be http(s)://. Using http://.');
+	    }
+	    return target.host;
+	}
+	otlpGrpcConfiguration.validateAndNormalizeUrl = validateAndNormalizeUrl;
+	function overrideMetadataEntriesIfNotPresent(metadata, additionalMetadata) {
+	    for (const [key, value] of Object.entries(additionalMetadata.getMap())) {
+	        // only override with env var data if the key has no values.
+	        // not using Metadata.merge() as it will keep both values.
+	        if (metadata.get(key).length < 1) {
+	            metadata.set(key, value);
+	        }
+	    }
+	}
+	function mergeOtlpGrpcConfigurationWithDefaults(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration) {
+	    const rawUrl = userProvidedConfiguration.url ??
+	        fallbackConfiguration.url ??
+	        defaultConfiguration.url;
+	    return {
+	        ...(0, otlp_exporter_base_1.mergeOtlpSharedConfigurationWithDefaults)(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration),
+	        metadata: () => {
+	            const metadata = defaultConfiguration.metadata();
+	            overrideMetadataEntriesIfNotPresent(metadata, 
+	            // clone to ensure we don't modify what the user gave us in case they hold on to the returned reference
+	            userProvidedConfiguration.metadata?.().clone() ?? (0, grpc_exporter_transport_1.createEmptyMetadata)());
+	            overrideMetadataEntriesIfNotPresent(metadata, fallbackConfiguration.metadata?.() ?? (0, grpc_exporter_transport_1.createEmptyMetadata)());
+	            return metadata;
+	        },
+	        url: validateAndNormalizeUrl(rawUrl),
+	        credentials: userProvidedConfiguration.credentials ??
+	            fallbackConfiguration.credentials?.(rawUrl) ??
+	            defaultConfiguration.credentials(rawUrl),
+	        userAgent: userProvidedConfiguration.userAgent,
+	    };
+	}
+	otlpGrpcConfiguration.mergeOtlpGrpcConfigurationWithDefaults = mergeOtlpGrpcConfigurationWithDefaults;
+	function getOtlpGrpcDefaultConfiguration() {
+	    return {
+	        ...(0, otlp_exporter_base_1.getSharedConfigurationDefaults)(),
+	        metadata: () => (0, grpc_exporter_transport_1.createEmptyMetadata)(),
+	        url: 'http://localhost:4317',
+	        credentials: (url) => {
+	            if (url.startsWith('http://')) {
+	                return () => (0, grpc_exporter_transport_1.createInsecureCredentials)();
+	            }
+	            else {
+	                return () => (0, grpc_exporter_transport_1.createSslCredentials)();
+	            }
+	        },
+	    };
+	}
+	otlpGrpcConfiguration.getOtlpGrpcDefaultConfiguration = getOtlpGrpcDefaultConfiguration;
+	
+	return otlpGrpcConfiguration;
+}
+
+var otlpGrpcEnvConfiguration = {};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const SUPPRESS_TRACING_KEY$1 = createContextKey('OpenTelemetry SDK Context Key SUPPRESS_TRACING');
+function suppressTracing$1(context) {
+    return context.setValue(SUPPRESS_TRACING_KEY$1, true);
 }
 function unsuppressTracing(context) {
-    return context.deleteValue(SUPPRESS_TRACING_KEY);
+    return context.deleteValue(SUPPRESS_TRACING_KEY$1);
 }
 function isTracingSuppressed(context) {
-    return context.getValue(SUPPRESS_TRACING_KEY) === true;
+    return context.getValue(SUPPRESS_TRACING_KEY$1) === true;
 }
 
 /*
@@ -85131,21 +86715,21 @@ function isValidPrimitiveAttributeValueType(valType) {
  * Returns a function that logs an error using the provided logger, or a
  * console logger if one was not provided.
  */
-function loggingErrorHandler() {
+function loggingErrorHandler$1() {
     return (ex) => {
-        diag.error(stringifyException(ex));
+        diag.error(stringifyException$1(ex));
     };
 }
 /**
  * Converts an exception into a string representation
  * @param {Exception} ex
  */
-function stringifyException(ex) {
+function stringifyException$1(ex) {
     if (typeof ex === 'string') {
         return ex;
     }
     else {
-        return JSON.stringify(flattenException(ex));
+        return JSON.stringify(flattenException$1(ex));
     }
 }
 /**
@@ -85153,7 +86737,7 @@ function stringifyException(ex) {
  * and coercing values to strings. Duplicate properties will not be overwritten;
  * the first insert wins.
  */
-function flattenException(ex) {
+function flattenException$1(ex) {
     const result = {};
     let current = ex;
     while (current !== null) {
@@ -85175,21 +86759,21 @@ function flattenException(ex) {
  * SPDX-License-Identifier: Apache-2.0
  */
 /** The global error handler delegate */
-let delegateHandler = loggingErrorHandler();
+let delegateHandler$1 = loggingErrorHandler$1();
 /**
  * Set the global error handler
  * @param {ErrorHandler} handler
  */
 function setGlobalErrorHandler(handler) {
-    delegateHandler = handler;
+    delegateHandler$1 = handler;
 }
 /**
  * Return the global error handler
  * @param {Exception} ex
  */
-function globalErrorHandler(ex) {
+function globalErrorHandler$1(ex) {
     try {
-        delegateHandler(ex);
+        delegateHandler$1(ex);
     }
     catch { } // eslint-disable-line no-empty
 }
@@ -85303,7 +86887,7 @@ const _globalThis = globalThis;
  * limitations under the License.
  */
 // this is autogenerated file, see scripts/version-update.js
-const VERSION$3 = '2.6.0';
+const VERSION$4 = '2.6.0';
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -85321,18 +86905,18 @@ const VERSION$3 = '2.6.0';
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-const ATTR_PROCESS_RUNTIME_NAME = 'process.runtime.name';
+const ATTR_PROCESS_RUNTIME_NAME$1 = 'process.runtime.name';
 
 /*
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 /** Constants describing the SDK in use */
-const SDK_INFO = {
+const SDK_INFO$1 = {
     [ATTR_TELEMETRY_SDK_NAME]: 'opentelemetry',
-    [ATTR_PROCESS_RUNTIME_NAME]: 'node',
+    [ATTR_PROCESS_RUNTIME_NAME$1]: 'node',
     [ATTR_TELEMETRY_SDK_LANGUAGE]: TELEMETRY_SDK_LANGUAGE_VALUE_NODEJS,
-    [ATTR_TELEMETRY_SDK_VERSION]: VERSION$3,
+    [ATTR_TELEMETRY_SDK_VERSION]: VERSION$4,
 };
 
 /*
@@ -85342,65 +86926,65 @@ const SDK_INFO = {
 /**
  * @deprecated Use performance directly.
  */
-const otperformance = performance;
+const otperformance$1 = performance;
 
 /*
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-const NANOSECOND_DIGITS = 9;
-const NANOSECOND_DIGITS_IN_MILLIS = 6;
-const MILLISECONDS_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS_IN_MILLIS);
-const SECOND_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS);
+const NANOSECOND_DIGITS$2 = 9;
+const NANOSECOND_DIGITS_IN_MILLIS$1 = 6;
+const MILLISECONDS_TO_NANOSECONDS$1 = Math.pow(10, NANOSECOND_DIGITS_IN_MILLIS$1);
+const SECOND_TO_NANOSECONDS$2 = Math.pow(10, NANOSECOND_DIGITS$2);
 /**
  * Converts a number of milliseconds from epoch to HrTime([seconds, remainder in nanoseconds]).
  * @param epochMillis
  */
-function millisToHrTime(epochMillis) {
+function millisToHrTime$1(epochMillis) {
     const epochSeconds = epochMillis / 1000;
     // Decimals only.
     const seconds = Math.trunc(epochSeconds);
     // Round sub-nanosecond accuracy to nanosecond.
-    const nanos = Math.round((epochMillis % 1000) * MILLISECONDS_TO_NANOSECONDS);
+    const nanos = Math.round((epochMillis % 1000) * MILLISECONDS_TO_NANOSECONDS$1);
     return [seconds, nanos];
 }
 /**
  * @deprecated Use `performance.timeOrigin` directly.
  */
 function getTimeOrigin() {
-    return otperformance.timeOrigin;
+    return otperformance$1.timeOrigin;
 }
 /**
  * Returns an hrtime calculated via performance component.
  * @param performanceNow
  */
-function hrTime(performanceNow) {
-    const timeOrigin = millisToHrTime(otperformance.timeOrigin);
-    const now = millisToHrTime(typeof performanceNow === 'number' ? performanceNow : otperformance.now());
-    return addHrTimes(timeOrigin, now);
+function hrTime$1(performanceNow) {
+    const timeOrigin = millisToHrTime$1(otperformance$1.timeOrigin);
+    const now = millisToHrTime$1(typeof performanceNow === 'number' ? performanceNow : otperformance$1.now());
+    return addHrTimes$1(timeOrigin, now);
 }
 /**
  *
  * Converts a TimeInput to an HrTime, defaults to _hrtime().
  * @param time
  */
-function timeInputToHrTime(time) {
+function timeInputToHrTime$1(time) {
     // process.hrtime
-    if (isTimeInputHrTime(time)) {
+    if (isTimeInputHrTime$1(time)) {
         return time;
     }
     else if (typeof time === 'number') {
         // Must be a performance.now() if it's smaller than process start time.
-        if (time < otperformance.timeOrigin) {
-            return hrTime(time);
+        if (time < otperformance$1.timeOrigin) {
+            return hrTime$1(time);
         }
         else {
             // epoch milliseconds or performance.timeOrigin
-            return millisToHrTime(time);
+            return millisToHrTime$1(time);
         }
     }
     else if (time instanceof Date) {
-        return millisToHrTime(time.getTime());
+        return millisToHrTime$1(time.getTime());
     }
     else {
         throw TypeError('Invalid input type');
@@ -85418,7 +87002,7 @@ function hrTimeDuration(startTime, endTime) {
     if (nanos < 0) {
         seconds -= 1;
         // negate
-        nanos += SECOND_TO_NANOSECONDS;
+        nanos += SECOND_TO_NANOSECONDS$2;
     }
     return [seconds, nanos];
 }
@@ -85427,7 +87011,7 @@ function hrTimeDuration(startTime, endTime) {
  * @param time
  */
 function hrTimeToTimeStamp(time) {
-    const precision = NANOSECOND_DIGITS;
+    const precision = NANOSECOND_DIGITS$2;
     const tmp = `${'0'.repeat(precision)}${time[1]}Z`;
     const nanoString = tmp.substring(tmp.length - precision - 1);
     const date = new Date(time[0] * 1000).toISOString();
@@ -85437,8 +87021,8 @@ function hrTimeToTimeStamp(time) {
  * Convert hrTime to nanoseconds.
  * @param time
  */
-function hrTimeToNanoseconds(time) {
-    return time[0] * SECOND_TO_NANOSECONDS + time[1];
+function hrTimeToNanoseconds$1(time) {
+    return time[0] * SECOND_TO_NANOSECONDS$2 + time[1];
 }
 /**
  * Convert hrTime to milliseconds.
@@ -85458,7 +87042,7 @@ function hrTimeToMicroseconds(time) {
  * check if time is HrTime
  * @param value
  */
-function isTimeInputHrTime(value) {
+function isTimeInputHrTime$1(value) {
     return (Array.isArray(value) &&
         value.length === 2 &&
         typeof value[0] === 'number' &&
@@ -85469,18 +87053,18 @@ function isTimeInputHrTime(value) {
  * @param value
  */
 function isTimeInput(value) {
-    return (isTimeInputHrTime(value) ||
+    return (isTimeInputHrTime$1(value) ||
         typeof value === 'number' ||
         value instanceof Date);
 }
 /**
  * Given 2 HrTime formatted times, return their sum as an HrTime.
  */
-function addHrTimes(time1, time2) {
+function addHrTimes$1(time1, time2) {
     const out = [time1[0] + time2[0], time1[1] + time2[1]];
     // Nanoseconds
-    if (out[1] >= SECOND_TO_NANOSECONDS) {
-        out[1] -= SECOND_TO_NANOSECONDS;
+    if (out[1] >= SECOND_TO_NANOSECONDS$2) {
+        out[1] -= SECOND_TO_NANOSECONDS$2;
         out[0] += 1;
     }
     return out;
@@ -85504,11 +87088,11 @@ function unrefTimer(timer) {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-var ExportResultCode;
+var ExportResultCode$1;
 (function (ExportResultCode) {
     ExportResultCode[ExportResultCode["SUCCESS"] = 0] = "SUCCESS";
     ExportResultCode[ExportResultCode["FAILED"] = 1] = "FAILED";
-})(ExportResultCode || (ExportResultCode = {}));
+})(ExportResultCode$1 || (ExportResultCode$1 = {}));
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -85695,7 +87279,7 @@ class TraceState {
  */
 const TRACE_PARENT_HEADER = 'traceparent';
 const TRACE_STATE_HEADER = 'tracestate';
-const VERSION$2 = '00';
+const VERSION$3 = '00';
 const VERSION_PART = '(?!ff)[\\da-f]{2}';
 const TRACE_ID_PART = '(?![0]{32})[\\da-f]{32}';
 const PARENT_ID_PART = '(?![0]{16})[\\da-f]{16}';
@@ -85739,7 +87323,7 @@ class W3CTraceContextPropagator {
             isTracingSuppressed(context) ||
             !isSpanContextValid(spanContext))
             return;
-        const traceParent = `${VERSION$2}-${spanContext.traceId}-${spanContext.spanId}-0${Number(spanContext.traceFlags || TraceFlags.NONE).toString(16)}`;
+        const traceParent = `${VERSION$3}-${spanContext.traceId}-${spanContext.spanId}-0${Number(spanContext.traceFlags || TraceFlags.NONE).toString(16)}`;
         setter.set(carrier, TRACE_PARENT_HEADER, traceParent);
         if (spanContext.traceState) {
             setter.set(carrier, TRACE_STATE_HEADER, spanContext.traceState.serialize());
@@ -86088,14 +87672,14 @@ function shouldMerge(one, two) {
 /**
  * Error that is thrown on timeouts.
  */
-class TimeoutError extends Error {
+let TimeoutError$1 = class TimeoutError extends Error {
     constructor(message) {
         super(message);
         // manually adjust prototype to retain `instanceof` functionality when targeting ES5, see:
         // https://github.com/Microsoft/TypeScript-wiki/blob/main/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
         Object.setPrototypeOf(this, TimeoutError.prototype);
     }
-}
+};
 /**
  * Adds a timeout to a promise and rejects if the specified timeout has elapsed. Also rejects if the specified promise
  * rejects, and resolves if the specified promise resolves.
@@ -86105,11 +87689,11 @@ class TimeoutError extends Error {
  * @param promise promise to use with timeout.
  * @param timeout the timeout in milliseconds until the returned promise is rejected.
  */
-function callWithTimeout(promise, timeout) {
+function callWithTimeout$1(promise, timeout) {
     let timeoutHandle;
     const timeoutPromise = new Promise(function timeoutFunction(_resolve, reject) {
         timeoutHandle = setTimeout(function timeoutHandler() {
-            reject(new TimeoutError('Operation timed out.'));
+            reject(new TimeoutError$1('Operation timed out.'));
         }, timeout);
     });
     return Promise.race([promise, timeoutPromise]).then(result => {
@@ -86154,7 +87738,7 @@ function isUrlIgnored(url, ignoredUrls) {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-class Deferred {
+let Deferred$1 = class Deferred {
     _promise;
     _resolve;
     _reject;
@@ -86173,7 +87757,7 @@ class Deferred {
     reject(err) {
         this._reject(err);
     }
-}
+};
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -86182,9 +87766,9 @@ class Deferred {
 /**
  * Bind the callback and only invoke the callback once regardless how many times `BindOnceFuture.call` is invoked.
  */
-class BindOnceFuture {
+let BindOnceFuture$1 = class BindOnceFuture {
     _isCalled = false;
-    _deferred = new Deferred();
+    _deferred = new Deferred$1();
     _callback;
     _that;
     constructor(callback, that) {
@@ -86209,7 +87793,7 @@ class BindOnceFuture {
         }
         return this._deferred.promise;
     }
-}
+};
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -86249,10 +87833,10 @@ function diagLogLevelFromString(value) {
  * @internal
  * Shared functionality used by Exporters while exporting data, including suppression of Traces.
  */
-function _export(exporter, arg) {
+function _export$1(exporter, arg) {
     return new Promise(resolve => {
         // prevent downstream exporter calls from generating spans
-        context.with(suppressTracing(context.active()), () => {
+        context.with(suppressTracing$1(context.active()), () => {
             exporter.export(arg, resolve);
         });
     });
@@ -86262,27 +87846,27 @@ function _export(exporter, arg) {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-const internal = {
-    _export,
+const internal$1 = {
+    _export: _export$1,
 };
 
-var esm$2 = /*#__PURE__*/Object.freeze({
+var esm$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
     AnchoredClock: AnchoredClock,
-    BindOnceFuture: BindOnceFuture,
+    BindOnceFuture: BindOnceFuture$1,
     CompositePropagator: CompositePropagator,
-    get ExportResultCode () { return ExportResultCode; },
+    get ExportResultCode () { return ExportResultCode$1; },
     get RPCType () { return RPCType; },
-    SDK_INFO: SDK_INFO,
+    SDK_INFO: SDK_INFO$1,
     TRACE_PARENT_HEADER: TRACE_PARENT_HEADER,
     TRACE_STATE_HEADER: TRACE_STATE_HEADER,
-    TimeoutError: TimeoutError,
+    TimeoutError: TimeoutError$1,
     TraceState: TraceState,
     W3CBaggagePropagator: W3CBaggagePropagator,
     W3CTraceContextPropagator: W3CTraceContextPropagator,
     _globalThis: _globalThis,
-    addHrTimes: addHrTimes,
-    callWithTimeout: callWithTimeout,
+    addHrTimes: addHrTimes$1,
+    callWithTimeout: callWithTimeout$1,
     deleteRPCMetadata: deleteRPCMetadata,
     diagLogLevelFromString: diagLogLevelFromString,
     getBooleanFromEnv: getBooleanFromEnv,
@@ -86291,626 +87875,36 @@ var esm$2 = /*#__PURE__*/Object.freeze({
     getStringFromEnv: getStringFromEnv,
     getStringListFromEnv: getStringListFromEnv,
     getTimeOrigin: getTimeOrigin,
-    globalErrorHandler: globalErrorHandler,
-    hrTime: hrTime,
+    globalErrorHandler: globalErrorHandler$1,
+    hrTime: hrTime$1,
     hrTimeDuration: hrTimeDuration,
     hrTimeToMicroseconds: hrTimeToMicroseconds,
     hrTimeToMilliseconds: hrTimeToMilliseconds,
-    hrTimeToNanoseconds: hrTimeToNanoseconds,
+    hrTimeToNanoseconds: hrTimeToNanoseconds$1,
     hrTimeToTimeStamp: hrTimeToTimeStamp,
-    internal: internal,
+    internal: internal$1,
     isAttributeValue: isAttributeValue,
     isTimeInput: isTimeInput,
-    isTimeInputHrTime: isTimeInputHrTime,
+    isTimeInputHrTime: isTimeInputHrTime$1,
     isTracingSuppressed: isTracingSuppressed,
     isUrlIgnored: isUrlIgnored,
-    loggingErrorHandler: loggingErrorHandler,
+    loggingErrorHandler: loggingErrorHandler$1,
     merge: merge,
-    millisToHrTime: millisToHrTime,
-    otperformance: otperformance,
+    millisToHrTime: millisToHrTime$1,
+    otperformance: otperformance$1,
     parseKeyPairsIntoRecord: parseKeyPairsIntoRecord,
     parseTraceParent: parseTraceParent,
     sanitizeAttributes: sanitizeAttributes,
     setGlobalErrorHandler: setGlobalErrorHandler,
     setRPCMetadata: setRPCMetadata,
-    suppressTracing: suppressTracing,
-    timeInputToHrTime: timeInputToHrTime,
+    suppressTracing: suppressTracing$1,
+    timeInputToHrTime: timeInputToHrTime$1,
     unrefTimer: unrefTimer,
     unsuppressTracing: unsuppressTracing,
     urlMatches: urlMatches
 });
 
-var src$2 = {};
-
-var OTLPLogExporter$1 = {};
-
-var src$1 = {};
-
-var convertLegacyOtlpGrpcOptions = {};
-
-var otlpGrpcConfiguration = {};
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class OTLPExporterBase {
-    _delegate;
-    constructor(delegate) {
-        this._delegate = delegate;
-    }
-    /**
-     * Export items.
-     * @param items
-     * @param resultCallback
-     */
-    export(items, resultCallback) {
-        this._delegate.export(items, resultCallback);
-    }
-    forceFlush() {
-        return this._delegate.forceFlush();
-    }
-    shutdown() {
-        return this._delegate.shutdown();
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/**
- * Interface for handling error
- */
-class OTLPExporterError extends Error {
-    code;
-    name = 'OTLPExporterError';
-    data;
-    constructor(message, code, data) {
-        super(message);
-        this.data = data;
-        this.code = code;
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-function validateTimeoutMillis(timeoutMillis) {
-    if (Number.isFinite(timeoutMillis) && timeoutMillis > 0) {
-        return timeoutMillis;
-    }
-    throw new Error(`Configuration: timeoutMillis is invalid, expected number greater than 0 (actual: '${timeoutMillis}')`);
-}
-function wrapStaticHeadersInFunction(headers) {
-    if (headers == null) {
-        return undefined;
-    }
-    return async () => headers;
-}
-/**
- * @param userProvidedConfiguration  Configuration options provided by the user in code.
- * @param fallbackConfiguration Fallback to use when the {@link userProvidedConfiguration} does not specify an option.
- * @param defaultConfiguration The defaults as defined by the exporter specification
- */
-function mergeOtlpSharedConfigurationWithDefaults(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration) {
-    return {
-        timeoutMillis: validateTimeoutMillis(userProvidedConfiguration.timeoutMillis ??
-            fallbackConfiguration.timeoutMillis ??
-            defaultConfiguration.timeoutMillis),
-        concurrencyLimit: userProvidedConfiguration.concurrencyLimit ??
-            fallbackConfiguration.concurrencyLimit ??
-            defaultConfiguration.concurrencyLimit,
-        compression: userProvidedConfiguration.compression ??
-            fallbackConfiguration.compression ??
-            defaultConfiguration.compression,
-    };
-}
-function getSharedConfigurationDefaults() {
-    return {
-        timeoutMillis: 10000,
-        concurrencyLimit: 30,
-        compression: 'none',
-    };
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-var CompressionAlgorithm;
-(function (CompressionAlgorithm) {
-    CompressionAlgorithm["NONE"] = "none";
-    CompressionAlgorithm["GZIP"] = "gzip";
-})(CompressionAlgorithm || (CompressionAlgorithm = {}));
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class BoundedQueueExportPromiseHandler {
-    _concurrencyLimit;
-    _sendingPromises = [];
-    /**
-     * @param concurrencyLimit maximum promises allowed in a queue at the same time.
-     */
-    constructor(concurrencyLimit) {
-        this._concurrencyLimit = concurrencyLimit;
-    }
-    pushPromise(promise) {
-        if (this.hasReachedLimit()) {
-            throw new Error('Concurrency Limit reached');
-        }
-        this._sendingPromises.push(promise);
-        const popPromise = () => {
-            const index = this._sendingPromises.indexOf(promise);
-            void this._sendingPromises.splice(index, 1);
-        };
-        promise.then(popPromise, popPromise);
-    }
-    hasReachedLimit() {
-        return this._sendingPromises.length >= this._concurrencyLimit;
-    }
-    async awaitAll() {
-        await Promise.all(this._sendingPromises);
-    }
-}
-/**
- * Promise queue for keeping track of export promises. Finished promises will be auto-dequeued.
- * Allows for awaiting all promises in the queue.
- */
-function createBoundedQueueExportPromiseHandler(options) {
-    return new BoundedQueueExportPromiseHandler(options.concurrencyLimit);
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-function isPartialSuccessResponse(response) {
-    return Object.prototype.hasOwnProperty.call(response, 'partialSuccess');
-}
-/**
- * Default response handler that logs a partial success to the console.
- */
-function createLoggingPartialSuccessResponseHandler() {
-    return {
-        handleResponse(response) {
-            // Partial success MUST never be an empty object according the specification
-            // see https://opentelemetry.io/docs/specs/otlp/#partial-success
-            if (response == null ||
-                !isPartialSuccessResponse(response) ||
-                response.partialSuccess == null ||
-                Object.keys(response.partialSuccess).length === 0) {
-                return;
-            }
-            diag.warn('Received Partial Success response:', JSON.stringify(response.partialSuccess));
-        },
-    };
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class OTLPExportDelegate {
-    _diagLogger;
-    _transport;
-    _serializer;
-    _responseHandler;
-    _promiseQueue;
-    _timeout;
-    constructor(transport, serializer, responseHandler, promiseQueue, timeout) {
-        this._transport = transport;
-        this._serializer = serializer;
-        this._responseHandler = responseHandler;
-        this._promiseQueue = promiseQueue;
-        this._timeout = timeout;
-        this._diagLogger = diag.createComponentLogger({
-            namespace: 'OTLPExportDelegate',
-        });
-    }
-    export(internalRepresentation, resultCallback) {
-        this._diagLogger.debug('items to be sent', internalRepresentation);
-        // don't do any work if too many exports are in progress.
-        if (this._promiseQueue.hasReachedLimit()) {
-            resultCallback({
-                code: ExportResultCode.FAILED,
-                error: new Error('Concurrent export limit reached'),
-            });
-            return;
-        }
-        const serializedRequest = this._serializer.serializeRequest(internalRepresentation);
-        if (serializedRequest == null) {
-            resultCallback({
-                code: ExportResultCode.FAILED,
-                error: new Error('Nothing to send'),
-            });
-            return;
-        }
-        this._promiseQueue.pushPromise(this._transport.send(serializedRequest, this._timeout).then(response => {
-            if (response.status === 'success') {
-                if (response.data != null) {
-                    try {
-                        this._responseHandler.handleResponse(this._serializer.deserializeResponse(response.data));
-                    }
-                    catch (e) {
-                        this._diagLogger.warn('Export succeeded but could not deserialize response - is the response specification compliant?', e, response.data);
-                    }
-                }
-                // No matter the response, we can consider the export still successful.
-                resultCallback({
-                    code: ExportResultCode.SUCCESS,
-                });
-                return;
-            }
-            else if (response.status === 'failure' && response.error) {
-                resultCallback({
-                    code: ExportResultCode.FAILED,
-                    error: response.error,
-                });
-                return;
-            }
-            else if (response.status === 'retryable') {
-                resultCallback({
-                    code: ExportResultCode.FAILED,
-                    error: response.error ??
-                        new OTLPExporterError('Export failed with retryable status'),
-                });
-            }
-            else {
-                resultCallback({
-                    code: ExportResultCode.FAILED,
-                    error: new OTLPExporterError('Export failed with unknown error'),
-                });
-            }
-        }, reason => resultCallback({
-            code: ExportResultCode.FAILED,
-            error: reason,
-        })));
-    }
-    forceFlush() {
-        return this._promiseQueue.awaitAll();
-    }
-    async shutdown() {
-        this._diagLogger.debug('shutdown started');
-        await this.forceFlush();
-        this._transport.shutdown();
-    }
-}
-/**
- * Creates a generic delegate for OTLP exports which only contains parts of the OTLP export that are shared across all
- * signals.
- */
-function createOtlpExportDelegate(components, settings) {
-    return new OTLPExportDelegate(components.transport, components.serializer, createLoggingPartialSuccessResponseHandler(), components.promiseHandler, settings.timeout);
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-function createOtlpNetworkExportDelegate(options, serializer, transport) {
-    return createOtlpExportDelegate({
-        transport: transport,
-        serializer,
-        promiseHandler: createBoundedQueueExportPromiseHandler(options),
-    }, { timeout: options.timeoutMillis });
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-
-var esm$1 = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    get CompressionAlgorithm () { return CompressionAlgorithm; },
-    OTLPExporterBase: OTLPExporterBase,
-    OTLPExporterError: OTLPExporterError,
-    createOtlpNetworkExportDelegate: createOtlpNetworkExportDelegate,
-    getSharedConfigurationDefaults: getSharedConfigurationDefaults,
-    mergeOtlpSharedConfigurationWithDefaults: mergeOtlpSharedConfigurationWithDefaults
-});
-
-var require$$2$1 = /*@__PURE__*/getAugmentedNamespace(esm$1);
-
-var grpcExporterTransport = {};
-
-var version$1 = {};
-
-var hasRequiredVersion;
-
-function requireVersion () {
-	if (hasRequiredVersion) return version$1;
-	hasRequiredVersion = 1;
-	/*
-	 * Copyright The OpenTelemetry Authors
-	 *
-	 * Licensed under the Apache License, Version 2.0 (the "License");
-	 * you may not use this file except in compliance with the License.
-	 * You may obtain a copy of the License at
-	 *
-	 *      https://www.apache.org/licenses/LICENSE-2.0
-	 *
-	 * Unless required by applicable law or agreed to in writing, software
-	 * distributed under the License is distributed on an "AS IS" BASIS,
-	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	 * See the License for the specific language governing permissions and
-	 * limitations under the License.
-	 */
-	Object.defineProperty(version$1, "__esModule", { value: true });
-	version$1.VERSION = void 0;
-	// this is autogenerated file, see scripts/version-update.js
-	version$1.VERSION = '0.213.0';
-	
-	return version$1;
-}
-
-var createServiceClientConstructor = {};
-
-var hasRequiredCreateServiceClientConstructor;
-
-function requireCreateServiceClientConstructor () {
-	if (hasRequiredCreateServiceClientConstructor) return createServiceClientConstructor;
-	hasRequiredCreateServiceClientConstructor = 1;
-	/*
-	 * Copyright The OpenTelemetry Authors
-	 * SPDX-License-Identifier: Apache-2.0
-	 */
-	Object.defineProperty(createServiceClientConstructor, "__esModule", { value: true });
-	createServiceClientConstructor.createServiceClientConstructor = void 0;
-	const grpc = requireSrc$4();
-	/**
-	 * Creates a unary service client constructor that, when instantiated, does not serialize/deserialize anything.
-	 * Allows for passing in {@link Buffer} directly, serialization can be handled via protobufjs or custom implementations.
-	 *
-	 * @param path service path
-	 * @param name service name
-	 */
-	function createServiceClientConstructor$1(path, name) {
-	    const serviceDefinition = {
-	        export: {
-	            path: path,
-	            requestStream: false,
-	            responseStream: false,
-	            requestSerialize: (arg) => {
-	                return arg;
-	            },
-	            requestDeserialize: (arg) => {
-	                return arg;
-	            },
-	            responseSerialize: (arg) => {
-	                return arg;
-	            },
-	            responseDeserialize: (arg) => {
-	                return arg;
-	            },
-	        },
-	    };
-	    return grpc.makeGenericClientConstructor(serviceDefinition, name);
-	}
-	createServiceClientConstructor.createServiceClientConstructor = createServiceClientConstructor$1;
-	
-	return createServiceClientConstructor;
-}
-
-var hasRequiredGrpcExporterTransport;
-
-function requireGrpcExporterTransport () {
-	if (hasRequiredGrpcExporterTransport) return grpcExporterTransport;
-	hasRequiredGrpcExporterTransport = 1;
-	/*
-	 * Copyright The OpenTelemetry Authors
-	 * SPDX-License-Identifier: Apache-2.0
-	 */
-	Object.defineProperty(grpcExporterTransport, "__esModule", { value: true });
-	grpcExporterTransport.createOtlpGrpcExporterTransport = grpcExporterTransport.GrpcExporterTransport = grpcExporterTransport.createEmptyMetadata = grpcExporterTransport.createSslCredentials = grpcExporterTransport.createInsecureCredentials = void 0;
-	const version_1 = /*@__PURE__*/ requireVersion();
-	const DEFAULT_USER_AGENT = `OTel-OTLP-Exporter-JavaScript/${version_1.VERSION}`;
-	function createUserAgent(userAgent) {
-	    if (userAgent) {
-	        return `${userAgent} ${DEFAULT_USER_AGENT}`;
-	    }
-	    return DEFAULT_USER_AGENT;
-	}
-	// values taken from '@grpc/grpc-js` so that we don't need to require/import it.
-	const GRPC_COMPRESSION_NONE = 0;
-	const GRPC_COMPRESSION_GZIP = 2;
-	function toGrpcCompression(compression) {
-	    return compression === 'gzip' ? GRPC_COMPRESSION_GZIP : GRPC_COMPRESSION_NONE;
-	}
-	function createInsecureCredentials() {
-	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
-	    const { credentials,
-	    // eslint-disable-next-line @typescript-eslint/no-require-imports
-	     } = requireSrc$4();
-	    return credentials.createInsecure();
-	}
-	grpcExporterTransport.createInsecureCredentials = createInsecureCredentials;
-	function createSslCredentials(rootCert, privateKey, certChain) {
-	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
-	    const { credentials,
-	    // eslint-disable-next-line @typescript-eslint/no-require-imports
-	     } = requireSrc$4();
-	    return credentials.createSsl(rootCert, privateKey, certChain);
-	}
-	grpcExporterTransport.createSslCredentials = createSslCredentials;
-	function createEmptyMetadata() {
-	    // Lazy-load so that we don't need to require/import '@grpc/grpc-js' before it can be wrapped by instrumentation.
-	    const { Metadata,
-	    // eslint-disable-next-line @typescript-eslint/no-require-imports
-	     } = requireSrc$4();
-	    return new Metadata();
-	}
-	grpcExporterTransport.createEmptyMetadata = createEmptyMetadata;
-	class GrpcExporterTransport {
-	    _client;
-	    _metadata;
-	    _parameters;
-	    constructor(parameters) {
-	        this._parameters = parameters;
-	    }
-	    shutdown() {
-	        this._client?.close();
-	    }
-	    send(data, timeoutMillis) {
-	        // We need to make a for gRPC
-	        const buffer = Buffer.from(data);
-	        if (this._client == null) {
-	            // Lazy require to ensure that grpc is not loaded before instrumentations can wrap it
-	            const { createServiceClientConstructor,
-	            // eslint-disable-next-line @typescript-eslint/no-require-imports
-	             } = /*@__PURE__*/ requireCreateServiceClientConstructor();
-	            try {
-	                this._metadata = this._parameters.metadata();
-	            }
-	            catch (error) {
-	                return Promise.resolve({
-	                    status: 'failure',
-	                    error: error,
-	                });
-	            }
-	            const clientConstructor = createServiceClientConstructor(this._parameters.grpcPath, this._parameters.grpcName);
-	            try {
-	                this._client = new clientConstructor(this._parameters.address, this._parameters.credentials(), {
-	                    'grpc.default_compression_algorithm': toGrpcCompression(this._parameters.compression),
-	                    'grpc.primary_user_agent': createUserAgent(this._parameters.userAgent),
-	                });
-	            }
-	            catch (error) {
-	                return Promise.resolve({
-	                    status: 'failure',
-	                    error: error,
-	                });
-	            }
-	        }
-	        return new Promise(resolve => {
-	            const deadline = Date.now() + timeoutMillis;
-	            // this should never happen
-	            if (this._metadata == null) {
-	                return resolve({
-	                    error: new Error('metadata was null'),
-	                    status: 'failure',
-	                });
-	            }
-	            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	            // @ts-ignore The gRPC client constructor is created on runtime, so we don't have any types for the resulting client.
-	            this._client.export(buffer, this._metadata, { deadline: deadline }, (err, response) => {
-	                if (err) {
-	                    resolve({
-	                        status: 'failure',
-	                        error: err,
-	                    });
-	                }
-	                else {
-	                    resolve({
-	                        data: response,
-	                        status: 'success',
-	                    });
-	                }
-	            });
-	        });
-	    }
-	}
-	grpcExporterTransport.GrpcExporterTransport = GrpcExporterTransport;
-	function createOtlpGrpcExporterTransport(options) {
-	    return new GrpcExporterTransport(options);
-	}
-	grpcExporterTransport.createOtlpGrpcExporterTransport = createOtlpGrpcExporterTransport;
-	
-	return grpcExporterTransport;
-}
-
-var hasRequiredOtlpGrpcConfiguration;
-
-function requireOtlpGrpcConfiguration () {
-	if (hasRequiredOtlpGrpcConfiguration) return otlpGrpcConfiguration;
-	hasRequiredOtlpGrpcConfiguration = 1;
-	/*
-	 * Copyright The OpenTelemetry Authors
-	 * SPDX-License-Identifier: Apache-2.0
-	 */
-	Object.defineProperty(otlpGrpcConfiguration, "__esModule", { value: true });
-	otlpGrpcConfiguration.getOtlpGrpcDefaultConfiguration = otlpGrpcConfiguration.mergeOtlpGrpcConfigurationWithDefaults = otlpGrpcConfiguration.validateAndNormalizeUrl = void 0;
-	const otlp_exporter_base_1 = require$$2$1;
-	const grpc_exporter_transport_1 = /*@__PURE__*/ requireGrpcExporterTransport();
-	const url_1 = require$$6$1;
-	const api_1 = require$$0$1;
-	function validateAndNormalizeUrl(url) {
-	    url = url.trim();
-	    const hasProtocol = url.match(/^([\w]{1,8}):\/\//);
-	    if (!hasProtocol) {
-	        url = `https://${url}`;
-	    }
-	    const target = new url_1.URL(url);
-	    if (target.protocol === 'unix:') {
-	        return url;
-	    }
-	    if (target.pathname && target.pathname !== '/') {
-	        api_1.diag.warn('URL path should not be set when using grpc, the path part of the URL will be ignored.');
-	    }
-	    if (target.protocol !== '' && !target.protocol?.match(/^(http)s?:$/)) {
-	        api_1.diag.warn('URL protocol should be http(s)://. Using http://.');
-	    }
-	    return target.host;
-	}
-	otlpGrpcConfiguration.validateAndNormalizeUrl = validateAndNormalizeUrl;
-	function overrideMetadataEntriesIfNotPresent(metadata, additionalMetadata) {
-	    for (const [key, value] of Object.entries(additionalMetadata.getMap())) {
-	        // only override with env var data if the key has no values.
-	        // not using Metadata.merge() as it will keep both values.
-	        if (metadata.get(key).length < 1) {
-	            metadata.set(key, value);
-	        }
-	    }
-	}
-	function mergeOtlpGrpcConfigurationWithDefaults(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration) {
-	    const rawUrl = userProvidedConfiguration.url ??
-	        fallbackConfiguration.url ??
-	        defaultConfiguration.url;
-	    return {
-	        ...(0, otlp_exporter_base_1.mergeOtlpSharedConfigurationWithDefaults)(userProvidedConfiguration, fallbackConfiguration, defaultConfiguration),
-	        metadata: () => {
-	            const metadata = defaultConfiguration.metadata();
-	            overrideMetadataEntriesIfNotPresent(metadata, 
-	            // clone to ensure we don't modify what the user gave us in case they hold on to the returned reference
-	            userProvidedConfiguration.metadata?.().clone() ?? (0, grpc_exporter_transport_1.createEmptyMetadata)());
-	            overrideMetadataEntriesIfNotPresent(metadata, fallbackConfiguration.metadata?.() ?? (0, grpc_exporter_transport_1.createEmptyMetadata)());
-	            return metadata;
-	        },
-	        url: validateAndNormalizeUrl(rawUrl),
-	        credentials: userProvidedConfiguration.credentials ??
-	            fallbackConfiguration.credentials?.(rawUrl) ??
-	            defaultConfiguration.credentials(rawUrl),
-	        userAgent: userProvidedConfiguration.userAgent,
-	    };
-	}
-	otlpGrpcConfiguration.mergeOtlpGrpcConfigurationWithDefaults = mergeOtlpGrpcConfigurationWithDefaults;
-	function getOtlpGrpcDefaultConfiguration() {
-	    return {
-	        ...(0, otlp_exporter_base_1.getSharedConfigurationDefaults)(),
-	        metadata: () => (0, grpc_exporter_transport_1.createEmptyMetadata)(),
-	        url: 'http://localhost:4317',
-	        credentials: (url) => {
-	            if (url.startsWith('http://')) {
-	                return () => (0, grpc_exporter_transport_1.createInsecureCredentials)();
-	            }
-	            else {
-	                return () => (0, grpc_exporter_transport_1.createSslCredentials)();
-	            }
-	        },
-	    };
-	}
-	otlpGrpcConfiguration.getOtlpGrpcDefaultConfiguration = getOtlpGrpcDefaultConfiguration;
-	
-	return otlpGrpcConfiguration;
-}
-
-var otlpGrpcEnvConfiguration = {};
-
-var require$$0 = /*@__PURE__*/getAugmentedNamespace(esm$2);
+var require$$0 = /*@__PURE__*/getAugmentedNamespace(esm$1);
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -87070,9 +88064,9 @@ function parseRetryAfterToMills(retryAfter) {
  * limitations under the License.
  */
 // this is autogenerated file, see scripts/version-update.js
-const VERSION$1 = '0.213.0';
+const VERSION$2 = '0.213.0';
 
-const DEFAULT_USER_AGENT = `OTel-OTLP-Exporter-JavaScript/${VERSION$1}`;
+const DEFAULT_USER_AGENT = `OTel-OTLP-Exporter-JavaScript/${VERSION$2}`;
 /**
  * Sends data using http
  * @param request
@@ -87345,7 +88339,7 @@ function createOtlpHttpExportDelegate(options, serializer) {
  * SPDX-License-Identifier: Apache-2.0
  */
 function parseAndValidateTimeoutFromEnv(timeoutEnvVar) {
-    const envTimeout = getNumberFromEnv(timeoutEnvVar);
+    const envTimeout = getNumberFromEnv$1(timeoutEnvVar);
     if (envTimeout != null) {
         if (Number.isFinite(envTimeout) && envTimeout > 0) {
             return envTimeout;
@@ -87360,7 +88354,7 @@ function getTimeoutFromEnv(signalIdentifier) {
     return specificTimeout ?? nonSpecificTimeout;
 }
 function parseAndValidateCompressionFromEnv(compressionEnvVar) {
-    const compression = getStringFromEnv(compressionEnvVar)?.trim();
+    const compression = getStringFromEnv$1(compressionEnvVar)?.trim();
     if (compression == null || compression === 'none' || compression === 'gzip') {
         return compression;
     }
@@ -87384,17 +88378,17 @@ function getSharedConfigurationFromEnvironment(signalIdentifier) {
  * SPDX-License-Identifier: Apache-2.0
  */
 function getStaticHeadersFromEnv(signalIdentifier) {
-    const signalSpecificRawHeaders = getStringFromEnv(`OTEL_EXPORTER_OTLP_${signalIdentifier}_HEADERS`);
-    const nonSignalSpecificRawHeaders = getStringFromEnv('OTEL_EXPORTER_OTLP_HEADERS');
-    const signalSpecificHeaders = parseKeyPairsIntoRecord(signalSpecificRawHeaders);
-    const nonSignalSpecificHeaders = parseKeyPairsIntoRecord(nonSignalSpecificRawHeaders);
+    const signalSpecificRawHeaders = getStringFromEnv$1(`OTEL_EXPORTER_OTLP_${signalIdentifier}_HEADERS`);
+    const nonSignalSpecificRawHeaders = getStringFromEnv$1('OTEL_EXPORTER_OTLP_HEADERS');
+    const signalSpecificHeaders = parseKeyPairsIntoRecord$1(signalSpecificRawHeaders);
+    const nonSignalSpecificHeaders = parseKeyPairsIntoRecord$1(nonSignalSpecificRawHeaders);
     if (Object.keys(signalSpecificHeaders).length === 0 &&
         Object.keys(nonSignalSpecificHeaders).length === 0) {
         return undefined;
     }
     // headers are combined instead of overwritten, with the specific headers taking precedence over
     // the non-specific ones.
-    return Object.assign({}, parseKeyPairsIntoRecord(nonSignalSpecificRawHeaders), parseKeyPairsIntoRecord(signalSpecificRawHeaders));
+    return Object.assign({}, parseKeyPairsIntoRecord$1(nonSignalSpecificRawHeaders), parseKeyPairsIntoRecord$1(signalSpecificRawHeaders));
 }
 function appendRootPathToUrlIfNeeded(url) {
     try {
@@ -87431,22 +88425,22 @@ function appendResourcePathToUrl(url, path) {
     return url;
 }
 function getNonSpecificUrlFromEnv(signalResourcePath) {
-    const envUrl = getStringFromEnv('OTEL_EXPORTER_OTLP_ENDPOINT');
+    const envUrl = getStringFromEnv$1('OTEL_EXPORTER_OTLP_ENDPOINT');
     if (envUrl === undefined) {
         return undefined;
     }
     return appendResourcePathToUrl(envUrl, signalResourcePath);
 }
 function getSpecificUrlFromEnv(signalIdentifier) {
-    const envUrl = getStringFromEnv(`OTEL_EXPORTER_OTLP_${signalIdentifier}_ENDPOINT`);
+    const envUrl = getStringFromEnv$1(`OTEL_EXPORTER_OTLP_${signalIdentifier}_ENDPOINT`);
     if (envUrl === undefined) {
         return undefined;
     }
     return appendRootPathToUrlIfNeeded(envUrl);
 }
 function readFileFromEnv(signalSpecificEnvVar, nonSignalSpecificEnvVar, warningMessage) {
-    const signalSpecificPath = getStringFromEnv(signalSpecificEnvVar);
-    const nonSignalSpecificPath = getStringFromEnv(nonSignalSpecificEnvVar);
+    const signalSpecificPath = getStringFromEnv$1(signalSpecificEnvVar);
+    const nonSignalSpecificPath = getStringFromEnv$1(nonSignalSpecificEnvVar);
     const filePath = signalSpecificPath ?? nonSignalSpecificPath;
     if (filePath != null) {
         try {
@@ -87799,17 +88793,17 @@ var hasRequiredSrc$2;
 function requireSrc$2 () {
 	if (hasRequiredSrc$2) return src$1;
 	hasRequiredSrc$2 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright The OpenTelemetry Authors
 		 * SPDX-License-Identifier: Apache-2.0
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.createOtlpGrpcExportDelegate = exports$1.convertLegacyOtlpGrpcOptions = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.createOtlpGrpcExportDelegate = exports.convertLegacyOtlpGrpcOptions = void 0;
 		var convert_legacy_otlp_grpc_options_1 = /*@__PURE__*/ requireConvertLegacyOtlpGrpcOptions();
-		Object.defineProperty(exports$1, "convertLegacyOtlpGrpcOptions", { enumerable: true, get: function () { return convert_legacy_otlp_grpc_options_1.convertLegacyOtlpGrpcOptions; } });
+		Object.defineProperty(exports, "convertLegacyOtlpGrpcOptions", { enumerable: true, get: function () { return convert_legacy_otlp_grpc_options_1.convertLegacyOtlpGrpcOptions; } });
 		var otlp_grpc_export_delegate_1 = /*@__PURE__*/ requireOtlpGrpcExportDelegate();
-		Object.defineProperty(exports$1, "createOtlpGrpcExportDelegate", { enumerable: true, get: function () { return otlp_grpc_export_delegate_1.createOtlpGrpcExportDelegate; } });
+		Object.defineProperty(exports, "createOtlpGrpcExportDelegate", { enumerable: true, get: function () { return otlp_grpc_export_delegate_1.createOtlpGrpcExportDelegate; } });
 		
 	} (src$1));
 	return src$1;
@@ -101226,6 +102220,20 @@ function toLogAttributes(attributes, encoder) {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
+const NANOSECOND_DIGITS$1 = 9;
+const SECOND_TO_NANOSECONDS$1 = Math.pow(10, NANOSECOND_DIGITS$1);
+/**
+ * Convert hrTime to nanoseconds.
+ * @param time
+ */
+function hrTimeToNanoseconds(time) {
+    return time[0] * SECOND_TO_NANOSECONDS$1 + time[1];
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 function intValue(charCode) {
     // 0-9
     if (charCode >= 48 && charCode <= 57) {
@@ -101390,177 +102398,6 @@ var DataPointType;
      */
     DataPointType[DataPointType["SUM"] = 3] = "SUM";
 })(DataPointType || (DataPointType = {}));
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-let serviceName;
-/**
- * Returns the default service name for OpenTelemetry resources.
- * In Node.js environments, returns "unknown_service:<process.argv0>".
- * In browser/edge environments, returns "unknown_service".
- */
-function defaultServiceName() {
-    if (serviceName === undefined) {
-        try {
-            const argv0 = globalThis.process.argv0;
-            serviceName = argv0 ? `unknown_service:${argv0}` : 'unknown_service';
-        }
-        catch {
-            serviceName = 'unknown_service';
-        }
-    }
-    return serviceName;
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-const isPromiseLike = (val) => {
-    return (val !== null &&
-        typeof val === 'object' &&
-        typeof val.then === 'function');
-};
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class ResourceImpl {
-    _rawAttributes;
-    _asyncAttributesPending = false;
-    _schemaUrl;
-    _memoizedAttributes;
-    static FromAttributeList(attributes, options) {
-        const res = new ResourceImpl({}, options);
-        res._rawAttributes = guardedRawAttributes(attributes);
-        res._asyncAttributesPending =
-            attributes.filter(([_, val]) => isPromiseLike(val)).length > 0;
-        return res;
-    }
-    constructor(
-    /**
-     * A dictionary of attributes with string keys and values that provide
-     * information about the entity as numbers, strings or booleans
-     * TODO: Consider to add check/validation on attributes.
-     */
-    resource, options) {
-        const attributes = resource.attributes ?? {};
-        this._rawAttributes = Object.entries(attributes).map(([k, v]) => {
-            if (isPromiseLike(v)) {
-                // side-effect
-                this._asyncAttributesPending = true;
-            }
-            return [k, v];
-        });
-        this._rawAttributes = guardedRawAttributes(this._rawAttributes);
-        this._schemaUrl = validateSchemaUrl(options?.schemaUrl);
-    }
-    get asyncAttributesPending() {
-        return this._asyncAttributesPending;
-    }
-    async waitForAsyncAttributes() {
-        if (!this.asyncAttributesPending) {
-            return;
-        }
-        for (let i = 0; i < this._rawAttributes.length; i++) {
-            const [k, v] = this._rawAttributes[i];
-            this._rawAttributes[i] = [k, isPromiseLike(v) ? await v : v];
-        }
-        this._asyncAttributesPending = false;
-    }
-    get attributes() {
-        if (this.asyncAttributesPending) {
-            diag.error('Accessing resource attributes before async attributes settled');
-        }
-        if (this._memoizedAttributes) {
-            return this._memoizedAttributes;
-        }
-        const attrs = {};
-        for (const [k, v] of this._rawAttributes) {
-            if (isPromiseLike(v)) {
-                diag.debug(`Unsettled resource attribute ${k} skipped`);
-                continue;
-            }
-            if (v != null) {
-                attrs[k] ??= v;
-            }
-        }
-        // only memoize output if all attributes are settled
-        if (!this._asyncAttributesPending) {
-            this._memoizedAttributes = attrs;
-        }
-        return attrs;
-    }
-    getRawAttributes() {
-        return this._rawAttributes;
-    }
-    get schemaUrl() {
-        return this._schemaUrl;
-    }
-    merge(resource) {
-        if (resource == null)
-            return this;
-        // Order is important
-        // Spec states incoming attributes override existing attributes
-        const mergedSchemaUrl = mergeSchemaUrl(this, resource);
-        const mergedOptions = mergedSchemaUrl
-            ? { schemaUrl: mergedSchemaUrl }
-            : undefined;
-        return ResourceImpl.FromAttributeList([...resource.getRawAttributes(), ...this.getRawAttributes()], mergedOptions);
-    }
-}
-function resourceFromAttributes(attributes, options) {
-    return ResourceImpl.FromAttributeList(Object.entries(attributes), options);
-}
-function defaultResource() {
-    return resourceFromAttributes({
-        [ATTR_SERVICE_NAME]: defaultServiceName(),
-        [ATTR_TELEMETRY_SDK_LANGUAGE]: SDK_INFO[ATTR_TELEMETRY_SDK_LANGUAGE],
-        [ATTR_TELEMETRY_SDK_NAME]: SDK_INFO[ATTR_TELEMETRY_SDK_NAME],
-        [ATTR_TELEMETRY_SDK_VERSION]: SDK_INFO[ATTR_TELEMETRY_SDK_VERSION],
-    });
-}
-function guardedRawAttributes(attributes) {
-    return attributes.map(([k, v]) => {
-        if (isPromiseLike(v)) {
-            return [
-                k,
-                v.catch(err => {
-                    diag.debug('promise rejection for resource attribute: %s - %s', k, err);
-                    return undefined;
-                }),
-            ];
-        }
-        return [k, v];
-    });
-}
-function validateSchemaUrl(schemaUrl) {
-    if (typeof schemaUrl === 'string' || schemaUrl === undefined) {
-        return schemaUrl;
-    }
-    diag.warn('Schema URL must be string or undefined, got %s. Schema URL will be ignored.', schemaUrl);
-    return undefined;
-}
-function mergeSchemaUrl(old, updating) {
-    const oldSchemaUrl = old?.schemaUrl;
-    const updatingSchemaUrl = updating?.schemaUrl;
-    const isOldEmpty = oldSchemaUrl === undefined || oldSchemaUrl === '';
-    const isUpdatingEmpty = updatingSchemaUrl === undefined || updatingSchemaUrl === '';
-    if (isOldEmpty) {
-        return updatingSchemaUrl;
-    }
-    if (isUpdatingEmpty) {
-        return oldSchemaUrl;
-    }
-    if (oldSchemaUrl === updatingSchemaUrl) {
-        return oldSchemaUrl;
-    }
-    diag.warn('Schema URL merge conflict: old resource has "%s", updating resource has "%s". Resulting resource will have undefined Schema URL.', oldSchemaUrl, updatingSchemaUrl);
-    return undefined;
-}
 
 /**
  * AggregationTemporality defines how a metric aggregator reports aggregated
@@ -102019,15 +102856,15 @@ var hasRequiredSrc$1;
 function requireSrc$1 () {
 	if (hasRequiredSrc$1) return src$2;
 	hasRequiredSrc$1 = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright The OpenTelemetry Authors
 		 * SPDX-License-Identifier: Apache-2.0
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.OTLPLogExporter = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.OTLPLogExporter = void 0;
 		var OTLPLogExporter_1 = /*@__PURE__*/ requireOTLPLogExporter();
-		Object.defineProperty(exports$1, "OTLPLogExporter", { enumerable: true, get: function () { return OTLPLogExporter_1.OTLPLogExporter; } });
+		Object.defineProperty(exports, "OTLPLogExporter", { enumerable: true, get: function () { return OTLPLogExporter_1.OTLPLogExporter; } });
 		
 	} (src$2));
 	return src$2;
@@ -102086,15 +102923,15 @@ var hasRequiredSrc;
 function requireSrc () {
 	if (hasRequiredSrc) return src;
 	hasRequiredSrc = 1;
-	(function (exports$1) {
+	(function (exports) {
 		/*
 		 * Copyright The OpenTelemetry Authors
 		 * SPDX-License-Identifier: Apache-2.0
 		 */
-		Object.defineProperty(exports$1, "__esModule", { value: true });
-		exports$1.OTLPTraceExporter = void 0;
+		Object.defineProperty(exports, "__esModule", { value: true });
+		exports.OTLPTraceExporter = void 0;
 		var OTLPTraceExporter_1 = /*@__PURE__*/ requireOTLPTraceExporter();
-		Object.defineProperty(exports$1, "OTLPTraceExporter", { enumerable: true, get: function () { return OTLPTraceExporter_1.OTLPTraceExporter; } });
+		Object.defineProperty(exports, "OTLPTraceExporter", { enumerable: true, get: function () { return OTLPTraceExporter_1.OTLPTraceExporter; } });
 		
 	} (src));
 	return src;
@@ -102115,6 +102952,693 @@ class OTLPTraceExporter extends OTLPExporterBase {
             'Content-Type': 'application/x-protobuf',
         }), ProtobufTraceSerializer));
     }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let serviceName$1;
+/**
+ * Returns the default service name for OpenTelemetry resources.
+ * In Node.js environments, returns "unknown_service:<process.argv0>".
+ * In browser/edge environments, returns "unknown_service".
+ */
+function defaultServiceName$1() {
+    if (serviceName$1 === undefined) {
+        try {
+            const argv0 = globalThis.process.argv0;
+            serviceName$1 = argv0 ? `unknown_service:${argv0}` : 'unknown_service';
+        }
+        catch {
+            serviceName$1 = 'unknown_service';
+        }
+    }
+    return serviceName$1;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const isPromiseLike$1 = (val) => {
+    return (val !== null &&
+        typeof val === 'object' &&
+        typeof val.then === 'function');
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let ResourceImpl$1 = class ResourceImpl {
+    _rawAttributes;
+    _asyncAttributesPending = false;
+    _schemaUrl;
+    _memoizedAttributes;
+    static FromAttributeList(attributes, options) {
+        const res = new ResourceImpl({}, options);
+        res._rawAttributes = guardedRawAttributes$1(attributes);
+        res._asyncAttributesPending =
+            attributes.filter(([_, val]) => isPromiseLike$1(val)).length > 0;
+        return res;
+    }
+    constructor(
+    /**
+     * A dictionary of attributes with string keys and values that provide
+     * information about the entity as numbers, strings or booleans
+     * TODO: Consider to add check/validation on attributes.
+     */
+    resource, options) {
+        const attributes = resource.attributes ?? {};
+        this._rawAttributes = Object.entries(attributes).map(([k, v]) => {
+            if (isPromiseLike$1(v)) {
+                // side-effect
+                this._asyncAttributesPending = true;
+            }
+            return [k, v];
+        });
+        this._rawAttributes = guardedRawAttributes$1(this._rawAttributes);
+        this._schemaUrl = validateSchemaUrl$1(options?.schemaUrl);
+    }
+    get asyncAttributesPending() {
+        return this._asyncAttributesPending;
+    }
+    async waitForAsyncAttributes() {
+        if (!this.asyncAttributesPending) {
+            return;
+        }
+        for (let i = 0; i < this._rawAttributes.length; i++) {
+            const [k, v] = this._rawAttributes[i];
+            this._rawAttributes[i] = [k, isPromiseLike$1(v) ? await v : v];
+        }
+        this._asyncAttributesPending = false;
+    }
+    get attributes() {
+        if (this.asyncAttributesPending) {
+            diag.error('Accessing resource attributes before async attributes settled');
+        }
+        if (this._memoizedAttributes) {
+            return this._memoizedAttributes;
+        }
+        const attrs = {};
+        for (const [k, v] of this._rawAttributes) {
+            if (isPromiseLike$1(v)) {
+                diag.debug(`Unsettled resource attribute ${k} skipped`);
+                continue;
+            }
+            if (v != null) {
+                attrs[k] ??= v;
+            }
+        }
+        // only memoize output if all attributes are settled
+        if (!this._asyncAttributesPending) {
+            this._memoizedAttributes = attrs;
+        }
+        return attrs;
+    }
+    getRawAttributes() {
+        return this._rawAttributes;
+    }
+    get schemaUrl() {
+        return this._schemaUrl;
+    }
+    merge(resource) {
+        if (resource == null)
+            return this;
+        // Order is important
+        // Spec states incoming attributes override existing attributes
+        const mergedSchemaUrl = mergeSchemaUrl$1(this, resource);
+        const mergedOptions = mergedSchemaUrl
+            ? { schemaUrl: mergedSchemaUrl }
+            : undefined;
+        return ResourceImpl.FromAttributeList([...resource.getRawAttributes(), ...this.getRawAttributes()], mergedOptions);
+    }
+};
+function resourceFromAttributes$1(attributes, options) {
+    return ResourceImpl$1.FromAttributeList(Object.entries(attributes), options);
+}
+function defaultResource$1() {
+    return resourceFromAttributes$1({
+        [ATTR_SERVICE_NAME]: defaultServiceName$1(),
+        [ATTR_TELEMETRY_SDK_LANGUAGE]: SDK_INFO$2[ATTR_TELEMETRY_SDK_LANGUAGE],
+        [ATTR_TELEMETRY_SDK_NAME]: SDK_INFO$2[ATTR_TELEMETRY_SDK_NAME],
+        [ATTR_TELEMETRY_SDK_VERSION]: SDK_INFO$2[ATTR_TELEMETRY_SDK_VERSION],
+    });
+}
+function guardedRawAttributes$1(attributes) {
+    return attributes.map(([k, v]) => {
+        if (isPromiseLike$1(v)) {
+            return [
+                k,
+                v.catch(err => {
+                    diag.debug('promise rejection for resource attribute: %s - %s', k, err);
+                    return undefined;
+                }),
+            ];
+        }
+        return [k, v];
+    });
+}
+function validateSchemaUrl$1(schemaUrl) {
+    if (typeof schemaUrl === 'string' || schemaUrl === undefined) {
+        return schemaUrl;
+    }
+    diag.warn('Schema URL must be string or undefined, got %s. Schema URL will be ignored.', schemaUrl);
+    return undefined;
+}
+function mergeSchemaUrl$1(old, updating) {
+    const oldSchemaUrl = old?.schemaUrl;
+    const updatingSchemaUrl = updating?.schemaUrl;
+    const isOldEmpty = oldSchemaUrl === undefined || oldSchemaUrl === '';
+    const isUpdatingEmpty = updatingSchemaUrl === undefined || updatingSchemaUrl === '';
+    if (isOldEmpty) {
+        return updatingSchemaUrl;
+    }
+    if (isUpdatingEmpty) {
+        return oldSchemaUrl;
+    }
+    if (oldSchemaUrl === updatingSchemaUrl) {
+        return oldSchemaUrl;
+    }
+    diag.warn('Schema URL merge conflict: old resource has "%s", updating resource has "%s". Resulting resource will have undefined Schema URL.', oldSchemaUrl, updatingSchemaUrl);
+    return undefined;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const SUPPRESS_TRACING_KEY = createContextKey('OpenTelemetry SDK Context Key SUPPRESS_TRACING');
+function suppressTracing(context) {
+    return context.setValue(SUPPRESS_TRACING_KEY, true);
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Returns a function that logs an error using the provided logger, or a
+ * console logger if one was not provided.
+ */
+function loggingErrorHandler() {
+    return (ex) => {
+        diag.error(stringifyException(ex));
+    };
+}
+/**
+ * Converts an exception into a string representation
+ * @param {Exception} ex
+ */
+function stringifyException(ex) {
+    if (typeof ex === 'string') {
+        return ex;
+    }
+    else {
+        return JSON.stringify(flattenException(ex));
+    }
+}
+/**
+ * Flattens an exception into key-value pairs by traversing the prototype chain
+ * and coercing values to strings. Duplicate properties will not be overwritten;
+ * the first insert wins.
+ */
+function flattenException(ex) {
+    const result = {};
+    let current = ex;
+    while (current !== null) {
+        Object.getOwnPropertyNames(current).forEach(propertyName => {
+            if (result[propertyName])
+                return;
+            const value = current[propertyName];
+            if (value) {
+                result[propertyName] = String(value);
+            }
+        });
+        current = Object.getPrototypeOf(current);
+    }
+    return result;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** The global error handler delegate */
+let delegateHandler = loggingErrorHandler();
+/**
+ * Return the global error handler
+ * @param {Exception} ex
+ */
+function globalErrorHandler(ex) {
+    try {
+        delegateHandler(ex);
+    }
+    catch { } // eslint-disable-line no-empty
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+// this is autogenerated file, see scripts/version-update.js
+const VERSION$1 = '2.6.0';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
+ * This file contains a copy of unstable semantic convention definitions
+ * used by this package.
+ * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
+ */
+/**
+ * The name of the runtime of this process.
+ *
+ * @example OpenJDK Runtime Environment
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const ATTR_PROCESS_RUNTIME_NAME = 'process.runtime.name';
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** Constants describing the SDK in use */
+const SDK_INFO = {
+    [ATTR_TELEMETRY_SDK_NAME]: 'opentelemetry',
+    [ATTR_PROCESS_RUNTIME_NAME]: 'node',
+    [ATTR_TELEMETRY_SDK_LANGUAGE]: TELEMETRY_SDK_LANGUAGE_VALUE_NODEJS,
+    [ATTR_TELEMETRY_SDK_VERSION]: VERSION$1,
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @deprecated Use performance directly.
+ */
+const otperformance = performance;
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const NANOSECOND_DIGITS = 9;
+const NANOSECOND_DIGITS_IN_MILLIS = 6;
+const MILLISECONDS_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS_IN_MILLIS);
+const SECOND_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS);
+/**
+ * Converts a number of milliseconds from epoch to HrTime([seconds, remainder in nanoseconds]).
+ * @param epochMillis
+ */
+function millisToHrTime(epochMillis) {
+    const epochSeconds = epochMillis / 1000;
+    // Decimals only.
+    const seconds = Math.trunc(epochSeconds);
+    // Round sub-nanosecond accuracy to nanosecond.
+    const nanos = Math.round((epochMillis % 1000) * MILLISECONDS_TO_NANOSECONDS);
+    return [seconds, nanos];
+}
+/**
+ * Returns an hrtime calculated via performance component.
+ * @param performanceNow
+ */
+function hrTime(performanceNow) {
+    const timeOrigin = millisToHrTime(otperformance.timeOrigin);
+    const now = millisToHrTime(typeof performanceNow === 'number' ? performanceNow : otperformance.now());
+    return addHrTimes(timeOrigin, now);
+}
+/**
+ *
+ * Converts a TimeInput to an HrTime, defaults to _hrtime().
+ * @param time
+ */
+function timeInputToHrTime(time) {
+    // process.hrtime
+    if (isTimeInputHrTime(time)) {
+        return time;
+    }
+    else if (typeof time === 'number') {
+        // Must be a performance.now() if it's smaller than process start time.
+        if (time < otperformance.timeOrigin) {
+            return hrTime(time);
+        }
+        else {
+            // epoch milliseconds or performance.timeOrigin
+            return millisToHrTime(time);
+        }
+    }
+    else if (time instanceof Date) {
+        return millisToHrTime(time.getTime());
+    }
+    else {
+        throw TypeError('Invalid input type');
+    }
+}
+/**
+ * check if time is HrTime
+ * @param value
+ */
+function isTimeInputHrTime(value) {
+    return (Array.isArray(value) &&
+        value.length === 2 &&
+        typeof value[0] === 'number' &&
+        typeof value[1] === 'number');
+}
+/**
+ * Given 2 HrTime formatted times, return their sum as an HrTime.
+ */
+function addHrTimes(time1, time2) {
+    const out = [time1[0] + time2[0], time1[1] + time2[1]];
+    // Nanoseconds
+    if (out[1] >= SECOND_TO_NANOSECONDS) {
+        out[1] -= SECOND_TO_NANOSECONDS;
+        out[0] += 1;
+    }
+    return out;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var ExportResultCode;
+(function (ExportResultCode) {
+    ExportResultCode[ExportResultCode["SUCCESS"] = 0] = "SUCCESS";
+    ExportResultCode[ExportResultCode["FAILED"] = 1] = "FAILED";
+})(ExportResultCode || (ExportResultCode = {}));
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Error that is thrown on timeouts.
+ */
+class TimeoutError extends Error {
+    constructor(message) {
+        super(message);
+        // manually adjust prototype to retain `instanceof` functionality when targeting ES5, see:
+        // https://github.com/Microsoft/TypeScript-wiki/blob/main/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+        Object.setPrototypeOf(this, TimeoutError.prototype);
+    }
+}
+/**
+ * Adds a timeout to a promise and rejects if the specified timeout has elapsed. Also rejects if the specified promise
+ * rejects, and resolves if the specified promise resolves.
+ *
+ * <p> NOTE: this operation will continue even after it throws a {@link TimeoutError}.
+ *
+ * @param promise promise to use with timeout.
+ * @param timeout the timeout in milliseconds until the returned promise is rejected.
+ */
+function callWithTimeout(promise, timeout) {
+    let timeoutHandle;
+    const timeoutPromise = new Promise(function timeoutFunction(_resolve, reject) {
+        timeoutHandle = setTimeout(function timeoutHandler() {
+            reject(new TimeoutError('Operation timed out.'));
+        }, timeout);
+    });
+    return Promise.race([promise, timeoutPromise]).then(result => {
+        clearTimeout(timeoutHandle);
+        return result;
+    }, reason => {
+        clearTimeout(timeoutHandle);
+        throw reason;
+    });
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class Deferred {
+    _promise;
+    _resolve;
+    _reject;
+    constructor() {
+        this._promise = new Promise((resolve, reject) => {
+            this._resolve = resolve;
+            this._reject = reject;
+        });
+    }
+    get promise() {
+        return this._promise;
+    }
+    resolve(val) {
+        this._resolve(val);
+    }
+    reject(err) {
+        this._reject(err);
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Bind the callback and only invoke the callback once regardless how many times `BindOnceFuture.call` is invoked.
+ */
+class BindOnceFuture {
+    _isCalled = false;
+    _deferred = new Deferred();
+    _callback;
+    _that;
+    constructor(callback, that) {
+        this._callback = callback;
+        this._that = that;
+    }
+    get isCalled() {
+        return this._isCalled;
+    }
+    get promise() {
+        return this._deferred.promise;
+    }
+    call(...args) {
+        if (!this._isCalled) {
+            this._isCalled = true;
+            try {
+                Promise.resolve(this._callback.call(this._that, ...args)).then(val => this._deferred.resolve(val), err => this._deferred.reject(err));
+            }
+            catch (err) {
+                this._deferred.reject(err);
+            }
+        }
+        return this._deferred.promise;
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @internal
+ * Shared functionality used by Exporters while exporting data, including suppression of Traces.
+ */
+function _export(exporter, arg) {
+    return new Promise(resolve => {
+        // prevent downstream exporter calls from generating spans
+        context.with(suppressTracing(context.active()), () => {
+            exporter.export(arg, resolve);
+        });
+    });
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const internal = {
+    _export,
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let serviceName;
+/**
+ * Returns the default service name for OpenTelemetry resources.
+ * In Node.js environments, returns "unknown_service:<process.argv0>".
+ * In browser/edge environments, returns "unknown_service".
+ */
+function defaultServiceName() {
+    if (serviceName === undefined) {
+        try {
+            const argv0 = globalThis.process.argv0;
+            serviceName = argv0 ? `unknown_service:${argv0}` : 'unknown_service';
+        }
+        catch {
+            serviceName = 'unknown_service';
+        }
+    }
+    return serviceName;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const isPromiseLike = (val) => {
+    return (val !== null &&
+        typeof val === 'object' &&
+        typeof val.then === 'function');
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+class ResourceImpl {
+    _rawAttributes;
+    _asyncAttributesPending = false;
+    _schemaUrl;
+    _memoizedAttributes;
+    static FromAttributeList(attributes, options) {
+        const res = new ResourceImpl({}, options);
+        res._rawAttributes = guardedRawAttributes(attributes);
+        res._asyncAttributesPending =
+            attributes.filter(([_, val]) => isPromiseLike(val)).length > 0;
+        return res;
+    }
+    constructor(
+    /**
+     * A dictionary of attributes with string keys and values that provide
+     * information about the entity as numbers, strings or booleans
+     * TODO: Consider to add check/validation on attributes.
+     */
+    resource, options) {
+        const attributes = resource.attributes ?? {};
+        this._rawAttributes = Object.entries(attributes).map(([k, v]) => {
+            if (isPromiseLike(v)) {
+                // side-effect
+                this._asyncAttributesPending = true;
+            }
+            return [k, v];
+        });
+        this._rawAttributes = guardedRawAttributes(this._rawAttributes);
+        this._schemaUrl = validateSchemaUrl(options?.schemaUrl);
+    }
+    get asyncAttributesPending() {
+        return this._asyncAttributesPending;
+    }
+    async waitForAsyncAttributes() {
+        if (!this.asyncAttributesPending) {
+            return;
+        }
+        for (let i = 0; i < this._rawAttributes.length; i++) {
+            const [k, v] = this._rawAttributes[i];
+            this._rawAttributes[i] = [k, isPromiseLike(v) ? await v : v];
+        }
+        this._asyncAttributesPending = false;
+    }
+    get attributes() {
+        if (this.asyncAttributesPending) {
+            diag.error('Accessing resource attributes before async attributes settled');
+        }
+        if (this._memoizedAttributes) {
+            return this._memoizedAttributes;
+        }
+        const attrs = {};
+        for (const [k, v] of this._rawAttributes) {
+            if (isPromiseLike(v)) {
+                diag.debug(`Unsettled resource attribute ${k} skipped`);
+                continue;
+            }
+            if (v != null) {
+                attrs[k] ??= v;
+            }
+        }
+        // only memoize output if all attributes are settled
+        if (!this._asyncAttributesPending) {
+            this._memoizedAttributes = attrs;
+        }
+        return attrs;
+    }
+    getRawAttributes() {
+        return this._rawAttributes;
+    }
+    get schemaUrl() {
+        return this._schemaUrl;
+    }
+    merge(resource) {
+        if (resource == null)
+            return this;
+        // Order is important
+        // Spec states incoming attributes override existing attributes
+        const mergedSchemaUrl = mergeSchemaUrl(this, resource);
+        const mergedOptions = mergedSchemaUrl
+            ? { schemaUrl: mergedSchemaUrl }
+            : undefined;
+        return ResourceImpl.FromAttributeList([...resource.getRawAttributes(), ...this.getRawAttributes()], mergedOptions);
+    }
+}
+function resourceFromAttributes(attributes, options) {
+    return ResourceImpl.FromAttributeList(Object.entries(attributes), options);
+}
+function defaultResource() {
+    return resourceFromAttributes({
+        [ATTR_SERVICE_NAME]: defaultServiceName(),
+        [ATTR_TELEMETRY_SDK_LANGUAGE]: SDK_INFO[ATTR_TELEMETRY_SDK_LANGUAGE],
+        [ATTR_TELEMETRY_SDK_NAME]: SDK_INFO[ATTR_TELEMETRY_SDK_NAME],
+        [ATTR_TELEMETRY_SDK_VERSION]: SDK_INFO[ATTR_TELEMETRY_SDK_VERSION],
+    });
+}
+function guardedRawAttributes(attributes) {
+    return attributes.map(([k, v]) => {
+        if (isPromiseLike(v)) {
+            return [
+                k,
+                v.catch(err => {
+                    diag.debug('promise rejection for resource attribute: %s - %s', k, err);
+                    return undefined;
+                }),
+            ];
+        }
+        return [k, v];
+    });
+}
+function validateSchemaUrl(schemaUrl) {
+    if (typeof schemaUrl === 'string' || schemaUrl === undefined) {
+        return schemaUrl;
+    }
+    diag.warn('Schema URL must be string or undefined, got %s. Schema URL will be ignored.', schemaUrl);
+    return undefined;
+}
+function mergeSchemaUrl(old, updating) {
+    const oldSchemaUrl = old?.schemaUrl;
+    const updatingSchemaUrl = updating?.schemaUrl;
+    const isOldEmpty = oldSchemaUrl === undefined || oldSchemaUrl === '';
+    const isUpdatingEmpty = updatingSchemaUrl === undefined || updatingSchemaUrl === '';
+    if (isOldEmpty) {
+        return updatingSchemaUrl;
+    }
+    if (isUpdatingEmpty) {
+        return oldSchemaUrl;
+    }
+    if (oldSchemaUrl === updatingSchemaUrl) {
+        return oldSchemaUrl;
+    }
+    diag.warn('Schema URL merge conflict: old resource has "%s", updating resource has "%s". Resulting resource will have undefined Schema URL.', oldSchemaUrl, updatingSchemaUrl);
+    return undefined;
 }
 
 /*
@@ -102817,6 +104341,59 @@ const ExceptionEventName = 'exception';
  * SPDX-License-Identifier: Apache-2.0
  */
 /**
+ * Well-known symbol used by Node.js `util.inspect` (and `console.*`) to
+ * render an object via a custom representation. Defined as a global Symbol
+ * so it works without importing from `node:util`, keeping this module safe
+ * for browser builds (where the symbol is simply never looked up).
+ */
+const inspectCustom = Symbol.for('nodejs.util.inspect.custom');
+/**
+ * Collect a Resource's settled attributes without touching the
+ * `attributes` getter, which emits diag.error/debug entries when async
+ * attribute detectors are still pending. Promise-like (unsettled)
+ * entries are silently skipped so logging a Span/Tracer/Provider during
+ * startup doesn't recurse through the diag pipeline.
+ */
+function settledResourceAttributes(resource) {
+    const attrs = {};
+    for (const [k, v] of resource.getRawAttributes()) {
+        if (typeof v?.then === 'function') {
+            continue;
+        }
+        if (v != null) {
+            attrs[k] ??= v;
+        }
+    }
+    return attrs;
+}
+/**
+ * Build a class-tagged inspect representation. Returns a stub like
+ * `[ClassName]` once the recursion budget is exhausted, otherwise returns
+ * `ClassName <inspected payload>` so nested fields keep proper coloring,
+ * indentation, and depth handling. In environments that don't supply an
+ * `inspect` callback (e.g. browsers), falls back to returning the raw
+ * payload object.
+ */
+function formatInspect(className, payload, depth, options, inspect) {
+    if (typeof depth === 'number' && depth < 0) {
+        const tag = `[${className}]`;
+        return options?.stylize ? options.stylize(tag, 'special') : tag;
+    }
+    if (typeof inspect !== 'function' || !options) {
+        return payload;
+    }
+    const childOptions = {
+        ...options,
+        depth: options.depth == null ? options.depth : options.depth - 1,
+    };
+    return `${className} ${inspect(payload, childOptions)}`;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
  * This class represents a span.
  */
 class SpanImpl {
@@ -102855,18 +104432,22 @@ class SpanImpl {
     constructor(opts) {
         const now = Date.now();
         this._spanContext = opts.spanContext;
-        this._performanceStartTime = otperformance.now();
+        this._performanceStartTime = otperformance$2.now();
         this._performanceOffset =
-            now - (this._performanceStartTime + otperformance.timeOrigin);
+            now - (this._performanceStartTime + otperformance$2.timeOrigin);
         this._startTimeProvided = opts.startTime != null;
         this._spanLimits = opts.spanLimits;
         this._attributeValueLengthLimit =
-            this._spanLimits.attributeValueLengthLimit || 0;
+            this._spanLimits.attributeValueLengthLimit ?? 0;
         this._spanProcessor = opts.spanProcessor;
         this.name = opts.name;
         this.parentSpanContext = opts.parentSpanContext;
         this.kind = opts.kind;
-        this.links = opts.links || [];
+        if (opts.links) {
+            for (const link of opts.links) {
+                this.addLink(link);
+            }
+        }
         this.startTime = this._getTime(opts.startTime ?? now);
         this.resource = opts.resource;
         this.instrumentationScope = opts.scope;
@@ -102886,7 +104467,7 @@ class SpanImpl {
             diag.warn(`Invalid attribute key: ${key}`);
             return this;
         }
-        if (!isAttributeValue(value)) {
+        if (!isAttributeValue$1(value)) {
             diag.warn(`Invalid attribute value set for key: ${key}`);
             return this;
         }
@@ -102905,8 +104486,10 @@ class SpanImpl {
         return this;
     }
     setAttributes(attributes) {
-        for (const [k, v] of Object.entries(attributes)) {
-            this.setAttribute(k, v);
+        for (const key in attributes) {
+            if (Object.prototype.hasOwnProperty.call(attributes, key)) {
+                this.setAttribute(key, attributes[key]);
+            }
         }
         return this;
     }
@@ -102934,41 +104517,108 @@ class SpanImpl {
             this.events.shift();
             this._droppedEventsCount++;
         }
-        if (isTimeInput(attributesOrStartTime)) {
-            if (!isTimeInput(timeStamp)) {
+        if (isTimeInput$1(attributesOrStartTime)) {
+            if (!isTimeInput$1(timeStamp)) {
                 timeStamp = attributesOrStartTime;
             }
             attributesOrStartTime = undefined;
         }
-        const attributes = sanitizeAttributes(attributesOrStartTime);
+        const sanitized = sanitizeAttributes$1(attributesOrStartTime);
+        const { attributePerEventCountLimit } = this._spanLimits;
+        const attributes = {};
+        let droppedAttributesCount = 0;
+        let eventAttributesCount = 0;
+        for (const attr in sanitized) {
+            if (!Object.prototype.hasOwnProperty.call(sanitized, attr)) {
+                continue;
+            }
+            const attrVal = sanitized[attr];
+            if (attributePerEventCountLimit !== undefined &&
+                eventAttributesCount >= attributePerEventCountLimit) {
+                droppedAttributesCount++;
+                continue;
+            }
+            attributes[attr] = this._truncateToSize(attrVal);
+            eventAttributesCount++;
+        }
         this.events.push({
             name,
             attributes,
             time: this._getTime(timeStamp),
-            droppedAttributesCount: 0,
+            droppedAttributesCount,
         });
         return this;
     }
     addLink(link) {
-        this.links.push(link);
+        if (this._isSpanEnded())
+            return this;
+        const { linkCountLimit } = this._spanLimits;
+        if (linkCountLimit === 0) {
+            this._droppedLinksCount++;
+            return this;
+        }
+        if (linkCountLimit !== undefined && this.links.length >= linkCountLimit) {
+            if (this._droppedLinksCount === 0) {
+                diag.debug('Dropping extra links.');
+            }
+            this.links.shift();
+            this._droppedLinksCount++;
+        }
+        const { attributePerLinkCountLimit } = this._spanLimits;
+        const sanitized = sanitizeAttributes$1(link.attributes);
+        const attributes = {};
+        let droppedAttributesCount = 0;
+        let linkAttributesCount = 0;
+        for (const attr in sanitized) {
+            if (!Object.prototype.hasOwnProperty.call(sanitized, attr)) {
+                continue;
+            }
+            const attrVal = sanitized[attr];
+            if (attributePerLinkCountLimit !== undefined &&
+                linkAttributesCount >= attributePerLinkCountLimit) {
+                droppedAttributesCount++;
+                continue;
+            }
+            attributes[attr] = this._truncateToSize(attrVal);
+            linkAttributesCount++;
+        }
+        const processedLink = { context: link.context };
+        if (linkAttributesCount > 0) {
+            processedLink.attributes = attributes;
+        }
+        if (droppedAttributesCount > 0) {
+            processedLink.droppedAttributesCount = droppedAttributesCount;
+        }
+        this.links.push(processedLink);
         return this;
     }
     addLinks(links) {
-        this.links.push(...links);
+        for (const link of links) {
+            this.addLink(link);
+        }
         return this;
     }
     setStatus(status) {
         if (this._isSpanEnded())
             return this;
-        this.status = { ...status };
+        if (status.code === SpanStatusCode.UNSET)
+            return this;
+        if (this.status.code === SpanStatusCode.OK)
+            return this;
+        const newStatus = { code: status.code };
         // When using try-catch, the caught "error" is of type `any`. When then assigning `any` to `status.message`,
         // TypeScript will not error. While this can happen during use of any API, it is more common on Span#setStatus()
         // as it's likely used in a catch-block. Therefore, we validate if `status.message` is actually a string, null, or
         // undefined to avoid an incorrect type causing issues downstream.
-        if (this.status.message != null && typeof status.message !== 'string') {
-            diag.warn(`Dropping invalid status.message of type '${typeof status.message}', expected 'string'`);
-            delete this.status.message;
+        if (status.code === SpanStatusCode.ERROR) {
+            if (typeof status.message === 'string') {
+                newStatus.message = status.message;
+            }
+            else if (status.message != null) {
+                diag.warn(`Dropping invalid status.message of type '${typeof status.message}', expected 'string'`);
+            }
         }
+        this.status = newStatus;
         return this;
     }
     updateName(name) {
@@ -102983,7 +104633,7 @@ class SpanImpl {
             return;
         }
         this.endTime = this._getTime(endTime);
-        this._duration = hrTimeDuration(this.startTime, this.endTime);
+        this._duration = hrTimeDuration$1(this.startTime, this.endTime);
         if (this._duration[0] < 0) {
             diag.warn('Inconsistent start and end time, startTime > endTime. Setting span duration to 0ms.', this.startTime, this.endTime);
             this.endTime = this.startTime.slice();
@@ -102991,6 +104641,9 @@ class SpanImpl {
         }
         if (this._droppedEventsCount > 0) {
             diag.warn(`Dropped ${this._droppedEventsCount} events because eventCountLimit reached`);
+        }
+        if (this._droppedLinksCount > 0) {
+            diag.warn(`Dropped ${this._droppedLinksCount} links because linkCountLimit reached`);
         }
         if (this._spanProcessor.onEnding) {
             this._spanProcessor.onEnding(this);
@@ -103000,27 +104653,27 @@ class SpanImpl {
         this._spanProcessor.onEnd(this);
     }
     _getTime(inp) {
-        if (typeof inp === 'number' && inp <= otperformance.now()) {
+        if (typeof inp === 'number' && inp <= otperformance$2.now()) {
             // must be a performance timestamp
             // apply correction and convert to hrtime
-            return hrTime(inp + this._performanceOffset);
+            return hrTime$2(inp + this._performanceOffset);
         }
         if (typeof inp === 'number') {
-            return millisToHrTime(inp);
+            return millisToHrTime$2(inp);
         }
         if (inp instanceof Date) {
-            return millisToHrTime(inp.getTime());
+            return millisToHrTime$2(inp.getTime());
         }
-        if (isTimeInputHrTime(inp)) {
+        if (isTimeInputHrTime$2(inp)) {
             return inp;
         }
         if (this._startTimeProvided) {
             // if user provided a time for the start manually
             // we can't use duration to calculate event/end times
-            return millisToHrTime(Date.now());
+            return millisToHrTime$2(Date.now());
         }
-        const msDuration = otperformance.now() - this._performanceStartTime;
-        return addHrTimes(this.startTime, millisToHrTime(msDuration));
+        const msDuration = otperformance$2.now() - this._performanceStartTime;
+        return addHrTimes$2(this.startTime, millisToHrTime$2(msDuration));
     }
     isRecording() {
         return this._ended === false;
@@ -103114,6 +104767,28 @@ class SpanImpl {
         // Other types, no need to apply value length limit
         return value;
     }
+    [inspectCustom](depth, options, inspect) {
+        const payload = {
+            name: this.name,
+            kind: this.kind,
+            spanContext: this._spanContext,
+            parentSpanContext: this.parentSpanContext,
+            status: this.status,
+            startTime: this.startTime,
+            endTime: this.endTime,
+            duration: this._duration,
+            ended: this._ended,
+            attributes: this.attributes,
+            events: this.events,
+            links: this.links,
+            droppedAttributesCount: this._droppedAttributesCount,
+            droppedEventsCount: this._droppedEventsCount,
+            droppedLinksCount: this._droppedLinksCount,
+            instrumentationScope: this.instrumentationScope,
+            resource: { attributes: settledResourceAttributes(this.resource) },
+        };
+        return formatInspect('SpanImpl', payload, depth, options, inspect);
+    }
 }
 
 /*
@@ -103147,517 +104822,46 @@ var SamplingDecision;
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-/** Sampler that samples no traces. */
-class AlwaysOffSampler {
-    shouldSample() {
-        return {
-            decision: SamplingDecision.NOT_RECORD,
-        };
-    }
-    toString() {
-        return 'AlwaysOffSampler';
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/** Sampler that samples all traces. */
-class AlwaysOnSampler {
-    shouldSample() {
-        return {
-            decision: SamplingDecision.RECORD_AND_SAMPLED,
-        };
-    }
-    toString() {
-        return 'AlwaysOnSampler';
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/**
- * A composite sampler that either respects the parent span's sampling decision
- * or delegates to `delegateSampler` for root spans.
- */
-class ParentBasedSampler {
-    _root;
-    _remoteParentSampled;
-    _remoteParentNotSampled;
-    _localParentSampled;
-    _localParentNotSampled;
-    constructor(config) {
-        this._root = config.root;
-        if (!this._root) {
-            globalErrorHandler(new Error('ParentBasedSampler must have a root sampler configured'));
-            this._root = new AlwaysOnSampler();
-        }
-        this._remoteParentSampled =
-            config.remoteParentSampled ?? new AlwaysOnSampler();
-        this._remoteParentNotSampled =
-            config.remoteParentNotSampled ?? new AlwaysOffSampler();
-        this._localParentSampled =
-            config.localParentSampled ?? new AlwaysOnSampler();
-        this._localParentNotSampled =
-            config.localParentNotSampled ?? new AlwaysOffSampler();
-    }
-    shouldSample(context, traceId, spanName, spanKind, attributes, links) {
-        const parentContext = trace.getSpanContext(context);
-        if (!parentContext || !isSpanContextValid(parentContext)) {
-            return this._root.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-        }
-        if (parentContext.isRemote) {
-            if (parentContext.traceFlags & TraceFlags.SAMPLED) {
-                return this._remoteParentSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-            }
-            return this._remoteParentNotSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-        }
-        if (parentContext.traceFlags & TraceFlags.SAMPLED) {
-            return this._localParentSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-        }
-        return this._localParentNotSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
-    }
-    toString() {
-        return `ParentBased{root=${this._root.toString()}, remoteParentSampled=${this._remoteParentSampled.toString()}, remoteParentNotSampled=${this._remoteParentNotSampled.toString()}, localParentSampled=${this._localParentSampled.toString()}, localParentNotSampled=${this._localParentNotSampled.toString()}}`;
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/** Sampler that samples a given fraction of traces based of trace id deterministically. */
-class TraceIdRatioBasedSampler {
-    _ratio;
-    _upperBound;
-    constructor(ratio = 0) {
-        this._ratio = this._normalize(ratio);
-        this._upperBound = Math.floor(this._ratio * 0xffffffff);
-    }
-    shouldSample(context, traceId) {
-        return {
-            decision: isValidTraceId(traceId) && this._accumulate(traceId) < this._upperBound
-                ? SamplingDecision.RECORD_AND_SAMPLED
-                : SamplingDecision.NOT_RECORD,
-        };
-    }
-    toString() {
-        return `TraceIdRatioBased{${this._ratio}}`;
-    }
-    _normalize(ratio) {
-        if (typeof ratio !== 'number' || isNaN(ratio))
-            return 0;
-        return ratio >= 1 ? 1 : ratio <= 0 ? 0 : ratio;
-    }
-    _accumulate(traceId) {
-        let accumulation = 0;
-        for (let i = 0; i < traceId.length / 8; i++) {
-            const pos = i * 8;
-            const part = parseInt(traceId.slice(pos, pos + 8), 16);
-            accumulation = (accumulation ^ part) >>> 0;
-        }
-        return accumulation;
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-var TracesSamplerValues;
-(function (TracesSamplerValues) {
-    TracesSamplerValues["AlwaysOff"] = "always_off";
-    TracesSamplerValues["AlwaysOn"] = "always_on";
-    TracesSamplerValues["ParentBasedAlwaysOff"] = "parentbased_always_off";
-    TracesSamplerValues["ParentBasedAlwaysOn"] = "parentbased_always_on";
-    TracesSamplerValues["ParentBasedTraceIdRatio"] = "parentbased_traceidratio";
-    TracesSamplerValues["TraceIdRatio"] = "traceidratio";
-})(TracesSamplerValues || (TracesSamplerValues = {}));
-const DEFAULT_RATIO = 1;
-/**
- * Load default configuration. For fields with primitive values, any user-provided
- * value will override the corresponding default value. For fields with
- * non-primitive values (like `spanLimits`), the user-provided value will be
- * used to extend the default value.
- */
-// object needs to be wrapped in this function and called when needed otherwise
-// envs are parsed before tests are ran - causes tests using these envs to fail
-function loadDefaultConfig() {
-    return {
-        sampler: buildSamplerFromEnv(),
-        forceFlushTimeoutMillis: 30000,
-        generalLimits: {
-            attributeValueLengthLimit: getNumberFromEnv('OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT') ?? Infinity,
-            attributeCountLimit: getNumberFromEnv('OTEL_ATTRIBUTE_COUNT_LIMIT') ?? 128,
-        },
-        spanLimits: {
-            attributeValueLengthLimit: getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT') ?? Infinity,
-            attributeCountLimit: getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT') ?? 128,
-            linkCountLimit: getNumberFromEnv('OTEL_SPAN_LINK_COUNT_LIMIT') ?? 128,
-            eventCountLimit: getNumberFromEnv('OTEL_SPAN_EVENT_COUNT_LIMIT') ?? 128,
-            attributePerEventCountLimit: getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_PER_EVENT_COUNT_LIMIT') ?? 128,
-            attributePerLinkCountLimit: getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_PER_LINK_COUNT_LIMIT') ?? 128,
-        },
-    };
-}
-/**
- * Based on environment, builds a sampler, complies with specification.
- */
-function buildSamplerFromEnv() {
-    const sampler = getStringFromEnv('OTEL_TRACES_SAMPLER') ??
-        TracesSamplerValues.ParentBasedAlwaysOn;
-    switch (sampler) {
-        case TracesSamplerValues.AlwaysOn:
-            return new AlwaysOnSampler();
-        case TracesSamplerValues.AlwaysOff:
-            return new AlwaysOffSampler();
-        case TracesSamplerValues.ParentBasedAlwaysOn:
-            return new ParentBasedSampler({
-                root: new AlwaysOnSampler(),
-            });
-        case TracesSamplerValues.ParentBasedAlwaysOff:
-            return new ParentBasedSampler({
-                root: new AlwaysOffSampler(),
-            });
-        case TracesSamplerValues.TraceIdRatio:
-            return new TraceIdRatioBasedSampler(getSamplerProbabilityFromEnv());
-        case TracesSamplerValues.ParentBasedTraceIdRatio:
-            return new ParentBasedSampler({
-                root: new TraceIdRatioBasedSampler(getSamplerProbabilityFromEnv()),
-            });
-        default:
-            diag.error(`OTEL_TRACES_SAMPLER value "${sampler}" invalid, defaulting to "${TracesSamplerValues.ParentBasedAlwaysOn}".`);
-            return new ParentBasedSampler({
-                root: new AlwaysOnSampler(),
-            });
-    }
-}
-function getSamplerProbabilityFromEnv() {
-    const probability = getNumberFromEnv('OTEL_TRACES_SAMPLER_ARG');
-    if (probability == null) {
-        diag.error(`OTEL_TRACES_SAMPLER_ARG is blank, defaulting to ${DEFAULT_RATIO}.`);
-        return DEFAULT_RATIO;
-    }
-    if (probability < 0 || probability > 1) {
-        diag.error(`OTEL_TRACES_SAMPLER_ARG=${probability} was given, but it is out of range ([0..1]), defaulting to ${DEFAULT_RATIO}.`);
-        return DEFAULT_RATIO;
-    }
-    return probability;
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-const DEFAULT_ATTRIBUTE_COUNT_LIMIT = 128;
-const DEFAULT_ATTRIBUTE_VALUE_LENGTH_LIMIT = Infinity;
-/**
- * Function to merge Default configuration (as specified in './config') with
- * user provided configurations.
- */
-function mergeConfig(userConfig) {
-    const perInstanceDefaults = {
-        sampler: buildSamplerFromEnv(),
-    };
-    const DEFAULT_CONFIG = loadDefaultConfig();
-    const target = Object.assign({}, DEFAULT_CONFIG, perInstanceDefaults, userConfig);
-    target.generalLimits = Object.assign({}, DEFAULT_CONFIG.generalLimits, userConfig.generalLimits || {});
-    target.spanLimits = Object.assign({}, DEFAULT_CONFIG.spanLimits, userConfig.spanLimits || {});
-    return target;
-}
-/**
- * When general limits are provided and model specific limits are not,
- * configures the model specific limits by using the values from the general ones.
- * @param userConfig User provided tracer configuration
- */
-function reconfigureLimits(userConfig) {
-    const spanLimits = Object.assign({}, userConfig.spanLimits);
-    /**
-     * Reassign span attribute count limit to use first non null value defined by user or use default value
-     */
-    spanLimits.attributeCountLimit =
-        userConfig.spanLimits?.attributeCountLimit ??
-            userConfig.generalLimits?.attributeCountLimit ??
-            getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT') ??
-            getNumberFromEnv('OTEL_ATTRIBUTE_COUNT_LIMIT') ??
-            DEFAULT_ATTRIBUTE_COUNT_LIMIT;
-    /**
-     * Reassign span attribute value length limit to use first non null value defined by user or use default value
-     */
-    spanLimits.attributeValueLengthLimit =
-        userConfig.spanLimits?.attributeValueLengthLimit ??
-            userConfig.generalLimits?.attributeValueLengthLimit ??
-            getNumberFromEnv('OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT') ??
-            getNumberFromEnv('OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT') ??
-            DEFAULT_ATTRIBUTE_VALUE_LENGTH_LIMIT;
-    return Object.assign({}, userConfig, { spanLimits });
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-/**
- * Implementation of the {@link SpanProcessor} that batches spans exported by
- * the SDK then pushes them to the exporter pipeline.
- */
-class BatchSpanProcessorBase {
-    _maxExportBatchSize;
-    _maxQueueSize;
-    _scheduledDelayMillis;
-    _exportTimeoutMillis;
-    _exporter;
-    _isExporting = false;
-    _finishedSpans = [];
-    _timer;
-    _shutdownOnce;
-    _droppedSpansCount = 0;
-    constructor(exporter, config) {
-        this._exporter = exporter;
-        this._maxExportBatchSize =
-            typeof config?.maxExportBatchSize === 'number'
-                ? config.maxExportBatchSize
-                : (getNumberFromEnv('OTEL_BSP_MAX_EXPORT_BATCH_SIZE') ?? 512);
-        this._maxQueueSize =
-            typeof config?.maxQueueSize === 'number'
-                ? config.maxQueueSize
-                : (getNumberFromEnv('OTEL_BSP_MAX_QUEUE_SIZE') ?? 2048);
-        this._scheduledDelayMillis =
-            typeof config?.scheduledDelayMillis === 'number'
-                ? config.scheduledDelayMillis
-                : (getNumberFromEnv('OTEL_BSP_SCHEDULE_DELAY') ?? 5000);
-        this._exportTimeoutMillis =
-            typeof config?.exportTimeoutMillis === 'number'
-                ? config.exportTimeoutMillis
-                : (getNumberFromEnv('OTEL_BSP_EXPORT_TIMEOUT') ?? 30000);
-        this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
-        if (this._maxExportBatchSize > this._maxQueueSize) {
-            diag.warn('BatchSpanProcessor: maxExportBatchSize must be smaller or equal to maxQueueSize, setting maxExportBatchSize to match maxQueueSize');
-            this._maxExportBatchSize = this._maxQueueSize;
-        }
-    }
-    forceFlush() {
-        if (this._shutdownOnce.isCalled) {
-            return this._shutdownOnce.promise;
-        }
-        return this._flushAll();
-    }
-    // does nothing.
-    onStart(_span, _parentContext) { }
-    onEnd(span) {
-        if (this._shutdownOnce.isCalled) {
-            return;
-        }
-        if ((span.spanContext().traceFlags & TraceFlags.SAMPLED) === 0) {
-            return;
-        }
-        this._addToBuffer(span);
-    }
-    shutdown() {
-        return this._shutdownOnce.call();
-    }
-    _shutdown() {
-        return Promise.resolve()
-            .then(() => {
-            return this.onShutdown();
-        })
-            .then(() => {
-            return this._flushAll();
-        })
-            .then(() => {
-            return this._exporter.shutdown();
-        });
-    }
-    /** Add a span in the buffer. */
-    _addToBuffer(span) {
-        if (this._finishedSpans.length >= this._maxQueueSize) {
-            // limit reached, drop span
-            if (this._droppedSpansCount === 0) {
-                diag.debug('maxQueueSize reached, dropping spans');
-            }
-            this._droppedSpansCount++;
-            return;
-        }
-        if (this._droppedSpansCount > 0) {
-            // some spans were dropped, log once with count of spans dropped
-            diag.warn(`Dropped ${this._droppedSpansCount} spans because maxQueueSize reached`);
-            this._droppedSpansCount = 0;
-        }
-        this._finishedSpans.push(span);
-        this._maybeStartTimer();
-    }
-    /**
-     * Send all spans to the exporter respecting the batch size limit
-     * This function is used only on forceFlush or shutdown,
-     * for all other cases _flush should be used
-     * */
-    _flushAll() {
-        return new Promise((resolve, reject) => {
-            const promises = [];
-            // calculate number of batches
-            const count = Math.ceil(this._finishedSpans.length / this._maxExportBatchSize);
-            for (let i = 0, j = count; i < j; i++) {
-                promises.push(this._flushOneBatch());
-            }
-            Promise.all(promises)
-                .then(() => {
-                resolve();
-            })
-                .catch(reject);
-        });
-    }
-    _flushOneBatch() {
-        this._clearTimer();
-        if (this._finishedSpans.length === 0) {
-            return Promise.resolve();
-        }
-        return new Promise((resolve, reject) => {
-            const timer = setTimeout(() => {
-                // don't wait anymore for export, this way the next batch can start
-                reject(new Error('Timeout'));
-            }, this._exportTimeoutMillis);
-            // prevent downstream exporter calls from generating spans
-            context.with(suppressTracing(context.active()), () => {
-                // Reset the finished spans buffer here because the next invocations of the _flush method
-                // could pass the same finished spans to the exporter if the buffer is cleared
-                // outside the execution of this callback.
-                let spans;
-                if (this._finishedSpans.length <= this._maxExportBatchSize) {
-                    spans = this._finishedSpans;
-                    this._finishedSpans = [];
-                }
-                else {
-                    spans = this._finishedSpans.splice(0, this._maxExportBatchSize);
-                }
-                const doExport = () => this._exporter.export(spans, result => {
-                    clearTimeout(timer);
-                    if (result.code === ExportResultCode.SUCCESS) {
-                        resolve();
-                    }
-                    else {
-                        reject(result.error ??
-                            new Error('BatchSpanProcessor: span export failed'));
-                    }
-                });
-                let pendingResources = null;
-                for (let i = 0, len = spans.length; i < len; i++) {
-                    const span = spans[i];
-                    if (span.resource.asyncAttributesPending &&
-                        span.resource.waitForAsyncAttributes) {
-                        pendingResources ??= [];
-                        pendingResources.push(span.resource.waitForAsyncAttributes());
-                    }
-                }
-                // Avoid scheduling a promise to make the behavior more predictable and easier to test
-                if (pendingResources === null) {
-                    doExport();
-                }
-                else {
-                    Promise.all(pendingResources).then(doExport, err => {
-                        globalErrorHandler(err);
-                        reject(err);
-                    });
-                }
-            });
-        });
-    }
-    _maybeStartTimer() {
-        if (this._isExporting)
-            return;
-        const flush = () => {
-            this._isExporting = true;
-            this._flushOneBatch()
-                .finally(() => {
-                this._isExporting = false;
-                if (this._finishedSpans.length > 0) {
-                    this._clearTimer();
-                    this._maybeStartTimer();
-                }
-            })
-                .catch(e => {
-                this._isExporting = false;
-                globalErrorHandler(e);
-            });
-        };
-        // we only wait if the queue doesn't have enough elements yet
-        if (this._finishedSpans.length >= this._maxExportBatchSize) {
-            return flush();
-        }
-        if (this._timer !== undefined)
-            return;
-        this._timer = setTimeout(() => flush(), this._scheduledDelayMillis);
-        // depending on runtime, this may be a 'number' or NodeJS.Timeout
-        if (typeof this._timer !== 'number') {
-            this._timer.unref();
-        }
-    }
-    _clearTimer() {
-        if (this._timer !== undefined) {
-            clearTimeout(this._timer);
-            this._timer = undefined;
-        }
-    }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-class BatchSpanProcessor extends BatchSpanProcessorBase {
-    onShutdown() { }
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
-const SPAN_ID_BYTES = 8;
-const TRACE_ID_BYTES = 16;
-class RandomIdGenerator {
-    /**
-     * Returns a random 16-byte trace ID formatted/encoded as a 32 lowercase hex
-     * characters corresponding to 128 bits.
-     */
-    generateTraceId = getIdGenerator(TRACE_ID_BYTES);
-    /**
-     * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
-     * characters corresponding to 64 bits.
-     */
-    generateSpanId = getIdGenerator(SPAN_ID_BYTES);
-}
-const SHARED_BUFFER = Buffer.allocUnsafe(TRACE_ID_BYTES);
-function getIdGenerator(bytes) {
-    return function generateId() {
-        for (let i = 0; i < bytes / 4; i++) {
-            // unsigned right shift drops decimal part of the number
-            // it is required because if a number between 2**32 and 2**32 - 1 is generated, an out of range error is thrown by writeUInt32BE
-            SHARED_BUFFER.writeUInt32BE((Math.random() * 2 ** 32) >>> 0, i * 4);
-        }
-        // If buffer is all 0, set the last byte to 1 to guarantee a valid w3c id is generated
-        for (let i = 0; i < bytes; i++) {
-            if (SHARED_BUFFER[i] > 0) {
-                break;
-            }
-            else if (i === bytes - 1) {
-                SHARED_BUFFER[bytes - 1] = 1;
-            }
-        }
-        return SHARED_BUFFER.toString('hex', 0, bytes);
-    };
-}
-
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
 /*
  * This file contains a copy of unstable semantic convention definitions
  * used by this package.
  * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
  */
+/**
+ * A name uniquely identifying the instance of the OpenTelemetry component within its containing SDK instance.
+ *
+ * @example otlp_grpc_span_exporter/0
+ * @example custom-name
+ *
+ * @note Implementations **SHOULD** ensure a low cardinality for this attribute, even across application or SDK restarts.
+ * E.g. implementations **MUST NOT** use UUIDs as values for this attribute.
+ *
+ * Implementations **MAY** achieve these goals by following a `<otel.component.type>/<instance-counter>` pattern, e.g. `batching_span_processor/0`.
+ * Hereby `otel.component.type` refers to the corresponding attribute value of the component.
+ *
+ * The value of `instance-counter` **MAY** be automatically assigned by the component and uniqueness within the enclosing SDK instance **MUST** be guaranteed.
+ * For example, `<instance-counter>` **MAY** be implemented by using a monotonically increasing counter (starting with `0`), which is incremented every time an
+ * instance of the given component type is started.
+ *
+ * With this implementation, for example the first Batching Span Processor would have `batching_span_processor/0`
+ * as `otel.component.name`, the second one `batching_span_processor/1` and so on.
+ * These values will therefore be reused in the case of an application restart.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const ATTR_OTEL_COMPONENT_NAME = 'otel.component.name';
+/**
+ * A name identifying the type of the OpenTelemetry component.
+ *
+ * @example batching_span_processor
+ * @example com.example.MySpanExporter
+ *
+ * @note If none of the standardized values apply, implementations **SHOULD** use the language-defined name of the type.
+ * E.g. for Java the fully qualified classname **SHOULD** be used in this case.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const ATTR_OTEL_COMPONENT_TYPE = 'otel.component.type';
 /**
  * Determines whether the span has a parent span, and if so, [whether it is a remote parent](https://opentelemetry.io/docs/specs/otel/trace/api/#isremote)
  *
@@ -103670,6 +104874,31 @@ const ATTR_OTEL_SPAN_PARENT_ORIGIN = 'otel.span.parent.origin';
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 const ATTR_OTEL_SPAN_SAMPLING_RESULT = 'otel.span.sampling_result';
+/**
+ * The number of spans for which the processing has finished, either successful or failed.
+ *
+ * @note For successful processing, `error.type` **MUST NOT** be set. For failed processing, `error.type` **MUST** contain the failure cause.
+ * For the SDK Simple and Batching Span Processor a span is considered to be processed already when it has been submitted to the exporter, not when the corresponding export call has finished.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const METRIC_OTEL_SDK_PROCESSOR_SPAN_PROCESSED = 'otel.sdk.processor.span.processed';
+/**
+ * The maximum number of spans the queue of a given instance of an SDK span processor can hold.
+ *
+ * @note Only applies to span processors which use a queue, e.g. the SDK Batching Span Processor.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const METRIC_OTEL_SDK_PROCESSOR_SPAN_QUEUE_CAPACITY = 'otel.sdk.processor.span.queue.capacity';
+/**
+ * The number of spans in the queue of a given instance of an SDK span processor.
+ *
+ * @note Only applies to span processors which use a queue, e.g. the SDK Batching Span Processor.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const METRIC_OTEL_SDK_PROCESSOR_SPAN_QUEUE_SIZE = 'otel.sdk.processor.span.queue.size';
 /**
  * The number of created spans with `recording=true` for which the end operation has not been called yet.
  *
@@ -103684,6 +104913,14 @@ const METRIC_OTEL_SDK_SPAN_LIVE = 'otel.sdk.span.live';
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 const METRIC_OTEL_SDK_SPAN_STARTED = 'otel.sdk.span.started';
+/**
+ * Enum value "batching_span_processor" for attribute {@link ATTR_OTEL_COMPONENT_TYPE}.
+ *
+ * The builtin SDK batching span processor
+ *
+ * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+const OTEL_COMPONENT_TYPE_VALUE_BATCHING_SPAN_PROCESSOR = 'batching_span_processor';
 
 /**
  * Generates `otel.sdk.span.*` metrics.
@@ -103742,21 +104979,10 @@ function samplingDecisionToString(decision) {
 
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 // this is autogenerated file, see scripts/version-update.js
-const VERSION = '2.6.0';
+const VERSION = '2.11.0';
 
 /*
  * Copyright The OpenTelemetry Authors
@@ -103767,7 +104993,6 @@ const VERSION = '2.6.0';
  */
 class Tracer {
     _sampler;
-    _generalLimits;
     _spanLimits;
     _idGenerator;
     instrumentationScope;
@@ -103777,18 +105002,14 @@ class Tracer {
     /**
      * Constructs a new Tracer instance.
      */
-    constructor(instrumentationScope, config, resource, spanProcessor) {
-        const localConfig = mergeConfig(config);
-        this._sampler = localConfig.sampler;
-        this._generalLimits = localConfig.generalLimits;
-        this._spanLimits = localConfig.spanLimits;
-        this._idGenerator = config.idGenerator || new RandomIdGenerator();
-        this._resource = resource;
-        this._spanProcessor = spanProcessor;
+    constructor(instrumentationScope, options) {
         this.instrumentationScope = instrumentationScope;
-        const meter = localConfig.meterProvider
-            ? localConfig.meterProvider.getMeter('@opentelemetry/sdk-trace', VERSION)
-            : createNoopMeter();
+        this._sampler = options.sampler;
+        this._spanLimits = options.spanLimits;
+        this._resource = options.resource;
+        this._idGenerator = options.idGenerator;
+        this._spanProcessor = options.spanProcessor;
+        const meter = options.meterProvider.getMeter('@opentelemetry/sdk-trace', VERSION);
         this._tracerMetrics = new TracerMetrics(meter);
     }
     /**
@@ -103801,7 +105022,7 @@ class Tracer {
             context$1 = trace.deleteSpan(context$1);
         }
         const parentSpan = trace.getSpan(context$1);
-        if (isTracingSuppressed(context$1)) {
+        if (isTracingSuppressed$1(context$1)) {
             diag.debug('Instrumentation suppressed, returning Noop Span');
             const nonRecordingSpan = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
             return nonRecordingSpan;
@@ -103826,10 +105047,10 @@ class Tracer {
         const links = (options.links ?? []).map(link => {
             return {
                 context: link.context,
-                attributes: sanitizeAttributes(link.attributes),
+                attributes: sanitizeAttributes$1(link.attributes),
             };
         });
-        const attributes = sanitizeAttributes(options.attributes);
+        const attributes = sanitizeAttributes$1(options.attributes);
         // make sampling decision
         const samplingResult = this._sampler.shouldSample(context$1, traceId, name, spanKind, attributes, links);
         const recordEndMetrics = this._tracerMetrics.startSpan(parentSpanContext, samplingResult.decision);
@@ -103845,7 +105066,7 @@ class Tracer {
         }
         // Set initial span attributes. The attributes object may have been mutated
         // by the sampler, so we sanitize the merged attributes before setting them.
-        const initAttributes = sanitizeAttributes(Object.assign(attributes, samplingResult.attributes));
+        const initAttributes = sanitizeAttributes$1(Object.assign(attributes, samplingResult.attributes));
         const span = new SpanImpl({
             resource: this._resource,
             scope: this.instrumentationScope,
@@ -103887,13 +105108,13 @@ class Tracer {
         const contextWithSpanSet = trace.setSpan(parentContext, span);
         return context.with(contextWithSpanSet, fn, undefined, span);
     }
-    /** Returns the active {@link GeneralLimits}. */
-    getGeneralLimits() {
-        return this._generalLimits;
-    }
-    /** Returns the active {@link SpanLimits}. */
-    getSpanLimits() {
-        return this._spanLimits;
+    [inspectCustom](depth, options, inspect) {
+        const payload = {
+            instrumentationScope: this.instrumentationScope,
+            resource: { attributes: settledResourceAttributes(this._resource) },
+            spanLimits: this._spanLimits,
+        };
+        return formatInspect('Tracer', payload, depth, options, inspect);
     }
 }
 
@@ -103921,7 +105142,7 @@ class MultiSpanProcessor {
                 resolve();
             })
                 .catch(error => {
-                globalErrorHandler(error || new Error('MultiSpanProcessor: forceFlush failed'));
+                globalErrorHandler$2(error || new Error('MultiSpanProcessor: forceFlush failed'));
                 resolve();
             });
         });
@@ -103960,6 +105181,402 @@ class MultiSpanProcessor {
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
+/** Sampler that samples no traces. */
+class AlwaysOffSampler {
+    shouldSample() {
+        return {
+            decision: SamplingDecision.NOT_RECORD,
+        };
+    }
+    toString() {
+        return 'AlwaysOffSampler';
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** Sampler that samples all traces. */
+class AlwaysOnSampler {
+    shouldSample() {
+        return {
+            decision: SamplingDecision.RECORD_AND_SAMPLED,
+        };
+    }
+    toString() {
+        return 'AlwaysOnSampler';
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * A composite sampler that either respects the parent span's sampling decision
+ * or delegates to `delegateSampler` for root spans.
+ */
+class ParentBasedSampler {
+    _root;
+    _remoteParentSampled;
+    _remoteParentNotSampled;
+    _localParentSampled;
+    _localParentNotSampled;
+    constructor(config) {
+        this._root = config.root;
+        if (!this._root) {
+            globalErrorHandler$2(new Error('ParentBasedSampler must have a root sampler configured'));
+            this._root = new AlwaysOnSampler();
+        }
+        this._remoteParentSampled =
+            config.remoteParentSampled ?? new AlwaysOnSampler();
+        this._remoteParentNotSampled =
+            config.remoteParentNotSampled ?? new AlwaysOffSampler();
+        this._localParentSampled =
+            config.localParentSampled ?? new AlwaysOnSampler();
+        this._localParentNotSampled =
+            config.localParentNotSampled ?? new AlwaysOffSampler();
+    }
+    shouldSample(context, traceId, spanName, spanKind, attributes, links) {
+        const parentContext = trace.getSpanContext(context);
+        if (!parentContext || !isSpanContextValid(parentContext)) {
+            return this._root.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+        }
+        if (parentContext.isRemote) {
+            if (parentContext.traceFlags & TraceFlags.SAMPLED) {
+                return this._remoteParentSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+            }
+            return this._remoteParentNotSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+        }
+        if (parentContext.traceFlags & TraceFlags.SAMPLED) {
+            return this._localParentSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+        }
+        return this._localParentNotSampled.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+    }
+    toString() {
+        return `ParentBased{root=${this._root.toString()}, remoteParentSampled=${this._remoteParentSampled.toString()}, remoteParentNotSampled=${this._remoteParentNotSampled.toString()}, localParentSampled=${this._localParentSampled.toString()}, localParentNotSampled=${this._localParentNotSampled.toString()}}`;
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const componentCounter = new Map();
+class SpanProcessorMetrics {
+    processedSpans;
+    queueSize;
+    queueSizeCallback;
+    standardAttrs;
+    droppedAttrs;
+    constructor(componentType, meter, queueConfig) {
+        const counter = componentCounter.get(componentType) ?? 0;
+        componentCounter.set(componentType, counter + 1);
+        this.standardAttrs = {
+            [ATTR_OTEL_COMPONENT_TYPE]: componentType,
+            [ATTR_OTEL_COMPONENT_NAME]: `${componentType}/${counter}`,
+        };
+        this.droppedAttrs = {
+            ...this.standardAttrs,
+            [ATTR_ERROR_TYPE]: 'queue_full',
+        };
+        this.processedSpans = meter.createCounter(METRIC_OTEL_SDK_PROCESSOR_SPAN_PROCESSED, {
+            unit: '{span}',
+            description: 'The number of spans for which the processing has finished, either successful or failed.',
+        });
+        if (queueConfig) {
+            const { capacity, getQueueSize } = queueConfig;
+            const queueCapacity = meter.createUpDownCounter(METRIC_OTEL_SDK_PROCESSOR_SPAN_QUEUE_CAPACITY, {
+                unit: '{span}',
+                description: 'The maximum number of spans the queue of a given instance of an SDK span processor can hold.',
+            });
+            queueCapacity.add(capacity, this.standardAttrs);
+            this.queueSize = meter.createObservableUpDownCounter(METRIC_OTEL_SDK_PROCESSOR_SPAN_QUEUE_SIZE, {
+                unit: '{span}',
+                description: 'The number of spans in the queue of a given instance of an SDK span processor.',
+            });
+            this.queueSizeCallback = result => result.observe(getQueueSize(), this.standardAttrs);
+            this.queueSize.addCallback(this.queueSizeCallback);
+        }
+    }
+    dropSpans(count) {
+        this.processedSpans.add(count, this.droppedAttrs);
+    }
+    finishSpans(count, error) {
+        if (!error) {
+            this.processedSpans.add(count, this.standardAttrs);
+            return;
+        }
+        const attrs = {
+            ...this.standardAttrs,
+            [ATTR_ERROR_TYPE]: error.name,
+        };
+        this.processedSpans.add(count, attrs);
+    }
+    shutdown() {
+        if (this.queueSize && this.queueSizeCallback) {
+            this.queueSize.removeCallback(this.queueSizeCallback);
+        }
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * Implementation of the {@link SpanProcessor} that batches spans exported by
+ * the SDK then pushes them to the exporter pipeline.
+ */
+class BatchSpanProcessorBase {
+    _maxExportBatchSize;
+    _maxQueueSize;
+    _scheduledDelayMillis;
+    _exportTimeoutMillis;
+    _exporter;
+    _metrics;
+    _isExporting = false;
+    _finishedSpans = [];
+    _timer;
+    _shutdownOnce;
+    _droppedSpansCount = 0;
+    constructor(options) {
+        this._exporter = options.exporter;
+        this._maxExportBatchSize = options.maxExportBatchSize ?? 512;
+        this._maxQueueSize = options.maxQueueSize ?? 2048;
+        this._scheduledDelayMillis = options.scheduledDelayMillis ?? 5000;
+        this._exportTimeoutMillis = options.exportTimeoutMillis ?? 30000;
+        this._shutdownOnce = new BindOnceFuture$2(this._shutdown, this);
+        if (this._maxExportBatchSize > this._maxQueueSize) {
+            diag.warn('BatchSpanProcessor: maxExportBatchSize must be smaller or equal to maxQueueSize, setting maxExportBatchSize to match maxQueueSize');
+            this._maxExportBatchSize = this._maxQueueSize;
+        }
+        const meter = options.selfObsMeterProvider
+            ? options.selfObsMeterProvider.getMeter('@opentelemetry/sdk-trace')
+            : createNoopMeter();
+        this._metrics = new SpanProcessorMetrics(OTEL_COMPONENT_TYPE_VALUE_BATCHING_SPAN_PROCESSOR, meter, {
+            capacity: this._maxQueueSize,
+            getQueueSize: () => this._finishedSpans.length,
+        });
+    }
+    forceFlush() {
+        if (this._shutdownOnce.isCalled) {
+            return this._shutdownOnce.promise;
+        }
+        return this._flushAll();
+    }
+    // does nothing.
+    onStart(_span, _parentContext) { }
+    onEnd(span) {
+        if (this._shutdownOnce.isCalled) {
+            return;
+        }
+        if ((span.spanContext().traceFlags & TraceFlags.SAMPLED) === 0) {
+            return;
+        }
+        this._addToBuffer(span);
+    }
+    shutdown() {
+        return this._shutdownOnce.call();
+    }
+    _shutdown() {
+        return Promise.resolve()
+            .then(() => {
+            return this.onShutdown();
+        })
+            .then(() => {
+            return this._flushAll();
+        })
+            .then(() => {
+            this._metrics.shutdown();
+            return this._exporter.shutdown();
+        });
+    }
+    /** Add a span in the buffer. */
+    _addToBuffer(span) {
+        if (this._finishedSpans.length >= this._maxQueueSize) {
+            // limit reached, drop span
+            if (this._droppedSpansCount === 0) {
+                diag.debug('maxQueueSize reached, dropping spans');
+            }
+            this._droppedSpansCount++;
+            this._metrics.dropSpans(1);
+            return;
+        }
+        if (this._droppedSpansCount > 0) {
+            // some spans were dropped, log once with count of spans dropped
+            diag.warn(`Dropped ${this._droppedSpansCount} spans because maxQueueSize reached`);
+            this._droppedSpansCount = 0;
+        }
+        this._finishedSpans.push(span);
+        this._maybeStartTimer();
+    }
+    /**
+     * Send all spans to the exporter respecting the batch size limit
+     * This function is used only on forceFlush or shutdown,
+     * for all other cases _flush should be used
+     * */
+    _flushAll() {
+        return new Promise((resolve, reject) => {
+            const promises = [];
+            // calculate number of batches
+            const count = Math.ceil(this._finishedSpans.length / this._maxExportBatchSize);
+            for (let i = 0, j = count; i < j; i++) {
+                promises.push(this._flushOneBatch());
+            }
+            Promise.all(promises)
+                .then(() => {
+                resolve();
+            })
+                .catch(reject);
+        });
+    }
+    _flushOneBatch() {
+        this._clearTimer();
+        if (this._finishedSpans.length === 0) {
+            return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                // don't wait anymore for export, this way the next batch can start
+                reject(new Error('Timeout'));
+            }, this._exportTimeoutMillis);
+            // prevent downstream exporter calls from generating spans
+            context.with(suppressTracing$2(context.active()), () => {
+                // Reset the finished spans buffer here because the next invocations of the _flush method
+                // could pass the same finished spans to the exporter if the buffer is cleared
+                // outside the execution of this callback.
+                let spans;
+                if (this._finishedSpans.length <= this._maxExportBatchSize) {
+                    spans = this._finishedSpans;
+                    this._finishedSpans = [];
+                }
+                else {
+                    spans = this._finishedSpans.splice(0, this._maxExportBatchSize);
+                }
+                const doExport = () => this._exporter.export(spans, result => {
+                    clearTimeout(timer);
+                    this._metrics.finishSpans(spans.length, result.error);
+                    if (result.code === ExportResultCode$3.SUCCESS) {
+                        resolve();
+                    }
+                    else {
+                        reject(result.error ??
+                            new Error('BatchSpanProcessor: span export failed'));
+                    }
+                });
+                let pendingResources = null;
+                for (let i = 0, len = spans.length; i < len; i++) {
+                    const span = spans[i];
+                    if (span.resource.asyncAttributesPending &&
+                        span.resource.waitForAsyncAttributes) {
+                        pendingResources ??= [];
+                        pendingResources.push(span.resource.waitForAsyncAttributes());
+                    }
+                }
+                // Avoid scheduling a promise to make the behavior more predictable and easier to test
+                if (pendingResources === null) {
+                    doExport();
+                }
+                else {
+                    Promise.all(pendingResources).then(doExport, err => {
+                        globalErrorHandler$2(err);
+                        reject(err);
+                    });
+                }
+            });
+        });
+    }
+    _maybeStartTimer() {
+        if (this._isExporting)
+            return;
+        const flush = () => {
+            this._isExporting = true;
+            this._flushOneBatch()
+                .finally(() => {
+                this._isExporting = false;
+                if (this._finishedSpans.length > 0) {
+                    this._clearTimer();
+                    this._maybeStartTimer();
+                }
+            })
+                .catch(e => {
+                this._isExporting = false;
+                globalErrorHandler$2(e);
+            });
+        };
+        // we only wait if the queue doesn't have enough elements yet
+        if (this._finishedSpans.length >= this._maxExportBatchSize) {
+            return flush();
+        }
+        if (this._timer !== undefined)
+            return;
+        this._timer = setTimeout(() => flush(), this._scheduledDelayMillis);
+        // depending on runtime, this may be a 'number' or NodeJS.Timeout
+        if (typeof this._timer !== 'number') {
+            this._timer.unref();
+        }
+    }
+    _clearTimer() {
+        if (this._timer !== undefined) {
+            clearTimeout(this._timer);
+            this._timer = undefined;
+        }
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+let BatchSpanProcessor$1 = class BatchSpanProcessor extends BatchSpanProcessorBase {
+    onShutdown() { }
+};
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const SPAN_ID_BYTES = 8;
+const TRACE_ID_BYTES = 16;
+class RandomIdGenerator {
+    /**
+     * Returns a random 16-byte trace ID formatted/encoded as a 32 lowercase hex
+     * characters corresponding to 128 bits.
+     */
+    generateTraceId = getIdGenerator(TRACE_ID_BYTES);
+    /**
+     * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
+     * characters corresponding to 64 bits.
+     */
+    generateSpanId = getIdGenerator(SPAN_ID_BYTES);
+}
+const SHARED_BUFFER = Buffer.allocUnsafe(TRACE_ID_BYTES);
+function getIdGenerator(bytes) {
+    return function generateId() {
+        for (let i = 0; i < bytes / 4; i++) {
+            // unsigned right shift drops decimal part of the number
+            // it is required because if a number between 2**32 and 2**32 - 1 is generated, an out of range error is thrown by writeUInt32BE
+            SHARED_BUFFER.writeUInt32BE((Math.random() * 2 ** 32) >>> 0, i * 4);
+        }
+        // If buffer is all 0, set the last byte to 1 to guarantee a valid w3c id is generated
+        for (let i = 0; i < bytes; i++) {
+            if (SHARED_BUFFER[i] > 0) {
+                break;
+            }
+            else if (i === bytes - 1) {
+                SHARED_BUFFER[bytes - 1] = 1;
+            }
+        }
+        return SHARED_BUFFER.toString('hex', 0, bytes);
+    };
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 var ForceFlushState;
 (function (ForceFlushState) {
     ForceFlushState[ForceFlushState["resolved"] = 0] = "resolved";
@@ -103970,33 +105587,49 @@ var ForceFlushState;
 /**
  * This class represents a basic tracer provider which platform libraries can extend
  */
-class BasicTracerProvider {
-    _config;
-    _tracers = new Map();
+class TracerProvider {
     _resource;
     _activeSpanProcessor;
-    constructor(config = {}) {
-        const mergedConfig = merge({}, loadDefaultConfig(), reconfigureLimits(config));
-        this._resource = mergedConfig.resource ?? defaultResource();
-        this._config = Object.assign({}, mergedConfig, {
-            resource: this._resource,
-        });
-        const spanProcessors = [];
-        if (config.spanProcessors?.length) {
-            spanProcessors.push(...config.spanProcessors);
-        }
+    _forceFlushTimeoutMillis;
+    _tracerOptions;
+    _tracers = new Map();
+    constructor(options = {}) {
+        this._forceFlushTimeoutMillis = options.forceFlushTimeoutMillis ?? 30000;
+        this._resource = options.resource ?? defaultResource$1();
+        const spanProcessors = options.spanProcessors ?? [];
         this._activeSpanProcessor = new MultiSpanProcessor(spanProcessors);
+        this._tracerOptions = {
+            resource: this._resource,
+            sampler: options.sampler ??
+                new ParentBasedSampler({
+                    root: new AlwaysOnSampler(),
+                }),
+            spanLimits: {
+                attributeCountLimit: options.spanLimits?.attributeCountLimit ?? 128,
+                attributeValueLengthLimit: options.spanLimits?.attributeValueLengthLimit ?? Infinity,
+                eventCountLimit: options.spanLimits?.eventCountLimit ?? 128,
+                linkCountLimit: options.spanLimits?.linkCountLimit ?? 128,
+                attributePerEventCountLimit: options.spanLimits?.attributePerEventCountLimit ?? 128,
+                attributePerLinkCountLimit: options.spanLimits?.attributePerLinkCountLimit ?? 128,
+            },
+            idGenerator: options.idGenerator || new RandomIdGenerator(),
+            spanProcessor: this._activeSpanProcessor,
+            meterProvider: options.meterProvider ?? {
+                getMeter() {
+                    return createNoopMeter();
+                },
+            },
+        };
     }
     getTracer(name, version, options) {
         const key = `${name}@${version || ''}:${options?.schemaUrl || ''}`;
         if (!this._tracers.has(key)) {
-            this._tracers.set(key, new Tracer({ name, version, schemaUrl: options?.schemaUrl }, this._config, this._resource, this._activeSpanProcessor));
+            this._tracers.set(key, new Tracer({ name, version, schemaUrl: options?.schemaUrl }, this._tracerOptions));
         }
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this._tracers.get(key);
     }
-    forceFlush() {
-        const timeout = this._config.forceFlushTimeoutMillis;
+    forceFlush(options) {
+        const timeout = options?.timeoutMillis ?? this._forceFlushTimeoutMillis;
         const promises = this._activeSpanProcessor['_spanProcessors'].map((spanProcessor) => {
             return new Promise(resolve => {
                 let state;
@@ -104036,6 +105669,15 @@ class BasicTracerProvider {
     }
     shutdown() {
         return this._activeSpanProcessor.shutdown();
+    }
+    [inspectCustom](depth, options, inspect) {
+        const processors = this._activeSpanProcessor['_spanProcessors'];
+        const payload = {
+            resource: { attributes: settledResourceAttributes(this._resource) },
+            tracers: Array.from(this._tracers.keys()),
+            spanProcessors: processors.map(p => p.constructor?.name ?? 'SpanProcessor'),
+        };
+        return formatInspect('TracerProvider', payload, depth, options, inspect);
     }
 }
 
@@ -104088,8 +105730,8 @@ class ConsoleSpanExporter {
             name: span.name,
             id: span.spanContext().spanId,
             kind: span.kind,
-            timestamp: hrTimeToMicroseconds(span.startTime),
-            duration: hrTimeToMicroseconds(span.duration),
+            timestamp: hrTimeToMicroseconds$1(span.startTime),
+            duration: hrTimeToMicroseconds$1(span.duration),
             attributes: span.attributes,
             status: span.status,
             events: span.events,
@@ -104106,8 +105748,219 @@ class ConsoleSpanExporter {
             console.dir(this._exportInfo(span), { depth: 3 });
         }
         if (done) {
-            return done({ code: ExportResultCode.SUCCESS });
+            return done({ code: ExportResultCode$3.SUCCESS });
         }
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/** Sampler that samples a given fraction of traces based of trace id deterministically. */
+class TraceIdRatioBasedSampler {
+    _ratio;
+    _upperBound;
+    constructor(ratio = 0) {
+        this._ratio = this._normalize(ratio);
+        this._upperBound =
+            this._ratio === 1 ? 0x100000000 : Math.floor(this._ratio * 0xffffffff);
+    }
+    shouldSample(context, traceId) {
+        return {
+            decision: isValidTraceId(traceId) && this._accumulate(traceId) < this._upperBound
+                ? SamplingDecision.RECORD_AND_SAMPLED
+                : SamplingDecision.NOT_RECORD,
+        };
+    }
+    toString() {
+        return `TraceIdRatioBased{${this._ratio}}`;
+    }
+    _normalize(ratio) {
+        if (typeof ratio !== 'number' || isNaN(ratio))
+            return 0;
+        return ratio >= 1 ? 1 : ratio <= 0 ? 0 : ratio;
+    }
+    _accumulate(traceId) {
+        let accumulation = 0;
+        for (let i = 0; i < 32; i += 8) {
+            let part = 0;
+            for (let j = 0; j < 8; j++) {
+                const c = traceId.charCodeAt(i + j);
+                // Convert hex char code to value: '0'-'9' -> 0-9, 'a'-'f' -> 10-15, 'A'-'F' -> 10-15
+                const v = c < 58 ? c - 48 : c < 71 ? c - 55 : c - 87;
+                part = (part << 4) | v;
+            }
+            accumulation = (accumulation ^ part) >>> 0;
+        }
+        return accumulation;
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+var TracesSamplerValues;
+(function (TracesSamplerValues) {
+    TracesSamplerValues["AlwaysOff"] = "always_off";
+    TracesSamplerValues["AlwaysOn"] = "always_on";
+    TracesSamplerValues["ParentBasedAlwaysOff"] = "parentbased_always_off";
+    TracesSamplerValues["ParentBasedAlwaysOn"] = "parentbased_always_on";
+    TracesSamplerValues["ParentBasedTraceIdRatio"] = "parentbased_traceidratio";
+    TracesSamplerValues["TraceIdRatio"] = "traceidratio";
+})(TracesSamplerValues || (TracesSamplerValues = {}));
+const DEFAULT_RATIO = 1;
+/**
+ * Load default configuration. For fields with primitive values, any user-provided
+ * value will override the corresponding default value. For fields with
+ * non-primitive values (like `spanLimits`), the user-provided value will be
+ * used to extend the default value.
+ */
+// object needs to be wrapped in this function and called when needed otherwise
+// envs are parsed before tests are ran - causes tests using these envs to fail
+function loadDefaultConfig() {
+    return {
+        sampler: buildSamplerFromEnv(),
+        forceFlushTimeoutMillis: 30000,
+        generalLimits: {
+            attributeValueLengthLimit: getNumberFromEnv$2('OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT') ?? Infinity,
+            attributeCountLimit: getNumberFromEnv$2('OTEL_ATTRIBUTE_COUNT_LIMIT') ?? 128,
+        },
+        spanLimits: {
+            attributeValueLengthLimit: getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT') ?? Infinity,
+            attributeCountLimit: getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT') ?? 128,
+            linkCountLimit: getNumberFromEnv$2('OTEL_SPAN_LINK_COUNT_LIMIT') ?? 128,
+            eventCountLimit: getNumberFromEnv$2('OTEL_SPAN_EVENT_COUNT_LIMIT') ?? 128,
+            attributePerEventCountLimit: getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_PER_EVENT_COUNT_LIMIT') ?? 128,
+            attributePerLinkCountLimit: getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_PER_LINK_COUNT_LIMIT') ?? 128,
+        },
+    };
+}
+/**
+ * Based on environment, builds a sampler, complies with specification.
+ */
+function buildSamplerFromEnv() {
+    const sampler = getStringFromEnv$2('OTEL_TRACES_SAMPLER') ??
+        TracesSamplerValues.ParentBasedAlwaysOn;
+    switch (sampler) {
+        case TracesSamplerValues.AlwaysOn:
+            return new AlwaysOnSampler();
+        case TracesSamplerValues.AlwaysOff:
+            return new AlwaysOffSampler();
+        case TracesSamplerValues.ParentBasedAlwaysOn:
+            return new ParentBasedSampler({
+                root: new AlwaysOnSampler(),
+            });
+        case TracesSamplerValues.ParentBasedAlwaysOff:
+            return new ParentBasedSampler({
+                root: new AlwaysOffSampler(),
+            });
+        case TracesSamplerValues.TraceIdRatio:
+            return new TraceIdRatioBasedSampler(getSamplerProbabilityFromEnv());
+        case TracesSamplerValues.ParentBasedTraceIdRatio:
+            return new ParentBasedSampler({
+                root: new TraceIdRatioBasedSampler(getSamplerProbabilityFromEnv()),
+            });
+        default:
+            diag.error(`OTEL_TRACES_SAMPLER value "${sampler}" invalid, defaulting to "${TracesSamplerValues.ParentBasedAlwaysOn}".`);
+            return new ParentBasedSampler({
+                root: new AlwaysOnSampler(),
+            });
+    }
+}
+function getSamplerProbabilityFromEnv() {
+    const probability = getNumberFromEnv$2('OTEL_TRACES_SAMPLER_ARG');
+    if (probability == null) {
+        diag.error(`OTEL_TRACES_SAMPLER_ARG is blank, defaulting to ${DEFAULT_RATIO}.`);
+        return DEFAULT_RATIO;
+    }
+    if (probability < 0 || probability > 1) {
+        diag.error(`OTEL_TRACES_SAMPLER_ARG=${probability} was given, but it is out of range ([0..1]), defaulting to ${DEFAULT_RATIO}.`);
+        return DEFAULT_RATIO;
+    }
+    return probability;
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+const DEFAULT_ATTRIBUTE_COUNT_LIMIT = 128;
+const DEFAULT_ATTRIBUTE_VALUE_LENGTH_LIMIT = Infinity;
+/**
+ * When general limits are provided and model specific limits are not,
+ * configures the model specific limits by using the values from the general ones.
+ * @param userConfig User provided tracer configuration
+ */
+function reconfigureLimits(userConfig) {
+    const spanLimits = Object.assign({}, userConfig.spanLimits);
+    /**
+     * Reassign span attribute count limit to use first non null value defined by user or use default value
+     */
+    spanLimits.attributeCountLimit =
+        userConfig.spanLimits?.attributeCountLimit ??
+            userConfig.generalLimits?.attributeCountLimit ??
+            getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT') ??
+            getNumberFromEnv$2('OTEL_ATTRIBUTE_COUNT_LIMIT') ??
+            DEFAULT_ATTRIBUTE_COUNT_LIMIT;
+    /**
+     * Reassign span attribute value length limit to use first non null value defined by user or use default value
+     */
+    spanLimits.attributeValueLengthLimit =
+        userConfig.spanLimits?.attributeValueLengthLimit ??
+            userConfig.generalLimits?.attributeValueLengthLimit ??
+            getNumberFromEnv$2('OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT') ??
+            getNumberFromEnv$2('OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT') ??
+            DEFAULT_ATTRIBUTE_VALUE_LENGTH_LIMIT;
+    return Object.assign({}, userConfig, { spanLimits });
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * A TracerProvider implementation that reads configuration defaults from
+ * OTEL_* environment variables per
+ * https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/
+ */
+class BasicTracerProvider extends TracerProvider {
+    constructor(config = {}) {
+        const mergedConfig = merge$1({}, loadDefaultConfig(), reconfigureLimits(config));
+        delete mergedConfig.generalLimits;
+        super(mergedConfig);
+    }
+}
+
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * A BatchSpanProcessor that applies `OTEL_*` environment variable fallbacks per
+ * https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/
+ */
+class BatchSpanProcessor extends BatchSpanProcessor$1 {
+    constructor(exporter, config) {
+        if (!config) {
+            config = {};
+        }
+        const envFallbacks = [
+            ['maxExportBatchSize', 'OTEL_BSP_MAX_EXPORT_BATCH_SIZE'],
+            ['maxQueueSize', 'OTEL_BSP_MAX_QUEUE_SIZE'],
+            ['scheduledDelayMillis', 'OTEL_BSP_SCHEDULE_DELAY'],
+            ['exportTimeoutMillis', 'OTEL_BSP_EXPORT_TIMEOUT'],
+        ];
+        for (const [configName, envName] of envFallbacks) {
+            if (config[configName] === undefined) {
+                const envFallback = getNumberFromEnv$2(envName);
+                if (envFallback !== undefined) {
+                    config[configName] = envFallback;
+                }
+            }
+        }
+        super({ exporter, ...config });
     }
 }
 
@@ -104138,7 +105991,7 @@ function extractParentContext(traceparent) {
         warning(`Invalid traceparent format: "${traceparent}". Creating new root trace.`);
         return ROOT_CONTEXT;
     }
-    const propagator = new W3CTraceContextPropagator();
+    const propagator = new W3CTraceContextPropagator$1();
     const carrier = { traceparent };
     return propagator.extract(ROOT_CONTEXT, carrier, {
         get: (c, key) => c[key],
@@ -104176,7 +106029,7 @@ function createLoggerProvider(endpoint, headers, attributes) {
     }
     // Cast through unknown to bridge the version mismatch between @opentelemetry/resources 1.x
     // (trace SDK) and 2.x (sdk-logs). The runtime shape is identical.
-    const resource = defaultResource().merge(resourceFromAttributes(attributes));
+    const resource = defaultResource$1().merge(resourceFromAttributes$1(attributes));
     const config = { resource };
     if (exporter) {
         config["processors"] = [new BatchLogRecordProcessor(exporter)];
@@ -104235,7 +106088,7 @@ function createTracerProvider(endpoint, headers, attributes) {
             });
         }
     }
-    const resource = defaultResource().merge(resourceFromAttributes(attributes));
+    const resource = defaultResource$1().merge(resourceFromAttributes$1(attributes));
     const provider = new BasicTracerProvider({
         resource,
         // The whole run's spans are created in one synchronous burst before the

@@ -973,7 +973,7 @@ describe("run with testResultsArtifactPrefix", () => {
     const firstTest = aTestName();
     const secondTest = aTestName();
     const reports = { 10: [{ name: aTestName(), cases: [{ name: firstTest }, { name: secondTest }] }] };
-    collectTestCasesFromArtifacts.mockResolvedValue(reports as never);
+    collectTestCasesFromArtifacts.mockResolvedValue(reports);
 
     await run();
 
@@ -1003,7 +1003,7 @@ describe("run with testResultsArtifactPrefix", () => {
     });
     const passingTest = aTestName();
     const reports = { 10: [{ name: aTestName(), cases: [{ name: passingTest }] }] };
-    collectTestCasesFromArtifacts.mockResolvedValue(reports as never);
+    collectTestCasesFromArtifacts.mockResolvedValue(reports);
     const globSummary = { suites: 9, total: 9, passed: 9, failed: 0, skipped: 0, errors: 0, duration: 1 };
     findTestResultsSummary.mockResolvedValue(globSummary as never);
 
@@ -1040,7 +1040,7 @@ describe("run with testResultsArtifactPrefix", () => {
     });
     collectTestCasesFromArtifacts.mockResolvedValue({
       10: [{ name: aTestName(), cases: [{ name: aTestName(), status: "failed" }] }],
-    } as never);
+    });
 
     await run();
 
@@ -1056,7 +1056,7 @@ describe("run with testResultsArtifactPrefix", () => {
     });
     collectTestCasesFromArtifacts.mockResolvedValue({
       10: [{ name: aTestName(), cases: [{ name: aTestName(), status: "passed" }] }],
-    } as never);
+    });
 
     await run();
 

@@ -70,7 +70,7 @@ function buildJob(overrides: Partial<Job> = {}): Job {
     runner_group_id: 2,
     runner_group_name: "default",
     ...overrides,
-  } as Job;
+  };
 }
 
 describe("traceJob", () => {

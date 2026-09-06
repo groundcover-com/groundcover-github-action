@@ -27,7 +27,7 @@ function buildStep(overrides: Partial<Step> = {}): Step {
     started_at: "2026-01-29T17:16:45Z",
     completed_at: "2026-01-29T17:16:50Z",
     ...overrides,
-  } as Step;
+  };
 }
 
 function hrTimeToMs(value: [number, number]): number {
@@ -106,7 +106,7 @@ describe("traceStep", () => {
         conclusion: null,
         started_at: "2026-01-29T17:16:45Z",
         completed_at: "2026-01-29T17:16:50Z",
-      } as unknown as Partial<Step>),
+      }),
     );
 
     const span = exporter.getFinishedSpans()[0];

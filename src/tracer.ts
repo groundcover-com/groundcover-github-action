@@ -98,7 +98,7 @@ function createLoggerProvider(endpoint: string, headers: string, attributes: Att
   if (exporter) {
     config["processors"] = [new BatchLogRecordProcessor(exporter)];
   }
-  const provider = new LoggerProvider(config as ConstructorParameters<typeof LoggerProvider>[0]);
+  const provider = new LoggerProvider(config);
 
   logs.setGlobalLoggerProvider(provider);
   return provider;
