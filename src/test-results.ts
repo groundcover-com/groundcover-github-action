@@ -18,6 +18,7 @@ type TestCaseStatus = "passed" | "failed" | "error" | "skipped";
 interface TestCase {
   /** For Go this includes the subtest path. */
   name: string;
+  /** The suite when the report leaves it empty, as gotestsum does for package-level failures. */
   classname: string;
   suite: string;
   timeSeconds: number;
@@ -60,6 +61,10 @@ const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "",
   parseAttributeValue: true,
+  // Go's encoding/xml escapes tabs and newlines as numeric character references
+  // (`&#x9;`, `&#xA;`), which the parser only decodes with htmlEntities on.
+  // Without it a gotestsum failure body reaches the span still escaped.
+  htmlEntities: true,
 });
 
 function parseTestResultsGlobs(input: string): string[] {
@@ -197,6 +202,18 @@ function toCaseStatus(node: XmlTestCaseNode): TestCaseStatus {
   return "passed";
 }
 
+/**
+ * gotestsum leaves classname empty on the synthetic `TestMain` case it emits
+ * for a package that failed as a whole (build failure, setup failure, test
+ * binary timeout). Falling back to the suite keeps classname the package
+ * everywhere, so keying a test on classname + name doesn't collapse every
+ * package-level failure in the repo into one `::TestMain` identity.
+ */
+function classnameOf(testCase: XmlTestCaseNode, suiteName: string): string {
+  const classname = testCase.classname === undefined ? "" : String(testCase.classname);
+  return classname === "" ? suiteName : classname;
+}
+
 function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf">[]): void {
   if (!node) {
     return;
@@ -213,7 +230,7 @@ function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf
     const output = extractMessage(testCase["system-out"], MAX_OUTPUT_LENGTH);
     cases.push({
       name: String(testCase.name),
-      classname: testCase.classname === undefined ? "" : String(testCase.classname),
+      classname: classnameOf(testCase, suiteName),
       suite: suiteName,
       timeSeconds,
       status,

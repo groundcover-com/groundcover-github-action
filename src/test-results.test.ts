@@ -186,6 +186,23 @@ describe("parseJUnitTestCases", () => {
     expect(casesByName(xml).get(name)?.output).toBeUndefined();
   });
 
+  it("falls back to the suite when a package-level testcase carries an empty classname", () => {
+    const pkg = aPackageName();
+    const xml = `<testsuite name="${pkg}" tests="1" failures="1"><testcase classname="" name="TestMain" time="0"><failure message="Failed">FAIL&#x9;${pkg} [build failed]&#xA;</failure></testcase></testsuite>`;
+
+    expect(casesByName(xml).get("TestMain")).toMatchObject({ classname: pkg, suite: pkg });
+  });
+
+  it("decodes XML-escaped whitespace in failure messages and output", () => {
+    const name = aTestName();
+    const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"><failure message="Failed&#xA;twice">FAIL&#x9;pkg [build failed]&#xA;</failure><system-out>first&#xA;second</system-out></testcase></testsuite>`;
+
+    const testCase = casesByName(xml).get(name);
+
+    expect(testCase?.message).toBe("Failed\ntwice\nFAIL\tpkg [build failed]\n");
+    expect(testCase?.output).toBe("first\nsecond");
+  });
+
   it("classifies error elements as errors", () => {
     const name = aTestName();
     const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"><error message="panic"/></testcase></testsuite>`;

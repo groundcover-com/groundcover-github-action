@@ -409,7 +409,7 @@ The wrapper is named after the report's suite, or its file name when a file hold
 
 Each test case span carries these attributes:
 
-- `test.name`, `test.classname`, `test.suite`
+- `test.name`, `test.classname`, `test.suite` — `test.classname` falls back to the suite when the report leaves it empty, as gotestsum does for the synthetic `TestMain` case of a package that failed to build
 - `test.status` (`passed` / `failed` / `error` / `skipped`), `test.duration_ms`
 - `test.leaf` — false for Go subtest ancestors (another case in the same classname extends this name)
 - `test.collateral` — true for zero-duration failures with no output, which the framework aborted before the test ran (e.g. Go `-failfast`)
