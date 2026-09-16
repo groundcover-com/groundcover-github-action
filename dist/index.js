@@ -106155,7 +106155,7 @@ class DeterministicIdGenerator {
     }
 }
 
-var version = "4.0.0";
+var version = "4.1.0";
 
 function isOctokitError(err) {
     return err instanceof RequestError;
