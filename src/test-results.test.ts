@@ -159,13 +159,40 @@ describe("parseJUnitTestCases", () => {
   it("combines the failure message attribute and body, capped", () => {
     const name = aTestName();
     const message = `boom ${unique()}`;
-    const longBody = "x".repeat(10_000);
+    const longBody = "x".repeat(100_000);
     const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"><failure message="${message}">${longBody}</failure></testcase></testsuite>`;
 
     const testCase = casesByName(xml).get(name);
 
     expect(testCase?.message).toContain(message);
-    expect(testCase?.message?.length).toBeLessThanOrEqual(4096);
+    expect(testCase?.message?.length).toBeLessThanOrEqual(65_536);
+  });
+
+  it("keeps the assertion at the end of a long Go failure body", () => {
+    const name = aTestName();
+    const assertion = `Error: Not equal ${unique()}`;
+    const body = `${"=== RUN noise\n".repeat(1_000)}${assertion}`;
+    const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"><failure message="Failed">${body}</failure></testcase></testsuite>`;
+
+    expect(casesByName(xml).get(name)?.message).toContain(assertion);
+  });
+
+  it("caps the failure message at a configured length", () => {
+    const name = aTestName();
+    const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"><failure>${"x".repeat(1_000)}</failure></testcase></testsuite>`;
+
+    const [testCase] = parseJUnitTestCases(xml, { maxMessageLength: 100 }) ?? [];
+
+    expect(testCase?.message).toBe("x".repeat(100));
+  });
+
+  it("counts the cap in decoded characters, not XML escapes", () => {
+    const name = aTestName();
+    const xml = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"><failure>${"&#34;".repeat(20)}</failure></testcase></testsuite>`;
+
+    const [testCase] = parseJUnitTestCases(xml, { maxMessageLength: 10 }) ?? [];
+
+    expect(testCase?.message).toBe('"'.repeat(10));
   });
 
   it("captures per-test system-out as output, capped", () => {

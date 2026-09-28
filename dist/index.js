@@ -47744,7 +47744,9 @@ function parseJUnitXml(content) {
     const parsed = parser.parse(content);
     return extractNodeSummary(parsed.testsuites) ?? extractNodeSummary(parsed.testsuite);
 }
-const MAX_MESSAGE_LENGTH = 4096;
+// Go failure bodies put the assertion last, after the test's own log output, so a
+// cap that fits most of them keeps the part a reader needs.
+const MAX_MESSAGE_LENGTH = 65_536;
 const MAX_OUTPUT_LENGTH = 16_384;
 /**
  * A zero-duration failure that produced no output means the framework aborted
@@ -47798,7 +47800,7 @@ function classnameOf(testCase, suiteName) {
     const classname = testCase.classname === undefined ? "" : String(testCase.classname);
     return classname === "" ? suiteName : classname;
 }
-function collectTestCases(node, cases) {
+function collectTestCases(node, cases, maxMessageLength) {
     if (!node) {
         return;
     }
@@ -47809,7 +47811,7 @@ function collectTestCases(node, cases) {
         }
         const status = toCaseStatus(testCase);
         const timeSeconds = Number(testCase.time ?? 0) || 0;
-        const message = extractMessage(testCase.failure ?? testCase.error);
+        const message = extractMessage(testCase.failure ?? testCase.error, maxMessageLength);
         const output = extractMessage(testCase["system-out"], MAX_OUTPUT_LENGTH);
         cases.push({
             name: String(testCase.name),
@@ -47823,7 +47825,7 @@ function collectTestCases(node, cases) {
         });
     }
     for (const child of toArray(node.testsuite)) {
-        collectTestCases(child, cases);
+        collectTestCases(child, cases, maxMessageLength);
     }
 }
 /** A case is a leaf unless another case in the same classname extends its name (Go subtest ancestry). */
@@ -47857,11 +47859,12 @@ function summarizeTestCases(cases) {
         duration,
     };
 }
-function parseJUnitTestCases(content) {
+function parseJUnitTestCases(content, options = {}) {
     const parsed = parser.parse(content);
     const cases = [];
-    collectTestCases(parsed.testsuites, cases);
-    collectTestCases(parsed.testsuite, cases);
+    const maxMessageLength = options.maxMessageLength ?? MAX_MESSAGE_LENGTH;
+    collectTestCases(parsed.testsuites, cases, maxMessageLength);
+    collectTestCases(parsed.testsuite, cases, maxMessageLength);
     return cases.length > 0 ? markLeaves(cases) : undefined;
 }
 async function findTestResultsSummary(input) {
@@ -48531,7 +48534,7 @@ function extractXmlFilesFromZip(zip) {
     }
     return files;
 }
-async function collectTestCasesFromArtifacts(context, octokit, runId, prefix, jobs) {
+async function collectTestCasesFromArtifacts(context, octokit, runId, prefix, jobs, maxMessageLength) {
     const artifacts = await listWorkflowRunArtifacts(context, octokit, runId);
     const testReportsByJobId = {};
     for (const artifact of artifacts) {
@@ -48545,7 +48548,7 @@ async function collectTestCasesFromArtifacts(context, octokit, runId, prefix, jo
         }
         const zip = await downloadArtifactZip(context, octokit, artifact.id);
         for (const file of extractXmlFilesFromZip(zip)) {
-            const cases = parseJUnitTestCases(file.content);
+            const cases = parseJUnitTestCases(file.content, { maxMessageLength });
             if (!cases) {
                 warning(`No test cases found in ${artifact.name}/${file.name}; skipping it`);
                 continue;
@@ -106155,7 +106158,7 @@ class DeterministicIdGenerator {
     }
 }
 
-var version = "4.1.0";
+var version = "4.2.0";
 
 function isOctokitError(err) {
     return err instanceof RequestError;
@@ -106269,6 +106272,16 @@ async function upsertPrTraceComments(token, workflowRun, groundcoverBaseUrl, tra
         }
     }
 }
+function parsePositiveInteger(inputName, raw) {
+    if (raw === "") {
+        return undefined;
+    }
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value <= 0) {
+        throw new Error(`${inputName} must be a positive integer, got "${raw}"`);
+    }
+    return value;
+}
 async function run() {
     try {
         const otlpEndpoint = getInput("groundcoverEndpoint");
@@ -106280,6 +106293,7 @@ async function run() {
         const extraAttributes = stringToRecord(getInput("extraAttributes"));
         const testResultsGlob = getInput("testResultsGlob");
         const testResultsArtifactPrefix = getInput("testResultsArtifactPrefix");
+        const maxFailureMessageLength = parsePositiveInteger("maxFailureMessageLength", getInput("maxFailureMessageLength"));
         const exportLogs = getInput("exportLogs") === "true";
         const env = getInput("env") || undefined;
         const workload = getInput("workload") || undefined;
@@ -106310,7 +106324,7 @@ async function run() {
         if (testResultsArtifactPrefix) {
             info(`Collect test results from run artifacts prefixed "${testResultsArtifactPrefix}"`);
             const octokit = getOctokit(ghToken);
-            testReportsByJobId = await collectTestCasesFromArtifacts(context$1, octokit, runId, testResultsArtifactPrefix, jobs);
+            testReportsByJobId = await collectTestCasesFromArtifacts(context$1, octokit, runId, testResultsArtifactPrefix, jobs, maxFailureMessageLength);
         }
         const allTestCases = Object.values(testReportsByJobId)
             .flat()
