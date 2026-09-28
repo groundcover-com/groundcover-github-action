@@ -168,6 +168,17 @@ async function upsertPrTraceComments(
   }
 }
 
+function parsePositiveInteger(inputName: string, raw: string): number | undefined {
+  if (raw === "") {
+    return undefined;
+  }
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${inputName} must be a positive integer, got "${raw}"`);
+  }
+  return value;
+}
+
 async function run(): Promise<void> {
   try {
     const otlpEndpoint = core.getInput("groundcoverEndpoint");
@@ -179,6 +190,10 @@ async function run(): Promise<void> {
     const extraAttributes = stringToRecord(core.getInput("extraAttributes"));
     const testResultsGlob = core.getInput("testResultsGlob");
     const testResultsArtifactPrefix = core.getInput("testResultsArtifactPrefix");
+    const maxFailureMessageLength = parsePositiveInteger(
+      "maxFailureMessageLength",
+      core.getInput("maxFailureMessageLength"),
+    );
     const exportLogs = core.getInput("exportLogs") === "true";
     const env = core.getInput("env") || undefined;
     const workload = core.getInput("workload") || undefined;
@@ -225,6 +240,7 @@ async function run(): Promise<void> {
         runId,
         testResultsArtifactPrefix,
         jobs,
+        maxFailureMessageLength,
       );
     }
 

@@ -150,7 +150,9 @@ function parseJUnitXml(content: string): TestResultsSummary | undefined {
   return extractNodeSummary(parsed.testsuites) ?? extractNodeSummary(parsed.testsuite);
 }
 
-const MAX_MESSAGE_LENGTH = 4096;
+// Go failure bodies put the assertion last, after the test's own log output, so a
+// cap that fits most of them keeps the part a reader needs.
+const MAX_MESSAGE_LENGTH = 65_536;
 const MAX_OUTPUT_LENGTH = 16_384;
 
 /**
@@ -214,7 +216,12 @@ function classnameOf(testCase: XmlTestCaseNode, suiteName: string): string {
   return classname === "" ? suiteName : classname;
 }
 
-function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf">[]): void {
+interface ParseOptions {
+  /** Cap on a failure's message, in decoded characters. */
+  maxMessageLength?: number | undefined;
+}
+
+function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf">[], maxMessageLength: number): void {
   if (!node) {
     return;
   }
@@ -226,7 +233,7 @@ function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf
     }
     const status = toCaseStatus(testCase);
     const timeSeconds = Number(testCase.time ?? 0) || 0;
-    const message = extractMessage(testCase.failure ?? testCase.error);
+    const message = extractMessage(testCase.failure ?? testCase.error, maxMessageLength);
     const output = extractMessage(testCase["system-out"], MAX_OUTPUT_LENGTH);
     cases.push({
       name: String(testCase.name),
@@ -241,7 +248,7 @@ function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf
   }
 
   for (const child of toArray(node.testsuite)) {
-    collectTestCases(child, cases);
+    collectTestCases(child, cases, maxMessageLength);
   }
 }
 
@@ -280,11 +287,12 @@ function summarizeTestCases(cases: TestCase[]): TestResultsSummary {
   };
 }
 
-function parseJUnitTestCases(content: string): TestCase[] | undefined {
+function parseJUnitTestCases(content: string, options: ParseOptions = {}): TestCase[] | undefined {
   const parsed = parser.parse(content) as { testsuites?: XmlNode; testsuite?: XmlNode };
   const cases: Omit<TestCase, "leaf">[] = [];
-  collectTestCases(parsed.testsuites, cases);
-  collectTestCases(parsed.testsuite, cases);
+  const maxMessageLength = options.maxMessageLength ?? MAX_MESSAGE_LENGTH;
+  collectTestCases(parsed.testsuites, cases, maxMessageLength);
+  collectTestCases(parsed.testsuite, cases, maxMessageLength);
 
   return cases.length > 0 ? markLeaves(cases) : undefined;
 }

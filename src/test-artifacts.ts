@@ -59,6 +59,7 @@ async function collectTestCasesFromArtifacts(
   runId: number,
   prefix: string,
   jobs: components["schemas"]["job"][],
+  maxMessageLength?: number,
 ): Promise<Record<number, TestReport[]>> {
   const artifacts = await listWorkflowRunArtifacts(context, octokit, runId);
   const testReportsByJobId: Record<number, TestReport[]> = {};
@@ -76,7 +77,7 @@ async function collectTestCasesFromArtifacts(
 
     const zip = await downloadArtifactZip(context, octokit, artifact.id);
     for (const file of extractXmlFilesFromZip(zip)) {
-      const cases = parseJUnitTestCases(file.content);
+      const cases = parseJUnitTestCases(file.content, { maxMessageLength });
       if (!cases) {
         core.warning(`No test cases found in ${artifact.name}/${file.name}; skipping it`);
         continue;

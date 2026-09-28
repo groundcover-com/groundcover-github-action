@@ -63,6 +63,13 @@ inputs:
       jobs should use actions/upload-artifact with overwrite: true so reruns
       replace the previous attempt's reports.
     required: false
+  maxFailureMessageLength:
+    description: >
+      Maximum length, in characters, of a failed test's message on its span and
+      log record. Longer messages are cut at this length. Go test failures put the
+      assertion after the test's own output, so a low cap can drop it.
+    required: false
+    default: "65536"
   exportLogs:
     description: >
       Download GitHub Actions job logs and export them as OpenTelemetry log records

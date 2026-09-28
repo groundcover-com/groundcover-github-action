@@ -977,9 +977,14 @@ describe("run with testResultsArtifactPrefix", () => {
 
     await run();
 
-    expect(collectTestCasesFromArtifacts).toHaveBeenCalledWith(github.context, { mocked: true }, 123, "test-reports-", [
-      { id: 10 },
-    ]);
+    expect(collectTestCasesFromArtifacts).toHaveBeenCalledWith(
+      github.context,
+      { mocked: true },
+      123,
+      "test-reports-",
+      [{ id: 10 }],
+      undefined,
+    );
     expect(summarizeTestCases).toHaveBeenCalledWith([{ name: firstTest }, { name: secondTest }]);
     expect(traceWorkflowRun).toHaveBeenCalledWith(
       expect.any(Object),
@@ -992,6 +997,41 @@ describe("run with testResultsArtifactPrefix", () => {
       reports,
     );
     expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it("caps failure messages at the configured length", async () => {
+    mockRun({
+      groundcoverEndpoint: "https://localhost",
+      apiKey: "gc-secret",
+      testResultsArtifactPrefix: "test-reports-",
+      maxFailureMessageLength: "8192",
+    });
+    collectTestCasesFromArtifacts.mockResolvedValue({});
+
+    await run();
+
+    expect(collectTestCasesFromArtifacts).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      8192,
+    );
+  });
+
+  it("fails the run on a failure-message length that is not a positive integer", async () => {
+    mockRun({
+      groundcoverEndpoint: "https://localhost",
+      apiKey: "gc-secret",
+      testResultsArtifactPrefix: "test-reports-",
+      maxFailureMessageLength: "64k",
+    });
+
+    await run();
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining("maxFailureMessageLength"));
+    expect(collectTestCasesFromArtifacts).not.toHaveBeenCalled();
   });
 
   it("prefers the glob summary over the artifact-derived one", async () => {
