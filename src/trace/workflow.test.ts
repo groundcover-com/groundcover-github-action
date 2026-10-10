@@ -448,6 +448,8 @@ describe("traceWorkflowRun", () => {
       failed: 1,
       skipped: 1,
       errors: 0,
+      pending: 3,
+      other: 4,
       duration: 12.5,
     });
 
@@ -458,6 +460,8 @@ describe("traceWorkflowRun", () => {
     expect(rootSpan?.attributes["test.failed"]).toBe(1);
     expect(rootSpan?.attributes["test.skipped"]).toBe(1);
     expect(rootSpan?.attributes["test.errors"]).toBe(0);
+    expect(rootSpan?.attributes["test.pending"]).toBe(3);
+    expect(rootSpan?.attributes["test.other"]).toBe(4);
     expect(rootSpan?.attributes["test.duration"]).toBe(12.5);
   });
 });

@@ -14,7 +14,7 @@ interface TestCaseJobContext {
   completed_at: string;
 }
 
-/** One parsed JUnit file: its display name and the cases it reported. */
+/** One parsed JUnit or CTRF file: its display name and the cases it reported. */
 interface TestReport {
   name: string;
   cases: TestCase[];
@@ -22,11 +22,12 @@ interface TestReport {
 
 /**
  * Each report gets a wrapper span carrying that file's rollup, so a job with
- * several JUnit files keeps them apart instead of one flat list of tests.
+ * several report files keeps them apart instead of one flat list of tests.
  *
- * JUnit reports carry durations but no per-test timestamps, so every test span
- * is anchored at the job start; durations are exact, overlaps are expected
- * (tests run in parallel anyway). The wrapper covers the job's own window.
+ * JUnit reports carry durations but no per-test timestamps, so those test spans
+ * are anchored at the job start; durations are exact, overlaps are expected
+ * (tests run in parallel anyway). CTRF tests start at their own timestamp when
+ * it is inside the job window. The wrapper covers the job's own window.
  */
 function traceTestReports(reports: TestReport[], job: TestCaseJobContext): void {
   const tracer = trace.getTracer("otel-cicd-export-action");
@@ -40,12 +41,21 @@ function traceTestReports(reports: TestReport[], job: TestCaseJobContext): void 
       { attributes: reportToAttributes(report, job), startTime, kind: SpanKind.INTERNAL },
       (reportSpan) => {
         for (const testCase of report.cases) {
-          traceTestCase(testCase, job, tracer, startTime);
+          traceTestCase(testCase, job, tracer, testStartTime(testCase, startTime, endTime));
         }
         reportSpan.end(endTime);
       },
     );
   }
+}
+
+/** A timestamp outside the job window is from a skewed clock or another attempt, so use the job start. */
+function testStartTime(testCase: TestCase, jobStart: Date, jobEnd: Date): Date {
+  const startedAt = testCase.startedAt;
+  if (startedAt !== undefined && startedAt >= jobStart.getTime() && startedAt <= jobEnd.getTime()) {
+    return new Date(startedAt);
+  }
+  return jobStart;
 }
 
 function traceTestCase(
@@ -79,6 +89,8 @@ function reportToAttributes(report: TestReport, job: TestCaseJobContext): Attrib
     "test.failed": summary.failed,
     "test.skipped": summary.skipped,
     "test.errors": summary.errors,
+    "test.pending": summary.pending,
+    "test.other": summary.other,
     "test.duration": summary.duration,
     "github.job.id": job.id,
     "github.job.name": job.name,

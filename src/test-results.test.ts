@@ -8,7 +8,8 @@ const info = jest.fn<(message: string | number) => void>();
 const warning = jest.fn<(message: string | Error) => void>();
 jest.unstable_mockModule("@actions/core", () => ({ info, warning }));
 
-const { findTestResultsSummary, parseJUnitXml, parseJUnitTestCases } = await import("./test-results.js");
+const { findTestResultsSummary, parseJUnitXml, parseJUnitTestCases, parseTestCases, summarizeTestCases } =
+  await import("./test-results.js");
 type TestCase = NonNullable<ReturnType<typeof parseJUnitTestCases>>[number];
 
 describe("parseJUnitXml", () => {
@@ -27,6 +28,8 @@ describe("parseJUnitXml", () => {
       failed: 2,
       skipped: 3,
       errors: 1,
+      pending: 0,
+      other: 0,
       duration: 12.5,
     });
   });
@@ -43,6 +46,8 @@ describe("parseJUnitXml", () => {
       failed: 1,
       skipped: 1,
       errors: 0,
+      pending: 0,
+      other: 0,
       duration: 4.25,
     });
   });
@@ -59,6 +64,8 @@ describe("parseJUnitXml", () => {
       failed: 1,
       skipped: 1,
       errors: 1,
+      pending: 0,
+      other: 0,
       duration: 3.5,
     });
   });
@@ -75,6 +82,8 @@ describe("parseJUnitXml", () => {
       failed: 1,
       skipped: 1,
       errors: 0,
+      pending: 0,
+      other: 0,
       duration: 2,
     });
   });
@@ -254,6 +263,52 @@ describe("parseJUnitTestCases", () => {
   });
 });
 
+describe("parseTestCases", () => {
+  const name = aTestName();
+  const junit = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"/></testsuite>`;
+  const ctrf = JSON.stringify({ results: { tests: [{ name, status: "pending", duration: 1000 }] } });
+
+  it("parses XML as JUnit", () => {
+    expect(parseTestCases(junit)).toEqual([expect.objectContaining({ name, status: "passed" })]);
+  });
+
+  it("parses JSON as CTRF, after a byte order mark and whitespace", () => {
+    expect(parseTestCases(`\uFEFF\n  ${ctrf}`)).toEqual([expect.objectContaining({ name, status: "pending" })]);
+  });
+
+  it("returns undefined for other content", () => {
+    expect(parseTestCases("plain text")).toBeUndefined();
+    expect(parseTestCases("")).toBeUndefined();
+  });
+});
+
+describe("summarizeTestCases", () => {
+  it("counts pending and other apart from passed", () => {
+    const statuses = ["passed", "failed", "error", "skipped", "pending", "other", "other"] as const;
+    const cases = statuses.map((status) => ({
+      name: aTestName(),
+      classname: "pkg",
+      suite: "pkg",
+      timeSeconds: 1,
+      status,
+      leaf: true,
+      collateral: false,
+    }));
+
+    expect(summarizeTestCases(cases)).toEqual({
+      suites: 1,
+      total: 7,
+      passed: 1,
+      failed: 1,
+      skipped: 1,
+      errors: 1,
+      pending: 1,
+      other: 2,
+      duration: 7,
+    });
+  });
+});
+
 describe("findTestResultsSummary", () => {
   let tempDir: string | undefined;
 
@@ -286,9 +341,59 @@ describe("findTestResultsSummary", () => {
       failed: 1,
       skipped: 1,
       errors: 0,
+      pending: 0,
+      other: 0,
       duration: 4,
     });
     expect(info).toHaveBeenCalledWith("Parsed 2 test result file(s)");
+  });
+
+  it("aggregates JUnit and CTRF files together", async () => {
+    tempDir = await mkdtemp(join(tmpdir(), "gc-test-results-"));
+    await writeFile(
+      join(tempDir, "junit.xml"),
+      '<testsuite tests="2" failures="1" skipped="0" errors="0" time="1.5"></testsuite>',
+    );
+    await writeFile(
+      join(tempDir, "ctrf.json"),
+      JSON.stringify({
+        reportFormat: "CTRF",
+        specVersion: "1.0.0",
+        results: {
+          tool: { name: "playwright" },
+          tests: [
+            { name: aTestName(), status: "passed", duration: 500, filePath: "a.spec.ts" },
+            { name: aTestName(), status: "pending", duration: 0, filePath: "a.spec.ts" },
+            { name: aTestName(), status: "other", duration: 1500, filePath: "b.spec.ts" },
+          ],
+        },
+      }),
+    );
+
+    const summary = await findTestResultsSummary(`${join(tempDir, "*.xml")}, ${join(tempDir, "*.json")}`);
+
+    expect(summary).toEqual({
+      suites: 3,
+      total: 5,
+      passed: 2,
+      failed: 1,
+      skipped: 0,
+      errors: 0,
+      pending: 1,
+      other: 1,
+      duration: 3.5,
+    });
+    expect(info).toHaveBeenCalledWith("Parsed 2 test result file(s)");
+  });
+
+  it("warns and skips JSON files that are not CTRF", async () => {
+    tempDir = await mkdtemp(join(tmpdir(), "gc-test-results-"));
+    await writeFile(join(tempDir, "other.json"), '{"results":{"tests":[]}}');
+
+    const summary = await findTestResultsSummary(join(tempDir, "*.json"));
+
+    expect(summary).toBeUndefined();
+    expect(warning).toHaveBeenCalledWith(expect.stringContaining("Skipping unsupported test result file"));
   });
 
   it("logs when no files match", async () => {

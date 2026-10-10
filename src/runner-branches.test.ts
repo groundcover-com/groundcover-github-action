@@ -65,6 +65,8 @@ const summarizeTestCases = jest.fn(() => ({
   failed: 1,
   skipped: 0,
   errors: 0,
+  pending: 0,
+  other: 0,
   duration: 4,
 }));
 jest.unstable_mockModule("./test-results.js", () => ({ findTestResultsSummary, summarizeTestCases }));
@@ -1044,7 +1046,17 @@ describe("run with testResultsArtifactPrefix", () => {
     const passingTest = aTestName();
     const reports = { 10: [{ name: aTestName(), cases: [{ name: passingTest }] }] };
     collectTestCasesFromArtifacts.mockResolvedValue(reports);
-    const globSummary = { suites: 9, total: 9, passed: 9, failed: 0, skipped: 0, errors: 0, duration: 1 };
+    const globSummary = {
+      suites: 9,
+      total: 9,
+      passed: 9,
+      failed: 0,
+      skipped: 0,
+      errors: 0,
+      pending: 0,
+      other: 0,
+      duration: 1,
+    };
     findTestResultsSummary.mockResolvedValue(globSummary as never);
 
     await run();

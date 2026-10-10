@@ -4,9 +4,10 @@ import { aJobName, aNumber, aPackageName, aTestName, unique } from "./__fixtures
 
 const info = jest.fn<(message: string | number) => void>();
 const warning = jest.fn<(message: string | Error) => void>();
-jest.unstable_mockModule("@actions/core", () => ({ info, warning }));
+const debug = jest.fn<(message: string) => void>();
+jest.unstable_mockModule("@actions/core", () => ({ info, warning, debug }));
 
-const { collectTestCasesFromArtifacts, extractXmlFilesFromZip, matchArtifactToJob, sanitizeArtifactNamePart } =
+const { collectTestCasesFromArtifacts, extractReportFilesFromZip, matchArtifactToJob, sanitizeArtifactNamePart } =
   await import("./test-artifacts.js");
 
 const PREFIX = "test-reports-";
@@ -61,26 +62,31 @@ describe("matchArtifactToJob", () => {
   });
 });
 
-describe("extractXmlFilesFromZip", () => {
-  it("returns the contents of xml files, including nested ones, and skips other files", () => {
+describe("extractReportFilesFromZip", () => {
+  it("returns the contents of xml and json files, including nested ones, and skips other files", () => {
     const suiteName = aPackageName();
     const zip = zipSync({
       "a-junit.xml": strToU8(`<testsuite name='${suiteName}'/>`),
       "nested/b-junit.xml": strToU8(`<testsuite name='${aPackageName()}'/>`),
+      "nested/ctrf-report.JSON": strToU8("{}"),
       "notes.txt": strToU8("not xml"),
     });
 
-    const files = extractXmlFilesFromZip(Buffer.from(zip));
+    const files = extractReportFilesFromZip(Buffer.from(zip));
 
-    expect(files).toHaveLength(2);
-    expect(files.map((file) => file.name).sort()).toEqual(["a-junit.xml", "nested/b-junit.xml"]);
+    expect(files).toHaveLength(3);
+    expect(files.map((file) => file.name).sort()).toEqual([
+      "a-junit.xml",
+      "nested/b-junit.xml",
+      "nested/ctrf-report.JSON",
+    ]);
     expect(files[0]?.content).toContain(suiteName);
   });
 
-  it("returns an empty list for a zip without xml files", () => {
+  it("returns an empty list for a zip without report files", () => {
     const zip = zipSync({ "notes.txt": strToU8("not xml") });
 
-    expect(extractXmlFilesFromZip(Buffer.from(zip))).toHaveLength(0);
+    expect(extractReportFilesFromZip(Buffer.from(zip))).toHaveLength(0);
   });
 });
 
@@ -155,5 +161,40 @@ describe("collectTestCasesFromArtifacts", () => {
 
     expect(byJobId).toEqual({});
     expect(warning).toHaveBeenCalledWith(expect.stringContaining("empty.xml"));
+  });
+
+  it("parses CTRF reports next to JUnit files, and skips other JSON without a warning", async () => {
+    const job = aJob();
+    const ctrfTest = aTestName();
+    const ctrf = JSON.stringify({
+      reportFormat: "CTRF",
+      specVersion: "1.0.0",
+      results: {
+        tool: { name: "jest" },
+        summary: { tests: 1, passed: 0, failed: 0, skipped: 0, pending: 1, other: 0, start: 0, stop: 0 },
+        tests: [{ name: ctrfTest, status: "pending", duration: 0 }],
+      },
+    });
+    const junit = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${aTestName()}" time="1"/></testsuite>`;
+    const artifacts = [{ id: 1, name: artifactNameFor(job), expired: false }];
+    const octokit = stubOctokit(artifacts, {
+      1: zipSync({
+        "junit.xml": strToU8(junit),
+        "ctrf-report.json": strToU8(ctrf),
+        "package.json": strToU8('{"name":"unrelated"}'),
+      }),
+    });
+
+    const byJobId = await collectTestCasesFromArtifacts(context as never, octokit as never, aNumber(), PREFIX, [
+      job,
+    ] as never);
+
+    const reports = byJobId[job.id] ?? [];
+    expect(reports).toHaveLength(2);
+    expect(reports.find((report) => report.name === "jest")?.cases).toEqual([
+      expect.objectContaining({ name: ctrfTest, status: "pending" }),
+    ]);
+    expect(debug).toHaveBeenCalledWith(expect.stringContaining("package.json"));
+    expect(warning).not.toHaveBeenCalledWith(expect.stringContaining("package.json"));
   });
 });

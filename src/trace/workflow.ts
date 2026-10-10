@@ -103,6 +103,8 @@ function testResultsToAttributes(testResults: TestResultsSummary | undefined): A
     "test.failed": testResults.failed,
     "test.skipped": testResults.skipped,
     "test.errors": testResults.errors,
+    "test.pending": testResults.pending,
+    "test.other": testResults.other,
     "test.duration": testResults.duration,
   };
 }
