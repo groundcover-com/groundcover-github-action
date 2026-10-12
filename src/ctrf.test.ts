@@ -18,7 +18,14 @@ function aCtrfReport(tests: unknown[], overrides: object = {}): string {
 describe("isCtrfReport", () => {
   it("accepts spec v1 and legacy reports", () => {
     expect(isCtrfReport(aCtrfReport([]))).toBe(true);
-    expect(isCtrfReport(JSON.stringify({ results: { tool: { name: "jest" }, tests: [] } }))).toBe(true);
+    expect(isCtrfReport(JSON.stringify({ results: { tool: { name: "jest" }, summary: {}, tests: [] } }))).toBe(true);
+  });
+
+  it("rejects JSON with a results.tests list but no CTRF marker or tool name", () => {
+    expect(isCtrfReport('{"results":{"tests":[{"name":"config"}]}}')).toBe(false);
+    expect(isCtrfReport('{"results":{"tool":{"name":"x"},"tests":[{"name":"config"}]}}')).toBe(false);
+    expect(isCtrfReport('{"reportFormat":"CTRF","results":{"tests":[]}}')).toBe(false);
+    expect(isCtrfReport('{"reportFormat":"CTRF","results":{"tool":{"name":""},"tests":[]}}')).toBe(false);
   });
 
   it("rejects other JSON and invalid JSON", () => {
@@ -75,7 +82,11 @@ describe("parseCtrfTestCases", () => {
   it("accepts a legacy string suite", () => {
     const suite = `suite-${unique()}`;
     const report = JSON.stringify({
-      results: { tests: [{ name: aTestName(), status: "passed", duration: 1, suite }] },
+      results: {
+        tool: { name: "jest" },
+        summary: { tests: 1, passed: 1, failed: 0, skipped: 0, pending: 0, other: 0, start: 0, stop: 0 },
+        tests: [{ name: aTestName(), status: "passed", duration: 1, suite }],
+      },
     });
 
     const [testCase] = parseCtrfTestCases(report) ?? [];
@@ -128,10 +139,10 @@ describe("parseCtrfTestCases", () => {
     expect(parseCtrfTestCases(report)?.map((testCase) => testCase.leaf)).toEqual([false, true]);
   });
 
-  it("skips tests without a name, and returns undefined when none remain", () => {
+  it("skips tests without a name, and returns an empty list when none remain", () => {
     const report = aCtrfReport([{ status: "passed", duration: 1 }, null, { name: "", status: "passed", duration: 1 }]);
 
-    expect(parseCtrfTestCases(report)).toBeUndefined();
+    expect(parseCtrfTestCases(report)).toEqual([]);
   });
 
   it("returns undefined for JSON that is not CTRF", () => {

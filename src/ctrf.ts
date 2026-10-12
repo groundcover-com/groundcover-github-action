@@ -23,10 +23,18 @@ interface CtrfTest {
 }
 
 interface CtrfReport {
+  reportFormat?: unknown;
   results?: {
     tool?: { name?: unknown };
+    summary?: unknown;
     tests?: unknown;
   };
+}
+
+/** A report that passed detection, so its tool name is set and its tests are a list. */
+interface ValidCtrfReport {
+  toolName: string;
+  tests: unknown[];
 }
 
 const CTRF_STATUSES = new Set<TestCaseStatus>(["passed", "failed", "skipped", "pending", "other"]);
@@ -55,15 +63,26 @@ function joinCapped(parts: unknown[], maxLength: number): string | undefined {
   return text === "" ? undefined : text.slice(0, maxLength);
 }
 
-/** Detection uses `results.tests`, because older reporters omit `reportFormat`. */
-function parseCtrfReport(content: string): CtrfReport | undefined {
+/**
+ * All CTRF versions require `results.tool.name` and `results.tests`. Older
+ * reporters omit `reportFormat`, so for them the required `results.summary`
+ * is the marker.
+ */
+function parseCtrfReport(content: string): ValidCtrfReport | undefined {
+  let parsed: CtrfReport | null;
   try {
     // JSON.parse rejects a byte order mark, and Windows tools often write one.
-    const parsed = JSON.parse(content.replace(/^\uFEFF/, "")) as CtrfReport | null;
-    return Array.isArray(parsed?.results?.tests) ? parsed : undefined;
+    parsed = JSON.parse(content.replace(/^\uFEFF/, "")) as CtrfReport | null;
   } catch {
     return undefined;
   }
+
+  const results = parsed?.results;
+  const toolName = nonEmptyString(results?.tool?.name);
+  const tests = results?.tests;
+  const hasMarker =
+    parsed?.reportFormat === "CTRF" || (typeof results?.summary === "object" && results.summary !== null);
+  return toolName !== undefined && Array.isArray(tests) && hasMarker ? { toolName, tests } : undefined;
 }
 
 function toTestCase(test: CtrfTest, toolName: string, maxMessageLength: number): Omit<TestCase, "leaf"> | undefined {
@@ -97,20 +116,20 @@ function isCtrfReport(content: string): boolean {
   return parseCtrfReport(content) !== undefined;
 }
 
+/** Returns undefined when the content is not CTRF. A CTRF report without tests gives an empty list. */
 function parseCtrfTestCases(content: string, options: ParseOptions = {}): TestCase[] | undefined {
   const report = parseCtrfReport(content);
   if (!report) {
     return undefined;
   }
 
-  const toolName = nonEmptyString(report.results?.tool?.name) ?? "";
   const maxMessageLength = options.maxMessageLength ?? MAX_MESSAGE_LENGTH;
-  const cases = (report.results?.tests as unknown[])
+  const cases = report.tests
     .filter((test): test is CtrfTest => typeof test === "object" && test !== null)
-    .map((test) => toTestCase(test, toolName, maxMessageLength))
+    .map((test) => toTestCase(test, report.toolName, maxMessageLength))
     .filter((testCase) => testCase !== undefined);
 
-  return cases.length > 0 ? markLeaves(cases) : undefined;
+  return markLeaves(cases);
 }
 
 export { isCtrfReport, parseCtrfTestCases };

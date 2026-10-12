@@ -150,6 +150,20 @@ describe("collectTestCasesFromArtifacts", () => {
     expect(octokit.rest.actions.downloadArtifact).toHaveBeenCalledTimes(1);
   });
 
+  it("warns and skips CTRF files without test cases", async () => {
+    const job = aJob();
+    const artifacts = [{ id: 1, name: artifactNameFor(job), expired: false }];
+    const empty = JSON.stringify({ reportFormat: "CTRF", results: { tool: { name: "jest" }, tests: [] } });
+    const octokit = stubOctokit(artifacts, { 1: zipSync({ "empty-ctrf.json": strToU8(empty) }) });
+
+    const byJobId = await collectTestCasesFromArtifacts(context as never, octokit as never, aNumber(), PREFIX, [
+      job,
+    ] as never);
+
+    expect(byJobId).toEqual({});
+    expect(warning).toHaveBeenCalledWith(expect.stringContaining("empty-ctrf.json"));
+  });
+
   it("warns and skips xml files without test cases", async () => {
     const job = aJob();
     const artifacts = [{ id: 1, name: artifactNameFor(job), expired: false }];

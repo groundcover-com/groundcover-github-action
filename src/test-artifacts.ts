@@ -85,7 +85,7 @@ async function collectTestCasesFromArtifacts(
         continue;
       }
       const cases = parseTestCases(file.content, { maxMessageLength });
-      if (!cases) {
+      if (!cases || cases.length === 0) {
         core.warning(`No test cases found in ${artifact.name}/${file.name}; skipping it`);
         continue;
       }

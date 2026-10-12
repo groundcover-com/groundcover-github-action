@@ -266,7 +266,10 @@ describe("parseJUnitTestCases", () => {
 describe("parseTestCases", () => {
   const name = aTestName();
   const junit = `<testsuite name="${aPackageName()}"><testcase classname="${aPackageName()}" name="${name}" time="1"/></testsuite>`;
-  const ctrf = JSON.stringify({ results: { tests: [{ name, status: "pending", duration: 1000 }] } });
+  const ctrf = JSON.stringify({
+    reportFormat: "CTRF",
+    results: { tool: { name: "jest" }, tests: [{ name, status: "pending", duration: 1000 }] },
+  });
 
   it("parses XML as JUnit", () => {
     expect(parseTestCases(junit)).toEqual([expect.objectContaining({ name, status: "passed" })]);
@@ -384,6 +387,30 @@ describe("findTestResultsSummary", () => {
       duration: 3.5,
     });
     expect(info).toHaveBeenCalledWith("Parsed 2 test result file(s)");
+  });
+
+  it("counts a CTRF report without tests as parsed, with zero counts", async () => {
+    tempDir = await mkdtemp(join(tmpdir(), "gc-test-results-"));
+    await writeFile(
+      join(tempDir, "ctrf.json"),
+      JSON.stringify({ reportFormat: "CTRF", results: { tool: { name: "jest" }, tests: [] } }),
+    );
+
+    const summary = await findTestResultsSummary(join(tempDir, "*.json"));
+
+    expect(summary).toEqual({
+      suites: 0,
+      total: 0,
+      passed: 0,
+      failed: 0,
+      skipped: 0,
+      errors: 0,
+      pending: 0,
+      other: 0,
+      duration: 0,
+    });
+    expect(warning).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledWith("Parsed 1 test result file(s)");
   });
 
   it("warns and skips JSON files that are not CTRF", async () => {

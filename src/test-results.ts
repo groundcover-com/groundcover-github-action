@@ -283,8 +283,7 @@ function parseSummary(content: string): TestResultsSummary | undefined {
   if (!isCtrfReport(content)) {
     return parseJUnitXml(content);
   }
-  const cases = parseCtrfTestCases(content);
-  return cases ? summarizeTestCases(cases) : undefined;
+  return summarizeTestCases(parseCtrfTestCases(content) ?? []);
 }
 
 async function findTestResultsSummary(input: string): Promise<TestResultsSummary | undefined> {
