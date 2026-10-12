@@ -2,6 +2,16 @@ import * as core from "@actions/core";
 import fg from "fast-glob";
 import { XMLParser } from "fast-xml-parser";
 import { readFile } from "node:fs/promises";
+import { isCtrfReport, parseCtrfTestCases } from "./ctrf";
+import {
+  isCollateral,
+  markLeaves,
+  MAX_MESSAGE_LENGTH,
+  MAX_OUTPUT_LENGTH,
+  type ParseOptions,
+  type TestCase,
+  type TestCaseStatus,
+} from "./test-case";
 
 interface TestResultsSummary {
   suites: number;
@@ -10,25 +20,9 @@ interface TestResultsSummary {
   failed: number;
   skipped: number;
   errors: number;
+  pending: number;
+  other: number;
   duration: number;
-}
-
-type TestCaseStatus = "passed" | "failed" | "error" | "skipped";
-
-interface TestCase {
-  /** For Go this includes the subtest path. */
-  name: string;
-  /** The suite when the report leaves it empty, as gotestsum does for package-level failures. */
-  classname: string;
-  suite: string;
-  timeSeconds: number;
-  status: TestCaseStatus;
-  message?: string;
-  output?: string;
-  /** False when another case in the same classname extends this name (a Go subtest ancestor). */
-  leaf: boolean;
-  /** Set when the framework aborted before the test ran (e.g. Go -failfast), so it never really failed. */
-  collateral: boolean;
 }
 
 interface XmlFailureNode {
@@ -90,6 +84,8 @@ function emptySummary(): TestResultsSummary {
     failed: 0,
     skipped: 0,
     errors: 0,
+    pending: 0,
+    other: 0,
     duration: 0,
   };
 }
@@ -102,6 +98,8 @@ function addSummary(a: TestResultsSummary, b: TestResultsSummary): TestResultsSu
     failed: a.failed + b.failed,
     skipped: a.skipped + b.skipped,
     errors: a.errors + b.errors,
+    pending: a.pending + b.pending,
+    other: a.other + b.other,
     duration: a.duration + b.duration,
   };
 }
@@ -125,6 +123,8 @@ function extractNodeSummary(node: XmlNode | undefined): TestResultsSummary | und
       failed: ownFailures,
       skipped: ownSkipped,
       errors: ownErrors,
+      pending: 0,
+      other: 0,
       duration: ownDuration,
     };
   }
@@ -148,20 +148,6 @@ function extractNodeSummary(node: XmlNode | undefined): TestResultsSummary | und
 function parseJUnitXml(content: string): TestResultsSummary | undefined {
   const parsed = parser.parse(content) as { testsuites?: XmlNode; testsuite?: XmlNode };
   return extractNodeSummary(parsed.testsuites) ?? extractNodeSummary(parsed.testsuite);
-}
-
-// Go failure bodies put the assertion last, after the test's own log output, so a
-// cap that fits most of them keeps the part a reader needs.
-const MAX_MESSAGE_LENGTH = 65_536;
-const MAX_OUTPUT_LENGTH = 16_384;
-
-/**
- * A zero-duration failure that produced no output means the framework aborted
- * before the test ran (e.g. Go -failfast / suite abort). A zero-duration
- * failure WITH a body demonstrably ran — an instant assertion failure.
- */
-function isCollateral(status: TestCaseStatus, timeSeconds: number, hasFailureBody: boolean): boolean {
-  return (status === "failed" || status === "error") && timeSeconds === 0 && !hasFailureBody;
 }
 
 function hasBody(node: XmlFailureNode | XmlFailureNode[] | string | number | undefined): boolean {
@@ -216,11 +202,6 @@ function classnameOf(testCase: XmlTestCaseNode, suiteName: string): string {
   return classname === "" ? suiteName : classname;
 }
 
-interface ParseOptions {
-  /** Cap on a failure's message, in decoded characters. */
-  maxMessageLength?: number | undefined;
-}
-
 function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf">[], maxMessageLength: number): void {
   if (!node) {
     return;
@@ -252,37 +233,24 @@ function collectTestCases(node: XmlNode | undefined, cases: Omit<TestCase, "leaf
   }
 }
 
-/** A case is a leaf unless another case in the same classname extends its name (Go subtest ancestry). */
-function markLeaves(cases: Omit<TestCase, "leaf">[]): TestCase[] {
-  const namesByClassname = new Map<string, string[]>();
-  for (const testCase of cases) {
-    const names = namesByClassname.get(testCase.classname) ?? [];
-    names.push(testCase.name);
-    namesByClassname.set(testCase.classname, names);
-  }
-
-  return cases.map((testCase) => {
-    const siblings = namesByClassname.get(testCase.classname) ?? [];
-    const prefix = `${testCase.name}/`;
-    const leaf = !siblings.some((name) => name.startsWith(prefix));
-    return { ...testCase, leaf };
-  });
-}
-
 function summarizeTestCases(cases: TestCase[]): TestResultsSummary {
   const suites = new Set(cases.map((testCase) => testCase.suite)).size;
   const failed = cases.filter((testCase) => testCase.status === "failed").length;
   const errors = cases.filter((testCase) => testCase.status === "error").length;
   const skipped = cases.filter((testCase) => testCase.status === "skipped").length;
+  const pending = cases.filter((testCase) => testCase.status === "pending").length;
+  const other = cases.filter((testCase) => testCase.status === "other").length;
   const duration = cases.reduce((sum, testCase) => sum + testCase.timeSeconds, 0);
 
   return {
     suites,
     total: cases.length,
-    passed: cases.length - failed - errors - skipped,
+    passed: cases.length - failed - errors - skipped - pending - other,
     failed,
     skipped,
     errors,
+    pending,
+    other,
     duration,
   };
 }
@@ -295,6 +263,27 @@ function parseJUnitTestCases(content: string, options: ParseOptions = {}): TestC
   collectTestCases(parsed.testsuite, cases, maxMessageLength);
 
   return cases.length > 0 ? markLeaves(cases) : undefined;
+}
+
+/** Picks the parser from the content: JSON is CTRF, XML is JUnit. */
+function parseTestCases(content: string, options: ParseOptions = {}): TestCase[] | undefined {
+  // trimStart also removes a byte order mark.
+  const first = content.trimStart()[0];
+  if (first === "{") {
+    return parseCtrfTestCases(content, options);
+  }
+  if (first === "<") {
+    return parseJUnitTestCases(content, options);
+  }
+  return undefined;
+}
+
+/** CTRF counts come from its tests, so a file gives the same numbers here as in per-test spans. */
+function parseSummary(content: string): TestResultsSummary | undefined {
+  if (!isCtrfReport(content)) {
+    return parseJUnitXml(content);
+  }
+  return summarizeTestCases(parseCtrfTestCases(content) ?? []);
 }
 
 async function findTestResultsSummary(input: string): Promise<TestResultsSummary | undefined> {
@@ -315,7 +304,7 @@ async function findTestResultsSummary(input: string): Promise<TestResultsSummary
   for (const file of files) {
     try {
       const content = await readFile(file, "utf8");
-      const fileSummary = parseJUnitXml(content);
+      const fileSummary = parseSummary(content);
       if (fileSummary) {
         summary = addSummary(summary, fileSummary);
         parsedFiles += 1;
@@ -336,5 +325,5 @@ async function findTestResultsSummary(input: string): Promise<TestResultsSummary
   return summary;
 }
 
-export { findTestResultsSummary, parseJUnitXml, parseJUnitTestCases, summarizeTestCases };
+export { findTestResultsSummary, parseJUnitXml, parseJUnitTestCases, parseTestCases, summarizeTestCases };
 export type { TestResultsSummary, TestCase, TestCaseStatus };

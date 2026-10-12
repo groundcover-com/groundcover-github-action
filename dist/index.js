@@ -28645,6 +28645,13 @@ function setFailed(message) {
     error$2(message);
 }
 /**
+ * Writes debug message to user log
+ * @param message debug message
+ */
+function debug(message) {
+    issueCommand('debug', {}, message);
+}
+/**
  * Adds an error issue
  * @param message error issue message. Errors will be converted to string via toString()
  * @param properties optional properties to add to the annotation.
@@ -47664,6 +47671,116 @@ class XMLParser {
     }
 }
 
+// Go failure bodies put the assertion last, after the test's own log output, so a
+// cap that fits most of them keeps the part a reader needs.
+const MAX_MESSAGE_LENGTH = 65_536;
+const MAX_OUTPUT_LENGTH = 16_384;
+/**
+ * A zero-duration failure that produced no output means the framework aborted
+ * before the test ran (e.g. Go -failfast / suite abort). A zero-duration
+ * failure WITH a body demonstrably ran — an instant assertion failure.
+ */
+function isCollateral(status, timeSeconds, hasFailureBody) {
+    return (status === "failed" || status === "error") && timeSeconds === 0 && !hasFailureBody;
+}
+/** A case is a leaf unless another case in the same classname extends its name (Go subtest ancestry). */
+function markLeaves(cases) {
+    const namesByClassname = new Map();
+    for (const testCase of cases) {
+        const names = namesByClassname.get(testCase.classname) ?? [];
+        names.push(testCase.name);
+        namesByClassname.set(testCase.classname, names);
+    }
+    return cases.map((testCase) => {
+        const siblings = namesByClassname.get(testCase.classname) ?? [];
+        const prefix = `${testCase.name}/`;
+        const leaf = !siblings.some((name) => name.startsWith(prefix));
+        return { ...testCase, leaf };
+    });
+}
+
+const CTRF_STATUSES = new Set(["passed", "failed", "skipped", "pending", "other"]);
+function toStatus(value) {
+    return typeof value === "string" && CTRF_STATUSES.has(value) ? value : "other";
+}
+function nonEmptyString(value) {
+    return typeof value === "string" && value !== "" ? value : undefined;
+}
+function suitePath(value) {
+    if (Array.isArray(value)) {
+        return value.filter((part) => typeof part === "string" && part !== "");
+    }
+    const single = nonEmptyString(value);
+    return single === undefined ? [] : [single];
+}
+function joinCapped(parts, maxLength) {
+    const text = parts
+        .flat()
+        .filter((part) => typeof part === "string" && part !== "")
+        .join("\n");
+    return text === "" ? undefined : text.slice(0, maxLength);
+}
+/**
+ * All CTRF versions require `results.tool.name` and `results.tests`. Older
+ * reporters omit `reportFormat`, so for them the required `results.summary`
+ * is the marker.
+ */
+function parseCtrfReport(content) {
+    let parsed;
+    try {
+        // JSON.parse rejects a byte order mark, and Windows tools often write one.
+        parsed = JSON.parse(content.replace(/^\uFEFF/, ""));
+    }
+    catch {
+        return undefined;
+    }
+    const results = parsed?.results;
+    const toolName = nonEmptyString(results?.tool?.name);
+    const tests = results?.tests;
+    const hasMarker = parsed?.reportFormat === "CTRF" || (typeof results?.summary === "object" && results.summary !== null);
+    return toolName !== undefined && Array.isArray(tests) && hasMarker ? { toolName, tests } : undefined;
+}
+function toTestCase(test, toolName, maxMessageLength) {
+    const name = nonEmptyString(test.name);
+    if (name === undefined) {
+        return undefined;
+    }
+    const path = suitePath(test.suite);
+    const suite = nonEmptyString(test.filePath) ?? path[0] ?? toolName;
+    const status = toStatus(test.status);
+    const timeSeconds = typeof test.duration === "number" && test.duration > 0 ? test.duration / 1000 : 0;
+    const message = joinCapped([test.message, test.trace], maxMessageLength);
+    const output = joinCapped([test.stdout, test.stderr], MAX_OUTPUT_LENGTH);
+    const startedAt = typeof test.start === "number" && test.start > 0 ? test.start : undefined;
+    return {
+        name,
+        classname: path.length > 0 ? path.join(" > ") : suite,
+        suite,
+        timeSeconds,
+        status,
+        ...(message !== undefined ? { message } : {}),
+        ...(output !== undefined ? { output } : {}),
+        ...(startedAt !== undefined ? { startedAt } : {}),
+        collateral: isCollateral(status, timeSeconds, message !== undefined),
+    };
+}
+function isCtrfReport(content) {
+    return parseCtrfReport(content) !== undefined;
+}
+/** Returns undefined when the content is not CTRF. A CTRF report without tests gives an empty list. */
+function parseCtrfTestCases(content, options = {}) {
+    const report = parseCtrfReport(content);
+    if (!report) {
+        return undefined;
+    }
+    const maxMessageLength = options.maxMessageLength ?? MAX_MESSAGE_LENGTH;
+    const cases = report.tests
+        .filter((test) => typeof test === "object" && test !== null)
+        .map((test) => toTestCase(test, report.toolName, maxMessageLength))
+        .filter((testCase) => testCase !== undefined);
+    return markLeaves(cases);
+}
+
 const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "",
@@ -47693,6 +47810,8 @@ function emptySummary() {
         failed: 0,
         skipped: 0,
         errors: 0,
+        pending: 0,
+        other: 0,
         duration: 0,
     };
 }
@@ -47704,6 +47823,8 @@ function addSummary(a, b) {
         failed: a.failed + b.failed,
         skipped: a.skipped + b.skipped,
         errors: a.errors + b.errors,
+        pending: a.pending + b.pending,
+        other: a.other + b.other,
         duration: a.duration + b.duration,
     };
 }
@@ -47724,6 +47845,8 @@ function extractNodeSummary(node) {
             failed: ownFailures,
             skipped: ownSkipped,
             errors: ownErrors,
+            pending: 0,
+            other: 0,
             duration: ownDuration,
         };
     }
@@ -47743,18 +47866,6 @@ function extractNodeSummary(node) {
 function parseJUnitXml(content) {
     const parsed = parser.parse(content);
     return extractNodeSummary(parsed.testsuites) ?? extractNodeSummary(parsed.testsuite);
-}
-// Go failure bodies put the assertion last, after the test's own log output, so a
-// cap that fits most of them keeps the part a reader needs.
-const MAX_MESSAGE_LENGTH = 65_536;
-const MAX_OUTPUT_LENGTH = 16_384;
-/**
- * A zero-duration failure that produced no output means the framework aborted
- * before the test ran (e.g. Go -failfast / suite abort). A zero-duration
- * failure WITH a body demonstrably ran — an instant assertion failure.
- */
-function isCollateral(status, timeSeconds, hasFailureBody) {
-    return (status === "failed" || status === "error") && timeSeconds === 0 && !hasFailureBody;
 }
 function hasBody(node) {
     const first = Array.isArray(node) ? node[0] : node;
@@ -47828,34 +47939,23 @@ function collectTestCases(node, cases, maxMessageLength) {
         collectTestCases(child, cases, maxMessageLength);
     }
 }
-/** A case is a leaf unless another case in the same classname extends its name (Go subtest ancestry). */
-function markLeaves(cases) {
-    const namesByClassname = new Map();
-    for (const testCase of cases) {
-        const names = namesByClassname.get(testCase.classname) ?? [];
-        names.push(testCase.name);
-        namesByClassname.set(testCase.classname, names);
-    }
-    return cases.map((testCase) => {
-        const siblings = namesByClassname.get(testCase.classname) ?? [];
-        const prefix = `${testCase.name}/`;
-        const leaf = !siblings.some((name) => name.startsWith(prefix));
-        return { ...testCase, leaf };
-    });
-}
 function summarizeTestCases(cases) {
     const suites = new Set(cases.map((testCase) => testCase.suite)).size;
     const failed = cases.filter((testCase) => testCase.status === "failed").length;
     const errors = cases.filter((testCase) => testCase.status === "error").length;
     const skipped = cases.filter((testCase) => testCase.status === "skipped").length;
+    const pending = cases.filter((testCase) => testCase.status === "pending").length;
+    const other = cases.filter((testCase) => testCase.status === "other").length;
     const duration = cases.reduce((sum, testCase) => sum + testCase.timeSeconds, 0);
     return {
         suites,
         total: cases.length,
-        passed: cases.length - failed - errors - skipped,
+        passed: cases.length - failed - errors - skipped - pending - other,
         failed,
         skipped,
         errors,
+        pending,
+        other,
         duration,
     };
 }
@@ -47866,6 +47966,25 @@ function parseJUnitTestCases(content, options = {}) {
     collectTestCases(parsed.testsuites, cases, maxMessageLength);
     collectTestCases(parsed.testsuite, cases, maxMessageLength);
     return cases.length > 0 ? markLeaves(cases) : undefined;
+}
+/** Picks the parser from the content: JSON is CTRF, XML is JUnit. */
+function parseTestCases(content, options = {}) {
+    // trimStart also removes a byte order mark.
+    const first = content.trimStart()[0];
+    if (first === "{") {
+        return parseCtrfTestCases(content, options);
+    }
+    if (first === "<") {
+        return parseJUnitTestCases(content, options);
+    }
+    return undefined;
+}
+/** CTRF counts come from its tests, so a file gives the same numbers here as in per-test spans. */
+function parseSummary(content) {
+    if (!isCtrfReport(content)) {
+        return parseJUnitXml(content);
+    }
+    return summarizeTestCases(parseCtrfTestCases(content) ?? []);
 }
 async function findTestResultsSummary(input) {
     const patterns = parseTestResultsGlobs(input);
@@ -47882,7 +48001,7 @@ async function findTestResultsSummary(input) {
     for (const file of files) {
         try {
             const content = await readFile(file, "utf8");
-            const fileSummary = parseJUnitXml(content);
+            const fileSummary = parseSummary(content);
             if (fileSummary) {
                 summary = addSummary(summary, fileSummary);
                 parsedFiles += 1;
@@ -48524,11 +48643,12 @@ function matchArtifactToJob(artifactName, prefix, jobs) {
     const suffix = artifactName.slice(prefix.length);
     return jobs.find((job) => sanitizeArtifactNamePart(jobNameTail(job.name)) === suffix);
 }
-function extractXmlFilesFromZip(zip) {
+/** JUnit XML and CTRF JSON files. */
+function extractReportFilesFromZip(zip) {
     const entries = unzipSync(new Uint8Array(zip));
     const files = [];
     for (const [name, content] of Object.entries(entries)) {
-        if (name.toLowerCase().endsWith(".xml")) {
+        if (/\.(xml|json)$/i.test(name)) {
             files.push({ name, content: strFromU8(content) });
         }
     }
@@ -48547,9 +48667,14 @@ async function collectTestCasesFromArtifacts(context, octokit, runId, prefix, jo
             continue;
         }
         const zip = await downloadArtifactZip(context, octokit, artifact.id);
-        for (const file of extractXmlFilesFromZip(zip)) {
-            const cases = parseJUnitTestCases(file.content, { maxMessageLength });
-            if (!cases) {
+        for (const file of extractReportFilesFromZip(zip)) {
+            // Artifacts often hold other JSON files, so a JSON file that is not CTRF is not a problem.
+            if (/\.json$/i.test(file.name) && !isCtrfReport(file.content)) {
+                debug(`${artifact.name}/${file.name} is not a CTRF report; skipping it`);
+                continue;
+            }
+            const cases = parseTestCases(file.content, { maxMessageLength });
+            if (!cases || cases.length === 0) {
                 warning(`No test cases found in ${artifact.name}/${file.name}; skipping it`);
                 continue;
             }
@@ -48567,7 +48692,7 @@ async function collectTestCasesFromArtifacts(context, octokit, runId, prefix, jo
 function reportName(cases, fileName) {
     const suites = new Set(cases.map((testCase) => testCase.suite).filter(Boolean));
     const onlySuite = suites.size === 1 ? [...suites][0] : undefined;
-    return onlySuite ?? fileName.replace(/^.*\//, "").replace(/\.xml$/i, "");
+    return onlySuite ?? fileName.replace(/^.*\//, "").replace(/\.(xml|json)$/i, "");
 }
 
 /*
@@ -50575,11 +50700,12 @@ function toStepResult(conclusion) {
 
 /**
  * Each report gets a wrapper span carrying that file's rollup, so a job with
- * several JUnit files keeps them apart instead of one flat list of tests.
+ * several report files keeps them apart instead of one flat list of tests.
  *
- * JUnit reports carry durations but no per-test timestamps, so every test span
- * is anchored at the job start; durations are exact, overlaps are expected
- * (tests run in parallel anyway). The wrapper covers the job's own window.
+ * JUnit reports carry durations but no per-test timestamps, so those test spans
+ * are anchored at the job start; durations are exact, overlaps are expected
+ * (tests run in parallel anyway). CTRF tests start at their own timestamp when
+ * it is inside the job window. The wrapper covers the job's own window.
  */
 function traceTestReports(reports, job) {
     const tracer = trace.getTracer("otel-cicd-export-action");
@@ -50589,11 +50715,19 @@ function traceTestReports(reports, job) {
     for (const report of reports) {
         tracer.startActiveSpan(`Tests / ${report.name}`, { attributes: reportToAttributes(report, job), startTime, kind: SpanKind.INTERNAL }, (reportSpan) => {
             for (const testCase of report.cases) {
-                traceTestCase(testCase, job, tracer, startTime);
+                traceTestCase(testCase, job, tracer, testStartTime(testCase, startTime, endTime));
             }
             reportSpan.end(endTime);
         });
     }
+}
+/** A timestamp outside the job window is from a skewed clock or another attempt, so use the job start. */
+function testStartTime(testCase, jobStart, jobEnd) {
+    const startedAt = testCase.startedAt;
+    if (startedAt !== undefined && startedAt >= jobStart.getTime() && startedAt <= jobEnd.getTime()) {
+        return new Date(startedAt);
+    }
+    return jobStart;
 }
 function traceTestCase(testCase, job, tracer, startTime) {
     const span = tracer.startSpan(testCase.name, {
@@ -50618,6 +50752,8 @@ function reportToAttributes(report, job) {
         "test.failed": summary.failed,
         "test.skipped": summary.skipped,
         "test.errors": summary.errors,
+        "test.pending": summary.pending,
+        "test.other": summary.other,
         "test.duration": summary.duration,
         "github.job.id": job.id,
         "github.job.name": job.name,
@@ -50942,6 +51078,8 @@ function testResultsToAttributes(testResults) {
         "test.failed": testResults.failed,
         "test.skipped": testResults.skipped,
         "test.errors": testResults.errors,
+        "test.pending": testResults.pending,
+        "test.other": testResults.other,
         "test.duration": testResults.duration,
     };
 }

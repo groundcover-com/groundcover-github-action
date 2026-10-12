@@ -3,7 +3,8 @@ import type { context } from "@actions/github";
 import type { components } from "@octokit/openapi-types";
 import { strFromU8, unzipSync } from "fflate";
 import { downloadArtifactZip, listWorkflowRunArtifacts, type Octokit } from "./github";
-import { parseJUnitTestCases, type TestCase } from "./test-results";
+import { isCtrfReport } from "./ctrf";
+import { parseTestCases, type TestCase } from "./test-results";
 import type { TestReport } from "./trace/test-trace";
 
 type Context = typeof context;
@@ -12,7 +13,7 @@ interface NamedJob {
   name: string;
 }
 
-interface XmlFile {
+interface ReportFile {
   name: string;
   content: string;
 }
@@ -40,12 +41,13 @@ function matchArtifactToJob<T extends NamedJob>(artifactName: string, prefix: st
   return jobs.find((job) => sanitizeArtifactNamePart(jobNameTail(job.name)) === suffix);
 }
 
-function extractXmlFilesFromZip(zip: Buffer): XmlFile[] {
+/** JUnit XML and CTRF JSON files. */
+function extractReportFilesFromZip(zip: Buffer): ReportFile[] {
   const entries = unzipSync(new Uint8Array(zip));
-  const files: XmlFile[] = [];
+  const files: ReportFile[] = [];
 
   for (const [name, content] of Object.entries(entries)) {
-    if (name.toLowerCase().endsWith(".xml")) {
+    if (/\.(xml|json)$/i.test(name)) {
       files.push({ name, content: strFromU8(content) });
     }
   }
@@ -76,9 +78,14 @@ async function collectTestCasesFromArtifacts(
     }
 
     const zip = await downloadArtifactZip(context, octokit, artifact.id);
-    for (const file of extractXmlFilesFromZip(zip)) {
-      const cases = parseJUnitTestCases(file.content, { maxMessageLength });
-      if (!cases) {
+    for (const file of extractReportFilesFromZip(zip)) {
+      // Artifacts often hold other JSON files, so a JSON file that is not CTRF is not a problem.
+      if (/\.json$/i.test(file.name) && !isCtrfReport(file.content)) {
+        core.debug(`${artifact.name}/${file.name} is not a CTRF report; skipping it`);
+        continue;
+      }
+      const cases = parseTestCases(file.content, { maxMessageLength });
+      if (!cases || cases.length === 0) {
         core.warning(`No test cases found in ${artifact.name}/${file.name}; skipping it`);
         continue;
       }
@@ -100,12 +107,12 @@ async function collectTestCasesFromArtifacts(
 function reportName(cases: TestCase[], fileName: string): string {
   const suites = new Set(cases.map((testCase) => testCase.suite).filter(Boolean));
   const onlySuite = suites.size === 1 ? [...suites][0] : undefined;
-  return onlySuite ?? fileName.replace(/^.*\//, "").replace(/\.xml$/i, "");
+  return onlySuite ?? fileName.replace(/^.*\//, "").replace(/\.(xml|json)$/i, "");
 }
 
 export {
   collectTestCasesFromArtifacts,
-  extractXmlFilesFromZip,
+  extractReportFilesFromZip,
   matchArtifactToJob,
   reportName,
   sanitizeArtifactNamePart,

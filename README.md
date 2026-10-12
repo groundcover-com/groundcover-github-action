@@ -83,8 +83,8 @@ Use these rules when generating workflows or modifying this repository:
 - Follows the [OTEL CI/CD semantic conventions](https://opentelemetry.io/docs/specs/semconv/cicd/)
 - Adds resource attributes for `source`, `workload`, and optional `env`
 - Exports GitHub Actions job logs as OpenTelemetry log records correlated with job and step spans (enabled by default)
-- Can parse JUnit XML test results and attach a summary to the workflow root span
-- Can download JUnit XML report artifacts and export every test case as a span under its job span
+- Can parse JUnit XML and [CTRF](https://ctrf.io) JSON test results and attach a summary to the workflow root span
+- Can download JUnit XML and CTRF JSON report artifacts and export every test case as a span under its job span
 - Supports additional custom resource attributes for team/region/metadata
 - Upserts a single PR comment with trace details and a link to groundcover traces
 
@@ -238,8 +238,8 @@ Use your workspace-specific managed OTLP endpoint rather than a hardcoded shared
 | `traceparent`           | No       |                               | W3C Trace Context `traceparent` value (e.g., `00-<trace_id>-<span_id>-01`). When provided, the workflow root span becomes a child of this trace, enabling correlation between CI/CD and application traces. |
 | `env`                   | No       |                               | Environment name added to resource attributes (e.g., `production`, `staging`).                                                                                                                              |
 | `workload`              | No       | Workflow name                 | Workload name added to resource attributes. Use this to group traces by service/workload.                                                                                                                   |
-| `testResultsGlob`       | No       |                               | Comma-separated glob patterns for JUnit XML test result files. Matching files are parsed and summarized onto the workflow root span.                                                                        |
-| `testResultsArtifactPrefix` | No   |                               | Prefix of workflow-run artifacts holding JUnit XML reports (e.g. `test-reports-`). Matching artifacts are downloaded and every test case becomes a span under its job span. See [Per-test spans](#per-test-spans-from-report-artifacts). |
+| `testResultsGlob`       | No       |                               | Comma-separated glob patterns for JUnit XML or CTRF JSON test result files. Matching files are parsed and summarized onto the workflow root span.                                                                        |
+| `testResultsArtifactPrefix` | No   |                               | Prefix of workflow-run artifacts holding JUnit XML or CTRF JSON reports (e.g. `test-reports-`). Matching artifacts are downloaded and every test case becomes a span under its job span. See [Per-test spans](#per-test-spans-from-report-artifacts). |
 | `maxFailureMessageLength` | No     | `65536`                       | Maximum length, in characters, of a failed test's message on its span and log record. Longer messages are cut at this length. See [Per-test spans](#per-test-spans-from-report-artifacts). |
 | `exportLogs`            | No       | `true`                        | Export GitHub Actions job logs as OpenTelemetry log records correlated with job and step spans. Set to `false` to disable.                                                                                  |
 | `extraAttributes`       | No       |                               | Extra resource attributes as comma-separated `key=value` pairs. Example: `"team=platform,region=us-east-1"`. Prefer using dedicated `env` and `workload` inputs when applicable.                            |
@@ -334,7 +334,7 @@ For groundcover users, `source`, `workload`, and `env` make it easier to filter 
 
 ## Test Results
 
-If your workflow produces JUnit XML reports, set `testResultsGlob` to one or more comma-separated glob patterns. The action parses matching files and adds these workflow root span attributes:
+If your workflow produces JUnit XML or [CTRF](https://ctrf.io) JSON reports, set `testResultsGlob` to one or more comma-separated glob patterns. The action detects the format from each file's content, parses matching files, and adds these workflow root span attributes:
 
 - `test.suites`
 - `test.total`
@@ -342,13 +342,15 @@ If your workflow produces JUnit XML reports, set `testResultsGlob` to one or mor
 - `test.failed`
 - `test.skipped`
 - `test.errors`
+- `test.pending` (CTRF only)
+- `test.other` (CTRF only)
 - `test.duration`
 
-The matching XML files must exist on disk in the job running this action. In a separate `workflow_run` export workflow, download the test result artifacts first if you want them included.
+The matching files must exist on disk in the job running this action. In a separate `workflow_run` export workflow, download the test result artifacts first if you want them included.
 
 ### Per-test spans from report artifacts
 
-To get one span per test case, parented under the job that ran it, upload each test job's JUnit XML as a workflow artifact and set `testResultsArtifactPrefix`. This works with the recommended `workflow_run` setup, where the export job cannot see the test jobs' files on disk.
+To get one span per test case, parented under the job that ran it, upload each test job's JUnit XML or CTRF JSON reports as a workflow artifact and set `testResultsArtifactPrefix`. This works with the recommended `workflow_run` setup, where the export job cannot see the test jobs' files on disk.
 
 Upload the reports from every test job:
 
@@ -367,6 +369,8 @@ jobs:
           path: reports/*-junit.xml
           overwrite: true
 ```
+
+For CTRF reports, upload the JSON files instead, for example `path: ctrf/*.json`. One artifact can hold both formats.
 
 Then point the export at them:
 
@@ -394,7 +398,7 @@ Artifacts are matched to jobs by name, `<prefix><sanitized job name>`, where the
     overwrite: true
 ```
 
-Each JUnit file becomes a wrapper span under its job, and each test case in that file becomes a span under the wrapper, so a job that produces several reports keeps them apart:
+The action reads every `.xml` and `.json` file in a matching artifact. JSON files that are not CTRF reports are skipped. Each report file becomes a wrapper span under its job, and each test case in that file becomes a span under the wrapper, so a job that produces several reports keeps them apart:
 
 ```
 workflow run
@@ -406,20 +410,20 @@ workflow run
       test case
 ```
 
-The wrapper is named after the report's suite, or its file name when a file holds several suites, and carries that file's counts — `test.report`, `test.suites`, `test.total`, `test.passed`, `test.failed`, `test.skipped`, `test.errors`, `test.duration` — the same rollup the workflow root carries for the whole run. It spans the job's own window.
+The wrapper is named after the report's suite, or its file name when a file holds several suites, and carries that file's counts — `test.report`, `test.suites`, `test.total`, `test.passed`, `test.failed`, `test.skipped`, `test.errors`, `test.pending`, `test.other`, `test.duration` — the same rollup the workflow root carries for the whole run. It spans the job's own window.
 
 Each test case span carries these attributes:
 
 - `test.name`, `test.classname`, `test.suite` — `test.classname` falls back to the suite when the report leaves it empty, as gotestsum does for the synthetic `TestMain` case of a package that failed to build
-- `test.status` (`passed` / `failed` / `error` / `skipped`), `test.duration_ms`
+- `test.status` (`passed` / `failed` / `error` / `skipped`, plus `pending` / `other` from CTRF), `test.duration_ms`
 - `test.leaf` — false for Go subtest ancestors (another case in the same classname extends this name)
 - `test.collateral` — true for zero-duration failures with no output, which the framework aborted before the test ran (e.g. Go `-failfast`)
 - `test.failure.message` — the failure message and body, capped at `maxFailureMessageLength` characters (default 64 KiB). Go failures put the assertion after the test's own output, so a low cap can drop it
 - `github.job.name`, `github.job.id`, `github.run_id`, `github.run_attempt`, `github.head_sha`, `github.head_branch`
 
-Failed and errored cases are marked as error spans. JUnit reports carry durations but no per-test timestamps, so **test spans are anchored at the job start time**; durations are exact and overlaps are expected. When `testResultsGlob` is not set, the root-span summary attributes above are computed from the artifact-parsed cases instead.
+Failed and errored cases are marked as error spans. JUnit reports carry durations but no per-test timestamps, so **JUnit test spans are anchored at the job start time**; durations are exact and overlaps are expected. CTRF test spans start at the test's own `start` timestamp when it falls inside the job's window, and at the job start otherwise. When `testResultsGlob` is not set, the root-span summary attributes above are computed from the artifact-parsed cases instead.
 
-Each failed case also ships its failure message and captured `<system-out>` as a log record correlated with the test's span, so opening a red test span shows what the test printed. Passing-test output is not exported. These log records are sent even when `exportLogs` is `false`.
+Each failed case also ships its failure message and captured output (JUnit `<system-out>`, CTRF `stdout` and `stderr`) as a log record correlated with the test's span, so opening a red test span shows what the test printed. Passing-test output is not exported. These log records are sent even when `exportLogs` is `false`.
 
 ## Log Export
 

@@ -98,6 +98,8 @@ describe("traceTestCases", () => {
       aTestCase({ status: "failed", timeSeconds: 3 }),
       aTestCase({ status: "skipped", timeSeconds: 0 }),
       aTestCase({ status: "error", timeSeconds: 1 }),
+      aTestCase({ status: "pending", timeSeconds: 0 }),
+      aTestCase({ status: "other", timeSeconds: 0 }),
     ]);
 
     traceTestReports([report], aJobContext());
@@ -110,6 +112,8 @@ describe("traceTestCases", () => {
       "test.failed": 1,
       "test.skipped": 1,
       "test.errors": 1,
+      "test.pending": 1,
+      "test.other": 1,
       "test.duration": 6,
     });
   });
@@ -167,6 +171,33 @@ describe("traceTestCases", () => {
     expect(hrTimeToMs(span.endTime) - hrTimeToMs(span.startTime)).toBeCloseTo(testCase.timeSeconds * 1000);
   });
 
+  it("starts a span at the case's own start time when it is inside the job window", () => {
+    const job = aJobContext();
+    const startedAt = new Date(job.started_at).getTime() + 1000;
+    const testCase = aTestCase({ startedAt, timeSeconds: 2 });
+
+    traceTestReports([aTestReport(aPackageName(), [testCase])], job);
+
+    const span = spanFor(testCase);
+    expect(span).toBeDefined();
+    if (!span) return;
+
+    expect(hrTimeToMs(span.startTime)).toBe(startedAt);
+    expect(hrTimeToMs(span.endTime)).toBe(startedAt + 2000);
+  });
+
+  it("anchors at the job start when the case's start time is outside the job window", () => {
+    const job = aJobContext();
+    const jobStart = new Date(job.started_at).getTime();
+    const early = aTestCase({ startedAt: jobStart - 1 });
+    const late = aTestCase({ startedAt: new Date(job.completed_at).getTime() + 1 });
+
+    traceTestReports([aTestReport(aPackageName(), [early, late])], job);
+
+    expect(hrTimeToMs(spanFor(early)?.startTime ?? [0, 0])).toBe(jobStart);
+    expect(hrTimeToMs(spanFor(late)?.startTime ?? [0, 0])).toBe(jobStart);
+  });
+
   it("marks failed and errored cases as error spans with the failure message", () => {
     const failed = aTestCase({ status: "failed", message: `assertion mismatch ${aTestName()}` });
     const errored = aTestCase({ status: "error" });
@@ -183,13 +214,13 @@ describe("traceTestCases", () => {
     expect(spanFor(passed)?.attributes["error"]).toBe(false);
   });
 
-  it("emits skipped cases with a skipped status and no error", () => {
-    const skipped = aTestCase({ status: "skipped", timeSeconds: 0 });
+  it.each(["skipped", "pending", "other"] as const)("emits %s cases with their status and no error", (status) => {
+    const testCase = aTestCase({ status, timeSeconds: 0 });
 
-    traceTestReports([aTestReport(aPackageName(), [skipped])], aJobContext());
+    traceTestReports([aTestReport(aPackageName(), [testCase])], aJobContext());
 
     const span = exporter.getFinishedSpans()[0];
-    expect(span?.attributes["test.status"]).toBe("skipped");
+    expect(span?.attributes["test.status"]).toBe(status);
     expect(span?.status.code).not.toBe(SpanStatusCode.ERROR);
   });
 
@@ -216,6 +247,7 @@ describe("traceTestCases", () => {
     });
 
     const failedSpan = spanFor(failed);
+    expect(record?.["timestamp"]).toEqual(new Date(job.started_at));
     const recordSpan = trace.getSpan(record?.["context"] as Context);
     expect(recordSpan?.spanContext().spanId).toBe(failedSpan?.spanContext().spanId);
     expect(recordSpan?.spanContext().traceId).toBe(failedSpan?.spanContext().traceId);

@@ -48,12 +48,12 @@ inputs:
     required: false
   testResultsGlob:
     description: >
-      Optional comma-separated glob patterns for JUnit XML test result files.
+      Optional comma-separated glob patterns for JUnit XML or CTRF JSON test result files.
       Matching files are parsed and summarized onto the workflow root span.
     required: false
   testResultsArtifactPrefix:
     description: >
-      Optional prefix of workflow-run artifacts holding JUnit XML test reports
+      Optional prefix of workflow-run artifacts holding JUnit XML or CTRF JSON test reports
       (e.g. "test-reports-"). Matching artifacts are downloaded and every test
       case becomes a span under its job span, so this works in workflow_run mode
       where testResultsGlob cannot see the test jobs' files. Each artifact must
